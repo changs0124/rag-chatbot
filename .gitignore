@@ -1,0 +1,64 @@
+# === 시크릿 - 절대 커밋 금지 (S-1) ===
+# 넓은 규칙을 먼저 두고, 예외(!)를 그 "뒤"에 두어야 예외가 살아남음 (0-A 경고)
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*-secret*.yml
+*-secret*.yaml
+*-secret*.properties
+application-local.yml
+application-local.yaml
+application-local.properties
+application-secret.yml
+application-secret.yaml
+!/.env.example
+!/frontend/.env.example
+!/backend/.env.example
+
+# === Node / Vite (frontend) ===
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+coverage/
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# === Java / Maven (backend) ===
+target/
+*.class
+*.jar
+*.war
+!/backend/.mvn/wrapper/maven-wrapper.jar
+build/
+.gradle/
+
+# === IDE / 도구 상태 ===
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/extensions.json
+.settings/
+.classpath
+.project
+.factorypath
+*.log
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === OMC / Claude 상태 ===
+.omc/
+.claude/settings.local.json
+CLAUDE.md
+AGENTS.md
