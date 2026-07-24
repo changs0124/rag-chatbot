@@ -18,7 +18,12 @@ export default function MessageList({ messages }: { messages: ChatMessage[] }) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
+    <div
+      className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6"
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions text"
+    >
       {messages.map((m) => (
         <MessageBubble key={m.id} message={m} />
       ))}
