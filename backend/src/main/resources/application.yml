@@ -30,3 +30,7 @@ server:
 # 실행 모드 : mock | live (P-2). 운영 프로필에서 mock이면 기동 실패(AC-18, ProdModeGuard)
 app:
   mode: ${APP_MODE:mock}
+  jwt:
+    # 서명 시크릿 - 값은 env로 주입(커밋 금지). 테스트는 test 프로퍼티로 주입
+    secret: ${JWT_SECRET:}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
