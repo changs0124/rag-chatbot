@@ -4,6 +4,7 @@ import {
   deleteConversation as apiDelete,
   getMessages,
   listConversations,
+  renameConversation as apiRename,
   streamChat,
   uploadFile,
 } from '../lib/endpoints'
@@ -53,6 +54,13 @@ export function useChat() {
     },
     [activeId],
   )
+
+  const renameConversation = useCallback(async (id: string, title: string) => {
+    const trimmed = title.trim()
+    if (!trimmed) return
+    const updated = await apiRename(id, trimmed)
+    setConversations((prev) => prev.map((c) => (c.id === id ? updated : c)))
+  }, [])
 
   const stop = useCallback(() => {
     abortRef.current?.abort()
@@ -153,5 +161,6 @@ export function useChat() {
     selectConversation,
     newConversation,
     deleteConversation,
+    renameConversation,
   }
 }

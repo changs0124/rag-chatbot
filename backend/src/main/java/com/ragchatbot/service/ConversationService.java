@@ -51,6 +51,12 @@ public class ConversationService {
 		return findOwnedResponse(id, userId);
 	}
 
+	public ConversationResponse rename(UUID userId, UUID conversationId, String title) {
+		requireOwned(conversationId, userId);
+		conversationMapper.updateTitle(conversationId, userId, title.trim());
+		return findOwnedResponse(conversationId, userId);
+	}
+
 	public List<ConversationResponse> list(UUID userId) {
 		return conversationMapper.listByUser(userId).stream()
 				.map(c -> new ConversationResponse(c.id(), c.title(), c.createdAt(), c.updatedAt()))

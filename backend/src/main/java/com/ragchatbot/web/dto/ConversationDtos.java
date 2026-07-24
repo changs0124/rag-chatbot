@@ -15,6 +15,9 @@ public final class ConversationDtos {
 	public record CreateConversationRequest(String title) {
 	}
 
+	public record RenameConversationRequest(@jakarta.validation.constraints.NotBlank String title) {
+	}
+
 	public record ConversationResponse(UUID id, String title, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
 	}
 

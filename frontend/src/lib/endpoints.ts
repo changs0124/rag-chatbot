@@ -11,6 +11,8 @@ export const updatePassword = (currentPassword: string, newPassword: string) =>
 export const listConversations = () => api.get<Conversation[]>('/api/conversations')
 export const createConversation = (title?: string) =>
   api.post<Conversation>('/api/conversations', { title })
+export const renameConversation = (id: string, title: string) =>
+  api.patch<Conversation>(`/api/conversations/${id}`, { title })
 export const deleteConversation = (id: string) => api.del<void>(`/api/conversations/${id}`)
 export const getMessages = (id: string) => api.get<ChatMessage[]>(`/api/conversations/${id}/messages`)
 

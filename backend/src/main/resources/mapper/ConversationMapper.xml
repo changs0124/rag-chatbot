@@ -36,6 +36,10 @@
 		delete from conversations where id = #{id} and user_id = #{userId}
 	</delete>
 
+	<update id="updateTitle">
+		update conversations set title = #{title} where id = #{id} and user_id = #{userId}
+	</update>
+
 	<update id="touch">
 		update conversations set updated_at = now() where id = #{id} and user_id = #{userId}
 	</update>

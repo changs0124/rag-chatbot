@@ -66,6 +66,27 @@ class ConversationCrossAccessTest extends AbstractPgIntegrationTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
+	void owner_can_rename() {
+		String token = signup("rename@b.com");
+		String convId = createConversation(token);
+		var res = rest.exchange("/api/conversations/" + convId, HttpMethod.PATCH,
+				new HttpEntity<>(Map.of("title", "바뀐 제목"), bearer(token)), Map.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(res.getBody().get("title")).isEqualTo("바뀐 제목");
+	}
+
+	@Test
+	void stranger_cannot_rename_404() {
+		String owner = signup("rn-owner@b.com");
+		String stranger = signup("rn-stranger@b.com");
+		String convId = createConversation(owner);
+		var res = rest.exchange("/api/conversations/" + convId, HttpMethod.PATCH,
+				new HttpEntity<>(Map.of("title", "침입"), bearer(stranger)), Map.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
 	void unauthenticated_conversations_401() {
 		var res = rest.getForEntity("/api/conversations", Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);

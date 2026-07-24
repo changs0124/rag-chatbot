@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +18,9 @@ import com.ragchatbot.service.ConversationService;
 import com.ragchatbot.web.dto.ConversationDtos.ConversationResponse;
 import com.ragchatbot.web.dto.ConversationDtos.CreateConversationRequest;
 import com.ragchatbot.web.dto.ConversationDtos.MessageResponse;
+import com.ragchatbot.web.dto.ConversationDtos.RenameConversationRequest;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/conversations")
@@ -37,6 +41,11 @@ public class ConversationController {
 	@GetMapping
 	public List<ConversationResponse> list() {
 		return conversationService.list(CurrentUser.id());
+	}
+
+	@PatchMapping("/{id}")
+	public ConversationResponse rename(@PathVariable UUID id, @Valid @RequestBody RenameConversationRequest req) {
+		return conversationService.rename(CurrentUser.id(), id, req.title());
 	}
 
 	@GetMapping("/{id}/messages")

@@ -10,6 +10,18 @@ export default function ChatPage() {
   const { user, logout } = useAuth()
   const chat = useChat()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState('')
+
+  const activeTitle = chat.conversations.find((c) => c.id === chat.activeId)?.title
+
+  function commitTitle() {
+    setEditingTitle(false)
+    const next = titleDraft.trim()
+    if (chat.activeId && next && next !== activeTitle) {
+      chat.renameConversation(chat.activeId, next)
+    }
+  }
 
   const sidebar = (
     <Sidebar
@@ -41,19 +53,53 @@ export default function ChatPage() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-          <div className="flex items-center gap-2">
-            <button
-              className="text-zinc-500 hover:text-zinc-900 md:hidden dark:hover:text-zinc-100"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="대화 목록 열기"
-            >
-              <IconMenu />
-            </button>
-            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">RAG 챗봇</span>
-          </div>
+        <header className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
           <button
-            className="text-zinc-500 hover:text-zinc-900 md:hidden dark:hover:text-zinc-100"
+            className="shrink-0 text-zinc-500 hover:text-zinc-900 md:hidden dark:hover:text-zinc-100"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="대화 목록 열기"
+          >
+            <IconMenu />
+          </button>
+
+          {/* 활성 대화 제목 - 클릭하면 인라인 수정(GPT/Claude 방식) */}
+          <div className="min-w-0 flex-1">
+            {chat.activeId ? (
+              editingTitle ? (
+                <input
+                  autoFocus
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  onBlur={commitTitle}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      commitTitle()
+                    } else if (e.key === 'Escape') {
+                      setEditingTitle(false)
+                    }
+                  }}
+                  className="w-full max-w-xs rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                />
+              ) : (
+                <button
+                  onClick={() => {
+                    setTitleDraft(activeTitle ?? '')
+                    setEditingTitle(true)
+                  }}
+                  title="제목 변경"
+                  className="max-w-full truncate rounded px-1 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  {activeTitle ?? '새 대화'}
+                </button>
+              )
+            ) : (
+              <span className="text-sm font-semibold text-zinc-500">새 대화</span>
+            )}
+          </div>
+
+          <button
+            className="shrink-0 text-zinc-500 hover:text-zinc-900 md:hidden dark:hover:text-zinc-100"
             onClick={() => {
               chat.newConversation()
               setSidebarOpen(false)
