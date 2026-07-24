@@ -30,6 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# === 업로드된 파일(로컬 저장소 - 커밋 금지) ===
+uploads/
+backend/uploads/
+
 # === Java / Maven (backend) ===
 target/
 *.class

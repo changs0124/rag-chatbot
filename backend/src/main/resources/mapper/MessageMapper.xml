@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ragchatbot.mapper.MessageMapper">
+
+	<resultMap id="messageResult" type="com.ragchatbot.domain.Message">
+		<constructor>
+			<idArg column="id" javaType="java.util.UUID"/>
+			<arg column="conversation_id" javaType="java.util.UUID"/>
+			<arg column="role" javaType="java.lang.String"/>
+			<arg column="content" javaType="java.lang.String"/>
+			<arg column="status" javaType="java.lang.String"/>
+			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
+		</constructor>
+	</resultMap>
+
+	<insert id="insert" parameterType="com.ragchatbot.domain.Message">
+		insert into messages (id, conversation_id, role, content, status)
+		values (#{id}, #{conversationId}, #{role}, #{content}, #{status})
+	</insert>
+
+	<select id="listByConversation" resultMap="messageResult">
+		select id, conversation_id, role, content, status, created_at
+		from messages
+		where conversation_id = #{conversationId}
+		order by created_at asc
+	</select>
+
+</mapper>

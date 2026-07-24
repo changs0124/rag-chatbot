@@ -29,4 +29,11 @@ public final class ApiExceptions {
 			super(message);
 		}
 	}
+
+	/** 400 - 잘못된 요청(파일 검증 실패 등) */
+	public static class BadRequestException extends RuntimeException {
+		public BadRequestException(String message) {
+			super(message);
+		}
+	}
 }

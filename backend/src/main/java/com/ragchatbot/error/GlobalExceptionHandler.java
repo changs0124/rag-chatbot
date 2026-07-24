@@ -5,7 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
+import com.ragchatbot.error.ApiExceptions.BadRequestException;
 import com.ragchatbot.error.ApiExceptions.ConflictException;
 import com.ragchatbot.error.ApiExceptions.NotFoundException;
 import com.ragchatbot.error.ApiExceptions.UnauthorizedException;
@@ -41,5 +43,16 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(NotFoundException.class)
 	public ResponseEntity<ApiError> handleNotFound(NotFoundException ex) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("NOT_FOUND", ex.getMessage()));
+	}
+
+	@ExceptionHandler(BadRequestException.class)
+	public ResponseEntity<ApiError> handleBadRequest(BadRequestException ex) {
+		return ResponseEntity.badRequest().body(new ApiError("BAD_REQUEST", ex.getMessage()));
+	}
+
+	@ExceptionHandler(MaxUploadSizeExceededException.class)
+	public ResponseEntity<ApiError> handleTooLarge(MaxUploadSizeExceededException ex) {
+		return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+				.body(new ApiError("PAYLOAD_TOO_LARGE", "업로드 용량 한도 초과"));
 	}
 }

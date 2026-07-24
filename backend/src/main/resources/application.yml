@@ -10,6 +10,11 @@ spring:
     url: ${DB_URL:}
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
+  servlet:
+    multipart:
+      # 타입별 상한(이미지 10MB/문서 20MB)은 코드가 400으로 먼저 검사. 이 하드 한도 초과는 413
+      max-file-size: 25MB
+      max-request-size: 30MB
   flyway:
     # P-4 : 스키마의 소유자는 마이그레이션 SQL. 기동 시 자동 적용
     enabled: true
@@ -30,6 +35,9 @@ server:
 # 실행 모드 : mock | live (P-2). 운영 프로필에서 mock이면 기동 실패(AC-18, ProdModeGuard)
 app:
   mode: ${APP_MODE:mock}
+  file:
+    # 파일 저장 루트(로컬/서버 디스크, P-7). S3 교체 시 FileStorage 구현만 교체
+    storage-root: ${FILE_STORAGE_ROOT:./uploads}
   jwt:
     # 서명 시크릿 - 값은 env로 주입(커밋 금지). 테스트는 test 프로퍼티로 주입
     secret: ${JWT_SECRET:}

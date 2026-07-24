@@ -34,6 +34,8 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+						// 파일 서빙은 서명 경로 토큰으로 검증(Bearer 불가한 <img src> 대응, M6/AC-22)
+						.requestMatchers(HttpMethod.GET, "/api/files/**").permitAll()
 						.anyRequest().authenticated())
 				.exceptionHandling(e -> e.authenticationEntryPoint(
 						(req, res, ex) -> res.sendError(401, "Unauthorized")))
