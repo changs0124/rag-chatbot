@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Conversation } from '../../lib/types'
 import { IconClose } from '../icons'
+import ConfirmModal from '../ConfirmModal'
 
 export default function Sidebar({
   conversations,
@@ -21,6 +22,7 @@ export default function Sidebar({
   onLogout: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Conversation | null>(null)
   const initial = userName.trim().charAt(0) || '?'
 
   return (
@@ -49,7 +51,7 @@ export default function Sidebar({
               {c.title}
             </button>
             <button
-              onClick={() => onDelete(c.id)}
+              onClick={() => setPendingDelete(c)}
               aria-label="대화 삭제"
               className="ml-2 shrink-0 text-zinc-400 opacity-100 transition hover:text-red-500 md:opacity-0 md:group-hover:opacity-100"
             >
@@ -97,6 +99,18 @@ export default function Sidebar({
           </>
         )}
       </div>
+
+      {pendingDelete && (
+        <ConfirmModal
+          message={`'${pendingDelete.title}' 대화를 삭제할까요? 이 작업은 되돌릴 수 없습니다.`}
+          confirmLabel="삭제"
+          onConfirm={() => {
+            onDelete(pendingDelete.id)
+            setPendingDelete(null)
+          }}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </aside>
   )
 }
