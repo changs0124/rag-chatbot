@@ -1,12 +1,14 @@
 import { useEffect } from 'react'
 
 export default function ConfirmModal({
+  title,
   message,
   confirmLabel = '삭제',
   onConfirm,
   onCancel,
 }: {
-  message: string
+  title: string
+  message?: string
   confirmLabel?: string
   onConfirm: () => void
   onCancel: () => void
@@ -22,9 +24,10 @@ export default function ConfirmModal({
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0" onClick={onCancel} aria-hidden="true" />
-      <div className="relative w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
-        <p className="mb-5 text-sm text-zinc-700 dark:text-zinc-200">{message}</p>
-        <div className="flex justify-end gap-2">
+      <div className="relative w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
+        {message && <p className="mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{message}</p>}
+        <div className="mt-6 flex justify-end gap-2">
           <button
             onClick={onCancel}
             className="rounded-lg px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"

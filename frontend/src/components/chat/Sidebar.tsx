@@ -102,7 +102,8 @@ export default function Sidebar({
 
       {pendingDelete && (
         <ConfirmModal
-          message={`'${pendingDelete.title}' 대화를 삭제할까요? 이 작업은 되돌릴 수 없습니다.`}
+          title="대화를 삭제할까요?"
+          message={`'${pendingDelete.title}' 대화가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`}
           confirmLabel="삭제"
           onConfirm={() => {
             onDelete(pendingDelete.id)
