@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: rag-chatbot-backend
+  mvc:
+    async:
+      # P-5 : 스트림 수명은 SSE emitter가 단독 관장. MVC async 타임아웃을 끔
+      request-timeout: -1
+
+server:
+  # Cloud/컨테이너 대응 - PORT 우선 리슨
+  port: ${PORT:${SERVER_PORT:8080}}
+
+# 실행 모드 : mock | live (P-2). 운영 프로필에서 mock이면 기동 실패(AC-18, ProdModeGuard)
+app:
+  mode: ${APP_MODE:mock}
