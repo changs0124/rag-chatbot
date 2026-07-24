@@ -35,6 +35,12 @@ server:
 # 실행 모드 : mock | live (P-2). 운영 프로필에서 mock이면 기동 실패(AC-18, ProdModeGuard)
 app:
   mode: ${APP_MODE:mock}
+  chat:
+    # P-5 : SSE emitter 타임아웃이 스트림 수명을 단독 결정(기본 10분). 참조 착지값
+    sse-timeout-ms: ${SSE_TIMEOUT_MS:600000}
+  ratelimit:
+    # 사용자별 분당 채팅 상한(비용 통제, D-1). 단일 인스턴스 전제(R-6, 미결)
+    chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}
   file:
     # 파일 저장 루트(로컬/서버 디스크, P-7). S3 교체 시 FileStorage 구현만 교체
     storage-root: ${FILE_STORAGE_ROOT:./uploads}

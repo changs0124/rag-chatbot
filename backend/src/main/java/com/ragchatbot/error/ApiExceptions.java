@@ -36,4 +36,11 @@ public final class ApiExceptions {
 			super(message);
 		}
 	}
+
+	/** 429 - 레이트리밋 초과 */
+	public static class RateLimitException extends RuntimeException {
+		public RateLimitException(String message) {
+			super(message);
+		}
+	}
 }

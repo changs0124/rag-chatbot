@@ -19,7 +19,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * (@Container 를 클래스마다 쓰면 한 클래스 종료 시 컨테이너가 멈춰 캐시된 컨텍스트가 죽음)
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = "app.jwt.secret=test-secret-please-change-0123456789abcdef")
+@TestPropertySource(properties = {
+		"app.jwt.secret=test-secret-please-change-0123456789abcdef",
+		"app.ratelimit.chat-per-minute=5" })
 public abstract class AbstractPgIntegrationTest {
 
 	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");

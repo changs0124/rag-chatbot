@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import com.ragchatbot.error.ApiExceptions.BadRequestException;
 import com.ragchatbot.error.ApiExceptions.ConflictException;
 import com.ragchatbot.error.ApiExceptions.NotFoundException;
+import com.ragchatbot.error.ApiExceptions.RateLimitException;
 import com.ragchatbot.error.ApiExceptions.UnauthorizedException;
 
 /**
@@ -54,5 +55,10 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiError> handleTooLarge(MaxUploadSizeExceededException ex) {
 		return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
 				.body(new ApiError("PAYLOAD_TOO_LARGE", "업로드 용량 한도 초과"));
+	}
+
+	@ExceptionHandler(RateLimitException.class)
+	public ResponseEntity<ApiError> handleRateLimit(RateLimitException ex) {
+		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ApiError("RATE_LIMIT", ex.getMessage()));
 	}
 }

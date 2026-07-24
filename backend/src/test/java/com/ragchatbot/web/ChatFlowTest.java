@@ -13,14 +13,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 
 import com.ragchatbot.openai.OpenAiMockService;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * Phase 4 : 목업 채팅 경계. AC-5(호출0/목업) · AC-6(무자료) · AC-7(출처 저장·재조회) ·
- * AC-12(삭제 시 OpenAI 정리 호출) · AC-14(첨부 전달) · AC-21(이미지 단독).
+ * Phase 5 : SSE 스트리밍 채팅 + 레이트리밋.
+ * AC-6(무자료) · AC-7(출처 저장·재조회) · AC-10(429) · AC-12 · AC-14 · AC-21.
  */
 class ChatFlowTest extends AbstractPgIntegrationTest {
 
@@ -55,21 +56,21 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		return url.substring(url.indexOf("/api/files/") + 11, url.indexOf('?'));
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private org.springframework.http.ResponseEntity<Map> chat(String token, Map<String, Object> body) {
-		return rest.exchange("/api/chat", HttpMethod.POST, new HttpEntity<>(body, bearer(token)), Map.class);
+	/** SSE 스트림을 문자열로 수신(목업은 빠르게 완료됨) */
+	private ResponseEntity<String> chat(String token, Map<String, Object> body) {
+		return rest.exchange("/api/chat", HttpMethod.POST, new HttpEntity<>(body, bearer(token)), String.class);
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
-	void known_topic_returns_citations_and_persists() {
+	void known_topic_streams_citations_and_persists() {
 		String token = signup("chat-known@b.com");
 		String convId = createConversation(token);
 
 		var res = chat(token, Map.of("conversationId", convId, "message", "환불 정책 알려줘"));
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat((Boolean) res.getBody().get("noSource")).isFalse();
-		assertThat((List<?>) res.getBody().get("citations")).isNotEmpty();
+		assertThat(res.getBody()).contains("event:token").contains("event:citations")
+				.contains("event:done").contains("이용 정책 문서");
 
 		// AC-7 : 재조회 시 출처 유지
 		var messages = rest.exchange("/api/conversations/" + convId + "/messages", HttpMethod.GET,
@@ -77,17 +78,16 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		List<Map<String, Object>> list = messages.getBody();
 		var assistant = list.stream().filter(m -> "assistant".equals(m.get("role"))).findFirst().orElseThrow();
 		assertThat((List<?>) assistant.get("citations")).isNotEmpty();
+		assertThat((String) assistant.get("content")).isNotBlank();
 	}
 
 	@Test
-	void unknown_topic_is_no_source() {
+	void unknown_topic_streams_no_source() {
 		String token = signup("chat-unknown@b.com");
 		String convId = createConversation(token);
 		var res = chat(token, Map.of("conversationId", convId, "message", "우주의 크기는 얼마나 되나"));
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat((Boolean) res.getBody().get("noSource")).isTrue();
-		assertThat((List<?>) res.getBody().get("citations")).isEmpty();
-		assertThat((String) res.getBody().get("content")).contains("자료 없음");
+		assertThat(res.getBody()).contains("자료 없음").doesNotContain("이용 정책 문서");
 	}
 
 	@Test
@@ -120,5 +120,20 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		String convId = createConversation(token);
 		var res = chat(token, Map.of("conversationId", convId, "message", ""));
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
+	void rate_limit_returns_429_when_exceeded() {
+		String token = signup("chat-rl@b.com");
+		String convId = createConversation(token);
+		// 상한 5/분(테스트 프로퍼티). 6회 시도 시 마지막은 429
+		boolean saw429 = false;
+		for (int i = 0; i < 6; i++) {
+			var res = chat(token, Map.of("conversationId", convId, "message", "가격 문의 " + i));
+			if (res.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+				saw429 = true;
+			}
+		}
+		assertThat(saw429).as("6회 중 최소 1회는 429여야 함").isTrue();
 	}
 }
