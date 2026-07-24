@@ -26,6 +26,11 @@
 		where id = #{id} and user_id = #{userId}
 	</select>
 
+	<update id="linkToMessage">
+		update attachments set message_id = #{messageId}
+		where id = #{id} and user_id = #{userId} and message_id is null
+	</update>
+
 	<delete id="deleteByIdAndUser">
 		delete from attachments where id = #{id} and user_id = #{userId}
 	</delete>

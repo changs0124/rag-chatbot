@@ -22,4 +22,7 @@ public interface ConversationMapper {
 	List<Conversation> listByUser(@Param("userId") UUID userId);
 
 	int deleteByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
+
+	/** 새 활동으로 updated_at 갱신(목록 정렬용) */
+	int touch(@Param("id") UUID id, @Param("userId") UUID userId);
 }

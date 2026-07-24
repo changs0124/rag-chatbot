@@ -1,5 +1,6 @@
 package com.ragchatbot.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,9 +11,12 @@ import com.ragchatbot.domain.Attachment;
 import com.ragchatbot.domain.Conversation;
 import com.ragchatbot.error.ApiExceptions.NotFoundException;
 import com.ragchatbot.mapper.AttachmentMapper;
+import com.ragchatbot.mapper.CitationMapper;
 import com.ragchatbot.mapper.ConversationMapper;
 import com.ragchatbot.mapper.MessageMapper;
+import com.ragchatbot.openai.OpenAiService;
 import com.ragchatbot.storage.FileStorage;
+import com.ragchatbot.web.dto.ConversationDtos.CitationResponse;
 import com.ragchatbot.web.dto.ConversationDtos.ConversationResponse;
 import com.ragchatbot.web.dto.ConversationDtos.MessageResponse;
 
@@ -25,14 +29,19 @@ public class ConversationService {
 	private final ConversationMapper conversationMapper;
 	private final MessageMapper messageMapper;
 	private final AttachmentMapper attachmentMapper;
+	private final CitationMapper citationMapper;
 	private final FileStorage fileStorage;
+	private final OpenAiService openAiService;
 
 	public ConversationService(ConversationMapper conversationMapper, MessageMapper messageMapper,
-			AttachmentMapper attachmentMapper, FileStorage fileStorage) {
+			AttachmentMapper attachmentMapper, CitationMapper citationMapper, FileStorage fileStorage,
+			OpenAiService openAiService) {
 		this.conversationMapper = conversationMapper;
 		this.messageMapper = messageMapper;
 		this.attachmentMapper = attachmentMapper;
+		this.citationMapper = citationMapper;
 		this.fileStorage = fileStorage;
+		this.openAiService = openAiService;
 	}
 
 	public ConversationResponse create(UUID userId, String title) {
@@ -48,21 +57,31 @@ public class ConversationService {
 				.toList();
 	}
 
+	/** 메시지 + 출처(AC-7 재조회 시 유지) */
 	public List<MessageResponse> messages(UUID userId, UUID conversationId) {
 		requireOwned(conversationId, userId);
 		return messageMapper.listByConversation(conversationId).stream()
-				.map(m -> new MessageResponse(m.id(), m.role(), m.content(), m.status(), m.createdAt()))
+				.map(m -> new MessageResponse(m.id(), m.role(), m.content(), m.status(), m.createdAt(),
+						citationMapper.findByMessage(m.id()).stream()
+								.map(c -> new CitationResponse(c.seq(), c.sourceName(), c.snippet(), c.uri()))
+								.toList()))
 				.toList();
 	}
 
-	/** 대화 삭제 - 첨부 파일을 먼저 지우고(외부 리소스), DB는 cascade로 정리(AC-12). */
+	/** 대화 삭제 - 첨부 파일 + OpenAI 리소스 정리 후 DB cascade(AC-12). */
 	@Transactional
 	public void delete(UUID userId, UUID conversationId) {
-		requireOwned(conversationId, userId);
-		for (Attachment a : attachmentMapper.findByConversation(conversationId)) {
+		Conversation conversation = requireOwned(conversationId, userId);
+		List<Attachment> attachments = attachmentMapper.findByConversation(conversationId);
+		List<String> openaiFileIds = new ArrayList<>();
+		for (Attachment a : attachments) {
 			fileStorage.delete(a.storagePath());
-			// TODO(Phase 4) : a.openaiFileId 가 있으면 OpenAiService.deleteVectorStore/파일 삭제 호출(AC-12)
+			if (a.openaiFileId() != null) {
+				openaiFileIds.add(a.openaiFileId());
+			}
 		}
+		// OpenAI 파일/Vector Store 정리(AC-12). 목업은 호출 기록만
+		openAiService.deleteResources(conversation.vectorStoreId(), openaiFileIds);
 		conversationMapper.deleteByIdAndUser(conversationId, userId);
 	}
 
