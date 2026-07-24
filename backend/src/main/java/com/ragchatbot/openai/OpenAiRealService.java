@@ -56,6 +56,11 @@ public class OpenAiRealService implements OpenAiService {
 			@Value("${app.openai.model:gpt-4o}") String model,
 			@Value("${app.openai.vector-store-id:}") String vectorStoreId,
 			FileStorage fileStorage) {
+		// live 모드인데 키가 비면 부팅 즉시 실패(per-request 401 대신 fail-fast). 이 빈은 app.mode=live에서만 로드됨
+		if (apiKey == null || apiKey.isBlank()) {
+			throw new IllegalStateException(
+					"APP_MODE=live 인데 OPENAI_API_KEY 가 비어 있음. 실 연동 키를 env로 주입할 것");
+		}
 		this.model = model;
 		this.sharedVectorStoreId = vectorStoreId;
 		this.fileStorage = fileStorage;
@@ -143,6 +148,7 @@ public class OpenAiRealService implements OpenAiService {
 	private ChatCompletion consumeStream(InputStream in, Consumer<String> onToken) {
 		StringBuilder buffer = new StringBuilder();
 		List<CitationData> citations = List.of();
+		boolean completed = false;
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
@@ -161,12 +167,19 @@ public class OpenAiRealService implements OpenAiService {
 					onToken.accept(delta);
 				} else if ("response.completed".equals(type)) {
 					citations = extractCitations(ev.path("response"));
+					completed = true;
 				}
 			}
 		} catch (RuntimeException e) {
 			throw e; // 중단 신호를 그대로 전파(ChatService가 error 상태로 저장)
 		} catch (Exception e) {
 			throw new IllegalStateException("OpenAI 스트림 읽기 오류", e);
+		}
+
+		// 완료 이벤트 없이 스트림이 끝나면 업스트림 실패를 무자료 성공으로 위장하지 않고 오류로 처리.
+		// (M2 : 실 API의 완료 이벤트명이 다르면 여기서 드러남 - 조용히 무자료로 넘어가지 않게)
+		if (!completed) {
+			throw new IllegalStateException("OpenAI 스트림이 완료(response.completed) 없이 종료됨");
 		}
 
 		boolean noSource = citations.isEmpty();
@@ -209,7 +222,9 @@ public class OpenAiRealService implements OpenAiService {
 		int seq = 1;
 		for (String name : citedFiles.keySet()) {
 			String snippet = truncate(snippetByFile.getOrDefault(name, ""));
-			citations.add(new CitationData(seq++, name, snippet, null));
+			// file_search 인용은 브라우징 가능한 URI가 없음. non-null 유지(ChatService Map.of가 null 불가, mock 파리티).
+			// TODO(M2) : annotation의 file_id로 상관(filename 동명이인 방지) + 표시용 식별자 부여
+			citations.add(new CitationData(seq++, name, snippet, ""));
 		}
 		return citations;
 	}
