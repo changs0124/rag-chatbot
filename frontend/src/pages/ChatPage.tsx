@@ -4,6 +4,7 @@ import { useChat } from '../hooks/useChat'
 import Sidebar from '../components/chat/Sidebar'
 import MessageList from '../components/chat/MessageList'
 import Composer from '../components/chat/Composer'
+import { IconEdit, IconMenu } from '../components/icons'
 
 export default function ChatPage() {
   const { user, logout } = useAuth()
@@ -40,15 +41,27 @@ export default function ChatPage() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+        <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
+            <button
+              className="text-zinc-500 hover:text-zinc-900 md:hidden dark:hover:text-zinc-100"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="대화 목록 열기"
+            >
+              <IconMenu />
+            </button>
+            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">RAG 챗봇</span>
+          </div>
           <button
-            className="text-zinc-500 md:hidden"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="대화 목록 열기"
+            className="text-zinc-500 hover:text-zinc-900 md:hidden dark:hover:text-zinc-100"
+            onClick={() => {
+              chat.newConversation()
+              setSidebarOpen(false)
+            }}
+            aria-label="새 채팅"
           >
-            ☰
+            <IconEdit />
           </button>
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">RAG 챗봇</span>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto">

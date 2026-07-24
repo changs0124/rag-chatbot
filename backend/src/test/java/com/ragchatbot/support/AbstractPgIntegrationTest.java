@@ -21,7 +21,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
 		"app.jwt.secret=test-secret-please-change-0123456789abcdef",
-		"app.ratelimit.chat-per-minute=5" })
+		"app.ratelimit.chat-per-minute=5",
+		"app.mock.token-delay-ms=0" })
 public abstract class AbstractPgIntegrationTest {
 
 	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +23,17 @@ public class OpenAiMockService implements OpenAiService {
 	/** 목업 고정 코퍼스 키워드 */
 	private static final List<String> CORPUS_KEYWORDS = List.of("환불", "배송", "정책", "가격", "이용", "약관");
 
+	/** 토큰당 지연(ms) - 실제 스트리밍처럼 타이핑 효과를 보이게 함. 테스트는 0 */
+	private final long tokenDelayMs;
+
 	// 기록(테스트 검증용)
 	private final AtomicInteger streamChatCalls = new AtomicInteger();
 	private final AtomicInteger deleteResourcesCalls = new AtomicInteger();
 	private volatile int lastAttachmentCount = 0;
+
+	public OpenAiMockService(@Value("${app.mock.token-delay-ms:45}") long tokenDelayMs) {
+		this.tokenDelayMs = tokenDelayMs;
+	}
 
 	@Override
 	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken) {
@@ -55,8 +63,17 @@ public class OpenAiMockService implements OpenAiService {
 		}
 
 		// 스트리밍 인터페이스를 실제로 흘려봄(Phase 5 SSE가 이 onToken을 emitter에 연결)
+		// 토큰당 소량 지연으로 실제 스트리밍처럼 타이핑 효과를 냄
 		for (String chunk : fullText.split("(?<=\\G.{8})")) {
 			onToken.accept(chunk);
+			if (tokenDelayMs > 0) {
+				try {
+					Thread.sleep(tokenDelayMs);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					break;
+				}
+			}
 		}
 		return new ChatCompletion(fullText, citations, noSource);
 	}

@@ -92,3 +92,22 @@ export function IconClose({ className }: IconProps) {
     </Svg>
   )
 }
+
+export function IconEdit({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </Svg>
+  )
+}
+
+export function IconMenu({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </Svg>
+  )
+}

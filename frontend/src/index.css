@@ -17,4 +17,12 @@ body,
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo",
     "Noto Sans KR", sans-serif;
+  /* 전역 배경 - 페이지 루트가 배경을 안 깔아도 테마가 적용되게 */
+  background-color: #ffffff;
+  color: #18181b;
+}
+
+:root[data-theme="dark"] body {
+  background-color: #09090b; /* zinc-950 */
+  color: #fafafa;
 }
