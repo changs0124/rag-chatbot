@@ -2,14 +2,17 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext'
+import { ThemeProvider } from '../theme/ThemeContext'
 import LoginPage from './LoginPage'
 
 function renderLogin() {
   render(
     <BrowserRouter>
-      <AuthProvider>
-        <LoginPage />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <LoginPage />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>,
   )
 }

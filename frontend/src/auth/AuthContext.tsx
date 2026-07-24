@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { api, getToken, setToken } from '../lib/api'
+import { useTheme } from '../theme/ThemeContext'
 import type { AuthResponse, Me } from '../lib/types'
 
 interface AuthContextValue {
@@ -17,6 +18,12 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Me | null>(null)
   const [loading, setLoading] = useState(true)
+  const { setTheme } = useTheme()
+
+  function applyUser(next: Me): void {
+    setUser(next)
+    setTheme(next.theme) // 계정에 저장된 테마 적용
+  }
 
   useEffect(() => {
     if (!getToken()) {
@@ -25,21 +32,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     api
       .get<Me>('/api/auth/me')
-      .then(setUser)
+      .then(applyUser)
       .catch(() => setToken(null))
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function login(email: string, password: string): Promise<void> {
     const res = await api.post<AuthResponse>('/api/auth/login', { email, password })
     setToken(res.token)
-    setUser(res.user)
+    applyUser(res.user)
   }
 
   async function signup(email: string, password: string, name: string): Promise<void> {
     const res = await api.post<AuthResponse>('/api/auth/signup', { email, password, name })
     setToken(res.token)
-    setUser(res.user)
+    applyUser(res.user)
   }
 
   function logout(): void {

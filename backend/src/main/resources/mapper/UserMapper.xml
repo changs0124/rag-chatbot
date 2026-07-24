@@ -33,4 +33,16 @@
 		where email = #{email}
 	</select>
 
+	<update id="updateName">
+		update users set name = #{name} where id = #{id}
+	</update>
+
+	<update id="updatePasswordHash">
+		update users set password_hash = #{passwordHash} where id = #{id}
+	</update>
+
+	<update id="updateTheme">
+		update users set theme = #{theme} where id = #{id}
+	</update>
+
 </mapper>

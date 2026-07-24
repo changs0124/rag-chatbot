@@ -1,5 +1,11 @@
 import { api, API_BASE, ApiError, getToken } from './api'
-import type { Attachment, ChatMessage, Citation, Conversation } from './types'
+import type { Attachment, ChatMessage, Citation, Conversation, Me, Theme } from './types'
+
+// 프로필 (마이페이지)
+export const updateName = (name: string) => api.patch<Me>('/api/profile/name', { name })
+export const updateTheme = (theme: Theme) => api.patch<Me>('/api/profile/theme', { theme })
+export const updatePassword = (currentPassword: string, newPassword: string) =>
+  api.patch<void>('/api/profile/password', { currentPassword, newPassword })
 
 // 대화
 export const listConversations = () => api.get<Conversation[]>('/api/conversations')
