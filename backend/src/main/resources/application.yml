@@ -35,6 +35,11 @@ server:
 # 실행 모드 : mock | live (P-2). 운영 프로필에서 mock이면 기동 실패(AC-18, ProdModeGuard)
 app:
   mode: ${APP_MODE:mock}
+  openai:
+    # 실 연동(APP_MODE=live)에서만 사용. 공용 Vector Store를 env로 지정(대화별 스토어 대신, 공용 Store 결정)
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o}
+    vector-store-id: ${OPENAI_VECTOR_STORE_ID:}
   cors:
     # 프론트 출처(개발: Vite 5173). 배포 시 실제 도메인으로 교체
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
