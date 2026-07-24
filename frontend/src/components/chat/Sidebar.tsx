@@ -51,7 +51,7 @@ export default function Sidebar({
             <button
               onClick={() => onDelete(c.id)}
               aria-label="대화 삭제"
-              className="ml-2 text-zinc-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
+              className="ml-2 shrink-0 text-zinc-400 opacity-100 transition hover:text-red-500 md:opacity-0 md:group-hover:opacity-100"
             >
               <IconClose className="h-4 w-4" />
             </button>

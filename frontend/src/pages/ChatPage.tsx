@@ -53,7 +53,7 @@ export default function ChatPage() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+        <header className="flex min-h-[3.25rem] items-center gap-2 border-b border-zinc-200 px-4 py-2 dark:border-zinc-800">
           <button
             className="shrink-0 text-zinc-500 hover:text-zinc-900 md:hidden dark:hover:text-zinc-100"
             onClick={() => setSidebarOpen(true)}
@@ -79,7 +79,7 @@ export default function ChatPage() {
                       setEditingTitle(false)
                     }
                   }}
-                  className="w-full max-w-xs rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="w-full max-w-xs rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm font-semibold text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
                 />
               ) : (
                 <button
@@ -88,7 +88,7 @@ export default function ChatPage() {
                     setEditingTitle(true)
                   }}
                   title="제목 변경"
-                  className="max-w-full truncate rounded px-1 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  className="max-w-full truncate rounded-md border border-transparent px-2 py-1 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
                 >
                   {activeTitle ?? '새 대화'}
                 </button>
