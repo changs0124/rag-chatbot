@@ -35,6 +35,9 @@ server:
 # 실행 모드 : mock | live (P-2). 운영 프로필에서 mock이면 기동 실패(AC-18, ProdModeGuard)
 app:
   mode: ${APP_MODE:mock}
+  cors:
+    # 프론트 출처(개발: Vite 5173). 배포 시 실제 도메인으로 교체
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
   chat:
     # P-5 : SSE emitter 타임아웃이 스트림 수명을 단독 결정(기본 10분). 참조 착지값
     sse-timeout-ms: ${SSE_TIMEOUT_MS:600000}
