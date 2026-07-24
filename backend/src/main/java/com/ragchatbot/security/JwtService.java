@@ -30,13 +30,15 @@ public class JwtService {
 			throw new IllegalStateException("app.jwt.secret 미설정 - JWT 서명 불가 (env JWT_SECRET 주입 필요)");
 		}
 		this.algorithm = Algorithm.HMAC256(secret);
-		this.verifier = JWT.require(algorithm).build();
+		// audience "auth" 강제 - 파일 서명 토큰(aud="file")이 인증 Bearer로 통용되지 않게 분리
+		this.verifier = JWT.require(algorithm).withAudience("auth").build();
 		this.expirationMinutes = expirationMinutes;
 	}
 
 	public String issue(UUID userId, String email) {
 		Instant now = Instant.now();
 		return JWT.create()
+				.withAudience("auth")
 				.withSubject(userId.toString())
 				.withClaim("email", email)
 				.withIssuedAt(now)

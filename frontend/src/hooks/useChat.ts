@@ -10,8 +10,6 @@ import {
 import { ApiError } from '../lib/api'
 import type { Attachment, ChatMessage, Conversation } from '../lib/types'
 
-const ASSISTANT_PLACEHOLDER = 'streaming-assistant'
-
 export function useChat() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -20,9 +18,13 @@ export function useChat() {
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
-  useEffect(() => {
+  const refreshConversations = useCallback(() => {
     listConversations().then(setConversations).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    refreshConversations()
+  }, [refreshConversations])
 
   const selectConversation = useCallback(async (id: string) => {
     setActiveId(id)
@@ -56,24 +58,21 @@ export function useChat() {
     abortRef.current?.abort()
   }, [])
 
-  const updateAssistant = useCallback((updater: (m: ChatMessage) => ChatMessage) => {
-    setMessages((prev) => prev.map((m) => (m.id === ASSISTANT_PLACEHOLDER ? updater(m) : m)))
-  }, [])
-
   const send = useCallback(
     async (text: string, files: File[]) => {
       if (streaming) return
       setError(null)
 
       let convId = activeId
+      const isNew = !convId
       if (!convId) {
         try {
           const conv = await createConversation(text.slice(0, 30) || '새 대화')
           setConversations((prev) => [conv, ...prev])
           setActiveId(conv.id)
           convId = conv.id
-        } catch {
-          setError('대화를 만들 수 없습니다')
+        } catch (e) {
+          setError(e instanceof ApiError ? e.message : '대화를 만들 수 없습니다')
           return
         }
       }
@@ -86,9 +85,11 @@ export function useChat() {
         return
       }
 
+      // 턴마다 고유 id - 오류/중단으로 끝난 이전 버블과 충돌하지 않게 함
+      const assistantId = crypto.randomUUID()
       const now = new Date().toISOString()
       const userMsg: ChatMessage = {
-        id: `user-${now}`,
+        id: crypto.randomUUID(),
         role: 'user',
         content: text,
         status: 'complete',
@@ -97,7 +98,7 @@ export function useChat() {
         attachments: uploaded,
       }
       const assistantMsg: ChatMessage = {
-        id: ASSISTANT_PLACEHOLDER,
+        id: assistantId,
         role: 'assistant',
         content: '',
         status: 'streaming',
@@ -109,31 +110,36 @@ export function useChat() {
       const controller = new AbortController()
       abortRef.current = controller
 
+      const patch = (updater: (m: ChatMessage) => ChatMessage) =>
+        setMessages((prev) => prev.map((m) => (m.id === assistantId ? updater(m) : m)))
+
       try {
         await streamChat(
           { conversationId: convId, message: text, attachmentIds: uploaded.map((a) => a.id) },
           {
-            onToken: (delta) => updateAssistant((m) => ({ ...m, content: m.content + delta })),
-            onCitations: (items) => updateAssistant((m) => ({ ...m, citations: items })),
+            onToken: (delta) => patch((m) => ({ ...m, content: m.content + delta })),
+            onCitations: (items) => patch((m) => ({ ...m, citations: items })),
             onDone: () => {
-              updateAssistant((m) => ({ ...m, id: `asst-${now}`, status: 'complete' }))
-              listConversations().then(setConversations).catch(() => {})
+              patch((m) => ({ ...m, status: 'complete' }))
+              refreshConversations()
             },
             onError: (msg) => {
               setError(msg)
-              updateAssistant((m) => ({ ...m, status: 'error' }))
+              patch((m) => ({ ...m, status: 'error' }))
             },
           },
           controller.signal,
         )
       } catch {
-        updateAssistant((m) => ({ ...m, status: 'error' }))
+        // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지)
+        patch((m) => ({ ...m, status: controller.signal.aborted ? 'complete' : 'error' }))
+        if (isNew) refreshConversations()
       } finally {
         setStreaming(false)
         abortRef.current = null
       }
     },
-    [activeId, streaming, updateAssistant],
+    [activeId, streaming, refreshConversations],
   )
 
   return {

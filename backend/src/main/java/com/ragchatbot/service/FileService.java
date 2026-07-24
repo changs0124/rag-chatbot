@@ -27,6 +27,9 @@ public class FileService {
 
 	private static final long MB = 1024 * 1024;
 
+	/** webp 컨테이너의 오프셋 8에 있는 "WEBP" 마커 */
+	private static final byte[] WEBP_MARKER = { 0x57, 0x45, 0x42, 0x50 };
+
 	/** content-type → (확장자, 파일유형, 최대크기, 매직바이트) */
 	private record AllowedType(String extension, String fileType, long maxSize, byte[] magic, String mediaType) {
 	}
@@ -67,6 +70,10 @@ public class FileService {
 			throw new BadRequestException("용량 초과(" + type.fileType() + " 최대 " + (type.maxSize() / MB) + "MB)");
 		}
 		if (!startsWith(bytes, type.magic())) {
+			throw new BadRequestException("파일 내용이 형식과 일치하지 않음");
+		}
+		// webp는 RIFF(0~3) 뒤 오프셋 8의 "WEBP"까지 확인 - 임의 RIFF 컨테이너 우회 차단
+		if ("webp".equals(type.extension()) && !regionEquals(bytes, 8, WEBP_MARKER)) {
 			throw new BadRequestException("파일 내용이 형식과 일치하지 않음");
 		}
 
@@ -120,6 +127,13 @@ public class FileService {
 			return false;
 		}
 		return Arrays.equals(data, 0, prefix.length, prefix, 0, prefix.length);
+	}
+
+	private static boolean regionEquals(byte[] data, int offset, byte[] marker) {
+		if (data.length < offset + marker.length) {
+			return false;
+		}
+		return Arrays.equals(data, offset, offset + marker.length, marker, 0, marker.length);
 	}
 
 	public record ServedFile(Resource resource, String contentType) {
