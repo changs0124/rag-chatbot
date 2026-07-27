@@ -23,9 +23,11 @@ export default function MessageList({
     )
   }
 
-  // 아직 토큰이 오지 않은 어시스턴트 턴 - 빈 버블 대신 진행 단계 한 줄을 보여줌(R-11)
+  // 진행 단계를 보여주는 동안에는 답변 버블을 내지 않음(R-11 한 줄 교체형).
+  // 단계가 최소 표시 시간을 마치면 stage가 null이 되고 그때 답변 텍스트로 교체됨
   const last = messages[messages.length - 1]
-  const pending = last.role === 'assistant' && last.status === 'streaming' && !last.content
+  const pending =
+    last.role === 'assistant' && (!!stage || (last.status === 'streaming' && !last.content))
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
