@@ -1,6 +1,7 @@
 package com.ragchatbot.openai;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -23,6 +24,15 @@ public class OpenAiMockService implements OpenAiService {
 	/** 목업 고정 코퍼스 키워드 */
 	private static final List<String> CORPUS_KEYWORDS = List.of("환불", "배송", "정책", "가격", "이용", "약관");
 
+	/**
+	 * 목업 전용 단계 라벨(R-11 · P-10). 라이브 라벨을 그대로 쓰지 않음 - 목업의 "검색"은 사용자 문자열
+	 * 키워드 비교라 문서 검색이 아니므로, 화면 문구만 봐도 목 데이터임이 드러나야 함.
+	 */
+	private static final Map<Stage, String> STAGE_LABELS = Map.of(
+			Stage.ANALYZING, "질문 분석 중(목업)",
+			Stage.SEARCHING, "목업 코퍼스 조회 중",
+			Stage.GENERATING, "답변 작성 중(목업)");
+
 	/** 토큰당 지연(ms) - 실제 스트리밍처럼 타이핑 효과를 보이게 함. 테스트는 0 */
 	private final long tokenDelayMs;
 
@@ -36,7 +46,12 @@ public class OpenAiMockService implements OpenAiService {
 	}
 
 	@Override
-	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken) {
+	public String stageLabel(Stage stage) {
+		return STAGE_LABELS.get(stage);
+	}
+
+	@Override
+	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, Consumer<Stage> onStage) {
 		streamChatCalls.incrementAndGet();
 		lastAttachmentCount = input.attachments() == null ? 0 : input.attachments().size();
 
@@ -45,6 +60,8 @@ public class OpenAiMockService implements OpenAiService {
 		String imagePrefix = hasImage ? "(첨부 이미지를 확인함) " : "";
 
 		String message = input.userMessage() == null ? "" : input.userMessage();
+		// 코퍼스 조회 경계 - 목업이 실제로 지나는 지점에서만 단계를 올림(P-10). 자료 유무와 무관하게 조회는 함
+		onStage.accept(Stage.SEARCHING);
 		boolean matched = CORPUS_KEYWORDS.stream().anyMatch(message::contains);
 
 		String fullText;
@@ -64,6 +81,8 @@ public class OpenAiMockService implements OpenAiService {
 
 		// 스트리밍 인터페이스를 실제로 흘려봄(Phase 5 SSE가 이 onToken을 emitter에 연결)
 		// 토큰당 소량 지연으로 실제 스트리밍처럼 타이핑 효과를 냄
+		// 첫 토큰 직전이 생성 경계임. 체감 시간을 만들려고 여기에 인위 지연을 넣지 않음(P-10 · 이관-7)
+		onStage.accept(Stage.GENERATING);
 		for (String chunk : fullText.split("(?<=\\G.{8})")) {
 			onToken.accept(chunk);
 			if (tokenDelayMs > 0) {

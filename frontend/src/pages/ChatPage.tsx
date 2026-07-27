@@ -111,7 +111,7 @@ export default function ChatPage() {
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <MessageList messages={chat.messages} />
+          <MessageList messages={chat.messages} stage={chat.stage} />
         </div>
 
         {chat.error && (
