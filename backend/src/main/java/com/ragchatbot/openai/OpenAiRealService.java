@@ -75,8 +75,19 @@ public class OpenAiRealService implements OpenAiService {
 				.build();
 	}
 
+	/** 라이브 단계 라벨(R-11). 목업과 달리 실제 file_search 결과에 근거하므로 실 문구를 씀 */
+	private static final Map<Stage, String> STAGE_LABELS = Map.of(
+			Stage.ANALYZING, "질문 분석 중",
+			Stage.SEARCHING, "참조 문서 검색 중",
+			Stage.GENERATING, "답변 작성 중");
+
 	@Override
-	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken) {
+	public String stageLabel(Stage stage) {
+		return STAGE_LABELS.get(stage);
+	}
+
+	@Override
+	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, Consumer<Stage> onStage) {
 		String storeId = (input.vectorStoreId() != null && !input.vectorStoreId().isBlank())
 				? input.vectorStoreId()
 				: sharedVectorStoreId;
@@ -105,7 +116,7 @@ public class OpenAiRealService implements OpenAiService {
 						log.warn("openai responses api error {}: {}", response.getStatusCode(), detail);
 						throw new IllegalStateException("OpenAI 응답 생성 실패");
 					}
-					return consumeStream(response.getBody(), onToken);
+					return consumeStream(response.getBody(), onToken, onStage);
 				});
 	}
 
@@ -144,11 +155,17 @@ public class OpenAiRealService implements OpenAiService {
 		return "image/jpeg";
 	}
 
-	/** Responses API SSE를 읽어 토큰을 흘리고, 완료 이벤트에서 출처를 추출함 */
-	private ChatCompletion consumeStream(InputStream in, Consumer<String> onToken) {
+	/**
+	 * Responses API SSE를 읽어 토큰을 흘리고, 완료 이벤트에서 출처를 추출함.
+	 * 진행 단계(R-11)는 실제 도착한 이벤트에만 근거함 - file_search 이벤트가 없으면 검색 단계도 없음(P-10, AC-24).
+	 */
+	// 패키지 가시성 : 캔드 스트림으로 단계 매핑을 단위 테스트함(실 호출 없이 AC-24 검증)
+	ChatCompletion consumeStream(InputStream in, Consumer<String> onToken, Consumer<Stage> onStage) {
 		StringBuilder buffer = new StringBuilder();
 		List<CitationData> citations = List.of();
 		boolean completed = false;
+		boolean searchingSent = false;
+		boolean generatingSent = false;
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
@@ -163,8 +180,17 @@ public class OpenAiRealService implements OpenAiService {
 				String type = ev.path("type").asText();
 				if ("response.output_text.delta".equals(type)) {
 					String delta = ev.path("delta").asText();
+					if (!generatingSent) {
+						onStage.accept(Stage.GENERATING); // 첫 토큰 직전이 생성 경계임
+						generatingSent = true;
+					}
 					buffer.append(delta);
 					onToken.accept(delta);
+				} else if (!searchingSent && ("response.file_search_call.in_progress".equals(type)
+						|| "response.file_search_call.searching".equals(type))) {
+					// 실제 file_search 호출이 시작된 근거가 있을 때만 검색 단계를 보냄(AC-24)
+					onStage.accept(Stage.SEARCHING);
+					searchingSent = true;
 				} else if ("response.completed".equals(type)) {
 					citations = extractCitations(ev.path("response"));
 					completed = true;

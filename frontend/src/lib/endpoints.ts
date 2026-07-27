@@ -25,6 +25,8 @@ export function uploadFile(file: File): Promise<Attachment> {
 
 export interface ChatStreamHandlers {
   onMeta?: (data: { messageId: string; conversationId: string }) => void
+  /** 진행 단계(R-11) - 라벨 문자열은 서버가 소유함(모드별로 다름) */
+  onStage?: (data: { stage: string; label: string }) => void
   onToken?: (delta: string) => void
   onCitations?: (items: Citation[]) => void
   onDone?: (data: { finishReason: string; noSource: boolean }) => void
@@ -39,7 +41,7 @@ interface ChatStreamBody {
 
 /**
  * 채팅 SSE 수신. EventSource는 Authorization 헤더를 못 실으므로 fetch + ReadableStream 사용.
- * 이벤트: meta → token* → citations → done (또는 error).
+ * 이벤트: meta → stage* → token* → citations → done (또는 error).
  */
 export async function streamChat(
   body: ChatStreamBody,
@@ -102,6 +104,9 @@ function dispatchEvent(raw: string, handlers: ChatStreamHandlers): void {
   switch (event) {
     case 'meta':
       handlers.onMeta?.(data as { messageId: string; conversationId: string })
+      break
+    case 'stage':
+      handlers.onStage?.(data as { stage: string; label: string })
       break
     case 'token':
       handlers.onToken?.((data as { delta: string }).delta)

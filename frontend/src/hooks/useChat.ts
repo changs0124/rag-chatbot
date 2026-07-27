@@ -16,6 +16,8 @@ export function useChat() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [streaming, setStreaming] = useState(false)
+  // 진행 단계(R-11) - 휘발성 표시라 저장하지 않고, 첫 토큰·종료 어느 경로에서든 비움
+  const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -115,6 +117,7 @@ export function useChat() {
       }
       setMessages((prev) => [...prev, userMsg, assistantMsg])
       setStreaming(true)
+      setStage(null)
       const controller = new AbortController()
       abortRef.current = controller
 
@@ -125,7 +128,11 @@ export function useChat() {
         await streamChat(
           { conversationId: convId, message: text, attachmentIds: uploaded.map((a) => a.id) },
           {
-            onToken: (delta) => patch((m) => ({ ...m, content: m.content + delta })),
+            onStage: ({ label }) => setStage(label),
+            onToken: (delta) => {
+              setStage(null) // 첫 토큰부터는 답변 텍스트가 진행 표시를 대신함
+              patch((m) => ({ ...m, content: m.content + delta }))
+            },
             onCitations: (items) => patch((m) => ({ ...m, citations: items })),
             onDone: () => {
               patch((m) => ({ ...m, status: 'complete' }))
@@ -143,6 +150,8 @@ export function useChat() {
         patch((m) => ({ ...m, status: controller.signal.aborted ? 'complete' : 'error' }))
         if (isNew) refreshConversations()
       } finally {
+        // 중단·오류·스트림 절단 어느 경로로 끝나도 단계 표시가 남지 않게 함(AC-23)
+        setStage(null)
         setStreaming(false)
         abortRef.current = null
       }
@@ -155,6 +164,7 @@ export function useChat() {
     activeId,
     messages,
     streaming,
+    stage,
     error,
     send,
     stop,

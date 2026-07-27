@@ -17,7 +17,7 @@ import com.ragchatbot.service.RateLimiterService;
 import com.ragchatbot.web.dto.ChatDtos.ChatRequest;
 
 /**
- * 채팅 - SSE 스트리밍(meta→token→citations→done).
+ * 채팅 - SSE 스트리밍(meta→stage*→token*→citations→done).
  * 레이트리밋·검증은 동기로 먼저 처리(429/400/404를 정상 HTTP로), 그 후 비동기 스트리밍.
  */
 @RestController
