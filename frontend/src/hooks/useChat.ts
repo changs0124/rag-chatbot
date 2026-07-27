@@ -11,15 +11,44 @@ import {
 import { ApiError } from '../lib/api'
 import type { Attachment, ChatMessage, Conversation } from '../lib/types'
 
+/**
+ * 한 단계를 화면에 유지하는 최소 시간(ms). 목업은 단계가 같은 순간에 도착해 표시 시간이 0이 되므로,
+ * 실제로 도달한 단계를 읽을 수 있을 만큼만 붙잡아 둠. 없는 단계를 만들거나 순서를 바꾸지는 않음(P-10).
+ */
+const STAGE_MIN_MS = 350
+
 export function useChat() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [streaming, setStreaming] = useState(false)
-  // 진행 단계(R-11) - 휘발성 표시라 저장하지 않고, 첫 토큰·종료 어느 경로에서든 비움
+  // 진행 단계(R-11) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  // 실제 도달한 단계를 순서대로 담아 최소 표시 시간만큼 유지함(단계를 만들지 않고 읽을 시간만 줌)
+  const stageQueue = useRef<string[]>([])
+  const stageTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const advanceStage = useCallback(() => {
+    const next = stageQueue.current.shift()
+    if (next === undefined) {
+      stageTimer.current = null
+      setStage(null)
+      return
+    }
+    setStage(next)
+    stageTimer.current = setTimeout(advanceStage, STAGE_MIN_MS)
+  }, [])
+
+  const clearStages = useCallback(() => {
+    if (stageTimer.current) clearTimeout(stageTimer.current)
+    stageTimer.current = null
+    stageQueue.current = []
+    setStage(null)
+  }, [])
+
+  useEffect(() => () => clearStages(), [clearStages])
 
   const refreshConversations = useCallback(() => {
     listConversations().then(setConversations).catch(() => {})
@@ -117,7 +146,7 @@ export function useChat() {
       }
       setMessages((prev) => [...prev, userMsg, assistantMsg])
       setStreaming(true)
-      setStage(null)
+      clearStages() // 이전 턴의 단계가 남아 넘어오지 않게 함
       const controller = new AbortController()
       abortRef.current = controller
 
@@ -128,17 +157,19 @@ export function useChat() {
         await streamChat(
           { conversationId: convId, message: text, attachmentIds: uploaded.map((a) => a.id) },
           {
-            onStage: ({ label }) => setStage(label),
-            onToken: (delta) => {
-              setStage(null) // 첫 토큰부터는 답변 텍스트가 진행 표시를 대신함
-              patch((m) => ({ ...m, content: m.content + delta }))
+            onStage: ({ label }) => {
+              stageQueue.current.push(label)
+              if (stageTimer.current === null) advanceStage()
             },
+            // 토큰이 와도 단계를 끊지 않음 - 남은 단계가 최소 표시 시간을 마치면 답변으로 교체됨
+            onToken: (delta) => patch((m) => ({ ...m, content: m.content + delta })),
             onCitations: (items) => patch((m) => ({ ...m, citations: items })),
             onDone: () => {
               patch((m) => ({ ...m, status: 'complete' }))
               refreshConversations()
             },
             onError: (msg) => {
+              clearStages() // 오류 경로는 즉시 비움(잔류 0, AC-23)
               setError(msg)
               patch((m) => ({ ...m, status: 'error' }))
             },
@@ -146,17 +177,17 @@ export function useChat() {
           controller.signal,
         )
       } catch {
-        // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지)
+        // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지). 중단·절단 모두 단계는 즉시 비움(AC-23)
+        clearStages()
         patch((m) => ({ ...m, status: controller.signal.aborted ? 'complete' : 'error' }))
         if (isNew) refreshConversations()
       } finally {
-        // 중단·오류·스트림 절단 어느 경로로 끝나도 단계 표시가 남지 않게 함(AC-23)
-        setStage(null)
+        // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(advanceStage)
         setStreaming(false)
         abortRef.current = null
       }
     },
-    [activeId, streaming, refreshConversations],
+    [activeId, streaming, refreshConversations, clearStages, advanceStage],
   )
 
   return {

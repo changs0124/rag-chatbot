@@ -47,6 +47,17 @@ describe('MessageList', () => {
     expect(screen.queryByText('응답 생성 중…')).not.toBeInTheDocument()
   })
 
+  it('holds the stage line while it is still within its minimum display time', () => {
+    // 토큰이 이미 도착했어도 단계가 살아 있는 동안은 단계 줄을 유지함(최소 표시 시간)
+    const streamedWithStage: ChatMessage[] = [
+      pending[0],
+      { ...pending[1], content: '문의하신 내용에 대한' },
+    ]
+    render(<MessageList messages={streamedWithStage} stage="답변 작성 중(목업)" />)
+    expect(screen.getByRole('status')).toHaveTextContent('답변 작성 중(목업)')
+    expect(screen.queryByText('문의하신 내용에 대한')).not.toBeInTheDocument()
+  })
+
   it('replaces the stage line with answer text once tokens arrive', () => {
     const streamed: ChatMessage[] = [
       pending[0],
