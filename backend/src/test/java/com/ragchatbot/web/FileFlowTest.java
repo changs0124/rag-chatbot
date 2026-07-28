@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
 
+import com.ragchatbot.security.FileAccessTokenService;
 import com.ragchatbot.service.FileService;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
@@ -26,6 +27,9 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 
 	@Autowired
 	private FileService fileService;
+
+	@Autowired
+	private FileAccessTokenService fileTokenService;
 
 	// 유효 PNG 매직바이트(89 50 4E 47 0D 0A 1A 0A) + 패딩
 	private static final byte[] PNG = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
@@ -96,6 +100,56 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 	}
 
+	/**
+	 * AC-11 용량 상한(이미지 10MB). MIME·매직바이트가 전부 맞아도 크기만으로 거부돼야 함 -
+	 * 종전에는 이 경로에 케이스가 없어 상한을 지워도 초록이었음(2026-07-28 리스크 표 정비).
+	 */
+	@Test
+	void upload_oversized_image_400() {
+		String token = signup("file10@b.com");
+		byte[] oversized = new byte[11 * 1024 * 1024]; // 상한 10MB 초과
+		System.arraycopy(PNG, 0, oversized, 0, PNG.length); // 매직바이트는 유효하게 둠
+		var res = upload(token, oversized, MediaType.IMAGE_PNG, "big.png");
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(String.valueOf(res.getBody())).contains("용량 초과");
+	}
+
+	/**
+	 * R-10 소유자 검증 - 서명이 유효해도 <b>남의 파일</b>이면 404.
+	 *
+	 * <p>무토큰·변조 케이스는 서명 검증만 재고, 소유자 대조({@code findByIdAndUser})는 재지 않았음.
+	 * B의 uid 로 정상 서명한 토큰을 A의 파일에 씌워, 서명이 통과한 뒤의 소유자 관문만 남겨 확인함.
+	 */
+	@Test
+	void valid_token_of_other_user_404() {
+		String tokenA = signup("file-own-a@b.com");
+		signup("file-own-b@b.com");
+		String url = (String) upload(tokenA, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		UUID fileId = idOf(url);
+		UUID strangerId = userIdOf("file-own-b@b.com");
+
+		String forged = fileTokenService.issue(fileId, strangerId);
+		// byte[] 로 받음 - Map 으로 받으면 소유자 관문이 뚫렸을 때 단언 대신 컨버터 오류가 나 실패가 안 읽힘
+		var res = rest.getForEntity("/api/files/" + fileId + "?token=" + forged, byte[].class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	/** R-2 교차 접근 - 파일 삭제도 소유자만(대화 경로는 ConversationCrossAccessTest 가 담당) */
+	@Test
+	void stranger_cannot_delete_others_file_404() {
+		String tokenA = signup("file-del-a@b.com");
+		String tokenB = signup("file-del-b@b.com");
+		String url = (String) upload(tokenA, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+
+		var del = rest.exchange("/api/files/" + idOf(url), HttpMethod.DELETE,
+				new HttpEntity<>(bearer(tokenB)), Map.class);
+		assertThat(del.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+		// 소유자에게는 그대로 남아 있어야 함
+		var served = rest.getForEntity(url, byte[].class);
+		assertThat(served.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
 	@Test
 	void delete_own_then_gone() {
 		String token = signup("file6@b.com");
@@ -162,5 +216,9 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 
 	private static UUID idOf(String url) {
 		return UUID.fromString(url.substring(url.indexOf("/api/files/") + 11, url.indexOf('?')));
+	}
+
+	private UUID userIdOf(String email) {
+		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
 	}
 }
