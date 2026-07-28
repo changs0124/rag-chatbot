@@ -1,11 +1,14 @@
 package com.ragchatbot.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.ragchatbot.domain.Attachment;
 import com.ragchatbot.domain.Conversation;
@@ -19,6 +22,7 @@ import com.ragchatbot.storage.FileStorage;
 import com.ragchatbot.web.dto.ConversationDtos.CitationResponse;
 import com.ragchatbot.web.dto.ConversationDtos.ConversationResponse;
 import com.ragchatbot.web.dto.ConversationDtos.MessageResponse;
+import com.ragchatbot.web.dto.FileDtos.AttachmentResponse;
 
 /**
  * 대화 CRUD. 모든 접근은 requireOwned 를 통과함(P-3, AC-1). 남의 것은 404로 은닉.
@@ -26,22 +30,26 @@ import com.ragchatbot.web.dto.ConversationDtos.MessageResponse;
 @Service
 public class ConversationService {
 
+	private static final Logger log = LoggerFactory.getLogger(ConversationService.class);
+
 	private final ConversationMapper conversationMapper;
 	private final MessageMapper messageMapper;
 	private final AttachmentMapper attachmentMapper;
 	private final CitationMapper citationMapper;
 	private final FileStorage fileStorage;
 	private final OpenAiService openAiService;
+	private final FileService fileService;
 
 	public ConversationService(ConversationMapper conversationMapper, MessageMapper messageMapper,
 			AttachmentMapper attachmentMapper, CitationMapper citationMapper, FileStorage fileStorage,
-			OpenAiService openAiService) {
+			OpenAiService openAiService, FileService fileService) {
 		this.conversationMapper = conversationMapper;
 		this.messageMapper = messageMapper;
 		this.attachmentMapper = attachmentMapper;
 		this.citationMapper = citationMapper;
 		this.fileStorage = fileStorage;
 		this.openAiService = openAiService;
+		this.fileService = fileService;
 	}
 
 	public ConversationResponse create(UUID userId, String title) {
@@ -63,32 +71,63 @@ public class ConversationService {
 				.toList();
 	}
 
-	/** 메시지 + 출처(AC-7 재조회 시 유지) */
+	/** 메시지 + 출처(AC-7 재조회 시 유지) + 첨부(새로고침 시 이미지 소실 방지) */
 	public List<MessageResponse> messages(UUID userId, UUID conversationId) {
 		requireOwned(conversationId, userId);
+
+		// 메시지별 첨부를 한 번에 읽어 묶음(메시지마다 조회하지 않음)
+		Map<UUID, List<AttachmentResponse>> byMessage = new LinkedHashMap<>();
+		for (Attachment a : attachmentMapper.findByConversation(conversationId)) {
+			byMessage.computeIfAbsent(a.messageId(), k -> new ArrayList<>())
+					.add(new AttachmentResponse(a.id(), a.fileType(), fileService.issueUrl(a.id(), userId)));
+		}
+
 		return messageMapper.listByConversation(conversationId).stream()
 				.map(m -> new MessageResponse(m.id(), m.role(), m.content(), m.status(), m.createdAt(),
 						citationMapper.findByMessage(m.id()).stream()
 								.map(c -> new CitationResponse(c.seq(), c.sourceName(), c.snippet(), c.uri()))
-								.toList()))
+								.toList(),
+						byMessage.getOrDefault(m.id(), List.of())))
 				.toList();
 	}
 
-	/** 대화 삭제 - 첨부 파일 + OpenAI 리소스 정리 후 DB cascade(AC-12). */
-	@Transactional
+	/**
+	 * 대화 삭제 - **DB 를 먼저 지우고, 되돌릴 수 없는 외부 정리는 그 뒤에** 함(AC-12).
+	 *
+	 * <p>이전에는 한 트랜잭션 안에서 파일 삭제와 OpenAI DELETE 를 먼저 수행했음. 커밋이 실패하면
+	 * 파일만 사라진 채 행이 남고, 원격 호출이 지연되면 그동안 DB 커넥션을 점유했음(Phase 3 리뷰 H3-1).
+	 * cascade 삭제는 단일 문장이라 그 자체로 원자적이므로 별도 트랜잭션이 필요 없음.
+	 *
+	 * <p>DB 가 지워진 뒤의 정리 실패는 치명적이지 않음 - 남은 파일은 고아이며 회수 대상임.
+	 * 다만 조용히 넘기지 않고 경고로 남김.
+	 */
 	public void delete(UUID userId, UUID conversationId) {
 		Conversation conversation = requireOwned(conversationId, userId);
 		List<Attachment> attachments = attachmentMapper.findByConversation(conversationId);
 		List<String> openaiFileIds = new ArrayList<>();
+		List<String> paths = new ArrayList<>();
 		for (Attachment a : attachments) {
-			fileStorage.delete(a.storagePath());
+			paths.add(a.storagePath());
 			if (a.openaiFileId() != null) {
 				openaiFileIds.add(a.openaiFileId());
 			}
 		}
-		// OpenAI 파일/Vector Store 정리(AC-12). 목업은 호출 기록만
-		openAiService.deleteResources(conversation.vectorStoreId(), openaiFileIds);
-		conversationMapper.deleteByIdAndUser(conversationId, userId);
+
+		conversationMapper.deleteByIdAndUser(conversationId, userId); // cascade - 단일 문장
+
+		for (String path : paths) {
+			try {
+				fileStorage.delete(path);
+			} catch (RuntimeException e) {
+				log.warn("대화 삭제 후 첨부 파일 정리 실패 - 고아로 남음. path={}", path, e);
+			}
+		}
+		try {
+			// OpenAI 파일/Vector Store 정리(AC-12). 목업은 호출 기록만
+			openAiService.deleteResources(conversation.vectorStoreId(), openaiFileIds);
+		} catch (RuntimeException e) {
+			log.warn("대화 삭제 후 OpenAI 리소스 정리 실패. conversationId={}", conversationId, e);
+		}
 	}
 
 	private Conversation requireOwned(UUID conversationId, UUID userId) {

@@ -25,6 +25,38 @@ describe('MessageList', () => {
     expect(screen.getByText('이용 정책 문서')).toBeInTheDocument()
   })
 
+  it('marks an assistant answer with no citations as 자료 없음', () => {
+    const messages: ChatMessage[] = [
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: '일반적인 관점에서 이렇게 볼 수 있음.',
+        status: 'complete',
+        createdAt: '',
+        citations: [],
+      },
+    ]
+    render(<MessageList messages={messages} />)
+    // 접두가 본문에 섞이지 않고 별도 표시로 나와야 함(화면·재조회 동일 규칙)
+    expect(screen.getByText(/자료 없음/)).toBeInTheDocument()
+    expect(screen.getByText('일반적인 관점에서 이렇게 볼 수 있음.')).toBeInTheDocument()
+  })
+
+  it('does not mark an answer that has citations', () => {
+    const messages: ChatMessage[] = [
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: '안내는 다음과 같음 [1]',
+        status: 'complete',
+        createdAt: '',
+        citations: [{ seq: 1, sourceName: '이용 정책 문서', snippet: '발췌', uri: 'corpus://1' }],
+      },
+    ]
+    render(<MessageList messages={messages} />)
+    expect(screen.queryByText(/자료 없음/)).not.toBeInTheDocument()
+  })
+
   it('shows empty state when there are no messages', () => {
     render(<MessageList messages={[]} />)
     expect(screen.getByText(/무엇이든 물어보세요/)).toBeInTheDocument()

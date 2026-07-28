@@ -33,12 +33,15 @@ export interface ChatMessage {
   status: string
   createdAt: string
   citations: Citation[]
-  // 로컬 낙관적 표시용(백엔드 메시지 조회는 텍스트+출처만 반환)
+  // 재조회 응답에도 실림(2026-07-28) - URL 은 조회 시점에 새로 서명된 값임.
+  // 전송 직후에는 로컬 낙관적 표시로 먼저 채워짐
   attachments?: Attachment[]
 }
 
 export interface Attachment {
   id: string
+  // 문서 업로드는 2026-07-28부터 받지 않음(모델에 전달되지 않아 오해를 만들었음).
+  // 과거에 올라간 첨부가 남아 있을 수 있어 타입은 유지함
   fileType: 'image' | 'document'
   url: string
 }

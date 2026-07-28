@@ -34,12 +34,17 @@ public class FileService {
 	private record AllowedType(String extension, String fileType, long maxSize, byte[] magic, String mediaType) {
 	}
 
+	/**
+	 * 이미지만 허용함(2026-07-28 R-2 범위 축소, 사용자 승인).
+	 * 문서(PDF)는 업로드·저장·표시는 되는데 모델에는 전달되지 않아, 사용자가 "그 PDF를 근거로 답했다"고
+	 * 오해하는 상태였음(Phase 4 리뷰 H4-3). 실제 근거로 쓰려면 OpenAI Files + 대화 전용 Vector Store
+	 * 업로드가 필요하고 그건 실 키가 있어야 검증되므로, 지금은 **받지 않는 것**을 계약으로 함.
+	 */
 	private static final Map<String, AllowedType> ALLOWED = Map.of(
 			"image/jpeg", new AllowedType("jpg", "image", 10 * MB, new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF }, "image/jpeg"),
 			"image/png", new AllowedType("png", "image", 10 * MB, new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }, "image/png"),
 			"image/gif", new AllowedType("gif", "image", 10 * MB, new byte[] { 0x47, 0x49, 0x46, 0x38 }, "image/gif"),
-			"image/webp", new AllowedType("webp", "image", 10 * MB, new byte[] { 0x52, 0x49, 0x46, 0x46 }, "image/webp"),
-			"application/pdf", new AllowedType("pdf", "document", 20 * MB, new byte[] { 0x25, 0x50, 0x44, 0x46 }, "application/pdf"));
+			"image/webp", new AllowedType("webp", "image", 10 * MB, new byte[] { 0x52, 0x49, 0x46, 0x46 }, "image/webp"));
 
 	private final FileStorage fileStorage;
 	private final AttachmentMapper attachmentMapper;
@@ -58,6 +63,10 @@ public class FileService {
 		}
 		AllowedType type = ALLOWED.get(file.getContentType());
 		if (type == null) {
+			if ("application/pdf".equals(file.getContentType())) {
+				throw new BadRequestException(
+						"문서 첨부는 지원하지 않음 - 현재 답변 근거로 쓰이는 것은 이미지뿐임(이미지: jpg·png·gif·webp)");
+			}
 			throw new BadRequestException("지원하지 않는 파일 형식: " + file.getContentType());
 		}
 		byte[] bytes;
@@ -116,6 +125,11 @@ public class FileService {
 			attachmentMapper.deleteById(a.id());
 		}
 		return orphans.size();
+	}
+
+	/** 재조회 응답용 - 조회 시점에 새 서명 URL 을 발급함(저장된 URL 재사용 금지, TTL 15분) */
+	public String issueUrl(UUID fileId, UUID userId) {
+		return buildUrl(fileId, userId);
 	}
 
 	private String buildUrl(UUID fileId, UUID userId) {

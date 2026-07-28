@@ -31,8 +31,9 @@ import com.ragchatbot.storage.FileStorage;
  * 실 OpenAI 연동(APP_MODE=live). RestClient 직접 호출(1단계 채택) + Responses API 스트리밍.
  *
  * <p>구조 : Responses API(gpt-4o) + 공용 Vector Store 기반 file_search + 이미지 비전 입력(base64) +
- * 스트리밍 토큰 → onToken + 응답 annotations(file_citation) → CitationData. 무자료(인용 0건) 시
- * 규정 접두(P-8, {@link OpenAiMockService#NO_SOURCE_PREFIX}).
+ * 스트리밍 토큰 → onToken + 응답 annotations(file_citation) → CitationData. 무자료(인용 0건)는
+ * 텍스트를 건드리지 않고 {@code noSource} 플래그로만 알림(P-8) - 인용 0건은 스트림이 끝나야 알 수 있어
+ * 이미 보낸 토큰 앞에 접두를 붙일 수 없기 때문임.
  *
  * <p><b>주의(S-1)</b> : 실호출 검증은 OPENAI_API_KEY·공용 Store 확보 후 M2 스파이크에서 수행함(미결 표).
  * 현재는 컴파일·구조만 검증된 상태이며, 실 응답 스키마와 무자료 임계는 실물로 확인 전까지 완성으로 위장하지 않음.
@@ -208,11 +209,9 @@ public class OpenAiRealService implements OpenAiService {
 			throw new IllegalStateException("OpenAI 스트림이 완료(response.completed) 없이 종료됨");
 		}
 
+		// 저장 텍스트 = 스트리밍으로 내보낸 것과 정확히 같음(화면·재조회 불일치 방지)
 		boolean noSource = citations.isEmpty();
-		String fullText = noSource
-				? OpenAiMockService.NO_SOURCE_PREFIX + buffer
-				: buffer.toString();
-		return new ChatCompletion(fullText, citations, noSource);
+		return new ChatCompletion(buffer.toString(), citations, noSource);
 	}
 
 	/**
