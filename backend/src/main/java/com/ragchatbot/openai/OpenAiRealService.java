@@ -56,6 +56,7 @@ public class OpenAiRealService implements OpenAiService {
 			@Value("${app.openai.api-key:}") String apiKey,
 			@Value("${app.openai.model:gpt-4o}") String model,
 			@Value("${app.openai.vector-store-id:}") String vectorStoreId,
+			@Value("${app.openai.base-url:https://api.openai.com/v1}") String baseUrl,
 			FileStorage fileStorage) {
 		// live 모드인데 키가 비면 부팅 즉시 실패(per-request 401 대신 fail-fast). 이 빈은 app.mode=live에서만 로드됨
 		if (apiKey == null || apiKey.isBlank()) {
@@ -71,7 +72,10 @@ public class OpenAiRealService implements OpenAiService {
 		factory.setReadTimeout(Duration.ofMinutes(10));
 		this.client = RestClient.builder()
 				.requestFactory(factory)
-				.baseUrl("https://api.openai.com/v1")
+				// 기본값이 실 엔드포인트임. 설정으로 뺀 이유는 **증분 수신을 실 코드 경로로 잴 수 있게**
+				// 하려는 것임(M3 스파이크) - 캔드 InputStream 으로는 RestClient 가 응답을 통째로
+				// 버퍼링하는지 아닌지가 드러나지 않음
+				.baseUrl(baseUrl)
 				.defaultHeader("Authorization", "Bearer " + apiKey)
 				.build();
 	}
@@ -107,7 +111,8 @@ public class OpenAiRealService implements OpenAiService {
 		}
 
 		return client.post()
-				.uri(URI.create("https://api.openai.com/v1/responses"))
+				// 상대 경로여야 빌더의 baseUrl 이 적용됨. 종전에는 절대 URI 라 baseUrl 이 죽은 설정이었음
+				.uri("/responses")
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.TEXT_EVENT_STREAM)
 				.body(body)
