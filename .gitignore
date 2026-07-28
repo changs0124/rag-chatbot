@@ -66,3 +66,6 @@ desktop.ini
 .claude/settings.local.json
 CLAUDE.md
 AGENTS.md
+
+# 케이스 수 하한 게이트가 만드는 vitest JSON 리포트(산출물)
+frontend/vitest-report.json

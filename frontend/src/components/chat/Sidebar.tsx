@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import type { Conversation } from '../../lib/types'
 import { IconClose } from '../icons'
 import ConfirmModal from '../ConfirmModal'

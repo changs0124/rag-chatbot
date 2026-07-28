@@ -9,13 +9,20 @@ on:
 permissions:
   contents: read
 
+# 연속 푸시 시 이전 run 을 취소함 - 6잡 x N 이 계속 도는 것을 막음
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # 시크릿 스캔 도구 - 버전과 체크섬을 함께 고정함(공급망)
+  GITLEAKS_VERSION: 8.30.1
+  GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+
 jobs:
   backend:
-    name: backend (test + build)
+    name: backend (test + build + 케이스 수 하한)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -24,11 +31,88 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
+      - name: 런타임 버전 대조(이관-8)
+        run: bash scripts/check-runtime-versions.sh java
       - name: mvnw verify (test + build)
+        working-directory: backend
         run: ./mvnw -B verify
+      - name: 케이스 수 하한
+        run: bash scripts/check-case-floor.sh backend
 
   frontend:
-    name: frontend (lint + test + build)
+    name: frontend (lint + test + build + 케이스 수 하한)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: 런타임 버전 대조(이관-8)
+        run: bash ../scripts/check-runtime-versions.sh node
+      - run: npm ci
+      - name: Lint (oxlint)
+        run: npm run lint
+      - name: Test (vitest)
+        run: npm test -- --reporter=json --outputFile=vitest-report.json
+      - name: Build (tsc + vite)
+        run: npm run build
+      - name: 케이스 수 하한
+        # 스크립트가 스스로 저장소 루트로 이동하므로 frontend/ 에서 실행해도 같음
+        run: bash ../scripts/check-case-floor.sh frontend
+
+  docs:
+    name: docs (참조 실재 + 계획서 필수 표)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 문서 참조 실재 + 위키링크 검사
+        run: bash scripts/check-doc-refs.sh
+      - name: 계획서 필수 표 검사
+        run: bash scripts/check-plan-tables.sh
+
+  secrets:
+    name: secrets (시크릿 스캔)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # git 이력을 훑으므로 얕은 클론이면 PR 커밋을 못 봄
+          fetch-depth: 0
+      - name: gitleaks 설치(버전 · 체크섬 고정)
+        run: |
+          set -euo pipefail
+          curl -fsSLo gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+      - name: 시크릿 스캔(커밋된 내용 전체)
+        run: ./gitleaks git . --no-banner --redact
+
+  deps-backend:
+    name: deps (백엔드 의존성 취약점)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy - pom.xml 스캔
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25   # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: backend
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          # 해석한 패키지를 로그에 남김 - 이게 없으면 "취약점 0건"과
+          # "패키지를 한 건도 해석하지 못함"이 로그에서 구분되지 않음
+          list-all-pkgs: 'true'
+
+  deps-frontend:
+    name: deps (프론트 의존성 취약점)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -42,17 +126,5 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - name: Lint (oxlint)
-        run: npm run lint
-      - name: Test (vitest)
-        run: npm test
-      - name: Build (tsc + vite)
-        run: npm run build
-
-  docs:
-    name: docs (참조 실재 검사)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: 문서 참조 실재 + 위키링크 검사
-        run: bash scripts/check-doc-refs.sh
+      - name: npm audit (high 이상 0건)
+        run: npm audit --audit-level=high
