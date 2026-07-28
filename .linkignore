@@ -7,3 +7,7 @@ docs/05_동일성.md
 
 # 로컬 시크릿 파일 - .gitignore 대상이라 저장소에 없는 것이 정상. 커밋되면 STALE로 즉시 빨간불이 됨
 backend/.env
+
+# vitest 케이스 수 리포트 - .gitignore 대상인 측정 산출물. 매 실행마다 새로 만들어지므로
+# 저장소에 없는 것이 정상이고, 커밋되면 STALE로 빨간불이 됨(낡은 수가 게이트에 남는 것을 막음)
+frontend/vitest-report.json
