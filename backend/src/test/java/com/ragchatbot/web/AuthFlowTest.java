@@ -2,7 +2,11 @@ package com.ragchatbot.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
@@ -10,6 +14,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
@@ -78,6 +84,62 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 		headers.setBearerAuth("forged.jwt.value");
 		var res = rest.exchange(ME, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	// --- AC-2 : 위조 · 만료 · 서명 불일치 -------------------------------------
+	// 위 forged 테스트는 형식이 깨진 문자열이라 디코딩 단계에서 죽음 - 서명 검증에 도달하지 않아,
+	// verify() 를 decode() 로 바꿔도 초록이었음(2026-07-28 Phase 2 리뷰 H1). 아래 3건이 실제 검증 지점임.
+
+	private static final String TEST_SECRET = "test-secret-please-change-0123456789abcdef";
+
+	private HttpStatus meStatusWith(String token) {
+		var headers = new HttpHeaders();
+		headers.setBearerAuth(token);
+		return (HttpStatus) rest.exchange(ME, HttpMethod.GET, new HttpEntity<>(headers), Map.class).getStatusCode();
+	}
+
+	private static com.auth0.jwt.JWTCreator.Builder authClaims() {
+		return JWT.create()
+				.withAudience("auth")
+				.withSubject(UUID.randomUUID().toString())
+				.withClaim("email", "sig@b.com");
+	}
+
+	/** 다른 시크릿으로 정상 서명한 well-formed 토큰 - 서명 검증이 없으면 통과해 버림 */
+	@Test
+	void me_with_wrong_secret_signature_401() {
+		String token = authClaims()
+				.withIssuedAt(Instant.now())
+				.withExpiresAt(Instant.now().plusSeconds(600))
+				.sign(Algorithm.HMAC256("another-secret-0123456789abcdefghijkl"));
+		assertThat(meStatusWith(token)).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	/** 우리 시크릿으로 정상 서명했으나 이미 만료된 토큰 */
+	@Test
+	void me_with_expired_token_401() {
+		String token = authClaims()
+				.withIssuedAt(Instant.now().minusSeconds(7200))
+				.withExpiresAt(Instant.now().minusSeconds(60))
+				.sign(Algorithm.HMAC256(TEST_SECRET));
+		assertThat(meStatusWith(token)).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	/** 정상 서명 토큰의 payload(sub)만 바꿔치기 - 서명은 그대로라 서명 검증만이 잡을 수 있음 */
+	@Test
+	void me_with_tampered_payload_401() {
+		String good = authClaims()
+				.withIssuedAt(Instant.now())
+				.withExpiresAt(Instant.now().plusSeconds(600))
+				.sign(Algorithm.HMAC256(TEST_SECRET));
+		String[] parts = good.split("\\.");
+		String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+		String tampered = payload.replaceFirst("\"sub\":\"[^\"]+\"",
+				"\"sub\":\"" + UUID.randomUUID() + "\"");
+		String repacked = Base64.getUrlEncoder().withoutPadding()
+				.encodeToString(tampered.getBytes(StandardCharsets.UTF_8));
+		assertThat(meStatusWith(parts[0] + "." + repacked + "." + parts[2]))
+				.isEqualTo(HttpStatus.UNAUTHORIZED);
 	}
 
 	@Test

@@ -33,12 +33,21 @@ class UserMapperUuidTest extends AbstractPgIntegrationTest {
 	}
 
 	@Test
-	void migration_creates_five_tables() {
-		Integer count = jdbc.queryForObject(
+	void migration_creates_tables_and_indexes() {
+		Integer tables = jdbc.queryForObject(
 				"select count(*) from information_schema.tables "
 						+ "where table_schema = 'public' "
 						+ "and table_name in ('users','conversations','messages','citations','attachments')",
 				Integer.class);
-		assertThat(count).isEqualTo(5);
+		assertThat(tables).isEqualTo(5);
+
+		// AC-20 은 "5테이블·인덱스"임. 표 개수만 세면 create index 를 통째로 지워도 초록이 됨
+		// (2026-07-28 Phase 1 리뷰 M1)
+		Integer indexes = jdbc.queryForObject(
+				"select count(*) from pg_indexes where schemaname = 'public' and indexname in "
+						+ "('idx_conversations_user','idx_messages_conversation','idx_citations_message',"
+						+ "'idx_attachments_message','idx_attachments_user')",
+				Integer.class);
+		assertThat(indexes).isEqualTo(5);
 	}
 }
