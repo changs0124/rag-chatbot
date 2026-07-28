@@ -27,6 +27,9 @@ public class FileService {
 
 	private static final long MB = 1024 * 1024;
 
+	/** 고아 회수의 최소 유예 - 이보다 최근에 만들어진 첨부는 어떤 cutoff 를 줘도 지우지 않음 */
+	static final int MIN_ORPHAN_AGE_MINUTES = 10;
+
 	/** webp 컨테이너의 오프셋 8에 있는 "WEBP" 마커 */
 	private static final byte[] WEBP_MARKER = { 0x57, 0x45, 0x42, 0x50 };
 
@@ -117,9 +120,18 @@ public class FileService {
 		attachmentMapper.deleteByIdAndUser(fileId, userId);
 	}
 
-	/** 고아(미연결) 첨부 회수 - 파일 삭제 후 행 삭제(AC-13) */
+	/**
+	 * 고아(미연결) 첨부 회수 - 파일 삭제 후 행 삭제(AC-13).
+	 *
+	 * <p>cutoff 가 최소 유예({@value #MIN_ORPHAN_AGE_MINUTES}분)보다 최근이면 그 경계로 되돌림(클램프).
+	 * 첨부는 업로드된 뒤 사용자가 전송 버튼을 누를 때까지 {@code message_id = null} 로 있으므로,
+	 * cutoff 를 현재나 미래로 주면 <b>작성 중인 첨부가 지워짐</b> - 인자 하나로 살아 있는 데이터가
+	 * 사라지는 경로를 남기지 않음(2026-07-28 결정).
+	 */
 	public int cleanupOrphans(OffsetDateTime cutoff) {
-		var orphans = attachmentMapper.findOrphans(cutoff);
+		OffsetDateTime floor = OffsetDateTime.now().minusMinutes(MIN_ORPHAN_AGE_MINUTES);
+		OffsetDateTime effective = cutoff.isAfter(floor) ? floor : cutoff;
+		var orphans = attachmentMapper.findOrphans(effective);
 		for (Attachment a : orphans) {
 			fileStorage.delete(a.storagePath());
 			attachmentMapper.deleteById(a.id());

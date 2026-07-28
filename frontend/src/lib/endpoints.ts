@@ -1,11 +1,12 @@
 import { api, API_BASE, ApiError, getToken } from './api'
-import type { Attachment, ChatMessage, Citation, Conversation, Me, Theme } from './types'
+import type { Attachment, AuthResponse, ChatMessage, Citation, Conversation, Me, Theme } from './types'
 
 // 프로필 (마이페이지)
 export const updateName = (name: string) => api.patch<Me>('/api/profile/name', { name })
 export const updateTheme = (theme: Theme) => api.patch<Me>('/api/profile/theme', { theme })
+// 변경 이전 토큰은 서버가 전부 무효화하므로 응답의 새 토큰으로 반드시 교체해야 세션이 이어짐
 export const updatePassword = (currentPassword: string, newPassword: string) =>
-  api.patch<void>('/api/profile/password', { currentPassword, newPassword })
+  api.patch<AuthResponse>('/api/profile/password', { currentPassword, newPassword })
 
 // 대화
 export const listConversations = () => api.get<Conversation[]>('/api/conversations')

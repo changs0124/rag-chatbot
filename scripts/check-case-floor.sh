@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # 케이스 수 하한 게이트 - 테스트 명령은 케이스가 삭제돼도 통과하므로 수를 따로 잼(가이드 4단계)
 # 사용 : check-case-floor.sh backend | frontend
+#
+# 주의(로컬) : **반드시 clean 후 측정할 것**. surefire 리포트는 지운 테스트 클래스의 XML이
+# target/ 에 그대로 남아, 개명·삭제한 클래스가 계속 계수됨. 2026-07-28에 실제로 이 때문에
+# 로컬 실측이 6건 부풀려져 하한을 잘못 올렸고 원격 CI(클린 체크아웃)가 잡아냄
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 

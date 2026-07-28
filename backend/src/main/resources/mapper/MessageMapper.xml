@@ -10,17 +10,19 @@
 			<arg column="role" javaType="java.lang.String"/>
 			<arg column="content" javaType="java.lang.String"/>
 			<arg column="status" javaType="java.lang.String"/>
+			<!-- MyBatis 별칭 - `boolean`은 java.lang.Boolean 이라 레코드의 primitive 생성자를 못 찾음 -->
+			<arg column="stopped" javaType="_boolean"/>
 			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
 		</constructor>
 	</resultMap>
 
 	<insert id="insert" parameterType="com.ragchatbot.domain.Message">
-		insert into messages (id, conversation_id, role, content, status)
-		values (#{id}, #{conversationId}, #{role}, #{content}, #{status})
+		insert into messages (id, conversation_id, role, content, status, stopped)
+		values (#{id}, #{conversationId}, #{role}, #{content}, #{status}, #{stopped})
 	</insert>
 
 	<select id="listByConversation" resultMap="messageResult">
-		select id, conversation_id, role, content, status, created_at
+		select id, conversation_id, role, content, status, stopped, created_at
 		from messages
 		where conversation_id = #{conversationId}
 		order by created_at asc

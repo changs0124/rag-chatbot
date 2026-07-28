@@ -32,9 +32,10 @@ server:
   # Cloud/컨테이너 대응 - PORT 우선 리슨
   port: ${PORT:${SERVER_PORT:8080}}
 
-# 실행 모드 : mock | live (P-2). 운영 프로필에서 mock이면 기동 실패(AC-18, ProdModeGuard)
+# 실행 모드 : mock | live (P-2). **기본값 없음** - 미설정이면 기동 실패(AC-18, AppModeGuard).
+# 목업이 우연히 켜지는 경로를 없애려고 명시 옵트인으로 뒤집었음(2026-07-28 결정)
 app:
-  mode: ${APP_MODE:mock}
+  mode: ${APP_MODE:}
   openai:
     # 실 연동(APP_MODE=live)에서만 사용. 공용 Vector Store를 env로 지정(대화별 스토어 대신, 공용 Store 결정)
     api-key: ${OPENAI_API_KEY:}
@@ -49,9 +50,14 @@ app:
   ratelimit:
     # 사용자별 분당 채팅 상한(비용 통제, D-1). 단일 인스턴스 전제(R-6, 미결)
     chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}
+    # 계정별 분당 로그인 시도 상한(대입 지연). 키는 정규화된 이메일 - IP 기준이 아님
+    login-per-minute: ${RATELIMIT_LOGIN_PER_MINUTE:10}
   file:
     # 파일 저장 루트(로컬/서버 디스크, P-7). S3 교체 시 FileStorage 구현만 교체
     storage-root: ${FILE_STORAGE_ROOT:./uploads}
+    # 고아(미연결) 첨부 회수 - 유예 시간과 주기. 유예보다 최근 것은 어떤 cutoff 로도 지우지 않음
+    orphan-ttl-minutes: ${ORPHAN_TTL_MINUTES:60}
+    orphan-cleanup-cron: ${ORPHAN_CLEANUP_CRON:0 0 * * * *}
   jwt:
     # 서명 시크릿 - 값은 env로 주입(커밋 금지). 테스트는 test 프로퍼티로 주입
     secret: ${JWT_SECRET:}

@@ -127,7 +127,8 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		assertThat(atts).hasSize(1);
 		assertThat(atts.get(0).get("id")).isEqualTo(attId);
 		assertThat(atts.get(0).get("fileType")).isEqualTo("image");
-		// 저장된 URL 재사용이 아니라 조회 시점에 새로 서명한 것이어야 함(TTL 15분)
+		// 서명 토큰이 붙어 있는지까지만 잼. "조회 시점 재서명"은 첨부 테이블에 URL 컬럼 자체가 없어
+		// 구조적으로 그럴 수밖에 없는 것이라 여기서 따로 재지 않음(재리뷰 지적 9)
 		assertThat(String.valueOf(atts.get(0).get("url"))).contains("/api/files/" + attId + "?token=");
 	}
 

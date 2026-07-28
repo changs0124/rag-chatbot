@@ -83,7 +83,7 @@ public class ConversationService {
 		}
 
 		return messageMapper.listByConversation(conversationId).stream()
-				.map(m -> new MessageResponse(m.id(), m.role(), m.content(), m.status(), m.createdAt(),
+				.map(m -> new MessageResponse(m.id(), m.role(), m.content(), m.status(), m.stopped(), m.createdAt(),
 						citationMapper.findByMessage(m.id()).stream()
 								.map(c -> new CitationResponse(c.seq(), c.sourceName(), c.snippet(), c.uri()))
 								.toList(),
@@ -98,8 +98,10 @@ public class ConversationService {
 	 * 파일만 사라진 채 행이 남고, 원격 호출이 지연되면 그동안 DB 커넥션을 점유했음(Phase 3 리뷰 H3-1).
 	 * cascade 삭제는 단일 문장이라 그 자체로 원자적이므로 별도 트랜잭션이 필요 없음.
 	 *
-	 * <p>DB 가 지워진 뒤의 정리 실패는 치명적이지 않음 - 남은 파일은 고아이며 회수 대상임.
-	 * 다만 조용히 넘기지 않고 경고로 남김.
+	 * <p><b>주의</b> - DB 가 먼저 지워지므로 그 뒤 파일 삭제가 실패하면 <b>대응하는 행이 이미 없어
+	 * 고아 회수({@code cleanupOrphans})가 찾지 못함</b>. {@code findOrphans} 는 {@code attachments} 행을
+	 * 기준으로 도는데 cascade 로 그 행이 사라졌기 때문임 - 즉 그 파일은 영구 잔류임(재리뷰 지적 3).
+	 * 지금은 경고 로그가 유일한 흔적이며, 실제 회수는 미결로 남아 있음(`docs/02_운영.md`).
 	 */
 	public void delete(UUID userId, UUID conversationId) {
 		Conversation conversation = requireOwned(conversationId, userId);
@@ -119,7 +121,8 @@ public class ConversationService {
 			try {
 				fileStorage.delete(path);
 			} catch (RuntimeException e) {
-				log.warn("대화 삭제 후 첨부 파일 정리 실패 - 고아로 남음. path={}", path, e);
+				log.warn("대화 삭제 후 첨부 파일 정리 실패 - 행이 이미 없어 고아 회수 대상도 아님(영구 잔류). path={}",
+						path, e);
 			}
 		}
 		try {

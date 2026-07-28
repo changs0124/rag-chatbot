@@ -119,3 +119,106 @@ describe('useChat 진행 단계(R-11)', () => {
     expect(result.current.stage).toBeNull()
   })
 })
+
+describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.clearAllMocks()
+  })
+
+  async function abort(stream: ReturnType<typeof openStream>) {
+    await act(async () => {
+      stream.fail?.(new DOMException('aborted', 'AbortError'))
+    })
+  }
+
+  it('중단은 실패가 아님 - 받은 데까지 complete 로 남김', async () => {
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+
+    act(() => void stream.handlers?.onToken?.('부분 답변'))
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(result.current.messages).toHaveLength(2)
+    expect(result.current.messages[1].content).toBe('부분 답변')
+    expect(result.current.messages[1].status).toBe('complete')
+    // 서버 저장분과 같은 표시 - 이게 없으면 화면이 "자료 없음"을 거짓으로 붙임
+    expect(result.current.messages[1].stopped).toBe(true)
+    expect(result.current.error).toBeNull()
+  })
+
+  it('받은 것이 없이 중단하면 빈 답변 버블을 남기지 않음', async () => {
+    // 남겨 두면 새로고침에 사라짐 - 서버도 부분 텍스트가 비면 저장하지 않음(2026-07-28 정책)
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+    expect(result.current.messages).toHaveLength(2)
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(result.current.messages).toHaveLength(1)
+    expect(result.current.messages[0].role).toBe('user')
+  })
+
+  it('정상 완료 뒤 abort 예외가 나도 stopped 를 세우지 않음', async () => {
+    // 서버는 그 답변을 stopped=false 로 저장했으므로, 화면만 stopped 가 되면
+    // 무자료 배너가 화면과 재조회에서 갈림(재리뷰 라운드 2 N-4)
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+
+    act(() => {
+      stream.handlers?.onToken?.('완성된 답변')
+      stream.handlers?.onDone?.()
+    })
+    expect(result.current.messages[1].status).toBe('complete')
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(result.current.messages[1].content).toBe('완성된 답변')
+    expect(result.current.messages[1].stopped).toBeFalsy()
+  })
+
+  it('내용이 비어도 onDone 이 확정했으면 버블을 지우지 않음', async () => {
+    // 빈 버블 제거는 "중단으로 아무것도 못 받은" 경우만을 위한 것임. 정상 완료분은 서버가
+    // 저장했으므로 지우면 새로고침에 되살아나 화면과 재조회가 어긋남(재리뷰 라운드 3 ③)
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+
+    act(() => void stream.handlers?.onDone?.())
+    expect(result.current.messages).toHaveLength(2)
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(result.current.messages).toHaveLength(2)
+    expect(result.current.messages[1].status).toBe('complete')
+  })
+
+  it('SSE 실패는 백지 대신 인라인 오류로 남음(AC-17)', async () => {
+    // 에러 바운더리는 렌더 예외만 잡음 - 스트림 실패는 여기서 메시지 상태로 드러나야 함
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+
+    act(() => void stream.handlers?.onError?.('응답 생성 중 오류'))
+
+    expect(result.current.messages[0].content).toBe('환불 정책') // 화면이 비지 않음
+    expect(result.current.messages[1].status).toBe('error')
+    expect(result.current.error).toBe('응답 생성 중 오류')
+  })
+})

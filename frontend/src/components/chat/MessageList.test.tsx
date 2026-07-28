@@ -42,6 +42,24 @@ describe('MessageList', () => {
     expect(screen.getByText('일반적인 관점에서 이렇게 볼 수 있음.')).toBeInTheDocument()
   })
 
+  it('중단된 답변에는 자료 없음을 붙이지 않음', () => {
+    // 중단은 출처 판정 전에 끝나므로 citations 가 늘 0건임 - 배너를 붙이면 100% 거짓말이 됨
+    const messages: ChatMessage[] = [
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: '답변을 쓰다가',
+        status: 'complete',
+        stopped: true,
+        createdAt: '',
+        citations: [],
+      },
+    ]
+    render(<MessageList messages={messages} />)
+    expect(screen.queryByText(/자료 없음/)).not.toBeInTheDocument()
+    expect(screen.getByText('답변을 쓰다가')).toBeInTheDocument()
+  })
+
   it('does not mark an answer that has citations', () => {
     const messages: ChatMessage[] = [
       {
