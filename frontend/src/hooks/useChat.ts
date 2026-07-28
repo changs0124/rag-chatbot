@@ -58,32 +58,51 @@ export function useChat() {
     refreshConversations()
   }, [refreshConversations])
 
-  const selectConversation = useCallback(async (id: string) => {
-    setActiveId(id)
-    setError(null)
-    try {
-      setMessages(await getMessages(id))
-    } catch {
-      setMessages([])
-    }
-  }, [])
+  /**
+   * 대화를 떠날 때 돌고 있던 스트림을 끊음.
+   *
+   * 안 끊으면 이전 대화의 스트림이 계속 돌면서 단계 줄이 새 화면에 잔류함. 중단 후 처리는
+   * 정해진 정책을 그대로 탐(부분 저장 + `complete`) - `send` 의 catch 가 수행하며, 그 시점엔
+   * `messages` 가 이미 새 대화 것으로 바뀌어 있어 이전 턴의 patch 는 대상을 못 찾고 흘러감.
+   */
+  const abortActiveStream = useCallback(() => {
+    abortRef.current?.abort()
+    clearStages()
+  }, [clearStages])
+
+  const selectConversation = useCallback(
+    async (id: string) => {
+      abortActiveStream()
+      setActiveId(id)
+      setError(null)
+      try {
+        setMessages(await getMessages(id))
+      } catch {
+        setMessages([])
+      }
+    },
+    [abortActiveStream],
+  )
 
   const newConversation = useCallback(() => {
+    abortActiveStream()
     setActiveId(null)
     setMessages([])
     setError(null)
-  }, [])
+  }, [abortActiveStream])
 
   const deleteConversation = useCallback(
     async (id: string) => {
       await apiDelete(id)
       setConversations((prev) => prev.filter((c) => c.id !== id))
       if (activeId === id) {
+        // 지운 대화를 떠나는 것도 전환임 - 안 끊으면 사라진 대화에 대고 스트림이 계속 돎
+        abortActiveStream()
         setActiveId(null)
         setMessages([])
       }
     },
-    [activeId],
+    [activeId, abortActiveStream],
   )
 
   const renameConversation = useCallback(async (id: string, title: string) => {

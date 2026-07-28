@@ -24,11 +24,13 @@ const { streamChat } = await import('../lib/endpoints')
 function openStream() {
   const control: {
     handlers?: ChatStreamHandlers
+    signal?: AbortSignal
     finish?: () => void
     fail?: (e: unknown) => void
   } = {}
-  vi.mocked(streamChat).mockImplementation((_body, handlers) => {
+  vi.mocked(streamChat).mockImplementation((_body, handlers, signal) => {
     control.handlers = handlers
+    control.signal = signal
     return new Promise<void>((resolve, reject) => {
       control.finish = resolve
       control.fail = reject
@@ -220,5 +222,69 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.messages[0].content).toBe('환불 정책') // 화면이 비지 않음
     expect(result.current.messages[1].status).toBe('error')
     expect(result.current.error).toBe('응답 생성 중 오류')
+  })
+})
+
+describe('useChat 대화 전환 시 이전 스트림 중단', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.clearAllMocks()
+  })
+
+  /** 스트림을 열고 단계를 하나 띄운 상태를 만듦 */
+  async function streamingWithStage() {
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+    act(() => {
+      stream.handlers?.onStage?.({ stage: 'searching', label: '목업 코퍼스 조회 중' })
+      stream.handlers?.onToken?.('부분 답변')
+    })
+    expect(result.current.stage).toBe('목업 코퍼스 조회 중')
+    return { stream, result }
+  }
+
+  it('다른 대화를 고르면 이전 스트림이 끊기고 단계가 잔류하지 않음', async () => {
+    const { stream, result } = await streamingWithStage()
+
+    await act(async () => {
+      void result.current.selectConversation('c2')
+      stream.fail?.(new DOMException('aborted', 'AbortError'))
+    })
+
+    expect(stream.signal?.aborted).toBe(true)
+    expect(result.current.stage).toBeNull()
+    // 이전 턴의 부분 답변이 새 대화 화면으로 넘어오지 않아야 함
+    expect(result.current.messages).toHaveLength(0)
+
+    act(() => void vi.advanceTimersByTime(1000))
+    expect(result.current.stage).toBeNull()
+  })
+
+  it('새 대화를 열어도 이전 스트림이 끊김', async () => {
+    const { stream, result } = await streamingWithStage()
+
+    await act(async () => {
+      result.current.newConversation()
+      stream.fail?.(new DOMException('aborted', 'AbortError'))
+    })
+
+    expect(stream.signal?.aborted).toBe(true)
+    expect(result.current.stage).toBeNull()
+    expect(result.current.messages).toHaveLength(0)
+  })
+
+  it('스트리밍 중인 대화를 삭제하면 그 스트림이 끊김', async () => {
+    // 안 끊으면 사라진 대화에 대고 서버가 계속 씀
+    const { stream, result } = await streamingWithStage()
+
+    await act(async () => {
+      void result.current.deleteConversation('c1')
+      stream.fail?.(new DOMException('aborted', 'AbortError'))
+    })
+
+    expect(stream.signal?.aborted).toBe(true)
+    expect(result.current.stage).toBeNull()
   })
 })
