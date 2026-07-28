@@ -110,6 +110,17 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	}
 
 	@Test
+	void pdf_upload_is_rejected() {
+		// 문서 첨부는 업로드·저장은 되는데 모델에는 전달되지 않아 오해를 만들었음 → 받지 않는 것을 계약으로 함
+		// (2026-07-28 R-2 범위 축소, 사용자 승인)
+		String token = signup("file-pdf@b.com");
+		byte[] pdf = { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x37 }; // %PDF-1.7
+		var res = upload(token, pdf, MediaType.APPLICATION_PDF, "doc.pdf");
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(String.valueOf(res.getBody())).contains("문서 첨부는 지원하지 않음");
+	}
+
+	@Test
 	void orphan_cleanup_removes_unlinked() {
 		String token = signup("file7@b.com");
 		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");

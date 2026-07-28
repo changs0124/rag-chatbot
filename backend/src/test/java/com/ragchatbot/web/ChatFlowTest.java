@@ -87,7 +87,9 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		String convId = createConversation(token);
 		var res = chat(token, Map.of("conversationId", convId, "message", "우주의 크기는 얼마나 되나"));
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(res.getBody()).contains("자료 없음").doesNotContain("이용 정책 문서");
+		// 무자료는 텍스트 접두가 아니라 done 이벤트의 noSource 플래그로 판정함(2026-07-28)
+		assertThat(res.getBody()).contains("\"noSource\":true").doesNotContain("이용 정책 문서");
+		assertThat(res.getBody()).doesNotContain("자료 없음"); // 접두가 텍스트에 섞이지 않음
 	}
 
 	@Test
@@ -99,6 +101,34 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		var res = chat(token, Map.of("conversationId", convId, "message", "", "attachmentIds", List.of(attId)));
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK); // AC-21
 		assertThat(mock.lastAttachmentCount()).isEqualTo(1); // AC-14
+	}
+
+	@Test
+	void attachments_survive_reload_with_fresh_url() {
+		// 재조회 응답에 첨부가 없어 새로고침하면 이미지가 사라졌음(Phase 3 리뷰 M3-6)
+		String token = signup("chat-reload@b.com");
+		String convId = createConversation(token);
+		String attId = uploadImage(token);
+		chat(token, Map.of("conversationId", convId, "message", "이 이미지", "attachmentIds", List.of(attId)));
+
+		var res = rest.exchange("/api/conversations/" + convId + "/messages", HttpMethod.GET,
+				new HttpEntity<>(bearer(token)), List.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		@SuppressWarnings("unchecked")
+		List<Map<String, Object>> messages = res.getBody();
+		var withAttachment = messages.stream()
+				.filter(m -> !((List<?>) m.get("attachments")).isEmpty())
+				.findFirst()
+				.orElseThrow(() -> new AssertionError("첨부가 실린 메시지가 없음"));
+
+		@SuppressWarnings("unchecked")
+		var atts = (List<Map<String, Object>>) withAttachment.get("attachments");
+		assertThat(atts).hasSize(1);
+		assertThat(atts.get(0).get("id")).isEqualTo(attId);
+		assertThat(atts.get(0).get("fileType")).isEqualTo("image");
+		// 저장된 URL 재사용이 아니라 조회 시점에 새로 서명한 것이어야 함(TTL 15분)
+		assertThat(String.valueOf(atts.get(0).get("url"))).contains("/api/files/" + attId + "?token=");
 	}
 
 	@Test

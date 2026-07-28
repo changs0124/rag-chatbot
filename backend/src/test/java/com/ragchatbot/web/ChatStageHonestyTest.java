@@ -72,7 +72,7 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 	void mock_emits_same_stage_list_when_no_source() {
 		// 무자료 분기도 동일한 3종 - 목업·라이브가 분기에 따라 어긋나지 않게 함(P-8)
 		String body = chat(signup("stage-nosource@b.com"), "우주의 크기는 얼마나 되나");
-		assertThat(body).contains("자료 없음");
+		assertThat(body).contains("\"noSource\":true");
 		assertThat(stageKeys(body)).containsExactly("analyzing", "searching", "generating");
 	}
 

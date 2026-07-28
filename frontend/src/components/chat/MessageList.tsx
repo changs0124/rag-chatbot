@@ -85,6 +85,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             )}
           </div>
         )}
+        {/* 무자료 표시 - 텍스트 접두가 아니라 "출처 0건"에서 파생함(P-8).
+            스트리밍 중에는 아직 citations가 안 왔으므로 complete 인 메시지에만 붙임 */}
+        {!isUser && message.status === 'complete' && message.citations.length === 0 && (
+          <p className="mb-1 text-xs text-amber-600 dark:text-amber-400">
+            자료 없음 - 관련 자료를 찾지 못해 추론으로 답변함
+          </p>
+        )}
         {message.content && <p className="whitespace-pre-wrap break-words">{message.content}</p>}
         {message.status === 'error' && <p className="mt-1 text-xs text-red-500">응답 중 오류가 발생했습니다</p>}
         {!isUser && <Citations citations={message.citations} />}
