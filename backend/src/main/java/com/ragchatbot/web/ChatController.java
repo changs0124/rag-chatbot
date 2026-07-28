@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.ragchatbot.security.CurrentUser;
+import com.ragchatbot.service.ChatConcurrencyLimiter;
 import com.ragchatbot.service.ChatService;
 import com.ragchatbot.service.ChatService.PreparedChat;
 import com.ragchatbot.service.RateLimiterService;
@@ -26,13 +27,16 @@ public class ChatController {
 
 	private final ChatService chatService;
 	private final RateLimiterService rateLimiter;
+	private final ChatConcurrencyLimiter concurrency;
 	private final ExecutorService chatExecutor;
 	private final long sseTimeoutMs;
 
-	public ChatController(ChatService chatService, RateLimiterService rateLimiter, ExecutorService chatExecutor,
+	public ChatController(ChatService chatService, RateLimiterService rateLimiter,
+			ChatConcurrencyLimiter concurrency, ExecutorService chatExecutor,
 			@Value("${app.chat.sse-timeout-ms:600000}") long sseTimeoutMs) {
 		this.chatService = chatService;
 		this.rateLimiter = rateLimiter;
+		this.concurrency = concurrency;
 		this.chatExecutor = chatExecutor;
 		this.sseTimeoutMs = sseTimeoutMs;
 	}
@@ -41,9 +45,28 @@ public class ChatController {
 	public SseEmitter chat(@RequestBody ChatRequest req) {
 		UUID userId = CurrentUser.id();
 		rateLimiter.checkChat(userId); // AC-10 : 초과 시 429
-		PreparedChat prepared = chatService.prepare(userId, req); // 400/404 동기 반환
-		SseEmitter emitter = new SseEmitter(sseTimeoutMs); // P-5 : 타임아웃이 스트림 수명 단독 결정
-		chatExecutor.execute(() -> chatService.stream(userId, prepared, emitter));
-		return emitter;
+		// back-pressure : 동시 스트림 상한. **prepare 앞이어야 함** - prepare 가 사용자 메시지를
+		// 저장하므로 뒤에서 거절하면 답변 없는 메시지가 대화에 남음(2026-07-28 결정)
+		concurrency.acquire(userId);
+		boolean handedOff = false;
+		try {
+			PreparedChat prepared = chatService.prepare(userId, req); // 400/404 동기 반환
+			SseEmitter emitter = new SseEmitter(sseTimeoutMs); // P-5 : 타임아웃이 스트림 수명 단독 결정
+			chatExecutor.execute(() -> {
+				try {
+					chatService.stream(userId, prepared, emitter);
+				} finally {
+					concurrency.release(userId);
+				}
+			});
+			handedOff = true;
+			return emitter;
+		} finally {
+			// 스트림 작업으로 넘기지 못한 경로(prepare 실패 · execute 거부)에서만 여기서 해제함.
+			// 넘긴 뒤에는 작업의 finally 가 단독으로 해제하므로 이중 해제가 되지 않음
+			if (!handedOff) {
+				concurrency.release(userId);
+			}
+		}
 	}
 }

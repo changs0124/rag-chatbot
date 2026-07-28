@@ -47,6 +47,11 @@ app:
   chat:
     # P-5 : SSE emitter 타임아웃이 스트림 수명을 단독 결정(기본 10분). 참조 착지값
     sse-timeout-ms: ${SSE_TIMEOUT_MS:600000}
+    # back-pressure(2026-07-28 결정) - 동시 스트림 상한. 초과는 큐에 쌓지 않고 429로 거절함.
+    # 이 값은 chatExecutor 풀 크기이기도 함(ChatExecutorConfig) - 상한이 풀보다 크면 큐가 쌓임
+    max-concurrent-streams: ${CHAT_MAX_CONCURRENT_STREAMS:8}
+    # 사용자별 동시 스트림. 화면이 한 번에 하나만 쓰므로 1 - 한 사용자가 풀을 독점하지 못하게 함
+    max-concurrent-per-user: ${CHAT_MAX_CONCURRENT_PER_USER:1}
   ratelimit:
     # 사용자별 분당 채팅 상한(비용 통제, D-1). 단일 인스턴스 전제(R-6, 미결)
     chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}
