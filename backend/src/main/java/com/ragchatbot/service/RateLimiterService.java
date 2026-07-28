@@ -1,9 +1,9 @@
 package com.ragchatbot.service;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,22 +17,36 @@ import com.ragchatbot.error.ApiExceptions.RateLimitException;
  * <p>지난 분(minute)의 창은 분이 바뀔 때 한 번에 버림. 로그인 키는 <b>미인증 요청 본문의 이메일</b>이라
  * 정리하지 않으면 서로 다른 주소를 계속 보내는 것만으로 맵이 무한히 커졌음(재리뷰 지적 4).
  *
- * <p><b>완화이지 해결이 아님</b> - 스윕은 분이 바뀔 때만 돌므로 <b>한 분 안에서는</b> 서로 다른 키가
- * 여전히 상한 없이 쌓임(실효 : 무한 → 분당 요청 수). 키 총량 상한·LRU 는 없으며, 그 결정은
- * 미결 「레이트리밋 카운터 회수」 행에 열려 있음.
+ * <p><b>키 총량 상한 + LRU 축출</b>(2026-07-28 결정, {@code app.ratelimit.max-keys}). 스윕만으로는
+ * <b>한 분 안에서</b> 서로 다른 키가 상한 없이 쌓였음 - 이제 상한을 넘으면 가장 오래 안 쓴 키부터 밀려나
+ * 메모리가 유계임.
+ *
+ * <p><b>대신 축출은 곧 카운터 리셋임</b> - 서로 다른 이메일을 상한 이상 쏟아부으면 남의 로그인 실패
+ * 카운터를 밀어낼 수 있음. 로그인 상한은 대입 <b>지연</b> 장치이지 차단 장치가 아니므로 감수한 것이며,
+ * 이 약화는 {@code docs/02_운영.md} 처리 이력에 적혀 있음.
+ *
+ * <p>맵 접근을 전부 {@code synchronized} 로 감쌈 - LRU 축출은 원자 구간이 필요하고, 종전 구조의
+ * <b>락 밖 읽기 가시성</b> 문제와 <b>check-then-act 경합</b>도 함께 사라짐.
  */
 @Service
 public class RateLimiterService {
 
 	private final int chatPerMinute;
 	private final int loginPerMinute;
-	private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
-	private final AtomicLong lastSweptMinute = new AtomicLong(-1);
+	private final Map<String, Window> windows;
+	private long lastSweptMinute = -1;
 
 	public RateLimiterService(@Value("${app.ratelimit.chat-per-minute:20}") int chatPerMinute,
-			@Value("${app.ratelimit.login-per-minute:10}") int loginPerMinute) {
+			@Value("${app.ratelimit.login-per-minute:10}") int loginPerMinute,
+			@Value("${app.ratelimit.max-keys:10000}") int maxKeys) {
 		this.chatPerMinute = chatPerMinute;
 		this.loginPerMinute = loginPerMinute;
+		this.windows = new LinkedHashMap<>(16, 0.75f, true) {
+			@Override
+			protected boolean removeEldestEntry(Map.Entry<String, Window> eldest) {
+				return size() > maxKeys;
+			}
+		};
 	}
 
 	public void checkChat(UUID userId) {
@@ -59,23 +73,27 @@ public class RateLimiterService {
 		increment("login:" + email);
 	}
 
-	private int increment(String key) {
+	private synchronized int increment(String key) {
 		long minute = currentMinute();
 		sweep(minute);
-		return windows.compute(key, (k, cur) -> {
-			if (cur == null || cur.minute != minute) {
-				return new Window(minute, 1);
-			}
-			cur.count++;
-			return cur;
-		}).count;
+		Window cur = windows.get(key);
+		if (cur == null || cur.minute != minute) {
+			cur = new Window(minute, 0);
+			windows.put(key, cur);
+		}
+		return ++cur.count;
 	}
 
-	private int count(String key) {
+	private synchronized int count(String key) {
 		long minute = currentMinute();
 		sweep(minute);
 		Window w = windows.get(key);
 		return w == null || w.minute != minute ? 0 : w.count;
+	}
+
+	/** 테스트·운영 점검용 - 지금 추적 중인 키 수 */
+	synchronized int trackedKeys() {
+		return windows.size();
 	}
 
 	private static long currentMinute() {
@@ -84,25 +102,16 @@ public class RateLimiterService {
 
 	/** 분이 바뀐 첫 호출 한 번만 지난 창을 버림 - 호출마다 훑지 않음 */
 	private void sweep(long minute) {
-		long prev = lastSweptMinute.get();
-		if (prev != minute && lastSweptMinute.compareAndSet(prev, minute)) {
+		if (lastSweptMinute != minute) {
+			lastSweptMinute = minute;
 			windows.values().removeIf(w -> w.minute != minute);
 		}
 	}
 
+	/** 맵 접근이 전부 {@code synchronized} 안이라 {@code volatile} 이 필요 없음 */
 	private static final class Window {
 		final long minute;
-		/**
-		 * 증가는 {@code compute} 안(빈 락)에서만 일어나지만 <b>읽기는 락 밖</b>에서 함
-		 * ({@link #count(String)}). 키가 이미 있으면 {@code compute} 가 같은 참조를 돌려주므로
-		 * 맵에 새 참조가 게시되지 않아 happens-before 간선이 없음 - volatile 이 없으면 읽기 스레드가
-		 * <b>낡은 값</b>을 볼 수 있음(재리뷰 라운드 2 N-1).
-		 *
-		 * <p><b>가시성만 해결함.</b> 읽기({@code checkLoginAllowed})와 쓰기({@code recordLoginFailure})가
-		 * 별개 호출이라 원자 구간이 아니며, 동시 요청이 같은 값을 읽고 다 통과하면 한도를 넘김
-		 * (초과폭은 동시 요청 수만큼). 구조적 해결은 중앙 저장소가 필요해 R-6 미결에 열려 있음.
-		 */
-		volatile int count;
+		int count;
 
 		Window(long minute, int count) {
 			this.minute = minute;

@@ -57,6 +57,9 @@ app:
     chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}
     # 계정별 분당 로그인 시도 상한(대입 지연). 키는 정규화된 이메일 - IP 기준이 아님
     login-per-minute: ${RATELIMIT_LOGIN_PER_MINUTE:10}
+    # 카운터 키 총량 상한(2026-07-28 결정). 넘으면 가장 오래 안 쓴 키부터 축출해 메모리를 유계로 둠.
+    # 축출은 곧 카운터 리셋이라는 약화가 따름 - 사유는 docs/02_운영.md 처리 이력
+    max-keys: ${RATELIMIT_MAX_KEYS:10000}
   file:
     # 파일 저장 루트(로컬/서버 디스크, P-7). S3 교체 시 FileStorage 구현만 교체
     storage-root: ${FILE_STORAGE_ROOT:./uploads}

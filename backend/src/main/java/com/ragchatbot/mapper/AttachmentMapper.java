@@ -32,4 +32,7 @@ public interface AttachmentMapper {
 	List<Attachment> findOrphans(@Param("cutoff") OffsetDateTime cutoff);
 
 	int deleteById(@Param("id") UUID id);
+
+	/** 현재 행이 가리키는 저장 경로 전부 - 저장소 스캔 회수에서 "참조됨" 판정에 씀 */
+	List<String> findAllStoragePaths();
 }

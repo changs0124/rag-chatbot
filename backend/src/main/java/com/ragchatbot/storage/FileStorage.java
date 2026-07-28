@@ -1,5 +1,7 @@
 package com.ragchatbot.storage;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.core.io.Resource;
@@ -16,4 +18,15 @@ public interface FileStorage {
 	Resource load(String storagePath);
 
 	void delete(String storagePath);
+
+	/**
+	 * 저장소에 실재하는 파일 전부(상대 경로 + 최종 수정 시각).
+	 *
+	 * <p>DB 행이 사라진 뒤 남은 파일은 행 기준 회수({@code findOrphans})가 볼 수 없어, 저장소 쪽에서
+	 * 훑어야만 찾힘(2026-07-28 결정). 수정 시각은 <b>작성 중인 파일을 지우지 않기 위한 유예 판정용</b>임.
+	 */
+	List<StoredFile> listAll();
+
+	record StoredFile(String storagePath, Instant lastModified) {
+	}
 }

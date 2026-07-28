@@ -32,13 +32,24 @@ public class OrphanCleanupScheduler {
 	/** 기본 매시 정각. 실패해도 다음 주기가 다시 시도하므로 예외를 밖으로 내보내지 않음 */
 	@Scheduled(cron = "${app.file.orphan-cleanup-cron:0 0 * * * *}")
 	public void cleanup() {
+		OffsetDateTime cutoff = OffsetDateTime.now().minusMinutes(ttlMinutes);
 		try {
-			int removed = fileService.cleanupOrphans(OffsetDateTime.now().minusMinutes(ttlMinutes));
+			int removed = fileService.cleanupOrphans(cutoff);
 			if (removed > 0) {
 				log.info("고아 첨부 {}건 회수(유예 {}분)", removed, ttlMinutes);
 			}
 		} catch (Exception e) {
 			log.warn("고아 첨부 회수 실패 - 다음 주기에 재시도", e);
+		}
+		// 2차 패스 - 행이 사라진 뒤 남은 파일은 위 행 기준 회수가 구조적으로 못 봄(2026-07-28 결정).
+		// 1차가 실패해도 돌게 try 를 나눔 - 둘은 서로 다른 잔류를 지움
+		try {
+			int removed = fileService.cleanupUnreferencedFiles(cutoff);
+			if (removed > 0) {
+				log.info("참조 없는 첨부 파일 {}건 회수(유예 {}분)", removed, ttlMinutes);
+			}
+		} catch (Exception e) {
+			log.warn("참조 없는 첨부 파일 회수 실패 - 다음 주기에 재시도", e);
 		}
 	}
 }

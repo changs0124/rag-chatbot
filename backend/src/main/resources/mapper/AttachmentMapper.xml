@@ -52,4 +52,8 @@
 		delete from attachments where id = #{id}
 	</delete>
 
+	<select id="findAllStoragePaths" resultType="java.lang.String">
+		select storage_path from attachments
+	</select>
+
 </mapper>

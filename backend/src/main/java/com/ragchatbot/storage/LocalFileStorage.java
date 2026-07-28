@@ -3,7 +3,10 @@ package com.ragchatbot.storage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.PathResource;
@@ -47,6 +50,31 @@ public class LocalFileStorage implements FileStorage {
 			Files.deleteIfExists(resolve(storagePath));
 		} catch (IOException e) {
 			throw new IllegalStateException("파일 삭제 실패: " + storagePath, e);
+		}
+	}
+
+	@Override
+	public List<StoredFile> listAll() {
+		if (!Files.isDirectory(root)) {
+			return List.of(); // 아직 업로드가 한 건도 없으면 루트가 없음 - 빈 저장소로 봄
+		}
+		try (Stream<Path> walk = Files.walk(root)) {
+			return walk.filter(Files::isRegularFile)
+					.map(p -> new StoredFile(
+							root.relativize(p).toString().replace('\\', '/'), // 저장 경로는 항상 슬래시 표기
+							lastModified(p)))
+					.toList();
+		} catch (IOException e) {
+			throw new IllegalStateException("저장소 목록 조회 실패", e);
+		}
+	}
+
+	private static Instant lastModified(Path p) {
+		try {
+			return Files.getLastModifiedTime(p).toInstant();
+		} catch (IOException e) {
+			// 시각을 못 읽으면 "방금 만들어진 것"으로 취급해 유예에 걸리게 함 - 지우는 쪽으로 기울지 않음
+			return Instant.now();
 		}
 	}
 

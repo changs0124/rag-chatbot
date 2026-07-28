@@ -1,9 +1,12 @@
 package com.ragchatbot.service;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.core.io.Resource;
@@ -137,6 +140,35 @@ public class FileService {
 			attachmentMapper.deleteById(a.id());
 		}
 		return orphans.size();
+	}
+
+	/**
+	 * 저장소 스캔 회수 - <b>파일은 있는데 그것을 가리키는 행이 없는</b> 것을 지움(AC-13 보완).
+	 *
+	 * <p>{@link #cleanupOrphans}는 {@code attachments} 행을 기준으로 돌기 때문에, 대화 삭제 시
+	 * cascade 로 행이 먼저 사라진 뒤 파일 삭제가 실패한 경우를 <b>구조적으로 볼 수 없음</b>. 그 파일은
+	 * 종전에 경고 로그만 남기고 영구 잔류했음(2026-07-28 결정으로 이 패스를 넣음).
+	 *
+	 * <p>유예는 행 기준 회수와 같은 규칙임 - {@value #MIN_ORPHAN_AGE_MINUTES}분보다 최근에 <b>수정된</b>
+	 * 파일은 어떤 cutoff 로도 지우지 않음. 업로드 직후 아직 행이 커밋되기 전인 파일을 지우지 않으려는 것임.
+	 *
+	 * <p><b>참조 목록을 통째로 읽음</b> - 단일 인스턴스·소규모 전제라 한 번에 담음. 첨부가 많아지면
+	 * 경로별 존재 질의나 페이지 단위로 바꿔야 함(R-6과 같은 갈래).
+	 */
+	public int cleanupUnreferencedFiles(OffsetDateTime cutoff) {
+		OffsetDateTime floor = OffsetDateTime.now().minusMinutes(MIN_ORPHAN_AGE_MINUTES);
+		Instant effective = (cutoff.isAfter(floor) ? floor : cutoff).toInstant();
+
+		Set<String> referenced = new HashSet<>(attachmentMapper.findAllStoragePaths());
+		int removed = 0;
+		for (FileStorage.StoredFile file : fileStorage.listAll()) {
+			if (referenced.contains(file.storagePath()) || !file.lastModified().isBefore(effective)) {
+				continue;
+			}
+			fileStorage.delete(file.storagePath());
+			removed++;
+		}
+		return removed;
 	}
 
 	/** 재조회 응답용 - 조회 시점에 새 서명 URL 을 발급함(저장된 URL 재사용 금지, TTL 15분) */
