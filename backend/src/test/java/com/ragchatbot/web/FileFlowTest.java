@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,11 +125,42 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	void orphan_cleanup_removes_unlinked() {
 		String token = signup("file7@b.com");
 		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		// 유예(10분)보다 오래된 고아만 회수 대상이므로 생성 시각을 과거로 옮겨 조건을 만듦
+		jdbc.update("update attachments set created_at = now() - interval '2 hours' where id = ?", idOf(url));
 
-		int removed = fileService.cleanupOrphans(OffsetDateTime.now().plusMinutes(1));
+		int removed = fileService.cleanupOrphans(OffsetDateTime.now());
 		assertThat(removed).isGreaterThanOrEqualTo(1);
 
 		var served = rest.getForEntity(url, Map.class);
 		assertThat(served.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	/**
+	 * cutoff 클램프 - 미래 cutoff 를 줘도 방금 올린 첨부는 남아야 함.
+	 * 인자 하나로 <b>작성 중인 첨부</b>가 사라지면 사용자는 전송 버튼을 누르기도 전에 파일을 잃음.
+	 */
+	@Test
+	void orphan_cleanup_keeps_fresh_upload_even_with_future_cutoff() {
+		String token = signup("file8@b.com");
+		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+
+		fileService.cleanupOrphans(OffsetDateTime.now().plusMinutes(1));
+
+		var served = rest.getForEntity(url, byte[].class);
+		assertThat(served.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+	/** 서빙 응답에 MIME 스니핑 차단 헤더가 붙어야 함 - 업로드한 바이트가 다른 타입으로 해석되는 것을 막음 */
+	@Test
+	void served_file_has_nosniff_header() {
+		String token = signup("file9@b.com");
+		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+
+		var served = rest.getForEntity(url, byte[].class);
+		assertThat(served.getHeaders().getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
+	}
+
+	private static UUID idOf(String url) {
+		return UUID.fromString(url.substring(url.indexOf("/api/files/") + 11, url.indexOf('?')));
 	}
 }

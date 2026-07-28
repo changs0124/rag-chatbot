@@ -33,12 +33,13 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 		assertThat(me.getBody().get("name")).isEqualTo("새이름");
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	void update_password_changes_login() {
 		String token = signup("prof-pw@b.com");
 		var changed = patch(token, "/api/profile/password",
-				Map.of("currentPassword", "password123", "newPassword", "newpassword1"), Void.class);
-		assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+				Map.of("currentPassword", "password123", "newPassword", "newpassword1"), Map.class);
+		assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		var newLogin = rest.postForEntity("/api/auth/login",
 				Map.of("email", "prof-pw@b.com", "password", "newpassword1"), Map.class);
@@ -47,6 +48,30 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 		var oldLogin = rest.postForEntity("/api/auth/login",
 				Map.of("email", "prof-pw@b.com", "password", "password123"), Map.class);
 		assertThat(oldLogin.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	/**
+	 * 변경 응답이 새 토큰을 주고, 그 토큰으로 세션이 이어져야 함.
+	 *
+	 * <p>변경 시각 이전 토큰이 전부 무효가 되면서 <b>변경을 수행한 본인도 로그아웃</b>되던 회귀를 막음 -
+	 * "변경했습니다"를 띄운 직후 다음 요청부터 401 이었음(재리뷰 지적 1).
+	 */
+	@SuppressWarnings("rawtypes")
+	@Test
+	void update_password_returns_usable_token() {
+		String oldToken = signup("prof-pw3@b.com");
+		var changed = patch(oldToken, "/api/profile/password",
+				Map.of("currentPassword", "password123", "newPassword", "newpassword1"), Map.class);
+		assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		// 같은 초에 발급되면 클레임이 모두 같아 문자열까지 동일할 수 있음 - "다른 값"이 아니라
+		// **쓸 수 있는 값**인지가 이 테스트의 요지임
+		String newToken = (String) changed.getBody().get("token");
+		assertThat(newToken).isNotBlank();
+
+		var withNew = rest.exchange("/api/profile", HttpMethod.GET, new HttpEntity<>(bearer(newToken)), Map.class);
+		assertThat(withNew.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(withNew.getBody().get("email")).isEqualTo("prof-pw3@b.com");
 	}
 
 	@Test

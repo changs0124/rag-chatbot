@@ -18,14 +18,10 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(prefix = "app", name = "mode", havingValue = "mock", matchIfMissing = true)
 public class OpenAiMockService implements OpenAiService {
 
-	/** 무자료 규정 접두(P-8) */
-	/**
-	 * 무자료는 **텍스트 접두가 아니라 플래그**로 알림(2026-07-28 결정).
-	 * 라이브는 인용 0건 여부를 스트림이 끝나야 알 수 있어 이미 흘려보낸 토큰 앞에 접두를 붙일 수 없음 -
-	 * 접두를 유지하면 화면(접두 없음)과 재조회(접두 있음)가 어긋남(Phase 4 리뷰 H4-1).
-	 * 판정 규칙은 Mock·Real 공통으로 {@code citations.isEmpty()} 하나임(P-8).
-	 */
-	public static final boolean NO_SOURCE_IS_FLAG_ONLY = true;
+	// 무자료는 **텍스트 접두가 아니라 플래그**로 알림(2026-07-28 결정).
+	// 라이브는 인용 0건 여부를 스트림이 끝나야 알 수 있어 이미 흘려보낸 토큰 앞에 접두를 붙일 수 없음 -
+	// 접두를 유지하면 화면(접두 없음)과 재조회(접두 있음)가 어긋남(Phase 4 리뷰 H4-1).
+	// 판정 규칙은 Mock·Real 공통으로 citations.isEmpty() 하나임(P-8).
 
 	/** 목업 고정 코퍼스 키워드 */
 	private static final List<String> CORPUS_KEYWORDS = List.of("환불", "배송", "정책", "가격", "이용", "약관");

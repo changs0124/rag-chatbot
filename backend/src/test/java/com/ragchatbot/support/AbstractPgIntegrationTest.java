@@ -20,8 +20,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
+		// app.mode 는 기본값이 없어졌으므로 테스트도 명시해야 뜸(AC-18, AppModeGuard)
+		"app.mode=mock",
 		"app.jwt.secret=test-secret-please-change-0123456789abcdef",
 		"app.ratelimit.chat-per-minute=5",
+		"app.ratelimit.login-per-minute=3",
 		"app.mock.token-delay-ms=0" })
 public abstract class AbstractPgIntegrationTest {
 

@@ -179,7 +179,26 @@ export function useChat() {
       } catch {
         // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지). 중단·절단 모두 단계는 즉시 비움(AC-23)
         clearStages()
-        patch((m) => ({ ...m, status: controller.signal.aborted ? 'complete' : 'error' }))
+        if (controller.signal.aborted) {
+          // 받은 것이 없으면 빈 버블을 남기지 않음 - 서버도 부분 텍스트가 비면 저장하지 않으므로,
+          // 남겨 두면 새로고침에 사라져 화면과 재조회가 어긋남(2026-07-28 중단 상태 정책 결정)
+          // 단 onDone 이 이미 확정한 메시지는 서버가 정상 경로로 저장했으므로 지우지 않음(재리뷰 라운드 3 ③)
+          setMessages((prev) =>
+            prev.filter((m) => !(m.id === assistantId && !m.content && m.status !== 'complete')),
+          )
+        }
+        patch((m) =>
+          // onDone 이 이미 확정한 메시지는 건드리지 않음 - 서버는 그 답변을 stopped=false 로 저장했으므로,
+          // 여기서 stopped 를 세우면 화면(배너 없음)과 재조회(배너 있음)가 어긋남(재리뷰 라운드 2 N-4)
+          m.status === 'complete'
+            ? m
+            : {
+                ...m,
+                status: controller.signal.aborted ? 'complete' : 'error',
+                // 서버 저장분과 같은 표시 - 중단은 출처 판정 전에 끝나므로 무자료 배너를 붙이면 안 됨
+                stopped: controller.signal.aborted,
+              },
+        )
         if (isNew) refreshConversations()
       } finally {
         // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(advanceStage)

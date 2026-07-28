@@ -198,7 +198,7 @@ public class OpenAiRealService implements OpenAiService {
 				}
 			}
 		} catch (RuntimeException e) {
-			throw e; // 중단 신호를 그대로 전파(ChatService가 error 상태로 저장)
+			throw e; // 중단 신호를 그대로 전파(ChatService가 중단인지 오류인지 구분해 저장)
 		} catch (Exception e) {
 			throw new IllegalStateException("OpenAI 스트림 읽기 오류", e);
 		}

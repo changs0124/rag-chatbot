@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import { useTheme } from '../theme/ThemeContext'
-import { ApiError } from '../lib/api'
+import { ApiError, setToken } from '../lib/api'
 import { updateName, updatePassword, updateTheme } from '../lib/endpoints'
 import type { Theme } from '../lib/types'
 
@@ -43,7 +43,11 @@ export default function MyPage() {
 
   async function savePassword() {
     try {
-      await updatePassword(currentPassword, newPassword)
+      // 서버가 변경 시각 이전 토큰을 전부 무효화함 - 새 토큰으로 갈아 끼우지 않으면
+      // "변경했습니다"를 띄운 직후부터 모든 요청이 401 이 됨
+      const res = await updatePassword(currentPassword, newPassword)
+      setToken(res.token)
+      setUser(res.user)
       setCurrentPassword('')
       setNewPassword('')
       flash('비밀번호를 변경했습니다')
