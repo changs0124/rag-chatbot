@@ -2,7 +2,12 @@ package com.ragchatbot.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,6 +35,9 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 
 	@Autowired
 	private FileAccessTokenService fileTokenService;
+
+	@Autowired
+	private com.ragchatbot.storage.FileStorage fileStorage;
 
 	// 유효 PNG 매직바이트(89 50 4E 47 0D 0A 1A 0A) + 패딩
 	private static final byte[] PNG = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
@@ -204,6 +212,52 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 		assertThat(served.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
+	/**
+	 * 대화 삭제 시 cascade 로 행이 먼저 사라진 뒤 파일 삭제가 실패하면, 행 기준 회수는 그 파일을
+	 * <b>구조적으로 볼 수 없음</b>. 저장소 스캔 패스가 그 잔류를 지워야 함(2026-07-28 결정).
+	 */
+	@Test
+	void unreferenced_old_file_is_removed_by_scan() throws Exception {
+		String token = signup("scan-a@b.com");
+		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		UUID id = idOf(url);
+		Path file = pathOf(id);
+
+		jdbc.update("delete from attachments where id = ?", id); // cascade 로 행만 사라진 상태
+		age(file); // 유예(10분)보다 오래된 것만 대상
+
+		assertThat(Files.exists(file)).isTrue();
+		assertThat(fileService.cleanupUnreferencedFiles(OffsetDateTime.now())).isGreaterThanOrEqualTo(1);
+		assertThat(Files.exists(file)).isFalse();
+	}
+
+	/** 행이 살아 있는 파일은 아무리 오래돼도 건드리지 않음 - 이게 깨지면 정상 첨부가 사라짐 */
+	@Test
+	void referenced_file_is_kept_by_scan() throws Exception {
+		String token = signup("scan-b@b.com");
+		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		Path file = pathOf(idOf(url));
+		age(file);
+
+		fileService.cleanupUnreferencedFiles(OffsetDateTime.now());
+
+		assertThat(Files.exists(file)).isTrue();
+	}
+
+	/** 방금 올라온 파일은 행이 아직 없어도 유예로 보호함 - 업로드 도중 지워지면 안 됨 */
+	@Test
+	void fresh_unreferenced_file_is_kept_by_scan() {
+		String token = signup("scan-c@b.com");
+		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		UUID id = idOf(url);
+		Path file = pathOf(id);
+		jdbc.update("delete from attachments where id = ?", id);
+
+		fileService.cleanupUnreferencedFiles(OffsetDateTime.now());
+
+		assertThat(Files.exists(file)).isTrue();
+	}
+
 	/** 서빙 응답에 MIME 스니핑 차단 헤더가 붙어야 함 - 업로드한 바이트가 다른 타입으로 해석되는 것을 막음 */
 	@Test
 	void served_file_has_nosniff_header() {
@@ -220,5 +274,21 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 
 	private UUID userIdOf(String email) {
 		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
+	}
+
+	/** 첨부 id → 실제 파일 경로(행이 지워지기 전에 뽑아 둘 것) */
+	private Path pathOf(UUID attachmentId) {
+		String storagePath = jdbc.queryForObject(
+				"select storage_path from attachments where id = ?", String.class, attachmentId);
+		try {
+			return fileStorage.load(storagePath).getFile().toPath();
+		} catch (Exception e) {
+			throw new IllegalStateException("파일 경로 확인 실패: " + storagePath, e);
+		}
+	}
+
+	/** 유예 밖으로 밀어냄 - 수정 시각 기준이라 파일 자체를 늙힘 */
+	private static void age(Path file) throws Exception {
+		Files.setLastModifiedTime(file, FileTime.from(Instant.now().minus(2, ChronoUnit.HOURS)));
 	}
 }
