@@ -1,12 +1,16 @@
 package com.ragchatbot.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -24,6 +28,7 @@ import com.ragchatbot.openai.OpenAiService.AttachmentRef;
 import com.ragchatbot.openai.OpenAiService.ChatCompletion;
 import com.ragchatbot.openai.OpenAiService.ChatInput;
 import com.ragchatbot.openai.OpenAiService.Stage;
+import com.ragchatbot.openai.OpenAiService.Turn;
 import com.ragchatbot.web.dto.ChatDtos.ChatRequest;
 
 /**
@@ -35,22 +40,29 @@ import com.ragchatbot.web.dto.ChatDtos.ChatRequest;
 @Service
 public class ChatService {
 
+	/** 과거 턴의 이미지 자리표시자 - 이미지를 다시 보내지 않아도 "그때 첨부가 있었다"는 사실은 남김 */
+	static final String IMAGE_PLACEHOLDER = "(이미지 첨부)";
+
 	private final ConversationMapper conversationMapper;
 	private final MessageMapper messageMapper;
 	private final AttachmentMapper attachmentMapper;
 	private final OpenAiService openAiService;
 	private final ChatPersistenceService chatPersistence;
+	private final int historyTokenBudget;
 
 	public ChatService(ConversationMapper conversationMapper, MessageMapper messageMapper,
-			AttachmentMapper attachmentMapper, OpenAiService openAiService, ChatPersistenceService chatPersistence) {
+			AttachmentMapper attachmentMapper, OpenAiService openAiService, ChatPersistenceService chatPersistence,
+			@Value("${app.chat.history-token-budget:6000}") int historyTokenBudget) {
 		this.conversationMapper = conversationMapper;
 		this.messageMapper = messageMapper;
 		this.attachmentMapper = attachmentMapper;
 		this.openAiService = openAiService;
 		this.chatPersistence = chatPersistence;
+		this.historyTokenBudget = historyTokenBudget;
 	}
 
-	public record PreparedChat(UUID conversationId, String message, List<AttachmentRef> refs, String vectorStoreId) {
+	public record PreparedChat(UUID conversationId, String message, List<AttachmentRef> refs, String vectorStoreId,
+			List<Turn> history) {
 	}
 
 	/** 동기 준비 - 소유권/검증 + 사용자 메시지 저장 + 첨부 연결 */
@@ -72,12 +84,79 @@ public class ChatService {
 			refs.add(new AttachmentRef(att.fileType(), att.storagePath(), att.openaiFileId()));
 		}
 
+		// 이력은 **새 사용자 메시지를 넣기 전에** 읽음 - 넣고 읽으면 방금 보낸 것이 이력에 섞여 중복됨
+		List<Turn> history = buildHistory(messageMapper.listByConversation(conversation.id()),
+				messageIdsWithAttachments(conversation.id()), historyTokenBudget);
+
 		UUID userMsgId = UUID.randomUUID();
 		messageMapper.insert(new Message(userMsgId, conversation.id(), "user", message, "complete", false, null));
 		for (UUID attId : attachmentIds) {
 			attachmentMapper.linkToMessage(attId, userMsgId, userId);
 		}
-		return new PreparedChat(conversation.id(), message, refs, conversation.vectorStoreId());
+		return new PreparedChat(conversation.id(), message, refs, conversation.vectorStoreId(), history);
+	}
+
+	private Set<UUID> messageIdsWithAttachments(UUID conversationId) {
+		Set<UUID> ids = new HashSet<>();
+		for (Attachment a : attachmentMapper.findByConversation(conversationId)) {
+			ids.add(a.messageId());
+		}
+		return ids;
+	}
+
+	/**
+	 * 이력을 <b>토큰 예산</b> 안에서 최신부터 채운 뒤 시간순으로 돌려줌.
+	 *
+	 * <p>개수가 아니라 예산으로 자르는 이유 : 메시지 길이 편차가 커서 "최근 N개"는 비용을 예측하지 못함.
+	 * "네" 한 글자도 1개고 3000자 붙여넣기도 1개라, 같은 N 이 어떤 대화에서는 수백 토큰이고
+	 * 어떤 대화에서는 수만 토큰이 됨.
+	 *
+	 * <p>예산을 넘기면 <b>거기서 멈춤(break)</b> - 중간을 건너뛰고 더 오래된 것을 넣으면 대화가
+	 * 끊긴 채로 전달돼 모델이 없는 맥락을 지어냄.
+	 *
+	 * <p>{@code status=error} 는 답변이 아니므로 제외함. 반대로 {@code stopped=true}(사용자가 중단)는
+	 * 사용자가 실제로 화면에서 본 내용이라 포함함.
+	 */
+	static List<Turn> buildHistory(List<Message> messages, Set<UUID> withAttachments, int tokenBudget) {
+		List<Turn> newestFirst = new ArrayList<>();
+		int used = 0;
+		for (int i = messages.size() - 1; i >= 0; i--) {
+			Message m = messages.get(i);
+			if ("error".equals(m.status())) {
+				continue;
+			}
+			String text = historyText(m, withAttachments.contains(m.id()));
+			if (text.isEmpty()) {
+				continue;
+			}
+			int cost = estimateTokens(text);
+			if (used + cost > tokenBudget) {
+				break;
+			}
+			used += cost;
+			newestFirst.add(new Turn(m.role(), text));
+		}
+		Collections.reverse(newestFirst);
+		return List.copyOf(newestFirst);
+	}
+
+	private static String historyText(Message m, boolean hadAttachment) {
+		String content = m.content() == null ? "" : m.content().trim();
+		if (!hadAttachment) {
+			return content;
+		}
+		// 이미지 자체는 다시 보내지 않음. 텍스트가 비어 있던 턴(이미지만 보낸 경우)도 흔적을 남겨야
+		// 뒤 턴의 "그 사진"이 무엇을 가리키는지 모델이 알 수 있음
+		return content.isEmpty() ? IMAGE_PLACEHOLDER : content + " " + IMAGE_PLACEHOLDER;
+	}
+
+	/**
+	 * 토큰 수 근사. 정확한 토크나이저를 붙이지 않는 이유는 이 값이 <b>예산 가드</b>일 뿐 하드 한도가
+	 * 아니기 때문임. 한국어 기준(문자 1.5개당 1토큰)이라 영어에서는 과대평가되는데, 과대평가는 이력이
+	 * 짧아지는 방향이라 비용·컨텍스트 한도 어느 쪽으로도 안전한 쪽으로 틀림.
+	 */
+	private static int estimateTokens(String text) {
+		return (int) Math.ceil(text.length() / 1.5);
 	}
 
 	/** 비동기 스트리밍 - SSE 이벤트 전송 + 어시스턴트 메시지/출처 저장(원자적) */
@@ -101,7 +180,8 @@ public class ChatService {
 			onStage.accept(Stage.ANALYZING);
 
 			ChatCompletion completion = openAiService.streamChat(
-					new ChatInput(prepared.message(), prepared.refs(), prepared.vectorStoreId()), token -> {
+					new ChatInput(prepared.message(), prepared.refs(), prepared.vectorStoreId(), prepared.history()),
+					token -> {
 						firstTokenSeen[0] = true;
 						// 보낸 뒤에 담음 - 중단 시 저장분이 "화면에 닿은 만큼"과 같아짐(전송 실패한 토큰은 남기지 않음)
 						sendQuietly(emitter, "token", Map.of("delta", token));

@@ -39,8 +39,8 @@ public class ProfileService {
 		return toResponse(require(userId));
 	}
 
+	/** 갱신 후 한 번만 읽음 - 없는 사용자면 갱신이 0행이고 그 뒤 조회가 404 를 냄(선행 조회가 불필요) */
 	public MeResponse updateName(UUID userId, String name) {
-		require(userId);
 		userMapper.updateName(userId, name.trim());
 		return toResponse(require(userId));
 	}
@@ -71,7 +71,6 @@ public class ProfileService {
 	}
 
 	public MeResponse updateTheme(UUID userId, String theme) {
-		require(userId);
 		if (!THEMES.contains(theme)) {
 			throw new BadRequestException("허용되지 않은 테마: " + theme);
 		}

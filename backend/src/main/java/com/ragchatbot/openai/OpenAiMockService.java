@@ -38,10 +38,10 @@ public class OpenAiMockService implements OpenAiService {
 	/** 토큰당 지연(ms) - 실제 스트리밍처럼 타이핑 효과를 보이게 함. 테스트는 0 */
 	private final long tokenDelayMs;
 
-	// 기록(테스트 검증용)
-	private final AtomicInteger streamChatCalls = new AtomicInteger();
+	// 기록(테스트 검증용) - 목 응답 자체는 이력과 무관하지만, 이력이 실제로 전달됐는지는 여기서 확인함
 	private final AtomicInteger deleteResourcesCalls = new AtomicInteger();
 	private volatile int lastAttachmentCount = 0;
+	private volatile List<Turn> lastHistory = List.of();
 
 	public OpenAiMockService(@Value("${app.mock.token-delay-ms:45}") long tokenDelayMs) {
 		this.tokenDelayMs = tokenDelayMs;
@@ -54,8 +54,9 @@ public class OpenAiMockService implements OpenAiService {
 
 	@Override
 	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, Consumer<Stage> onStage) {
-		streamChatCalls.incrementAndGet();
 		lastAttachmentCount = input.attachments() == null ? 0 : input.attachments().size();
+		// 목 응답은 고정 코퍼스 키워드로만 정해짐(이력에 좌우되지 않음). 전달 여부만 기록해 둠
+		lastHistory = input.history() == null ? List.of() : input.history();
 
 		boolean hasImage = input.attachments() != null
 				&& input.attachments().stream().anyMatch(a -> "image".equals(a.fileType()));
@@ -105,15 +106,16 @@ public class OpenAiMockService implements OpenAiService {
 		// 목업 : 실제 삭제 없이 호출만 기록
 	}
 
-	public int streamChatCalls() {
-		return streamChatCalls.get();
-	}
-
 	public int deleteResourcesCalls() {
 		return deleteResourcesCalls.get();
 	}
 
 	public int lastAttachmentCount() {
 		return lastAttachmentCount;
+	}
+
+	/** 직전 호출에 전달된 이전 턴들(오래된 것부터). 이력이 실제로 붙었는지 검증용 */
+	public List<Turn> lastHistory() {
+		return lastHistory;
 	}
 }

@@ -13,5 +13,6 @@ public interface CitationMapper {
 
 	void insert(Citation citation);
 
-	List<Citation> findByMessage(@Param("messageId") UUID messageId);
+	/** 대화 전체의 출처를 한 번에 읽음(메시지별 조회로 돌면 메시지 수만큼 질의가 나감) */
+	List<Citation> findByConversation(@Param("conversationId") UUID conversationId);
 }

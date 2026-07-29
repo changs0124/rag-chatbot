@@ -25,7 +25,12 @@ import org.testcontainers.containers.PostgreSQLContainer;
 		"app.jwt.secret=test-secret-please-change-0123456789abcdef",
 		"app.ratelimit.chat-per-minute=5",
 		"app.ratelimit.login-per-minute=3",
-		"app.mock.token-delay-ms=0" })
+		"app.mock.token-delay-ms=0",
+		// 고아 회수 크론을 끔("-" = Scheduled.CRON_DISABLED). @EnableScheduling 이 켜져 있어
+		// 그냥 두면 테스트 중 매시 정각에 실제로 발화함 - 회수 대상은 DB 행과 **공유 저장소 디렉터리**라,
+		// 정각을 넘겨 도는 회차에서만 FileFlowTest 의 늙힌 파일(2시간 전)을 스케줄러가 먼저 지우거나
+		// Files.walk 가 동시 삭제와 겹쳐 터졌음. 스케줄러 자체 검증은 OrphanCleanupSchedulerTest 가 함
+		"app.file.orphan-cleanup-cron=-" })
 public abstract class AbstractPgIntegrationTest {
 
 	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");

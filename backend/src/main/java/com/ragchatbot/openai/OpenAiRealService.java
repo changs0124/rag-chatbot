@@ -3,7 +3,6 @@ package com.ragchatbot.openai;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -126,20 +125,38 @@ public class OpenAiRealService implements OpenAiService {
 				});
 	}
 
-	/** 이미지 첨부가 있으면 비전 입력(구조화 content), 없으면 단순 문자열 입력 */
+	/**
+	 * 입력 구성. 이력도 이미지도 없으면 문자열 하나(가장 단순한 형태), 그 외에는 메시지 배열.
+	 *
+	 * <p>이력 턴은 <b>문자열 content</b> 로만 보냄 - 과거 이미지는 재전송하지 않기로 했고
+	 * (턴이 쌓일수록 비용이 폭증함), 자리표시자는 ChatService 가 이미 텍스트에 넣어 둠.
+	 * 구조화 content(비전 입력)는 <b>이번 턴에만</b> 씀.
+	 */
 	private Object buildInput(ChatInput input) {
 		String text = input.userMessage() == null ? "" : input.userMessage();
 		List<AttachmentRef> images = input.attachments() == null ? List.of()
 				: input.attachments().stream().filter(a -> "image".equals(a.fileType())).toList();
-		if (images.isEmpty()) {
+		List<Turn> history = input.history() == null ? List.of() : input.history();
+
+		if (history.isEmpty() && images.isEmpty()) {
 			return text;
 		}
-		List<Map<String, Object>> content = new ArrayList<>();
-		content.add(Map.of("type", "input_text", "text", text));
-		for (AttachmentRef img : images) {
-			content.add(Map.of("type", "input_image", "image_url", toDataUrl(img)));
+
+		List<Map<String, Object>> items = new ArrayList<>();
+		for (Turn turn : history) {
+			items.add(Map.of("role", turn.role(), "content", turn.content()));
 		}
-		return List.of(Map.of("role", "user", "content", content));
+		if (images.isEmpty()) {
+			items.add(Map.of("role", "user", "content", text));
+		} else {
+			List<Map<String, Object>> content = new ArrayList<>();
+			content.add(Map.of("type", "input_text", "text", text));
+			for (AttachmentRef img : images) {
+				content.add(Map.of("type", "input_image", "image_url", toDataUrl(img)));
+			}
+			items.add(Map.of("role", "user", "content", content));
+		}
+		return items;
 	}
 
 	/** 로컬 디스크 이미지를 data URL(base64)로. 문서는 공용 Store에서만 검색되므로 인라인하지 않음 */
@@ -290,7 +307,9 @@ public class OpenAiRealService implements OpenAiService {
 
 	private void deleteQuietly(String path, String kind, String id) {
 		try {
-			client.delete().uri(URI.create("https://api.openai.com/v1" + path)).retrieve().toBodilessEntity();
+			// 상대 경로여야 빌더의 baseUrl 이 적용됨 - 절대 URL 을 박으면 app.openai.base-url 이
+			// 이 경로에서만 죽어, 스파이크·대체 엔드포인트로 돌려도 삭제만 실 API 로 나감
+			client.delete().uri(path).retrieve().toBodilessEntity();
 		} catch (Exception e) {
 			// 정리 실패는 삭제 흐름을 막지 않음(고아 리소스는 별도 정리)
 			log.warn("openai {} 삭제 실패 {}: {}", kind, id, e.getMessage());

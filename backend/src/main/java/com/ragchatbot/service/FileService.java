@@ -31,7 +31,7 @@ public class FileService {
 	private static final long MB = 1024 * 1024;
 
 	/** 고아 회수의 최소 유예 - 이보다 최근에 만들어진 첨부는 어떤 cutoff 를 줘도 지우지 않음 */
-	static final int MIN_ORPHAN_AGE_MINUTES = 10;
+	private static final int MIN_ORPHAN_AGE_MINUTES = 10;
 
 	/** webp 컨테이너의 오프셋 8에 있는 "WEBP" 마커 */
 	private static final byte[] WEBP_MARKER = { 0x57, 0x45, 0x42, 0x50 };

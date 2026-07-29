@@ -52,13 +52,16 @@ app:
     max-concurrent-streams: ${CHAT_MAX_CONCURRENT_STREAMS:8}
     # 사용자별 동시 스트림. 화면이 한 번에 하나만 쓰므로 1 - 한 사용자가 풀을 독점하지 못하게 함
     max-concurrent-per-user: ${CHAT_MAX_CONCURRENT_PER_USER:1}
+    # 모델에 함께 보낼 이전 대화 이력의 토큰 예산. 개수가 아니라 예산인 이유는 메시지 길이 편차가
+    # 커서 "최근 N개"가 턴당 비용을 예측하지 못하기 때문임. 과거 이미지는 재전송하지 않음
+    history-token-budget: ${CHAT_HISTORY_TOKEN_BUDGET:6000}
   ratelimit:
     # 사용자별 분당 채팅 상한(비용 통제, D-1). 단일 인스턴스 전제(R-6, 미결)
     chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}
     # 계정별 분당 로그인 시도 상한(대입 지연). 키는 정규화된 이메일 - IP 기준이 아님
     login-per-minute: ${RATELIMIT_LOGIN_PER_MINUTE:10}
     # 카운터 키 총량 상한(2026-07-28 결정). 넘으면 가장 오래 안 쓴 키부터 축출해 메모리를 유계로 둠.
-    # 축출은 곧 카운터 리셋이라는 약화가 따름 - 사유는 docs/02_운영.md 처리 이력
+    # 축출은 곧 카운터 리셋이라는 약화가 따름 - 사유는 docs/02_architecture/overview.md 「알려진 제약」
     max-keys: ${RATELIMIT_MAX_KEYS:10000}
   file:
     # 파일 저장 루트(로컬/서버 디스크, P-7). S3 교체 시 FileStorage 구현만 교체

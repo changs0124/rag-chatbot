@@ -23,7 +23,7 @@ import com.ragchatbot.error.ApiExceptions.RateLimitException;
  *
  * <p><b>대신 축출은 곧 카운터 리셋임</b> - 서로 다른 이메일을 상한 이상 쏟아부으면 남의 로그인 실패
  * 카운터를 밀어낼 수 있음. 로그인 상한은 대입 <b>지연</b> 장치이지 차단 장치가 아니므로 감수한 것이며,
- * 이 약화는 {@code docs/02_운영.md} 처리 이력에 적혀 있음.
+ * 이 약화는 {@code docs/02_architecture/overview.md} 「알려진 제약」에 적혀 있음.
  *
  * <p>맵 접근을 전부 {@code synchronized} 로 감쌈 - LRU 축출은 원자 구간이 필요하고, 종전 구조의
  * <b>락 밖 읽기 가시성</b> 문제와 <b>check-then-act 경합</b>도 함께 사라짐.
