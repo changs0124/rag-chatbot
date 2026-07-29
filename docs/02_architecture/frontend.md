@@ -89,10 +89,22 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts`, `LoginPage.test.tsx`). 실행은 `npm test`.
 현재 8개 파일 32 케이스이며 하한은 `scripts/case-floors.env` 가 잠근다.
 
-## 배포 (Vercel 전제)
+## 배포 (Vercel)
+
+현재 배포 : https://rag-chatbot-jade-pi.vercel.app (프로젝트 `rag-chatbot`, 스코프 `changs0124s-projects`)
 
 `frontend/vercel.json` 이 빌드 명령·출력 디렉터리와 **SPA 리라이트**를 고정한다. 리라이트가 없으면
 `/me` 를 직접 열거나 새로고침할 때 404 가 난다 — 라우팅을 `BrowserRouter` 가 하기 때문이다.
+
+### GitHub 연동은 아직 수동 단계가 남아 있음
+
+첫 배포는 파일을 직접 올려 만들었다. **저장소가 연결돼 있지 않아 푸시해도 자동 배포되지 않는다.**
+연결하려면 Vercel 대시보드에서 :
+
+1. 프로젝트 → Settings → Git → Connect Git Repository → `changs0124/rag-chatbot`
+   (private 저장소이므로 Vercel GitHub App 설치 승인이 필요함)
+2. **Root Directory 를 `frontend` 로 지정** — 모노레포라 이걸 빼면 루트에서 빌드를 시도해 실패한다
+3. 연결 후 첫 배포부터는 저장소의 `package-lock.json` 으로 빌드되므로 CI 와 같은 의존성이 잡힌다
 
 배포 전 반드시 할 것 :
 
