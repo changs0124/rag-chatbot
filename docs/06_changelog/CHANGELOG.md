@@ -11,6 +11,9 @@
 - 배포 빌드에서 `VITE_API_BASE_URL` 누락 시 콘솔 경고
 
 ### Fixed
+- 시각 의존 테스트 3건 — CI(Linux)에서 드러남
+  - `OrphanCleanupSchedulerTest` 가 두 `now()` 가 나노초까지 같을 때만 통과하는 단언을 씀. Windows 는 시계 해상도가 거칠어 우연히 통과했음
+  - `ChatFlowTest`·`AuthFlowTest` 의 레이트리밋 검사가 분 경계에 걸치면 카운터 리셋으로 429가 나지 않았음(고정 윈도우). 상한의 두 배 넘게 보내도록 수정
 - 통합 테스트가 고아 회수 크론을 끄지 않아 매시 정각에 실제로 발화하던 문제 — `app.file.orphan-cleanup-cron=-`. 스케줄러는 `OrphanCleanupSchedulerTest` 로 결정적 검증
 - 쓰지 않는 `UserDetailsServiceAutoConfiguration` 을 제외 — 운영 로그에 "Using generated security password" 가 남던 것을 없앰
 - `README.md` 의 무자료 표기 설명이 코드와 어긋나 있던 것(텍스트 접두 → 출처 0건 파생 표시)

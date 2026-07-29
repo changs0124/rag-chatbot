@@ -229,18 +229,30 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 	}
 
+	/**
+	 * 상한 5/분(테스트 프로퍼티).
+	 *
+	 * <p><b>고정 윈도우라 요청이 분 경계를 걸치면 카운터가 중간에 리셋됨.</b> 종전에는 6회만 보냈는데,
+	 * 5회가 이전 분에 1회가 새 분에 떨어지면 어느 창도 상한을 넘지 못해 429가 한 번도 안 났음
+	 * (2026-07-29 CI 07:05:00 경계에서 실제로 실패). 시각에 따라 갈리는 검사는 게이트가 되지 못함.
+	 *
+	 * <p>그래서 <b>상한의 두 배 + 1</b>회를 보냄 - 경계를 한 번 넘어 최악으로 갈려도(5/6) 한쪽 창에는
+	 * 반드시 상한 초과분이 쌓임. 요청이 1초 안에 끝나므로 경계를 두 번 넘을 일은 없음.
+	 */
 	@Test
 	void rate_limit_returns_429_when_exceeded() {
 		String token = signup("chat-rl@b.com");
 		String convId = createConversation(token);
-		// 상한 5/분(테스트 프로퍼티). 6회 시도 시 마지막은 429
+		int perMinute = 5;
+		int attempts = perMinute * 2 + 1;
+
 		boolean saw429 = false;
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < attempts; i++) {
 			var res = chat(token, Map.of("conversationId", convId, "message", "가격 문의 " + i));
 			if (res.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
 				saw429 = true;
 			}
 		}
-		assertThat(saw429).as("6회 중 최소 1회는 429여야 함").isTrue();
+		assertThat(saw429).as("%d회 중 최소 1회는 429여야 함", attempts).isTrue();
 	}
 }

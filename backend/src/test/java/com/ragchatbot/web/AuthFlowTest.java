@@ -168,14 +168,30 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 	}
 
-	/** 로그인 대입 상한 - 테스트 프로퍼티로 분당 3회 */
+	/**
+	 * 로그인 대입 상한 - 테스트 프로퍼티로 분당 3회.
+	 *
+	 * <p><b>고정 윈도우라 분 경계에서 카운터가 리셋됨.</b> 종전에는 정확히 3회 틀린 뒤 4번째를 검사했는데,
+	 * 그 사이 경계가 굴러가면 4번째는 새 창의 첫 시도라 통과했음(ChatFlowTest 와 같은 부류).
+	 *
+	 * <p>그래서 <b>실제로 429가 관측될 때까지</b> 틀린 시도를 보냄 - 429를 받았다는 것이 곧 지금 창에
+	 * 상한만큼 쌓였다는 증거임. 그 직후에 맞는 비밀번호를 넣어 <b>비밀번호가 맞아도 막히는지</b>를 검사함.
+	 */
 	@Test
 	void login_attempts_are_rate_limited() {
 		rest.postForEntity(SIGNUP, new Signup("auth-rl@b.com", "password123", "이름"), Map.class);
-		for (int i = 0; i < 3; i++) {
-			assertThat(rest.postForEntity(LOGIN, new Login("auth-rl@b.com", "nope-wrong"), Map.class)
-					.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+		int perMinute = 3;
+
+		boolean blocked = false;
+		for (int i = 0; i < perMinute * 2 + 1 && !blocked; i++) {
+			var wrong = rest.postForEntity(LOGIN, new Login("auth-rl@b.com", "nope-wrong"), Map.class);
+			assertThat(wrong.getStatusCode())
+					.as("틀린 비밀번호는 401 이거나, 상한을 넘었으면 429")
+					.isIn(HttpStatus.UNAUTHORIZED, HttpStatus.TOO_MANY_REQUESTS);
+			blocked = wrong.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS;
 		}
+		assertThat(blocked).as("틀린 시도를 반복하면 상한에 걸려야 함").isTrue();
+
 		// 한도를 넘으면 비밀번호가 맞아도 통과시키지 않음
 		var over = rest.postForEntity(LOGIN, new Login("auth-rl@b.com", "password123"), Map.class);
 		assertThat(over.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
