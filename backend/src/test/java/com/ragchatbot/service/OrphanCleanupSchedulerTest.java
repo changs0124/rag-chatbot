@@ -45,7 +45,13 @@ class OrphanCleanupSchedulerTest {
 		verify(fileService).cleanupUnreferencedFiles(any());
 	}
 
-	/** cutoff 는 "지금부터 ttl 분 전"이어야 함 - 미래나 현재를 넘기면 작성 중인 첨부가 회수 대상이 됨 */
+	/**
+	 * cutoff 는 "지금부터 ttl 분 전"이어야 함 - 미래나 현재를 넘기면 작성 중인 첨부가 회수 대상이 됨.
+	 *
+	 * <p>호출 <b>전후로 시각을 재서 그 구간 안</b>인지만 봄. 스케줄러가 자기 {@code now()} 를 따로
+	 * 부르므로 한쪽 기준으로 등호를 걸면 두 {@code now()} 가 나노초까지 같을 때만 통과함 -
+	 * 시계 해상도가 거친 OS 에서는 우연히 통과하고 해상도가 높은 OS 에서는 늘 실패한다.
+	 */
 	@Test
 	void cutoff_is_ttl_minutes_ago() {
 		FileService fileService = mock(FileService.class);
@@ -53,10 +59,9 @@ class OrphanCleanupSchedulerTest {
 
 		new OrphanCleanupScheduler(fileService, 60).cleanup();
 
+		OffsetDateTime after = OffsetDateTime.now();
 		ArgumentCaptor<OffsetDateTime> cutoff = ArgumentCaptor.forClass(OffsetDateTime.class);
 		verify(fileService).cleanupOrphans(cutoff.capture());
-		assertThat(cutoff.getValue())
-				.isBeforeOrEqualTo(before.minusMinutes(60))
-				.isAfter(before.minusMinutes(61));
+		assertThat(cutoff.getValue()).isBetween(before.minusMinutes(60), after.minusMinutes(60));
 	}
 }
