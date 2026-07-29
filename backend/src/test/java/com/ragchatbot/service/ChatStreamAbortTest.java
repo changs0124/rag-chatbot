@@ -92,11 +92,11 @@ class ChatStreamAbortTest {
 	}
 
 	private static PreparedChat prepared() {
-		return new PreparedChat(UUID.randomUUID(), "질문", List.of(), null);
+		return new PreparedChat(UUID.randomUUID(), "질문", List.of(), null, List.of());
 	}
 
 	private static ChatService chatService(OpenAiService openAi, ChatPersistenceService persistence) {
-		return new ChatService(null, null, null, openAi, persistence);
+		return new ChatService(null, null, null, openAi, persistence, 6000);
 	}
 
 	@Test

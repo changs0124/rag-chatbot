@@ -25,8 +25,8 @@ export default function Composer({
   const [files, setFiles] = useState<File[]>([])
   const [showCamera, setShowCamera] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  // 이미지만 받으므로(2026-07-28 범위 축소) "파일"·"사진" 메뉴가 같은 선택기를 엶 - 입력 요소는 하나면 충분함
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const photoInputRef = useRef<HTMLInputElement>(null)
 
   function addFiles(list: FileList | null) {
     if (!list) return
@@ -104,7 +104,7 @@ export default function Composer({
                     label="사진"
                     onClick={() => {
                       setMenuOpen(false)
-                      photoInputRef.current?.click()
+                      fileInputRef.current?.click()
                     }}
                   />
                   <MenuItem
@@ -122,17 +122,6 @@ export default function Composer({
 
           <input
             ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              addFiles(e.target.files)
-              e.target.value = ''
-            }}
-          />
-          <input
-            ref={photoInputRef}
             type="file"
             accept="image/*"
             multiple

@@ -4,13 +4,13 @@
 
 **유형** : 신규 · **규모** : 정식(1주~1개월) · **착수일** : 2026-07-24
 
-이 저장소는 볼트 문서 "프로젝트 진행 가이드"(`10_Dev/Architecture`)의 0-A~8단계를 따라 진행함. 실행 규칙 요약과 게이트 상태는 `docs/00_계획.md`에 있음.
+프로젝트 문서는 `docs/`에 있음. 진입점은 `docs/INDEX.md`.
 
 ## 구조 (모노레포)
 
 - `frontend/` - React + Vite + TypeScript. 반응형 웹(PC + 모바일 브라우저). Claude/GPT 류 채팅 UI
 - `backend/` - Spring Boot + Java 17 + Maven(Wrapper) + MyBatis
-- `docs/` - 계획 · 기술선택 · 운영 · PR 로그 · 런칭 문서
+- `docs/` - 프로젝트 문서(구조 · 컨벤션 · 태스크 · 이슈 · 변경 이력). 진입점은 `docs/INDEX.md`
 
 ## 툴체인 (0-A에서 고정 · 확인일 2026-07-24)
 
@@ -30,9 +30,25 @@
 - 이미지는 GPT-4o 비전으로 전달 + 대화에 저장
 - 사용자별 로그인(자체 이메일/비밀번호) + 마이페이지(이름 · 비밀번호 · 테마 변경)
 - 사용자별 대화 저장/조회
-- 답변에 항상 출처 표기. VectorDB에 없으면 "자료 없음 + 추론" 접두
-- API KEY · VectorDB 미구축 → 인터페이스 완성 + 응답만 목업
+- 답변에 항상 출처 표기. 자료를 못 찾으면 "자료 없음" 을 밝힌 뒤 추론으로 답변
+  (텍스트 접두가 아니라 **출처 0건에서 파생한 표시**임 - 라이브는 인용 유무를 스트림이 끝나야 알 수 있어
+  이미 흘려보낸 토큰 앞에 접두를 붙일 수 없음)
+- API KEY · VectorDB 미구축 → 인터페이스 완성 + 응답만 목업(`APP_MODE=mock`)
+
+## 배포 준비 상태
+
+키·Vector Store·호스트만 채우면 도는 상태로 맞춰 둠. 상세는 `docs/INDEX.md` 「배포 준비 상태」.
+
+| 준비물 | 위치 |
+|--------|------|
+| 프론트(Vercel) | `frontend/vercel.json` — SPA 리라이트 포함 |
+| 백엔드(호스트 무관 컨테이너) | `backend/Dockerfile` — `PORT` 자동 대응 |
+| 환경변수 | `backend/.env.example` · `frontend/.env.example` |
+| DB 스키마 | 기동 시 Flyway 자동 적용 |
+
+배포 시 빠뜨리기 쉬운 두 가지 : 백엔드 `ALLOWED_ORIGINS`(빠뜨리면 CORS 로 전 API 차단),
+프론트 `VITE_API_BASE_URL`(빠뜨리면 번들이 localhost 호출).
 
 ## 현재 상태
 
-- 0-A(저장소 개통) 진행 중. 상세 진행 로그는 `docs/00_계획.md`.
+- 진행 중인 작업은 `docs/04_tasks/current-sprint.md`, 남은 항목은 `docs/04_tasks/backlog.md`.

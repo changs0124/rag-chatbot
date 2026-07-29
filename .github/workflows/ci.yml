@@ -66,15 +66,23 @@ jobs:
         # 스크립트가 스스로 저장소 루트로 이동하므로 frontend/ 에서 실행해도 같음
         run: bash ../scripts/check-case-floor.sh frontend
 
+  docker:
+    name: docker (백엔드 이미지 빌드)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 이미지 빌드(푸시 없음)
+        # 배포 산출물이 조용히 썩는 것을 막음 - pom·소스 구조가 바뀌어 Dockerfile 이 깨지면
+        # 정작 배포하는 날이 아니라 여기서 먼저 드러남
+        run: docker build -t rag-chatbot-backend:ci backend
+
   docs:
-    name: docs (참조 실재 + 계획서 필수 표)
+    name: docs (참조 실재)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: 문서 참조 실재 + 위키링크 검사
         run: bash scripts/check-doc-refs.sh
-      - name: 계획서 필수 표 검사
-        run: bash scripts/check-plan-tables.sh
 
   secrets:
     name: secrets (시크릿 스캔)

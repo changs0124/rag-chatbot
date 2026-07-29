@@ -20,11 +20,12 @@
 		values (#{id}, #{messageId}, #{seq}, #{sourceName}, #{snippet}, #{uri})
 	</insert>
 
-	<select id="findByMessage" resultMap="citationResult">
-		select id, message_id, seq, source_name, snippet, uri, created_at
-		from citations
-		where message_id = #{messageId}
-		order by seq asc
+	<select id="findByConversation" resultMap="citationResult">
+		select c.id, c.message_id, c.seq, c.source_name, c.snippet, c.uri, c.created_at
+		from citations c
+		join messages m on c.message_id = m.id
+		where m.conversation_id = #{conversationId}
+		order by c.message_id, c.seq asc
 	</select>
 
 </mapper>
