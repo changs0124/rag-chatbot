@@ -41,7 +41,7 @@
 
 | 준비물 | 위치 |
 |--------|------|
-| 프론트(Vercel) | `frontend/vercel.json` — SPA 리라이트 포함 |
+| 프론트(Vercel) | `frontend/vercel.json` — SPA 리라이트 포함. 배포 : https://rag-chatbot-jade-pi.vercel.app |
 | 백엔드(호스트 무관 컨테이너) | `backend/Dockerfile` — `PORT` 자동 대응 |
 | 환경변수 | `backend/.env.example` · `frontend/.env.example` |
 | DB 스키마 | 기동 시 Flyway 자동 적용 |
