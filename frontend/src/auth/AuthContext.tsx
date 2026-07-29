@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { api, getToken, setToken } from '../lib/api'
+import { api, getToken, setToken, setUnauthorizedHandler } from '../lib/api'
 import { useTheme } from '../theme/ThemeContext'
 import type { AuthResponse, Me } from '../lib/types'
 
@@ -24,6 +24,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(next)
     setTheme(next.theme) // 계정에 저장된 테마 적용
   }
+
+  // 토큰이 죽으면(만료·비밀번호 변경) 어떤 요청에서든 세션을 비움 - ProtectedRoute 가 로그인으로 보냄
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setToken(null)
+      setUser(null)
+    })
+    return () => setUnauthorizedHandler(null)
+  }, [])
 
   useEffect(() => {
     if (!getToken()) {

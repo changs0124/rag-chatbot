@@ -77,7 +77,7 @@ class OpenAiRealStreamingSpikeTest {
 		List<String> tokens = new ArrayList<>();
 
 		var result = service.streamChat(
-				new ChatInput("질문", List.of(), null),
+				new ChatInput("질문", List.of(), null, List.of()),
 				token -> {
 					tokens.add(token);
 					firstTokenSeen.countDown();

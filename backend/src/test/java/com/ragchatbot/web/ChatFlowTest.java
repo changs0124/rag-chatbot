@@ -82,6 +82,82 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
+	void citations_stay_attached_to_their_own_message() {
+		// 재조회는 대화 전체의 출처를 한 번에 읽어 메시지별로 나눠 담음 - 나누는 규칙이 어긋나면
+		// 출처가 남의 답변에 붙거나 사라짐. 답변이 하나뿐인 테스트로는 그 어긋남이 드러나지 않음
+		String token = signup("chat-cite-group@b.com");
+		String convId = createConversation(token);
+
+		chat(token, Map.of("conversationId", convId, "message", "환불 정책 알려줘")); // 출처 2건
+		chat(token, Map.of("conversationId", convId, "message", "우주의 크기는 얼마나 되나")); // 출처 0건
+
+		var messages = rest.exchange("/api/conversations/" + convId + "/messages", HttpMethod.GET,
+				new HttpEntity<>(bearer(token)), List.class);
+		List<Map<String, Object>> list = messages.getBody();
+		// 순서가 아니라 본문으로 짚음 - 같은 순간에 저장돼 정렬이 뒤집혀도 판정이 흔들리지 않게
+		var withSource = pickAssistant(list, "안내는 다음과 같음");
+		var withoutSource = pickAssistant(list, "일반적인 관점에서");
+
+		assertThat((List<?>) withSource.get("citations")).hasSize(2);
+		assertThat((List<?>) withoutSource.get("citations")).isEmpty();
+	}
+
+	private static Map<String, Object> pickAssistant(List<Map<String, Object>> messages, String contentPart) {
+		return messages.stream()
+				.filter(m -> "assistant".equals(m.get("role")))
+				.filter(m -> ((String) m.get("content")).contains(contentPart))
+				.findFirst()
+				.orElseThrow(() -> new AssertionError("답변을 찾지 못함: " + contentPart));
+	}
+
+	/**
+	 * 같은 대화의 이전 턴이 모델에 전달돼야 함 - 전달되지 않으면 매 턴 문맥이 초기화돼
+	 * "앞에서 말한 그거"를 알아듣지 못함. 목 응답 자체는 이력과 무관하므로 전달 여부로 판정함.
+	 */
+	@Test
+	void previous_turns_are_sent_to_the_model() {
+		String token = signup("chat-history@b.com");
+		String convId = createConversation(token);
+
+		chat(token, Map.of("conversationId", convId, "message", "첫 질문"));
+		chat(token, Map.of("conversationId", convId, "message", "둘째 질문"));
+
+		// 둘째 턴이 본 이력 = 첫 질문 + 첫 답변 (이번 질문은 이력에 들어가지 않음)
+		var history = mock.lastHistory();
+		assertThat(history).hasSize(2);
+		assertThat(history.get(0).role()).isEqualTo("user");
+		assertThat(history.get(0).content()).isEqualTo("첫 질문");
+		assertThat(history.get(1).role()).isEqualTo("assistant");
+		assertThat(history.get(1).content()).isNotBlank();
+	}
+
+	/** 첫 턴에는 이력이 없어야 함 - 방금 보낸 메시지가 이력에 섞이면 같은 말이 두 번 전달됨 */
+	@Test
+	void first_turn_has_no_history() {
+		String token = signup("chat-history-first@b.com");
+		String convId = createConversation(token);
+
+		chat(token, Map.of("conversationId", convId, "message", "첫 질문"));
+
+		assertThat(mock.lastHistory()).isEmpty();
+	}
+
+	/** 과거 이미지는 재전송하지 않고 자리표시자만 남김 - 턴이 쌓일수록 비용이 폭증하는 것을 막음 */
+	@Test
+	void past_images_are_not_resent() {
+		String token = signup("chat-history-img@b.com");
+		String convId = createConversation(token);
+		String attId = uploadImage(token);
+
+		chat(token, Map.of("conversationId", convId, "message", "이거 뭐야", "attachmentIds", List.of(attId)));
+		chat(token, Map.of("conversationId", convId, "message", "그럼 저건?"));
+
+		assertThat(mock.lastAttachmentCount()).isZero(); // 이번 턴에는 첨부가 없음
+		assertThat(mock.lastHistory().get(0).content()).contains("(이미지 첨부)");
+	}
+
+	@Test
 	void unknown_topic_streams_no_source() {
 		String token = signup("chat-unknown@b.com");
 		String convId = createConversation(token);

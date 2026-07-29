@@ -13,8 +13,20 @@ public interface OpenAiService {
 	record AttachmentRef(String fileType, String storagePath, String openaiFileId) {
 	}
 
-	/** 채팅 입력 */
-	record ChatInput(String userMessage, List<AttachmentRef> attachments, String vectorStoreId) {
+	/**
+	 * 이전 대화 한 턴. <b>텍스트만</b> 담음 - 과거 이미지는 재전송하지 않고 자리표시자로 남김
+	 * (이미지 하나가 수천 토큰이라 턴이 쌓일수록 비용이 폭증함).
+	 */
+	record Turn(String role, String content) {
+	}
+
+	/**
+	 * 채팅 입력.
+	 *
+	 * @param history 이전 턴들. <b>오래된 것부터</b>의 순서이며 이번 사용자 메시지는 포함하지 않음.
+	 *                토큰 예산 안에서 잘려 있음(ChatService 가 자름)
+	 */
+	record ChatInput(String userMessage, List<AttachmentRef> attachments, String vectorStoreId, List<Turn> history) {
 	}
 
 	/** 출처 데이터 (응답 annotations 에 대응) */

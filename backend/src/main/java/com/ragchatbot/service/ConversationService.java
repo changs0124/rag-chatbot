@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.ragchatbot.domain.Attachment;
+import com.ragchatbot.domain.Citation;
 import com.ragchatbot.domain.Conversation;
 import com.ragchatbot.error.ApiExceptions.NotFoundException;
 import com.ragchatbot.mapper.AttachmentMapper;
@@ -75,19 +76,22 @@ public class ConversationService {
 	public List<MessageResponse> messages(UUID userId, UUID conversationId) {
 		requireOwned(conversationId, userId);
 
-		// 메시지별 첨부를 한 번에 읽어 묶음(메시지마다 조회하지 않음)
-		Map<UUID, List<AttachmentResponse>> byMessage = new LinkedHashMap<>();
+		// 첨부·출처 모두 대화 단위로 한 번에 읽어 메시지별로 나눠 담음(메시지마다 조회하지 않음)
+		Map<UUID, List<AttachmentResponse>> attachmentsByMessage = new LinkedHashMap<>();
 		for (Attachment a : attachmentMapper.findByConversation(conversationId)) {
-			byMessage.computeIfAbsent(a.messageId(), k -> new ArrayList<>())
+			attachmentsByMessage.computeIfAbsent(a.messageId(), k -> new ArrayList<>())
 					.add(new AttachmentResponse(a.id(), a.fileType(), fileService.issueUrl(a.id(), userId)));
+		}
+		Map<UUID, List<CitationResponse>> citationsByMessage = new LinkedHashMap<>();
+		for (Citation c : citationMapper.findByConversation(conversationId)) {
+			citationsByMessage.computeIfAbsent(c.messageId(), k -> new ArrayList<>())
+					.add(new CitationResponse(c.seq(), c.sourceName(), c.snippet(), c.uri()));
 		}
 
 		return messageMapper.listByConversation(conversationId).stream()
 				.map(m -> new MessageResponse(m.id(), m.role(), m.content(), m.status(), m.stopped(), m.createdAt(),
-						citationMapper.findByMessage(m.id()).stream()
-								.map(c -> new CitationResponse(c.seq(), c.sourceName(), c.snippet(), c.uri()))
-								.toList(),
-						byMessage.getOrDefault(m.id(), List.of())))
+						citationsByMessage.getOrDefault(m.id(), List.of()),
+						attachmentsByMessage.getOrDefault(m.id(), List.of())))
 				.toList();
 	}
 
@@ -101,7 +105,7 @@ public class ConversationService {
 	 * <p><b>주의</b> - DB 가 먼저 지워지므로 그 뒤 파일 삭제가 실패하면 <b>대응하는 행이 이미 없어
 	 * 고아 회수({@code cleanupOrphans})가 찾지 못함</b>. {@code findOrphans} 는 {@code attachments} 행을
 	 * 기준으로 도는데 cascade 로 그 행이 사라졌기 때문임 - 즉 그 파일은 영구 잔류임(재리뷰 지적 3).
-	 * 지금은 경고 로그가 유일한 흔적이며, 실제 회수는 미결로 남아 있음(`docs/02_운영.md`).
+	 * 지금은 경고 로그가 유일한 흔적이며, 실제 회수는 미결로 남아 있음({@code docs/04_tasks/backlog.md}).
 	 */
 	public void delete(UUID userId, UUID conversationId) {
 		Conversation conversation = requireOwned(conversationId, userId);

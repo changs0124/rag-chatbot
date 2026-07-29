@@ -69,7 +69,7 @@ esac
 echo "케이스 수($target) : 실측 $actual / 하한 $min"
 if [ "$actual" -lt "$min" ]; then
   echo "FAIL: 케이스 수가 하한 아래임 - 테스트가 지워졌는지, 검사 대상이 줄었는지 먼저 볼 것"
-  echo "      하한을 내려야 한다면 scripts/case-floors.env 와 docs/02_운영.md 처리 이력 표를 같은 PR에서 고칠 것"
+  echo "      하한을 내려야 한다면 scripts/case-floors.env 와 docs/06_changelog/CHANGELOG.md 를 같은 PR에서 고칠 것"
   exit 1
 fi
 echo "OK"
