@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import MessageList from './MessageList'
 import type { ChatMessage } from '../../lib/types'
 
@@ -73,6 +73,68 @@ describe('MessageList', () => {
     ]
     render(<MessageList messages={messages} />)
     expect(screen.queryByText(/자료 없음/)).not.toBeInTheDocument()
+  })
+
+  // 첨부 확대 보기 (FEAT-CHAT-002)
+  const withAttachments = (count: number): ChatMessage[] => [
+    {
+      id: 'u1',
+      role: 'user',
+      content: '이 사진들 설명해줘',
+      status: 'complete',
+      createdAt: '',
+      citations: [],
+      attachments: Array.from({ length: count }, (_, i) => ({
+        id: `f${i + 1}`,
+        fileType: 'image' as const,
+        url: `/api/files/f${i + 1}?token=t`,
+      })),
+    },
+  ]
+
+  it('말풍선 썸네일을 누르면 같은 서명 URL 로 확대함', () => {
+    render(<MessageList messages={withAttachments(1)} />)
+    fireEvent.click(screen.getByLabelText('첨부 이미지 확대'))
+
+    const dialog = screen.getByRole('dialog')
+    // 재요청 없이 화면에 이미 뜬 것과 같은 URL 을 씀
+    expect(within(dialog).getByAltText('첨부 이미지')).toHaveAttribute(
+      'src',
+      expect.stringContaining('/api/files/f1?token=t'),
+    )
+    // 한 장뿐이면 좌우 이동이 없음
+    expect(screen.queryByLabelText('다음 이미지')).not.toBeInTheDocument()
+  })
+
+  it('여러 장이면 좌우로 넘기고 끝에서는 순환하지 않음', () => {
+    render(<MessageList messages={withAttachments(3)} />)
+    fireEvent.click(screen.getAllByLabelText('첨부 이미지 확대')[1])
+
+    expect(screen.getByText('2 / 3')).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('다음 이미지'))
+    expect(screen.getByText('3 / 3')).toBeInTheDocument()
+    // 마지막에서 되돌아가면 "넘어갔다"고 오해하게 됨
+    expect(screen.getByLabelText('다음 이미지')).toBeDisabled()
+  })
+
+  it('확대 보기는 Esc · 배경 클릭 · 닫기 버튼 어느 쪽으로도 닫힘', () => {
+    render(<MessageList messages={withAttachments(1)} />)
+    const open = () => fireEvent.click(screen.getByLabelText('첨부 이미지 확대'))
+
+    open()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    open()
+    fireEvent.click(screen.getByLabelText('닫기'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    open()
+    // 배경(모달 뒤를 덮는 레이어)
+    fireEvent.click(screen.getByRole('dialog').firstElementChild as HTMLElement)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // 닫은 뒤에도 대화는 그대로 남아 있어야 함
+    expect(screen.getByText('이 사진들 설명해줘')).toBeInTheDocument()
   })
 
   it('shows empty state when there are no messages', () => {

@@ -102,6 +102,42 @@ export function IconEdit({ className }: IconProps) {
   )
 }
 
+export function IconChevronLeft({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <polyline points="15 18 9 12 15 6" />
+    </Svg>
+  )
+}
+
+export function IconChevronRight({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <polyline points="9 18 15 12 9 6" />
+    </Svg>
+  )
+}
+
+export function IconDownload({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </Svg>
+  )
+}
+
+export function IconAlert({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="8" x2="12" y2="13" />
+      <line x1="12" y1="16" x2="12" y2="16" />
+    </Svg>
+  )
+}
+
 export function IconMenu({ className }: IconProps) {
   return (
     <Svg className={className}>

@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { API_BASE } from '../../lib/api'
 import type { ChatMessage } from '../../lib/types'
 import Citations from './Citations'
+import ImageLightbox from './ImageLightbox'
 
 export default function MessageList({
   messages,
@@ -58,6 +59,9 @@ export default function MessageList({
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user'
+  // 확대 보기는 그 말풍선의 이미지들을 한 묶음으로 넘김(좌우 이동 대상)
+  const images = (message.attachments ?? []).filter((a) => a.fileType === 'image')
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   return (
     <div className={isUser ? 'flex justify-end' : 'flex justify-start'}>
       <div
@@ -71,12 +75,19 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           <div className="mb-2 flex flex-wrap gap-2">
             {message.attachments.map((a) =>
               a.fileType === 'image' ? (
-                <img
+                <button
                   key={a.id}
-                  src={API_BASE + a.url}
-                  alt="첨부 이미지"
-                  className="h-24 w-24 rounded-lg object-cover"
-                />
+                  type="button"
+                  onClick={() => setLightboxIndex(images.findIndex((i) => i.id === a.id))}
+                  aria-label="첨부 이미지 확대"
+                  className="block h-24 w-24 overflow-hidden rounded-lg"
+                >
+                  <img
+                    src={API_BASE + a.url}
+                    alt="첨부 이미지"
+                    className="h-full w-full object-cover"
+                  />
+                </button>
               ) : (
                 <span key={a.id} className="rounded-lg bg-black/10 px-2 py-1 text-xs">
                   📄 문서
@@ -97,6 +108,14 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         {message.status === 'error' && <p className="mt-1 text-xs text-red-500">응답 중 오류가 발생했습니다</p>}
         {!isUser && <Citations citations={message.citations} />}
       </div>
+
+      {lightboxIndex !== null && images[lightboxIndex] && (
+        <ImageLightbox
+          items={images.map((a) => ({ src: API_BASE + a.url }))}
+          startIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </div>
   )
 }

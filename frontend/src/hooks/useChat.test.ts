@@ -14,7 +14,6 @@ vi.mock('../lib/endpoints', () => ({
   getMessages: vi.fn().mockResolvedValue([]),
   deleteConversation: vi.fn(),
   renameConversation: vi.fn(),
-  uploadFile: vi.fn(),
   streamChat: vi.fn(),
 }))
 
