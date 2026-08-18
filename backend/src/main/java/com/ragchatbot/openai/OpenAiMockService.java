@@ -3,6 +3,7 @@ package com.ragchatbot.openai;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -48,12 +49,18 @@ public class OpenAiMockService implements OpenAiService {
 	}
 
 	@Override
-	public String stageLabel(Stage stage) {
-		return STAGE_LABELS.get(stage);
+	public String stageLabel(Stage stage, List<String> sources) {
+		String label = STAGE_LABELS.get(stage);
+		// 조회 단계에만 자료명을 덧붙임 - "어느 자료를 참조했는지"가 화면에 드러나야 함(R-11).
+		// 무자료 분기에서는 sources가 비어 있어 문구가 종전 그대로임 - 참조한 적 없는 이름을 붙이지 않기 위함(P-10)
+		if (stage == Stage.SEARCHING && !sources.isEmpty()) {
+			return label + " - " + String.join(" · ", sources);
+		}
+		return label;
 	}
 
 	@Override
-	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, Consumer<Stage> onStage) {
+	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage) {
 		lastAttachmentCount = input.attachments() == null ? 0 : input.attachments().size();
 		// 목 응답은 고정 코퍼스 키워드로만 정해짐(이력에 좌우되지 않음). 전달 여부만 기록해 둠
 		lastHistory = input.history() == null ? List.of() : input.history();
@@ -63,8 +70,6 @@ public class OpenAiMockService implements OpenAiService {
 		String imagePrefix = hasImage ? "(첨부 이미지를 확인함) " : "";
 
 		String message = input.userMessage() == null ? "" : input.userMessage();
-		// 코퍼스 조회 경계 - 목업이 실제로 지나는 지점에서만 단계를 올림(P-10). 자료 유무와 무관하게 조회는 함
-		onStage.accept(Stage.SEARCHING);
 		boolean matched = CORPUS_KEYWORDS.stream().anyMatch(message::contains);
 
 		String fullText;
@@ -82,10 +87,15 @@ public class OpenAiMockService implements OpenAiService {
 			noSource = true;
 		}
 
+		// 코퍼스 조회 경계 - 목업이 실제로 지나는 지점에서만 단계를 올림(P-10). 자료 유무와 무관하게 조회는 함.
+		// 조회 결과가 정해진 뒤에 올림 - 라벨에 실제로 참조한 자료명을 실어야 하기 때문임(R-11).
+		// 자료명은 화면 하단 출처 목록과 같은 값을 씀 - 진행 문구와 출처가 어긋나지 않게 함
+		onStage.accept(Stage.SEARCHING, citations.stream().map(CitationData::sourceName).toList());
+
 		// 스트리밍 인터페이스를 실제로 흘려봄(Phase 5 SSE가 이 onToken을 emitter에 연결)
 		// 토큰당 소량 지연으로 실제 스트리밍처럼 타이핑 효과를 냄
 		// 첫 토큰 직전이 생성 경계임. 체감 시간을 만들려고 여기에 인위 지연을 넣지 않음(P-10 · 이관-7)
-		onStage.accept(Stage.GENERATING);
+		onStage.accept(Stage.GENERATING, List.of());
 		for (String chunk : fullText.split("(?<=\\G.{8})")) {
 			onToken.accept(chunk);
 			if (tokenDelayMs > 0) {

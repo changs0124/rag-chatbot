@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -85,13 +86,18 @@ public class OpenAiRealService implements OpenAiService {
 			Stage.SEARCHING, "참조 문서 검색 중",
 			Stage.GENERATING, "답변 작성 중");
 
+	/**
+	 * sources는 라이브에서 늘 비어 있음. 검색 단계는 file_search 호출이 <b>시작됐다는</b> 이벤트에 올리는데
+	 * 그 시점에는 어느 문서가 걸렸는지 아직 모르고, 파일명은 response.completed 의 결과에서야 나옴 -
+	 * 즉 이미 토큰이 나간 뒤라 단계 라벨에 실을 수 없음(R-11 전송 규칙). 없는 이름을 지어내지 않고 비워 둠(P-10)
+	 */
 	@Override
-	public String stageLabel(Stage stage) {
+	public String stageLabel(Stage stage, List<String> sources) {
 		return STAGE_LABELS.get(stage);
 	}
 
 	@Override
-	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, Consumer<Stage> onStage) {
+	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage) {
 		String storeId = (input.vectorStoreId() != null && !input.vectorStoreId().isBlank())
 				? input.vectorStoreId()
 				: sharedVectorStoreId;
@@ -183,7 +189,7 @@ public class OpenAiRealService implements OpenAiService {
 	 * 진행 단계(R-11)는 실제 도착한 이벤트에만 근거함 - file_search 이벤트가 없으면 검색 단계도 없음(P-10, AC-24).
 	 */
 	// 패키지 가시성 : 캔드 스트림으로 단계 매핑을 단위 테스트함(실 호출 없이 AC-24 검증)
-	ChatCompletion consumeStream(InputStream in, Consumer<String> onToken, Consumer<Stage> onStage) {
+	ChatCompletion consumeStream(InputStream in, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage) {
 		StringBuilder buffer = new StringBuilder();
 		List<CitationData> citations = List.of();
 		boolean completed = false;
@@ -204,15 +210,16 @@ public class OpenAiRealService implements OpenAiService {
 				if ("response.output_text.delta".equals(type)) {
 					String delta = ev.path("delta").asText();
 					if (!generatingSent) {
-						onStage.accept(Stage.GENERATING); // 첫 토큰 직전이 생성 경계임
+						onStage.accept(Stage.GENERATING, List.of()); // 첫 토큰 직전이 생성 경계임
 						generatingSent = true;
 					}
 					buffer.append(delta);
 					onToken.accept(delta);
 				} else if (!searchingSent && ("response.file_search_call.in_progress".equals(type)
 						|| "response.file_search_call.searching".equals(type))) {
-					// 실제 file_search 호출이 시작된 근거가 있을 때만 검색 단계를 보냄(AC-24)
-					onStage.accept(Stage.SEARCHING);
+					// 실제 file_search 호출이 시작된 근거가 있을 때만 검색 단계를 보냄(AC-24).
+					// 이 시점에는 어느 문서가 걸렸는지 아직 모르므로 자료명은 비워 보냄(stageLabel 주석 참고)
+					onStage.accept(Stage.SEARCHING, List.of());
 					searchingSent = true;
 				} else if ("response.completed".equals(type)) {
 					citations = extractCitations(ev.path("response"));

@@ -1,6 +1,7 @@
 package com.ragchatbot.openai;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -45,15 +46,21 @@ public interface OpenAiService {
 		ANALYZING, SEARCHING, GENERATING
 	}
 
-	/** 단계 라벨. 목업은 목 데이터임이 드러나는 전용 문구를 씀(P-10) */
-	String stageLabel(Stage stage);
+	/**
+	 * 단계 라벨. 목업은 목 데이터임이 드러나는 전용 문구를 씀(P-10).
+	 *
+	 * @param sources 그 단계가 <b>실제로 참조한</b> 자료명. 참조한 자료가 없거나 그 시점에 아직 알 수 없으면
+	 *                빈 리스트임 - 비어 있으면 자료명을 붙이지 않음(없는 자료명을 지어내지 않기 위함, P-10)
+	 */
+	String stageLabel(Stage stage, List<String> sources);
 
 	/**
 	 * 스트리밍 채팅. 토큰을 onToken으로 흘리고(Phase 5 SSE 연결) 완료 시 결과 반환.
 	 * onStage는 실제로 통과한 경계에서만 호출함 - 근거가 없으면 그 단계를 보내지 않음(P-10, R-11).
+	 * 두 번째 인자는 그 단계가 참조한 자료명이며 근거가 없으면 빈 리스트임.
 	 * OpenAI 실 호출은 여기 뒤에만 존재함(P-1 키 비노출).
 	 */
-	ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, Consumer<Stage> onStage);
+	ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage);
 
 	/** 대화 삭제 시 OpenAI 파일/Vector Store 정리(AC-12). Mock은 호출을 기록만 함 */
 	void deleteResources(String vectorStoreId, List<String> openaiFileIds);

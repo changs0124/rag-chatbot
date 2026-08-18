@@ -82,7 +82,7 @@ class OpenAiRealStreamingSpikeTest {
 					tokens.add(token);
 					firstTokenSeen.countDown();
 				},
-				stage -> {
+				(stage, sources) -> {
 				});
 
 		// 핵심 단언 - 응답이 끝나기 전에 첫 토큰이 클라이언트에 도착했음

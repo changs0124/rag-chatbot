@@ -8,7 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -171,13 +171,14 @@ public class ChatService {
 					Map.of("messageId", asstMsgId.toString(), "conversationId", prepared.conversationId().toString()));
 
 			// 라벨은 구현이 소유하고(P-2) 발행만 여기서 함. analyzing은 meta 직후 = 스트림 개시 경계
-			Consumer<Stage> onStage = stage -> {
+			// sources는 그 단계가 실제로 참조한 자료명 - 여기서 만들지 않고 구현이 준 것을 그대로 넘김(P-2)
+			BiConsumer<Stage, List<String>> onStage = (stage, sources) -> {
 				if (!firstTokenSeen[0]) {
-					sendQuietly(emitter, "stage",
-							Map.of("stage", stage.name().toLowerCase(Locale.ROOT), "label", openAiService.stageLabel(stage)));
+					sendQuietly(emitter, "stage", Map.of("stage", stage.name().toLowerCase(Locale.ROOT),
+							"label", openAiService.stageLabel(stage, sources)));
 				}
 			};
-			onStage.accept(Stage.ANALYZING);
+			onStage.accept(Stage.ANALYZING, List.of());
 
 			ChatCompletion completion = openAiService.streamChat(
 					new ChatInput(prepared.message(), prepared.refs(), prepared.vectorStoreId(), prepared.history()),
