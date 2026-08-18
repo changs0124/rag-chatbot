@@ -72,7 +72,8 @@
 | 업로드 중에 보내기를 누름 | **보내기 버튼을 비활성**으로 둔다. 올라가지 않은 첨부가 빠진 채 전송되는 경로를 아예 막는다 |
 | 업로드 실패 (네트워크 · 413 · 400) | 카드를 `error` 로 표시하고 서버가 준 메시지를 보여준다. 재시도 또는 제거만 가능하다 |
 | 실패한 카드를 둔 채 보내기를 누름 | 업로드 중일 때와 같이 **비활성**이다. 실패 카드를 화면에 두고 전송하면 그 이미지는 빠진 채 나가는데, 사용자는 카드가 보이니 갔다고 읽는다 — 재시도하거나 지워야 보낼 수 있다 |
-| 업로드 **중**에 카드를 제거 | 진행 중인 요청을 `AbortController` 로 끊는다. 이미 서버에 저장됐으면 `DELETE /api/files/{id}` 로 지운다 |
+| 업로드 **중**에 카드를 제거 | 진행 중인 요청을 `AbortController` 로 끊는다 |
+| 지운 카드의 업로드가 **뒤늦게 성공** | 그 첨부를 곧바로 `DELETE /api/files/{id}` 로 지운다. 중단은 요청을 끊을 뿐 **서버가 이미 받은 것을 되돌리지 않으므로**, 여기서 지우지 않으면 회수 크론을 기다리는 고아가 된다 |
 | 업로드 **완료 후** 카드를 제거 | `DELETE /api/files/{id}` 를 호출한다. 실패해도 카드는 지운다 — 남은 파일은 고아 회수가 가져간다 |
 | 이미지가 아닌 파일이 들어옴 | **버린다.** 카드도 만들지 않는다 — 서버가 받지 않으므로 카드를 만들면 실패만 보여 주게 된다 |
 | 전송하지 않고 화면을 떠남 | 서버에 남은 첨부는 `message_id=null` 인 고아이므로 회수 크론이 유예(`ORPHAN_TTL_MINUTES`, 기본 60분) 뒤 정리한다 |
@@ -197,7 +198,7 @@
 | `frontend/src/components/chat/MessageList.tsx` | 썸네일을 버튼으로 감싸 확대 모달 연결 (그 말풍선의 첨부를 한 묶음으로 넘김) |
 | `frontend/src/lib/endpoints.ts` | 첨부 삭제 함수 추가 (`DELETE /api/files/{id}` — 서버에는 이미 있음) · 업로드에 `AbortSignal` 전달 |
 | `frontend/src/lib/api.ts` | `postForm` 이 `AbortSignal` 을 받도록 확장 |
-| `frontend/src/components/chat/ImageLightbox.tsx` | 신규. 확대 모달 (전송 전·후 공용) · 핀치 줌 |
+| `frontend/src/components/chat/ImageLightbox.tsx` | 신규. 확대 모달 (전송 전·후 공용) · 핀치 줌 · 포인터 캡처 |
 | `frontend/src/test/setup.ts` | jsdom 에 없는 `PointerEvent` 폴리필 (핀치 줌 검사용) |
 | `frontend/src/components/icons.tsx` | 좌우 · 내려받기 · 경고 아이콘 추가 |
 | `scripts/case-floors.env` | 프론트 케이스 수 하한(`FRONTEND_MIN`)을 실측값으로 상향 |

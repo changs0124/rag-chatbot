@@ -56,6 +56,12 @@ export default function Composer({
   const startUpload = useCallback((draft: Draft) => {
     uploadFile(draft.file, draft.controller.signal)
       .then((attachment) => {
+        // 지운 카드의 업로드가 뒤늦게 성공하는 경우 - abort 는 요청을 끊을 뿐 서버가 이미 받은 것을
+        // 되돌리지 않는다. 여기서 지우지 않으면 회수 크론을 기다리는 고아가 됨
+        if (!draftsRef.current.some((d) => d.key === draft.key)) {
+          deleteAttachment(attachment.id).catch(() => {})
+          return
+        }
         setDrafts((prev) =>
           prev.map((d) => (d.key === draft.key ? { ...d, status: 'done', attachment } : d)),
         )
@@ -189,7 +195,7 @@ export default function Composer({
   const lightboxItems = drafts.map((d) => ({ src: d.previewUrl, name: d.file.name }))
 
   return (
-    <div className="border-t border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="bg-canvas px-4 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <form onSubmit={submit} className="mx-auto w-full max-w-3xl">
         {drafts.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-3">
@@ -205,7 +211,7 @@ export default function Composer({
           </div>
         )}
 
-        <div className="flex items-end gap-2 rounded-2xl border border-zinc-300 bg-white px-2 py-1.5 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="flex items-end gap-2 rounded-3xl border border-line bg-raised px-2 py-1.5 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--c-accent-soft)]">
           {/* + 첨부 메뉴 */}
           <div className="relative">
             <button
@@ -213,14 +219,14 @@ export default function Composer({
               onClick={() => setMenuOpen((v) => !v)}
               aria-label="첨부 추가"
               aria-expanded={menuOpen}
-              className="grid h-8 w-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="grid h-10 w-10 place-items-center rounded-full text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink active:scale-[0.95]"
             >
               <IconPlus />
             </button>
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="absolute bottom-11 left-0 z-20 w-40 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                <div className="absolute bottom-12 left-0 z-20 w-40 overflow-hidden rounded-xl bg-raised py-1 shadow-[var(--shadow-lifted)]">
                   <MenuItem
                     icon={<IconImage className="h-4 w-4" />}
                     label="사진"
@@ -266,7 +272,7 @@ export default function Composer({
             }}
             rows={1}
             placeholder="메시지를 입력하세요"
-            className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-sm text-zinc-900 outline-none dark:text-zinc-100"
+            className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2.5 text-[15px] leading-relaxed text-ink outline-none placeholder:text-ink-muted"
           />
 
           {streaming ? (
@@ -274,7 +280,7 @@ export default function Composer({
               type="button"
               onClick={onStop}
               aria-label="중단"
-              className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"
+              className="grid h-10 w-10 place-items-center rounded-full bg-surface text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97]"
             >
               <IconStop />
             </button>
@@ -282,7 +288,7 @@ export default function Composer({
             <button
               type="submit"
               aria-label="보내기"
-              className="grid h-8 w-8 place-items-center rounded-lg bg-zinc-900 text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900"
+              className="grid h-10 w-10 place-items-center rounded-full bg-accent text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97] disabled:scale-100 disabled:opacity-35"
               // 올라가지 않은(또는 실패한) 첨부를 둔 채 보내면 그 이미지가 빠진 줄 모르고 보내게 됨
               disabled={pending || (!text.trim() && drafts.length === 0)}
             >
@@ -293,8 +299,8 @@ export default function Composer({
       </form>
 
       {dragging && (
-        <div className="fixed inset-0 z-40 grid place-items-center bg-black/30 p-8">
-          <div className="grid h-full w-full place-items-center rounded-2xl border-2 border-dashed border-white/70 text-sm font-medium text-white">
+        <div className="fixed inset-0 z-40 grid place-items-center bg-black/30 p-6 backdrop-blur-sm">
+          <div className="grid h-full w-full place-items-center rounded-[1.75rem] border-2 border-dashed border-white/70 text-[15px] font-medium text-white">
             여기에 놓아 첨부
           </div>
         </div>
@@ -336,13 +342,13 @@ function DraftCard({
         type="button"
         onClick={onOpen}
         aria-label={`${draft.file.name} 확대`}
-        className="block h-16 w-16 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700"
+        className="block h-16 w-16 overflow-hidden rounded-xl border border-line transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03]"
       >
         <img src={draft.previewUrl} alt={draft.file.name} className="h-full w-full object-cover" />
       </button>
 
       {draft.status === 'uploading' && (
-        <div className="absolute inset-0 grid place-items-center rounded-lg bg-black/40">
+        <div className="absolute inset-0 grid place-items-center rounded-xl bg-black/40">
           <span
             role="status"
             aria-label="업로드 중"
@@ -354,7 +360,7 @@ function DraftCard({
       {draft.status === 'error' && (
         <div
           title={draft.message}
-          className="absolute inset-0 grid place-items-center gap-0.5 rounded-lg bg-black/60 text-white"
+          className="absolute inset-0 grid place-items-center gap-0.5 rounded-xl bg-black/60 text-white"
         >
           <IconAlert className="h-4 w-4 text-amber-400" />
           <button type="button" onClick={onRetry} className="text-[10px] underline">
@@ -367,7 +373,7 @@ function DraftCard({
         type="button"
         onClick={onRemove}
         aria-label="첨부 제거"
-        className="absolute -top-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full border border-zinc-300 bg-white text-zinc-500 shadow-sm hover:text-red-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+        className="absolute -top-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full border border-line bg-raised text-ink-muted shadow-[var(--shadow-ambient)] transition duration-150 ease-[var(--ease-out-quint)] hover:text-danger"
       >
         <IconClose className="h-3 w-3" />
       </button>
@@ -380,9 +386,9 @@ function MenuItem({ icon, label, onClick }: { icon: ReactNode; label: string; on
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-700"
+      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface"
     >
-      <span className="text-zinc-500 dark:text-zinc-400">{icon}</span>
+      <span className="text-ink-muted">{icon}</span>
       {label}
     </button>
   )

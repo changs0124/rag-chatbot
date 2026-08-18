@@ -106,6 +106,20 @@ describe('Composer', () => {
     expect(deleteAttachment).not.toHaveBeenCalled()
   })
 
+  it('지운 카드의 업로드가 뒤늦게 성공하면 그 파일을 서버에서 지움', async () => {
+    const d = deferred<Attachment>()
+    vi.mocked(uploadFile).mockReturnValue(d.promise)
+    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+
+    pick(image())
+    fireEvent.click(screen.getByLabelText('첨부 제거'))
+    // abort 는 요청을 끊을 뿐 서버가 이미 받은 것을 되돌리지 않음 - 안 지우면 고아로 남음
+    d.resolve(attachment('a1'))
+
+    await waitFor(() => expect(deleteAttachment).toHaveBeenCalledWith('a1'))
+    expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
+  })
+
   it('업로드가 실패하면 재시도가 보이고 그 동안 보내기가 막힘', async () => {
     vi.mocked(uploadFile).mockRejectedValueOnce(new ApiError(413, '파일이 너무 큽니다'))
     render(<Composer onSend={noop} streaming={false} onStop={noop} />)

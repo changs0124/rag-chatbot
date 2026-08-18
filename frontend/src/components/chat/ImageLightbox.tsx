@@ -47,6 +47,8 @@ export default function ImageLightbox({
   useEffect(resetZoom, [index, resetZoom])
 
   function onPointerDown(e: React.PointerEvent) {
+    // 포인터가 이미지 밖으로 나가도 이동이 이어지게 함 - 확대한 상태에서는 손가락이 쉽게 벗어남
+    e.currentTarget.setPointerCapture?.(e.pointerId)
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (pointers.current.size === 2) {
       pinchStart.current = { dist: pointerDistance(pointers.current), scale }
@@ -132,6 +134,7 @@ export default function ImageLightbox({
         </button>
         <button
           type="button"
+          autoFocus
           onClick={onClose}
           aria-label="닫기"
           className="grid h-9 w-9 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white"
