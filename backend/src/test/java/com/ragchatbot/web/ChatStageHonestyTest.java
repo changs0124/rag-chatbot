@@ -83,6 +83,24 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 		assertThat(body).doesNotContain(LIVE_SEARCH_LABEL); // AC-24 : 라이브 라벨 재사용 금지
 	}
 
+	/**
+	 * R-11 : "어느 자료를 참조했는지"가 진행 문구에 드러나야 함. 자료명은 화면 하단 출처 목록과 <b>같은 값</b>을
+	 * 씀 - 진행 문구가 말한 자료와 실제로 붙는 출처가 어긋나면 그 자체가 거짓 표시가 됨
+	 */
+	@Test
+	void mock_search_label_names_the_sources_it_used() {
+		String body = chat(signup("stage-sources@b.com"), "환불 규정");
+		assertThat(body).contains("목업 코퍼스 조회 중 - 이용 정책 문서 · FAQ 문서");
+	}
+
+	/** 무자료 분기에는 붙일 자료명이 없음 - 참조한 적 없는 이름을 지어내지 않음(P-10) */
+	@Test
+	void mock_search_label_has_no_source_names_when_nothing_matched() {
+		String body = chat(signup("stage-nosources@b.com"), "우주의 크기는 얼마나 되나");
+		assertThat(body).contains("목업 코퍼스 조회 중");
+		assertThat(body).doesNotContain("이용 정책 문서");
+	}
+
 	@Test
 	void no_stage_event_after_first_token() {
 		List<String> names = eventNames(chat(signup("stage-after@b.com"), "배송 정책"));

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
@@ -53,12 +54,13 @@ class ChatStreamAbortTest {
 		}
 
 		@Override
-		public String stageLabel(Stage stage) {
+		public String stageLabel(Stage stage, List<String> sources) {
 			return stage.name();
 		}
 
 		@Override
-		public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, Consumer<Stage> onStage) {
+		public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken,
+				BiConsumer<Stage, List<String>> onStage) {
 			for (String t : tokens) {
 				onToken.accept(t);
 			}

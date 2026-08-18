@@ -5,6 +5,11 @@
 ## [2026-08-18]
 
 ### Changed
+- **진행 단계 문구가 참조한 자료명을 밝힘(R-11)** — 목업의 조회 단계 라벨이 `목업 코퍼스 조회 중` 에서 `목업 코퍼스 조회 중 - 이용 정책 문서 · FAQ 문서` 로 바뀜. 자료명은 화면 하단 출처 목록과 **같은 값**(`CitationData.sourceName`)에서 파생시켜, 진행 문구가 말한 자료와 실제로 붙는 출처가 어긋날 수 없게 함. 무자료 분기는 붙일 자료명이 없으므로 종전 문구 그대로임(P-10)
+  - `stageLabel(Stage)` → `stageLabel(Stage, List<String> sources)`, `Consumer<Stage>` → `BiConsumer<Stage, List<String>>`. 라벨 소유권은 그대로 구현에 있음(P-2) - `ChatService` 는 구현이 준 자료명을 넘기기만 함
+  - 목업의 조회 단계 발행을 키워드 매칭 **뒤로** 옮김. 조회 결과가 정해져야 라벨에 자료명을 실을 수 있기 때문임
+  - 라이브는 동작이 그대로임 - `file_search` 시작 이벤트 시점에는 어느 문서가 걸렸는지 아직 모르고 파일명은 `response.completed` 에서야 나오는데, 그때는 이미 토큰이 나간 뒤라 단계 라벨에 실을 수 없음(R-11 전송 규칙). 없는 이름을 지어내지 않고 비워 둠
+  - 프론트는 변경 없음 - `label` 문자열을 그대로 렌더하므로
 - **Node.js 22 → 24 (Active LTS)** — `.nvmrc` · CI `setup-node` 2개 잡 · README 툴체인 표를 24 로 올림. Node 22 는 2025-10 부터 유지보수 LTS 라 보안 픽스만 들어옴
 - 배포 런타임을 저장소에서 고정 — `frontend/package.json` 에 `engines.node: "24.x"` 추가. Vercel 프로젝트 설정은 이미 `24.x` 였는데 저장소는 22 를 선언하고 있어, CI 가 검증한 런타임과 실제로 배포 산출물을 만든 런타임이 갈려 있었음. Vercel 은 `engines.node` 를 대시보드 설정보다 우선하므로 이제 저장소가 배포 런타임의 단일 출처가 됨
 - `scripts/check-runtime-versions.sh` 의 node 분기가 `.nvmrc` ↔ `engines.node` 메이저도 대조함. 종래에는 `.nvmrc` 와 CI 러너만 비교해서, `.nvmrc` 만 올리고 `engines.node` 를 빠뜨려도 CI 가 통과하고 배포만 조용히 다른 런타임을 쓰는 구멍이 남아 있었음

@@ -52,7 +52,7 @@ class OpenAiRealStageMappingTest {
 		List<Stage> stages = new ArrayList<>();
 		resultOut[0] = service().consumeStream(
 				new ByteArrayInputStream(sse.getBytes(StandardCharsets.UTF_8)),
-				tokensOut::add, stages::add);
+				tokensOut::add, (stage, sources) -> stages.add(stage));
 		return stages;
 	}
 
@@ -87,8 +87,18 @@ class OpenAiRealStageMappingTest {
 	@Test
 	void live_labels_are_not_mock_labels() {
 		OpenAiRealService live = service();
-		assertThat(live.stageLabel(Stage.ANALYZING)).isEqualTo("질문 분석 중");
-		assertThat(live.stageLabel(Stage.SEARCHING)).isEqualTo("참조 문서 검색 중");
-		assertThat(live.stageLabel(Stage.GENERATING)).isEqualTo("답변 작성 중");
+		assertThat(live.stageLabel(Stage.ANALYZING, List.of())).isEqualTo("질문 분석 중");
+		assertThat(live.stageLabel(Stage.SEARCHING, List.of())).isEqualTo("참조 문서 검색 중");
+		assertThat(live.stageLabel(Stage.GENERATING, List.of())).isEqualTo("답변 작성 중");
+	}
+
+	/**
+	 * 라이브는 검색 시작 시점에 어느 문서가 걸렸는지 모르므로 자료명을 라벨에 싣지 않음(P-10).
+	 * 자료명이 들어오더라도 라벨을 바꾸지 않는다는 것을 고정함 - 나중에 실 연동에서 이 결정을 되돌린다면
+	 * 이 테스트가 먼저 깨져 "언제 알 수 있는가"를 다시 확인하게 됨
+	 */
+	@Test
+	void live_search_label_ignores_source_names() {
+		assertThat(service().stageLabel(Stage.SEARCHING, List.of("정책.pdf"))).isEqualTo("참조 문서 검색 중");
 	}
 }
