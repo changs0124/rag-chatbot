@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
+import TextInput from '../components/TextInput'
 import { useTheme } from '../theme/ThemeContext'
 import { ApiError, setToken } from '../lib/api'
 import { updateName, updatePassword, updateTheme } from '../lib/endpoints'
@@ -85,7 +86,7 @@ export default function MyPage() {
 
       <Section title="이름 변경">
         <div className="flex gap-2">
-          <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
           <button onClick={saveName} disabled={!name.trim()} className={btnClass}>
             저장
           </button>
@@ -94,17 +95,15 @@ export default function MyPage() {
 
       <Section title="비밀번호 변경">
         <div className="space-y-2">
-          <input
+          <TextInput
             type="password"
-            className={inputClass}
             placeholder="현재 비밀번호"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             autoComplete="current-password"
           />
-          <input
+          <TextInput
             type="password"
-            className={inputClass}
             placeholder="새 비밀번호 (8자 이상)"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -142,8 +141,6 @@ export default function MyPage() {
   )
 }
 
-const inputClass =
-  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100'
 const btnClass =
   'shrink-0 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900'
 

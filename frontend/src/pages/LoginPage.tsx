@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
+import TextInput from '../components/TextInput'
 import { ApiError } from '../lib/api'
 
 export default function LoginPage() {
@@ -43,8 +44,7 @@ export default function LoginPage() {
         <form onSubmit={onSubmit} className="space-y-3">
           {isSignup && (
             <Field label="이름">
-              <input
-                className={inputClass}
+              <TextInput
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -53,9 +53,8 @@ export default function LoginPage() {
             </Field>
           )}
           <Field label="이메일">
-            <input
+            <TextInput
               type="email"
-              className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -63,9 +62,8 @@ export default function LoginPage() {
             />
           </Field>
           <Field label="비밀번호">
-            <input
+            <TextInput
               type="password"
-              className={inputClass}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -99,9 +97,6 @@ export default function LoginPage() {
     </div>
   )
 }
-
-const inputClass =
-  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100'
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
