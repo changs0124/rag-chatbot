@@ -17,12 +17,15 @@ export const renameConversation = (id: string, title: string) =>
 export const deleteConversation = (id: string) => api.del<void>(`/api/conversations/${id}`)
 export const getMessages = (id: string) => api.get<ChatMessage[]>(`/api/conversations/${id}/messages`)
 
-// 파일 업로드
-export function uploadFile(file: File): Promise<Attachment> {
+// 파일 업로드 - 고르는 즉시 올림(전송 시점이 아님). signal 은 카드를 지웠을 때 끊기 위한 것
+export function uploadFile(file: File, signal?: AbortSignal): Promise<Attachment> {
   const form = new FormData()
   form.append('file', file)
-  return api.postForm<Attachment>('/api/files', form)
+  return api.postForm<Attachment>('/api/files', form, signal)
 }
+
+// 전송 전에 첨부를 뺀 경우. 안 지우면 message_id 가 비어 있는 고아로 남아 회수 크론을 기다리게 됨
+export const deleteAttachment = (id: string) => api.del<void>(`/api/files/${id}`)
 
 export interface ChatStreamHandlers {
   onMeta?: (data: { messageId: string; conversationId: string }) => void

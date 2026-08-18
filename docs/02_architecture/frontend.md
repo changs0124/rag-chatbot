@@ -73,11 +73,58 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   화면(배너 없음)과 재조회(배너 있음)가 갈린다.
 - **무자료 배너는 텍스트 접두가 아니라 "출처 0건"에서 파생한다.** 스트리밍 중과 중단된 답변에는 붙이지 않는다.
 
+## 첨부 UI 계약
+
+입력창(`frontend/src/components/chat/Composer.tsx`)과 말풍선(`frontend/src/components/chat/MessageList.tsx`)이
+지키는 규칙이며, 어기면 파일이 서버에 남거나 탭 메모리가 샌다.
+
+- **첨부는 고르는 즉시 올린다.** 전송 시점에는 이미 올라간 `id` 만 넘어간다(`useChat.send` 는 업로드를 하지 않는다).
+  서버가 이 모델을 전제로 설계돼 있다 — 업로드는 `message_id=null` 로 저장되고, 회수 크론이 고아를 가져간다.
+- **올라가지 않은 첨부가 있으면 보내기를 막는다.** 업로드 중·실패 카드가 하나라도 있으면 전송 버튼이 비활성이다.
+  막지 않으면 그 이미지가 빠진 채 나가는데 화면에는 카드가 남아 있어 사용자는 갔다고 읽는다.
+- **카드를 지우면 서버에서도 지운다.** 진행 중이면 `AbortController` 로 끊고, 이미 올라갔으면 `DELETE /api/files/{id}` 를
+  부른다. **끊은 뒤에 업로드가 성공해도 마찬가지로 지운다** — 중단은 요청을 끊을 뿐 서버가 이미 받은 것을 되돌리지 않는다.
+  삭제가 실패해도 카드는 지운다(남은 파일은 고아 회수가 가져간다).
+- **미리보기 URL 은 반드시 회수한다.** 회수 지점은 **카드 제거 · 전송 완료 · 컴포저 언마운트** 세 곳이다.
+  `URL.createObjectURL` 은 문서가 살아 있는 동안 원본을 메모리에 붙잡으므로, 빠뜨리면 촬영·삭제를 반복할수록 샌다.
+  눈으로 확인되지 않는 규칙이라 테스트가 유일한 게이트다(`Composer.test.tsx` 가 회수 호출을 단언한다).
+- **카드에 파일명을 쓰지 않는다.** 파일명은 `alt` · `aria-label` 로만 남기고, 구분이 필요하면 눌러서 확대한다.
+- **이미지가 아닌 파일은 받지 않는다.** `+` 메뉴는 사진 · 카메라 둘뿐이고, 드롭·붙여넣기로 들어온 비이미지도 버린다.
+  서버가 받지 않는 것을 화면에 올려 두면 실패만 보여 주게 된다. 과거 메시지에 남은 문서 첨부는 그대로 표시한다.
+- **확대 보기는 전송 전·후가 같은 컴포넌트다**(`frontend/src/components/chat/ImageLightbox.tsx`).
+  `src` 가 로컬 objectURL 이냐 서명 URL 이냐만 다르다. 양 끝에서 순환하지 않는다 — 한 장짜리에서 같은 이미지가
+  되돌아오면 넘어간 것으로 오해하게 된다. 내려받기는 `<a download>` 가 아니라 blob 으로 받아 저장한다
+  (백엔드가 다른 오리진이라 브라우저가 `download` 를 무시하고 새 탭으로 연다).
+- **확대 보기는 핀치 줌을 받는다.** 1~4배이고 1배 아래로는 줄지 않으며, 이미지를 넘기면 배율·위치를 초기화한다.
+  이미지에 `touch-action: none` 을 주지 않으면 브라우저 기본 제스처가 먼저 먹어 핀치 이벤트가 오지 않는다.
+- **드래그 오버레이는 진입/이탈을 센다.** `dragleave` 만 보고 걷으면 자식 요소를 지날 때마다 깜빡인다.
+
 ## 스타일·테마
 
 - Tailwind 유틸리티 클래스만 쓴다. CSS 모듈·CSS-in-JS 없음. 전역 CSS 는 `frontend/src/index.css` 뿐이다.
-- 다크 모드는 `html[data-theme="dark"]` 기준 커스텀 variant 다. 컴포넌트는 `dark:` 접두를 그대로 쓰되
-  `prefers-color-scheme` 을 직접 참조하지 않는다 — 시스템 설정 해석은 `ThemeProvider` 가 단독으로 한다.
+- 다크 모드는 `html[data-theme="dark"]` 기준 커스텀 variant 다. `prefers-color-scheme` 을 직접 참조하지 않는다 —
+  시스템 설정 해석은 `ThemeProvider` 가 단독으로 한다.
+- **색은 토큰으로만 쓰고, 색에는 `dark:` 를 쓰지 않는다.** 토큰 값은 `index.css` 의 `:root` ·
+  `[data-theme="dark"]` 에 CSS 변수로 두고 `@theme inline` 이 그 변수를 가리킨다. 그래서 `bg-surface` 한 번이면
+  두 테마가 다 된다. `bg-white dark:bg-zinc-950` 처럼 짝으로 적으면 한쪽만 고쳐져 테마가 갈린다.
+  - 면 : `canvas`(바탕) · `surface`(가라앉음) · `raised`(카드·입력창) · `line`(구분선)
+  - 글 : `ink` · `ink-muted`, 강조 : `accent` · `accent-ink` · `accent-soft`, 경고 : `danger`
+  - `dark:` 는 색이 아닌 것(반투명 겹침 세기 등)에만 남긴다
+- **모션은 이징 하나로 통일한다** — `--ease-out-quint`(`cubic-bezier(0.16,1,0.3,1)`). `linear` · `ease-in-out` 을 쓰지 않고,
+  값이 매 프레임 바뀌는 동작(사이드바 폭 드래그)에는 트랜지션을 걸지 않는다 — 손보다 늦게 따라와 고무줄처럼 보인다.
+  `prefers-reduced-motion: reduce` 는 전역 CSS 가 받아 트랜지션을 1ms 로 줄인다.
+- 본문 서체는 Pretendard(동적 서브셋)를 번들에 넣어 쓴다. CDN 을 새로 물리지 않는다.
+- 한국어 본문은 `word-break: keep-all` 을 전역으로 받는다 — 조사 앞에서 줄이 갈리면 읽는 속도가 떨어진다.
+
+### 화면 골격
+
+- 화면 높이는 `100dvh` 다. `h-screen` 은 iOS 주소창이 접힐 때 입력창을 화면 밖으로 밀어낸다.
+- 답변에는 배경을 깔지 않는다(ChatGPT · Claude 공통). 사용자 메시지만 `raised` 카드다 —
+  긴 답변에 큰 색면이 깔리면 읽는 흐름이 끊긴다.
+- 사이드바 폭은 `ResizableSidebar` 가 관장한다(200~420px, 기본 260px, `localStorage`).
+  범위 밖 저장값은 무시하고 기본값으로 연다. 손잡이는 `role="separator"` 로 키보드에서도 조절된다.
+  모바일 드로어에는 손잡이가 없다.
+- 드로어가 열린 동안 뒤 화면 스크롤을 잠근다. 터치 대상은 44px 을 밑돌지 않는다.
 
 ## 오류 경계
 
@@ -87,7 +134,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ## 테스트
 
 Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts`, `LoginPage.test.tsx`). 실행은 `npm test`.
-현재 8개 파일 32 케이스이며 하한은 `scripts/case-floors.env` 가 잠근다.
+현재 11개 파일 59 케이스이며 하한은 `scripts/case-floors.env` 가 잠근다.
 
 ## 배포 (Vercel)
 

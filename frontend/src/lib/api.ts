@@ -58,6 +58,8 @@ interface RequestOptions {
   method?: string
   body?: unknown
   formData?: FormData
+  // 첨부 업로드 취소용. 카드를 지우면 돌던 업로드를 끊어야 함(끊지 않으면 지운 파일이 서버에 남음)
+  signal?: AbortSignal
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -72,7 +74,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body = JSON.stringify(options.body)
   }
 
-  const res = await fetch(BASE + path, { method: options.method ?? 'GET', headers, body })
+  const res = await fetch(BASE + path, {
+    method: options.method ?? 'GET',
+    headers,
+    body,
+    signal: options.signal,
+  })
   if (!res.ok) {
     if (res.status === 401) handleUnauthorized(path)
     let message = `요청 실패 (${res.status})`
@@ -94,7 +101,8 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body }),
   patch: <T>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body }),
   del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
-  postForm: <T>(path: string, formData: FormData) => request<T>(path, { method: 'POST', formData }),
+  postForm: <T>(path: string, formData: FormData, signal?: AbortSignal) =>
+    request<T>(path, { method: 'POST', formData, signal }),
 }
 
 export { BASE as API_BASE }

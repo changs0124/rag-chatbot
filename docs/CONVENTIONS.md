@@ -91,8 +91,11 @@
 
 ### 스타일
 - Tailwind CSS 4 유틸리티 클래스. 별도 CSS 모듈·CSS-in-JS 없음. 전역은 `frontend/src/index.css`뿐.
-- 다크 모드는 `html[data-theme="dark"]` 기준의 커스텀 variant다. `dark:` 접두를 그대로 쓰되, `prefers-color-scheme`를
-  직접 참조하지 않는다 — 시스템 설정 해석은 `ThemeProvider`가 단독으로 한다.
+- 다크 모드는 `html[data-theme="dark"]` 기준의 커스텀 variant다. `prefers-color-scheme`를 직접 참조하지 않는다 —
+  시스템 설정 해석은 `ThemeProvider`가 단독으로 한다.
+- **색은 토큰(`bg-surface` · `text-ink` · `bg-accent` …)으로만 쓴다.** 토큰이 테마별 값을 이미 들고 있으므로
+  색에 `dark:` 를 붙이지 않는다. 새 색이 필요하면 유틸리티에 값을 박지 말고 `index.css` 에 토큰을 먼저 추가한다.
+- 모션은 `ease-[var(--ease-out-quint)]` 하나로 통일한다. `transition` 기본 이징(`ease-in-out`)을 그대로 쓰지 않는다.
 
 ### 테스트
 - 테스트는 **소스 옆에** 둔다(`useChat.test.ts`, `LoginPage.test.tsx`). 별도 `__tests__` 폴더를 만들지 않는다.

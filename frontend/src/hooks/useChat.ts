@@ -6,7 +6,6 @@ import {
   listConversations,
   renameConversation as apiRename,
   streamChat,
-  uploadFile,
 } from '../lib/endpoints'
 import { ApiError } from '../lib/api'
 import type { Attachment, ChatMessage, Conversation } from '../lib/types'
@@ -117,7 +116,8 @@ export function useChat() {
   }, [])
 
   const send = useCallback(
-    async (text: string, files: File[]) => {
+    // 첨부는 입력창이 **고르는 즉시** 올려 두므로 여기서는 이미 올라간 것만 받음(업로드 책임이 컴포저에 있음)
+    async (text: string, attachments: Attachment[]) => {
       if (streaming) return
       setError(null)
 
@@ -135,14 +135,6 @@ export function useChat() {
         }
       }
 
-      let uploaded: Attachment[] = []
-      try {
-        uploaded = await Promise.all(files.map(uploadFile))
-      } catch (e) {
-        setError(e instanceof ApiError ? e.message : '파일 업로드 실패')
-        return
-      }
-
       // 턴마다 고유 id - 오류/중단으로 끝난 이전 버블과 충돌하지 않게 함
       const assistantId = crypto.randomUUID()
       const now = new Date().toISOString()
@@ -153,7 +145,7 @@ export function useChat() {
         status: 'complete',
         createdAt: now,
         citations: [],
-        attachments: uploaded,
+        attachments,
       }
       const assistantMsg: ChatMessage = {
         id: assistantId,
@@ -174,7 +166,7 @@ export function useChat() {
 
       try {
         await streamChat(
-          { conversationId: convId, message: text, attachmentIds: uploaded.map((a) => a.id) },
+          { conversationId: convId, message: text, attachmentIds: attachments.map((a) => a.id) },
           {
             onStage: ({ label }) => {
               stageQueue.current.push(label)

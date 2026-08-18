@@ -36,63 +36,86 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid h-full place-items-center bg-zinc-50 px-4 dark:bg-zinc-950">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="mb-1 text-xl font-semibold text-zinc-900 dark:text-zinc-50">RAG 챗봇</h1>
-        <p className="mb-6 text-sm text-zinc-500">{isSignup ? '계정을 만들어 시작하세요' : '로그인하여 계속하세요'}</p>
+    <div className="min-h-[100dvh] bg-canvas">
+      <div className="mx-auto grid min-h-[100dvh] w-full max-w-5xl items-center gap-10 px-4 py-10 md:grid-cols-2 md:gap-16 md:px-8">
+        {/* 왼쪽은 정체성, 오른쪽은 폼. 모바일에서는 위아래로 쌓임 */}
+        <div className="md:pr-4">
+          <p className="inline-block rounded-full bg-accent-soft px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-accent uppercase">
+            RAG Chatbot
+          </p>
+          <h1 className="mt-4 text-3xl leading-snug font-semibold text-ink md:text-4xl">
+            출처를 밝히는
+            <br />
+            문서 기반 답변
+          </h1>
+          <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-ink-muted">
+            답변마다 근거가 된 자료를 함께 보여줍니다. 찾은 자료가 없으면 없다고 먼저 밝힌 뒤
+            추론으로 답합니다.
+          </p>
+        </div>
 
-        <form onSubmit={onSubmit} className="space-y-3">
-          {isSignup && (
-            <Field label="이름">
-              <TextInput
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                autoComplete="name"
-              />
-            </Field>
-          )}
-          <Field label="이메일">
-            <TextInput
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-          </Field>
-          <Field label="비밀번호">
-            <TextInput
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={isSignup ? 8 : undefined}
-              autoComplete={isSignup ? 'new-password' : 'current-password'}
-            />
-          </Field>
+        <div className="rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-ambient)]">
+          <div className="rounded-[1.375rem] bg-raised p-6 md:p-8">
+            <h2 className="text-lg font-semibold text-ink">{isSignup ? '회원가입' : '로그인'}</h2>
+            <p className="mt-1 mb-6 text-sm text-ink-muted">
+              {isSignup ? '계정을 만들어 시작하세요' : '계속하려면 로그인하세요'}
+            </p>
 
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+            <form onSubmit={onSubmit} className="space-y-3.5">
+              {isSignup && (
+                <Field label="이름">
+                  <TextInput
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    autoComplete="name"
+                  />
+                </Field>
+              )}
+              <Field label="이메일">
+                <TextInput
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </Field>
+              <Field label="비밀번호">
+                <TextInput
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={isSignup ? 8 : undefined}
+                  autoComplete={isSignup ? 'new-password' : 'current-password'}
+                />
+              </Field>
 
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-lg bg-zinc-900 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-          >
-            {busy ? '처리 중…' : isSignup ? '회원가입' : '로그인'}
-          </button>
-        </form>
+              {/* 자리를 미리 비워 둠 - 오류가 뜰 때 폼 전체가 밀려 내려가면 눌린 버튼 위치가 어긋남 */}
+              <p className="min-h-5 text-[13px] leading-5 text-danger">{error}</p>
 
-        <button
-          type="button"
-          onClick={() => {
-            setMode(isSignup ? 'login' : 'signup')
-            setError(null)
-          }}
-          className="mt-4 w-full text-center text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-        >
-          {isSignup ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
-        </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="h-12 w-full rounded-full bg-accent text-[15px] font-medium text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.01] active:scale-[0.99] disabled:scale-100 disabled:opacity-50"
+              >
+                {busy ? '처리 중…' : isSignup ? '회원가입' : '로그인'}
+              </button>
+            </form>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMode(isSignup ? 'login' : 'signup')
+                setError(null)
+              }}
+              className="mt-4 w-full text-center text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink"
+            >
+              {isSignup ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -101,7 +124,7 @@ export default function LoginPage() {
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">{label}</span>
+      <span className="mb-1.5 block text-[13px] font-medium text-ink-muted">{label}</span>
       {children}
     </label>
   )

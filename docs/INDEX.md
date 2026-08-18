@@ -58,6 +58,7 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 | [Backlog](./04_tasks/backlog.md) | 전체 태스크 |
 | [Open Issues](./05_issues/open/) | 현재 이슈 |
 | [Changelog](./06_changelog/CHANGELOG.md) | 변경 이력 |
+| [Inbox](./99_inbox/) | 분류 전 문서. 첨부 미리보기 3종([기능명세서](./99_inbox/features.md) · [와이어프레임](./99_inbox/wireframe.md) · [시나리오](./99_inbox/scenarios.md)) · 재디자인 2종([디자인 시스템](./99_inbox/design-system.md) · [재디자인 와이어프레임](./99_inbox/redesign-wireframe.md)) |
 
 ## AI 사용 가이드
 
