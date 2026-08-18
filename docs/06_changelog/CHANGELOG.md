@@ -9,6 +9,9 @@
 - 배포 런타임을 저장소에서 고정 — `frontend/package.json` 에 `engines.node: "24.x"` 추가. Vercel 프로젝트 설정은 이미 `24.x` 였는데 저장소는 22 를 선언하고 있어, CI 가 검증한 런타임과 실제로 배포 산출물을 만든 런타임이 갈려 있었음. Vercel 은 `engines.node` 를 대시보드 설정보다 우선하므로 이제 저장소가 배포 런타임의 단일 출처가 됨
 - `scripts/check-runtime-versions.sh` 의 node 분기가 `.nvmrc` ↔ `engines.node` 메이저도 대조함. 종래에는 `.nvmrc` 와 CI 러너만 비교해서, `.nvmrc` 만 올리고 `engines.node` 를 빠뜨려도 CI 가 통과하고 배포만 조용히 다른 런타임을 쓰는 구멍이 남아 있었음
 
+### Security
+- `nanoid` 3.3.16 → 3.3.18(high, GHSA-2v37-7h3g-55p8) · `postcss` 8.5.22 → 8.5.26(moderate, GHSA-fxqj-rqcc-2cmp). 코드 변경으로 들어온 것이 아니라, lockfile 동결(2026-07-28) 뒤에 advisory 가 공개되면서 `npm audit` 게이트가 빨간불이 된 것임 — nanoid advisory 공개일이 2026-07-29 로 동결일보다 하루 늦음. 둘 다 `vite`(devDependency) 경유라 배포 번들에는 들어가지 않고, 패치 범위에서 해결돼 빌드 산출물 해시가 바뀌지 않음
+
 ## [2026-07-29]
 
 ### Added
