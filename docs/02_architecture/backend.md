@@ -67,6 +67,10 @@ error/        ApiExceptions + GlobalExceptionHandler
 - **저장 텍스트는 화면에 닿은 것과 같다.** 토큰을 보낸 **뒤에** 버퍼에 담아, 전송 실패한 토큰은 남기지 않는다.
 - **진행 단계 라벨 문자열은 LLM 구현이 소유한다.** `ChatService` 는 실행 모드를 알지 못한다. 목업은 목업임이
   드러나는 전용 문구를 쓴다.
+- **조회 단계 라벨은 실제로 참조한 자료명을 밝힌다.** 그 이름은 화면 하단 출처 목록과 **같은 값**
+  (`CitationData.sourceName`)에서 파생한다 — 따로 문자열을 두면 진행 문구가 말한 자료와 실제로 붙는 출처가
+  언젠가 어긋나고, 그 어긋남 자체가 거짓 표시가 된다. 참조한 자료가 없거나(무자료) 그 시점에 아직 알 수 없으면
+  (라이브의 `file_search` 시작 시점) 이름을 붙이지 않는다. 없는 이름을 지어내지 않는다.
 
 ### 대화 이력
 
@@ -177,7 +181,7 @@ Railway · Render · Fly · Cloud Run 등이 그대로 받는다. 리슨 포트�
 
 통합 테스트는 Testcontainers 로 **실 PostgreSQL** 을 띄운다(`AbstractPgIntegrationTest`). H2 로 대체하지 않는다 —
 `gen_random_uuid()` · `timestamptz` · 트리거 · `lower(email)` 표현식 유일 인덱스가 실물과 갈린다.
-현재 101 케이스이며 하한은 `scripts/case-floors.env` 가 잠근다. 로컬 실행에 Docker 가 필요하다.
+현재 104 케이스이며 하한은 `scripts/case-floors.env` 가 잠근다. 로컬 실행에 Docker 가 필요하다.
 
 통합 테스트는 **고아 회수 크론을 꺼 둔다**(`app.file.orphan-cleanup-cron=-`). `@EnableScheduling` 이 켜져 있어
 그냥 두면 테스트 도중 매시 정각에 실제로 발화하는데, 회수 대상이 DB 행과 공유 저장소 디렉터리라 결과가

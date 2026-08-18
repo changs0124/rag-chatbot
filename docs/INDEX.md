@@ -15,7 +15,7 @@
 | 저장소 | 로컬 디스크(`FILE_STORAGE_ROOT`) — `FileStorage` 인터페이스로 S3 교체 가능 |
 | 테스트 | 백엔드 JUnit 5 + Testcontainers(실 PostgreSQL) · 프론트 Vitest + Testing Library |
 | Lint | oxlint (프론트) |
-| CI | GitHub Actions — `.github/workflows/ci.yml` (backend · frontend · docs · secrets · deps × 2) |
+| CI | GitHub Actions — `.github/workflows/ci.yml` (backend · frontend · docker · docs · secrets · deps × 2) |
 
 ## 실행
 
