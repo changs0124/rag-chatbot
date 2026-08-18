@@ -139,7 +139,7 @@ describe('MessageList', () => {
 
   it('shows empty state when there are no messages', () => {
     render(<MessageList messages={[]} />)
-    expect(screen.getByText(/무엇이든 물어보세요/)).toBeInTheDocument()
+    expect(screen.getByText(/무엇을 도와드릴까요/)).toBeInTheDocument()
   })
 
   // R-11 진행 단계 표시

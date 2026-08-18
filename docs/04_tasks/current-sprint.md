@@ -8,6 +8,9 @@
 
 ## 완료
 
+- [x] 전 화면 재디자인 (Claude 계열 웜 톤) + 사이드바 폭 조절(FEAT-UI-001) — 색을 토큰으로 접고
+  답변 말풍선을 걷어냄. 설계는 `docs/99_inbox/design-system.md` · `docs/99_inbox/redesign-wireframe.md`
+
 - [x] 첨부 미리보기 (FEAT-CHAT-001~003) — 입력창 썸네일 카드 · 즉시 업로드 · 확대 보기 · 드롭/붙여넣기.
   설계는 `docs/99_inbox/features.md` · `docs/99_inbox/wireframe.md` · `docs/99_inbox/scenarios.md`
 
