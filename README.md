@@ -12,12 +12,12 @@
 - `backend/` - Spring Boot + Java 17 + Maven(Wrapper) + MyBatis
 - `docs/` - 프로젝트 문서(구조 · 컨벤션 · 태스크 · 이슈 · 변경 이력). 진입점은 `docs/INDEX.md`
 
-## 툴체인 (0-A에서 고정 · 확인일 2026-07-24)
+## 툴체인 (0-A에서 고정 · 확인일 2026-08-18)
 
 | 도구 | 버전 | 고정 위치 |
 |------|------|-----------|
-| Node.js | 22.23.1 | `.nvmrc` (major 22) |
-| npm | 10.9.8 | Node 동봉 |
+| Node.js | 24.19.0 | `.nvmrc` (major 24) |
+| npm | 11.17.0 | Node 동봉 |
 | Java(JDK) | 17.0.19 LTS | `backend/pom.xml`의 `java.version` (백엔드 스캐폴딩 시) |
 | Maven | Wrapper로 부트스트랩 | `backend/.mvn/wrapper/maven-wrapper.properties` (전역 `mvn` 미설치 대응) |
 | Git | 2.54 | - |
