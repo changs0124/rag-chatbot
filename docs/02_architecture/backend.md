@@ -155,9 +155,8 @@ SSE 타임아웃까지 기다리게 된다.
 
 ## 배포
 
-호스트가 정해지지 않았으므로 특정 PaaS 형식 대신 **컨테이너 하나**(`backend/Dockerfile`)로 둔다.
-Railway · Render · Fly · Cloud Run 등이 그대로 받는다. 리슨 포트는 `PORT` 환경변수를 따르므로
-플랫폼이 주입하는 포트에 자동으로 맞는다.
+두 갈래가 있다. **상시 공개**는 컨테이너를 호스트에 올리고, **데모**는 로컬 인스턴스를 터널로 노출한다.
+환경변수 요구사항은 어느 쪽이든 같다.
 
 필요한 환경변수와 각 값의 의미는 `backend/.env.example` 에 있다. 배포 시 반드시 확인할 것 :
 
@@ -170,12 +169,46 @@ Railway · Render · Fly · Cloud Run 등이 그대로 받는다. 리슨 포트�
 | `OPENAI_API_KEY` | `live` 에서만 필요. `live` 인데 비면 기동 실패(fail-fast) |
 | `OPENAI_VECTOR_STORE_ID` | 기동·응답은 되지만 file_search 없이 답해 **출처가 늘 0건**(전부 "자료 없음") |
 
+스키마는 기동 시 Flyway 가 적용하므로 별도 마이그레이션 단계가 필요 없다.
+헬스체크 경로는 `GET /api/health`(인증 불필요)다.
+
+### 상시 공개 - 컨테이너
+
+호스트가 정해지지 않았으므로 특정 PaaS 형식 대신 **컨테이너 하나**(`backend/Dockerfile`)로 둔다.
+Railway · Render · Fly · Cloud Run 등이 그대로 받는다. 리슨 포트는 `PORT` 환경변수를 따르므로
+플랫폼이 주입하는 포트에 자동으로 맞는다.
+
 **첨부 파일은 로컬 디스크에 저장한다.** 컨테이너가 갈리면 사라지므로 `FILE_STORAGE_ROOT` 에
 영속 볼륨을 붙여야 한다(이미지 기본값 `/data/uploads`). 볼륨을 붙일 수 없는 환경이면
 `FileStorage` 구현을 S3 등으로 교체해야 한다.
 
-스키마는 기동 시 Flyway 가 적용하므로 별도 마이그레이션 단계가 필요 없다.
-헬스체크 경로는 `GET /api/health`(인증 불필요)다.
+### 데모 - 로컬 + 터널
+
+프론트는 Vercel(https)에 있고 백엔드는 로컬이므로 `http://공인IP:8080` 직결은 성립하지 않는다 —
+https 페이지가 http 를 부르면 브라우저가 mixed content 로 막는다. 터널이 https 종단을 대신 맡는다.
+
+1. 백엔드를 평소대로 띄운다(`./mvnw spring-boot:run`, `:8080`)
+2. 터널을 연다 — `ngrok http 8080` 또는 `cloudflared tunnel --url http://localhost:8080`
+3. 백엔드 `ALLOWED_ORIGINS` 에 **Vercel 도메인**을 넣는다. 터널 주소가 아니다 —
+   이 값은 백엔드의 공개 주소가 아니라 **요청을 보내는 화면의 출처**다
+4. Vercel `VITE_API_BASE_URL` 에 **터널 주소**를 넣고 재배포한다
+
+터널 프로세스와 백엔드 프로세스는 수명이 다르다. 백엔드만 재시작하면 주소가 유지되므로 재배포가
+필요 없고, 주소가 바뀌는 것은 **터널을 재시작할 때**다. 여기서 도구가 갈린다 :
+
+| 도구 | 주소 | 대가 |
+|------|------|------|
+| ngrok 무료 | 계정당 고정 도메인 1개 — 재시작해도 같음 | 월 20,000 요청 · 1GB. 브라우저 요청에 경고 페이지(interstitial)를 끼움 |
+| cloudflared quick tunnel | 켤 때마다 랜덤 | 주소가 바뀔 때마다 Vercel 재배포 |
+
+ngrok 의 경고 페이지는 요청에 `ngrok-skip-browser-warning` 헤더를 실으면 건너뛴다. 다만 이 앱에서는
+그 우회가 절반만 가능하다 — `CorsConfig` 의 허용 헤더가 `Authorization` · `Content-Type` 화이트리스트라
+헤더를 실으려면 거기에도 추가해야 하고, 첨부 이미지는 `<img src>` 로 나가서(`MessageList`) 헤더를 실을 수 없다.
+ngrok 문서는 interstitial 이 HTML 브라우저 요청에만 붙고 이미지·API 요청에는 해당하지 않는다고 밝히지만
+**이 저장소에서 실측한 적은 없다.** 데모 전에 로그인과 첨부 이미지 표시부터 확인하고, 깨지면 그때 고친다.
+
+첨부는 로컬 디스크(`FILE_STORAGE_ROOT`, 기본 `./uploads`)에 그대로 쌓이므로 이 경로에는 볼륨 문제가 없다.
+대신 **PC 가 꺼지면 데모도 끝난다.**
 
 ## 테스트
 

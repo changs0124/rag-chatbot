@@ -42,6 +42,7 @@
 - **Node.js 22 → 24 (Active LTS)** — `.nvmrc` · CI `setup-node` 2개 잡 · README 툴체인 표를 24 로 올림. Node 22 는 2025-10 부터 유지보수 LTS 라 보안 픽스만 들어옴
 - 배포 런타임을 저장소에서 고정 — `frontend/package.json` 에 `engines.node: "24.x"` 추가. Vercel 프로젝트 설정은 이미 `24.x` 였는데 저장소는 22 를 선언하고 있어, CI 가 검증한 런타임과 실제로 배포 산출물을 만든 런타임이 갈려 있었음. Vercel 은 `engines.node` 를 대시보드 설정보다 우선하므로 이제 저장소가 배포 런타임의 단일 출처가 됨
 - `scripts/check-runtime-versions.sh` 의 node 분기가 `.nvmrc` ↔ `engines.node` 메이저도 대조함. 종래에는 `.nvmrc` 와 CI 러너만 비교해서, `.nvmrc` 만 올리고 `engines.node` 를 빠뜨려도 CI 가 통과하고 배포만 조용히 다른 런타임을 쓰는 구멍이 남아 있었음
+- **배포 문서를 두 갈래로 나눔(상시 공개 컨테이너 · 데모 로컬+터널)** — 종래 배포 절은 컨테이너 경로만 적어서, 프론트만 Vercel 에 올라가 있고 백엔드는 로컬인 현재 상태에서 무엇을 해야 하는지가 문서에 없었음. 터널 경로에서 실제로 사람이 틀리는 두 지점을 명시함 : `ALLOWED_ORIGINS` 에 터널 주소를 넣는 것(넣을 값은 화면의 출처인 Vercel 도메인임) · 터널 주소가 바뀌었을 때 Vercel 환경변수만 고치고 재배포를 빠뜨리는 것(`VITE_API_BASE_URL` 은 빌드 시점 치환이라 반영되지 않음). ngrok 무료 플랜의 interstitial 은 `CorsConfig` 허용 헤더 화이트리스트와 `<img src>` 첨부 경로 때문에 헤더 우회가 절반만 통한다는 점을 **미검증 항목으로** 함께 적음
 
 ### Security
 - `nanoid` 3.3.16 → 3.3.18(high, GHSA-2v37-7h3g-55p8) · `postcss` 8.5.22 → 8.5.26(moderate, GHSA-fxqj-rqcc-2cmp). 코드 변경으로 들어온 것이 아니라, lockfile 동결(2026-07-28) 뒤에 advisory 가 공개되면서 `npm audit` 게이트가 빨간불이 된 것임 — nanoid advisory 공개일이 2026-07-29 로 동결일보다 하루 늦음. 둘 다 `vite`(devDependency) 경유라 배포 번들에는 들어가지 않고, 패치 범위에서 해결돼 빌드 산출물 해시가 바뀌지 않음
