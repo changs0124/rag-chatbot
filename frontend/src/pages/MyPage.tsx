@@ -69,85 +69,93 @@ export default function MyPage() {
   }
 
   return (
-    <div className="mx-auto h-full max-w-lg overflow-y-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">마이페이지</h1>
-        <Link to="/" className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
+    <div className="min-h-[100dvh] overflow-y-auto bg-canvas">
+      <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+        <Link
+          to="/"
+          className="text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink"
+        >
           ← 채팅으로
         </Link>
+
+        <h1 className="mt-4 mb-1 text-2xl font-semibold text-ink">설정</h1>
+        <p className="mb-6 text-sm text-ink-muted">{user?.email}</p>
+
+        {notice && (
+          <p className="mb-4 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-accent">{notice}</p>
+        )}
+        {error && (
+          <p className="mb-4 rounded-xl bg-surface px-3.5 py-2.5 text-sm text-danger">{error}</p>
+        )}
+
+        <div className="space-y-4">
+          <Card title="이름">
+            <div className="flex gap-2">
+              <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+              <button onClick={saveName} disabled={!name.trim()} className={btnClass}>
+                저장
+              </button>
+            </div>
+          </Card>
+
+          <Card title="비밀번호">
+            <div className="space-y-2.5">
+              <TextInput
+                type="password"
+                placeholder="현재 비밀번호"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+              <TextInput
+                type="password"
+                placeholder="새 비밀번호 (8자 이상)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+              <button
+                onClick={savePassword}
+                disabled={!currentPassword || newPassword.length < 8}
+                className={btnClass}
+              >
+                비밀번호 변경
+              </button>
+            </div>
+          </Card>
+
+          <Card title="테마">
+            {/* 세그먼트 컨트롤 - 선택된 칸만 떠 보이게 함 */}
+            <div className="flex gap-1 rounded-xl bg-surface p-1">
+              {THEMES.map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => chooseTheme(t.value)}
+                  className={
+                    'flex-1 rounded-lg px-3 py-2 text-sm transition duration-150 ease-[var(--ease-out-quint)] ' +
+                    (theme === t.value
+                      ? 'bg-raised font-medium text-ink shadow-[var(--shadow-ambient)]'
+                      : 'text-ink-muted hover:text-ink')
+                  }
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
-
-      {notice && <p className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-400">{notice}</p>}
-      {error && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">{error}</p>}
-
-      <Section title="계정">
-        <p className="text-sm text-zinc-500">{user?.email}</p>
-      </Section>
-
-      <Section title="이름 변경">
-        <div className="flex gap-2">
-          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
-          <button onClick={saveName} disabled={!name.trim()} className={btnClass}>
-            저장
-          </button>
-        </div>
-      </Section>
-
-      <Section title="비밀번호 변경">
-        <div className="space-y-2">
-          <TextInput
-            type="password"
-            placeholder="현재 비밀번호"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            autoComplete="current-password"
-          />
-          <TextInput
-            type="password"
-            placeholder="새 비밀번호 (8자 이상)"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            autoComplete="new-password"
-          />
-          <button
-            onClick={savePassword}
-            disabled={!currentPassword || newPassword.length < 8}
-            className={btnClass}
-          >
-            비밀번호 변경
-          </button>
-        </div>
-      </Section>
-
-      <Section title="테마">
-        <div className="flex gap-2">
-          {THEMES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => chooseTheme(t.value)}
-              className={
-                'flex-1 rounded-lg border px-3 py-2 text-sm ' +
-                (theme === t.value
-                  ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900'
-                  : 'border-zinc-300 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800')
-              }
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </Section>
     </div>
   )
 }
 
 const btnClass =
-  'shrink-0 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900'
+  'h-11 shrink-0 rounded-full bg-accent px-5 text-sm font-medium text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 disabled:opacity-40'
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mb-6">
-      <h2 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">{title}</h2>
+    <section className="rounded-2xl bg-raised p-5 shadow-[var(--shadow-ambient)]">
+      <h2 className="mb-3 text-sm font-medium text-ink">{title}</h2>
       {children}
     </section>
   )

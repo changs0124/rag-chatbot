@@ -44,24 +44,30 @@ export default function CameraCapture({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl bg-zinc-900 p-4">
-        {error ? (
-          <p className="py-8 text-center text-sm text-red-400">{error}</p>
-        ) : (
-          <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg bg-black" />
-        )}
-        <div className="mt-3 flex justify-between">
-          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-zinc-300 hover:bg-white/10">
-            취소
-          </button>
-          {!error && (
-            <button
-              onClick={capture}
-              className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-200"
-            >
-              촬영
-            </button>
+      {/* 영상이 주인공이라 안쪽은 어둡게 두되, 껍데기·버튼은 토큰을 쓴다 */}
+      <div className="w-full max-w-md rounded-[1.75rem] bg-raised p-1.5 shadow-[var(--shadow-lifted)]">
+        <div className="rounded-[1.375rem] bg-black/90 p-4">
+          {error ? (
+            <p className="py-8 text-center text-sm text-danger">{error}</p>
+          ) : (
+            <video ref={videoRef} autoPlay playsInline className="w-full rounded-xl bg-black" />
           )}
+          <div className="mt-3 flex items-center justify-between">
+            <button
+              onClick={onClose}
+              className="rounded-full px-4 py-2.5 text-sm text-white/80 transition duration-150 ease-[var(--ease-out-quint)] hover:bg-white/10 hover:text-white active:scale-[0.98]"
+            >
+              취소
+            </button>
+            {!error && (
+              <button
+                onClick={capture}
+                className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.02] active:scale-[0.98]"
+              >
+                촬영
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
