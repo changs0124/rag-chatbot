@@ -2,6 +2,9 @@ package com.ragchatbot.openai;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -115,6 +118,39 @@ public class OpenAiMockService implements OpenAiService {
 	public void deleteResources(String vectorStoreId, List<String> openaiFileIds) {
 		deleteResourcesCalls.incrementAndGet();
 		// 목업 : 실제 삭제 없이 호출만 기록
+	}
+
+	// ── RAG 문서 관리(FEAT-ADMIN-002) ────────────────────────────────────────────
+	// 목업도 전 경로가 동작해야 함(P-2). 실 호출 없이 메모리로만 흉내내되,
+	// **목업임이 파일 ID 에 드러나게** `mock-` 접두를 붙여 실 데이터와 섞이지 않게 함.
+
+	/** 목업 스토어 ID. 실 값과 구분되도록 접두를 붙임 */
+	static final String MOCK_STORE_ID = "mock-vector-store";
+
+	private final Set<String> mockDocuments = ConcurrentHashMap.newKeySet();
+
+	@Override
+	public boolean hasSharedVectorStore() {
+		// 목업은 늘 스토어가 있는 것으로 봄 - 스토어 미설정 분기는 실 연동 전용 상태임
+		return true;
+	}
+
+	@Override
+	public UploadedDocument uploadDocument(String filename, byte[] content, String contentType) {
+		String fileId = "mock-file-" + UUID.randomUUID();
+		mockDocuments.add(fileId);
+		return new UploadedDocument(fileId, MOCK_STORE_ID);
+	}
+
+	@Override
+	public String documentStatus(String vectorStoreId, String openaiFileId) {
+		// 목업은 인덱싱을 기다릴 것이 없으므로 곧바로 완료. 지워진 파일은 실패로 봄
+		return mockDocuments.contains(openaiFileId) ? "completed" : "failed";
+	}
+
+	@Override
+	public void deleteDocument(String vectorStoreId, String openaiFileId) {
+		mockDocuments.remove(openaiFileId);
 	}
 
 	public int deleteResourcesCalls() {

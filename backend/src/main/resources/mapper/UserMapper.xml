@@ -56,6 +56,12 @@
 		<foreach item="e" collection="emails" open="(" separator="," close=")">#{e}</foreach>
 	</update>
 
+	<select id="listAll" resultMap="userResult">
+		select id, email, password_hash, name, theme, role, created_at, updated_at
+		from users
+		order by created_at asc
+	</select>
+
 	<update id="updateName">
 		update users set name = #{name} where id = #{id}
 	</update>

@@ -94,7 +94,7 @@ erDiagram
     messages ||--o{ attachments : "첨부"
 ```
 
-**`rag_documents` 는 신설 예정**이다(FEAT-ADMIN-002). 나머지 5개 테이블은 구현돼 있다.
+여섯 테이블 모두 구현돼 있다. `rag_documents` 만 V6 로 나중에 붙었다.
 
 ## 2. 테이블 정의
 
@@ -179,7 +179,7 @@ erDiagram
 **`message_id` 가 nullable 인 것이 즉시 업로드의 핵심**이다. 파일을 고르는 즉시 올리고, 전송 시점에
 메시지와 연결한다. 연결되지 않은 행은 **고아**이며 회수 스케줄러가 유예 뒤 정리한다.
 
-### rag_documents (RAG 문서) — 신설
+### rag_documents (RAG 문서)
 
 | 컬럼명 | 타입 | NULL | 기본값 | 설명 |
 |--------|------|------|--------|------|
@@ -211,7 +211,7 @@ erDiagram
 | citations | `idx_citations_message` | (message_id, seq) | INDEX | 각주 번호 순 조회 |
 | attachments | `idx_attachments_message` | message_id | INDEX | 메시지별 첨부 |
 | attachments | `idx_attachments_user` | user_id | INDEX | 소유권 검증·고아 회수 |
-| rag_documents | `idx_rag_documents_alive` | (deleted_at, created_at desc) | INDEX | **신설.** 살아 있는 문서 최신순 |
+| rag_documents | `idx_rag_documents_alive` | (deleted_at, created_at desc) | INDEX | 살아 있는 문서 최신순(V6) |
 
 ## 4. 관계 정의
 
@@ -255,7 +255,7 @@ erDiagram
 | V3 | `messages.stopped` |
 | V4 | `messages.input_tokens` · `output_tokens` — FEAT-OPS-001 |
 | V5 | `users.role` — FEAT-ADMIN-001 |
-| **V6 (예정)** | `rag_documents` 신설 — FEAT-ADMIN-002 |
+| V6 | `rag_documents` 신설 — FEAT-ADMIN-002 |
 
 **기존 마이그레이션을 수정하지 않는다.** 새 변경은 항상 새 파일로 추가한다.
 

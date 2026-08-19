@@ -71,4 +71,30 @@ public interface OpenAiService {
 
 	/** 대화 삭제 시 OpenAI 파일/Vector Store 정리(AC-12). Mock은 호출을 기록만 함 */
 	void deleteResources(String vectorStoreId, List<String> openaiFileIds);
+
+	// ── RAG 문서 관리(FEAT-ADMIN-002) ────────────────────────────────────────────
+	// 채팅 첨부와 다른 경로임. 첨부는 비전 입력용이라 이미지만 받고 인라인으로 보내지만,
+	// 여기는 색인용이라 문서만 받아 공용 Vector Store 에 넣음.
+
+	/** 공용 Vector Store 설정 여부. 비어 있으면 업로드를 받지 않음 - 어디에도 없는 문서가 목록에만 뜨는 것을 막음 */
+	boolean hasSharedVectorStore();
+
+	/** 업로드한 문서의 OpenAI 식별자와 그것이 들어간 스토어 */
+	record UploadedDocument(String openaiFileId, String vectorStoreId) {
+	}
+
+	/**
+	 * 문서를 OpenAI Files 에 올리고 공용 Vector Store 에 연결함.
+	 *
+	 * <p>둘 중 뒤 단계가 실패하면 <b>고아 파일이 남으므로</b> 구현이 즉시 정리를 시도하고,
+	 * 그것도 실패하면 경고 로그에 file_id 를 남김. 어느 경우에도 예외를 던져 호출자가
+	 * DB 행을 만들지 않게 함.
+	 */
+	UploadedDocument uploadDocument(String filename, byte[] content, String contentType);
+
+	/** 인덱싱 상태 조회 - in_progress | completed | failed 중 하나를 돌려줌 */
+	String documentStatus(String vectorStoreId, String openaiFileId);
+
+	/** Vector Store 연결 해제 + 파일 삭제. 실패해도 예외를 던지지 않음(호출자는 삭제를 계속 진행함) */
+	void deleteDocument(String vectorStoreId, String openaiFileId);
 }

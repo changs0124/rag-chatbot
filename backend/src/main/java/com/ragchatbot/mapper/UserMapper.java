@@ -22,6 +22,9 @@ public interface UserMapper {
 
 	Optional<User> findByEmail(String email);
 
+	/** 관리자 화면의 사용자 목록(FEAT-ADMIN-003). 가입 순 */
+	List<User> listAll();
+
 	void updateName(@Param("id") UUID id, @Param("name") String name);
 
 	/**
