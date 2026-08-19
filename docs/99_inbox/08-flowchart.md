@@ -19,7 +19,7 @@
 | ID | 플로우명 | 관련 기능 | 우선순위 | 상태 |
 |----|---------|---------|---------|------|
 | FLOW-AUTH-001 | 로그인 · 세션 유지 | FEAT-OPS-003 | High | 일부 미구현 |
-| FLOW-AUTH-002 | 회원가입 · 도메인 검사 | FEAT-AUTH-001 | High | **미구현** |
+| FLOW-AUTH-002 | 회원가입 · 도메인 검사 | FEAT-AUTH-001 | High | 구현됨 |
 | FLOW-CHAT-001 | 채팅 한 턴 (검증 → 스트림 → 저장) | FEAT-CHAT-* | High | 구현됨 |
 | FLOW-CHAT-002 | 첨부 즉시 업로드 | FEAT-CHAT-001 | High | 구현됨 |
 | FLOW-RAG-001 | 무자료 판정 | REQ-RAG-003 | High | 구현됨 |
@@ -68,7 +68,7 @@ flowchart TD
 
 ---
 
-### FLOW-AUTH-002: 회원가입 · 도메인 검사 (미구현)
+### FLOW-AUTH-002: 회원가입 · 도메인 검사
 
 ```mermaid
 flowchart TD

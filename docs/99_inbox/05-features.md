@@ -44,8 +44,7 @@
 | FEAT-OPS-003 | 세션 슬라이딩 재발급 | 인증 | Should | REQ-AUTH-005 |
 | FEAT-AUTH-001 | 가입 이메일 도메인 화이트리스트 | 인증 | Must | REQ-AUTH-007 |
 
-**구현 상태** : `FEAT-CHAT-*` · `FEAT-OPS-*` · `FEAT-ADMIN-*` **9종 구현 완료**(화면 포함).
-`FEAT-AUTH-001` 은 **미구현**이다.
+**구현 상태** : `FEAT-CHAT-*` · `FEAT-OPS-*` · `FEAT-ADMIN-*` · `FEAT-AUTH-001` **10종 모두 구현 완료**.
 
 **의존 순서** : FEAT-ADMIN-001 → 002 · 003. 001이 없으면 나머지의 접근 제어가 성립하지 않는다.
 FEAT-OPS-* 3종은 서로 독립이며 **원인이 달라 커밋을 나눈다.**
