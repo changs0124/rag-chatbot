@@ -103,7 +103,7 @@
 | ID | 메서드 | 경로 | 설명 | 인증 | 상태 |
 |----|--------|------|------|------|------|
 | API-GET-001 | GET | `/api/health` | 헬스체크 | - | 구현됨 |
-| API-POST-001 | POST | `/api/auth/signup` | 회원가입 | - | 구현됨 |
+| API-POST-001 | POST | `/api/auth/signup` | 회원가입 | - | 구현됨 (도메인 제한은 미구현) |
 | API-POST-002 | POST | `/api/auth/login` | 로그인 | - | 구현됨 |
 | API-GET-002 | GET | `/api/auth/me` | 현재 사용자 | USER | 구현됨 |
 | API-GET-003 | GET | `/api/profile` | 프로필 조회 | USER | 구현됨 |
@@ -129,6 +129,31 @@
 양이 늘면 그때 넣는다. 지금 넣으면 쓰이지 않는 파라미터가 계약에 남는다.
 
 ## 3. API 상세
+
+### API-POST-001: 회원가입
+
+**POST** `/api/auth/signup`
+
+**Request Body:**
+```json
+{ "email": "hong@company.com", "password": "…", "name": "홍길동" }
+```
+
+**Response 200:** 로그인과 같은 형태(`token` + `user`).
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `BAD_REQUEST` | 400 | 이메일 형식 · 비밀번호 8자 미만 · 이름 공백 |
+| `BAD_REQUEST` | 400 | **허용 도메인 밖**(FEAT-AUTH-001, 미구현). 메시지에 허용 도메인을 밝힌다 |
+| `CONFLICT` | 409 | 이미 가입된 이메일 |
+
+**도메인 검사가 중복 검사보다 먼저다.** 순서가 바뀌면 거절할 주소에 대해 "이미 가입된 이메일"을
+돌려주게 되어 **계정 존재 여부가 새어 나간다.**
+
+**현재 상태** : 도메인 제한이 없어 형식만 맞으면 누구나 가입된다. `/api/auth/signup` 은 `permitAll`
+이며 관리자 승인도 이메일 인증도 없다.
 
 ### API-POST-002: 로그인
 
