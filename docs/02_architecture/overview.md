@@ -172,6 +172,7 @@ erDiagram
 | JWT 시크릿 / 만료 | `JWT_SECRET` · `JWT_EXPIRATION_MINUTES` | 없음(필수) / 120분 |
 | 슬라이딩 재발급 임계 | `JWT_REFRESH_THRESHOLD_MINUTES` | 30분 (**0이면 기능 끔**) |
 | 관리자 이메일 명단 | `ADMIN_EMAILS` | 없음(관리자 0명). 명단에서 빠지면 다음 기동에 강등 |
+| 가입 허용 도메인 | `ALLOWED_EMAIL_DOMAINS` | 없음. **`live` 에서는 필수** — 비우면 기동 실패 |
 | SSE 타임아웃 | `SSE_TIMEOUT_MS` | 600000 |
 | 동시 스트림 상한 / 사용자별 | `CHAT_MAX_CONCURRENT_STREAMS` · `CHAT_MAX_CONCURRENT_PER_USER` | 8 / 1 |
 | 채팅·로그인 분당 상한 | `RATELIMIT_CHAT_PER_MINUTE` · `RATELIMIT_LOGIN_PER_MINUTE` | 20 / 10 |
