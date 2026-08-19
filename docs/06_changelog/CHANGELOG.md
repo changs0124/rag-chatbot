@@ -2,6 +2,15 @@
 
 모든 주요 변경사항을 기록한다.
 
+## [2026-08-19]
+
+### Added
+- **개발 문서 10종 정비 (`/project-docs-gen` 체계)** — 코드가 먼저 있고 문서가 없던 상태를 뒤집음. `docs/99_inbox/` 에 `01-requirements` ~ `10-scenarios` 를 두고 `REQ-` · `FEAT-` · `SCR-` · `API-` · `FLOW-` · `TC-` ID 체계를 세움
+  - 기존 첨부 미리보기 3종은 **정본 파일명으로 옮겨 누적 병합**(`features.md` → `05-features.md` 등). 새 기능마다 파일을 늘리지 않고 한 문서에 쌓음
+  - 템플릿 기본값이 이 저장소와 어긋나는 부분은 **골격만 따르고 값은 실제로 바꿈** — MySQL(`BIGINT AUTO_INCREMENT` · `DATETIME`) → PostgreSQL uuid · `timestamptz`, 응답 `{success,data}` → `{code,message}`, `/api/v1` → `/api`, 권한 없음 403 → 404 은닉. 그대로 옮기면 문서가 코드와 어긋남
+  - 실제 스키마와 대조해 `06-erd.md` 2건을 고침 — 인덱스명을 비워뒀던 것(`idx_citations_message` 는 `(message_id, seq)` 복합)과 V1 의 `set_updated_at()` 트리거 누락
+  - `docs/01_specs/live-integration.md` 신설 — 키·Vector Store 확보 후 투입 절차와 **실물로 확인된 적 없는 가정 5건**(이벤트명 · annotation 스키마)을 증상과 함께 나열함
+
 ## [2026-08-18]
 
 ### Added
@@ -17,7 +26,7 @@
   - **지운 카드의 업로드가 뒤늦게 성공하면 그 파일을 서버에서 지움** — 중단은 요청을 끊을 뿐 서버가 이미 받은 것을 되돌리지 않아, 지우지 않으면 회수 크론(기본 60분)을 기다리는 고아가 됨. 눈에 보이지 않는 경합이라 테스트로 잠금
   - 확대 화면에서 포인터 캡처를 잡음 — 확대 상태로 끌 때 손가락이 이미지 밖으로 나가면 이동이 멈추던 것
   - `frontend/src/test/setup.ts` 에 `PointerEvent` 폴리필 추가 — jsdom 에 없어서 핀치 검사가 밋밋한 `Event` 를 받고 "아무 일도 안 일어남"을 통과로 읽었음(실제로 그렇게 한 번 초록불이 났음)
-  - 프론트 테스트 32 → 52 케이스(`FRONTEND_MIN` 동반 상향). 설계 문서는 `docs/99_inbox/features.md` · `docs/99_inbox/wireframe.md` · `docs/99_inbox/scenarios.md`
+  - 프론트 테스트 32 → 52 케이스(`FRONTEND_MIN` 동반 상향). 설계 문서는 `docs/99_inbox/05-features.md` · `docs/99_inbox/09-wireframe.md` · `docs/99_inbox/10-scenarios.md`
 
 ### Changed
 - **전 화면 재디자인 — Claude 계열 웜 톤 + 채팅 앱 구조** — 채팅 · 로그인 · 마이페이지를 한 번에 다시 칠함. 배치는 ChatGPT · Claude 를 따랐고, 색은 웜 크림 계열로 바꿈(회색 계열은 대화가 길어지는 화면에서 눈이 빨리 지침)

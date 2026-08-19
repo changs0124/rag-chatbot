@@ -49,7 +49,7 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 
 | 문서 | 설명 |
 |------|------|
-| [Specs](./01_specs/) | 기획·설계 문서 (요구사항, 기능명세, ERD 등) |
+| [Specs](./01_specs/) | 기획·설계 문서. [OpenAI 실 연동 투입 절차](./01_specs/live-integration.md) |
 | [Architecture](./02_architecture/overview.md) | 시스템 전체 구조 · API 맵 · 데이터 흐름 |
 | [References](./03_references/) | 외부 레퍼런스 (디자인, API, 라이브러리) |
 | [Conventions](./CONVENTIONS.md) | 코드 스타일 & 패턴 규칙 |
@@ -58,7 +58,25 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 | [Backlog](./04_tasks/backlog.md) | 전체 태스크 |
 | [Open Issues](./05_issues/open/) | 현재 이슈 |
 | [Changelog](./06_changelog/CHANGELOG.md) | 변경 이력 |
-| [Inbox](./99_inbox/) | 분류 전 문서. 첨부 미리보기 3종([기능명세서](./99_inbox/features.md) · [와이어프레임](./99_inbox/wireframe.md) · [시나리오](./99_inbox/scenarios.md)) · 재디자인 2종([디자인 시스템](./99_inbox/design-system.md) · [재디자인 와이어프레임](./99_inbox/redesign-wireframe.md)) |
+| [Inbox](./99_inbox/) | 분류 전 문서. 아래 개발 문서 10종 + 재디자인 2종([디자인 시스템](./99_inbox/design-system.md) · [재디자인 와이어프레임](./99_inbox/redesign-wireframe.md)) |
+
+### 개발 문서 10종 (`docs/99_inbox/`)
+
+`/project-docs-gen` 템플릿 체계다. 파일명 앞 숫자는 **의존 순서**이며, 앞 문서가 뒤 문서의 입력이 된다.
+프로젝트 전체를 누적해 담으므로 기능이 늘면 새 파일을 만들지 않고 해당 문서에 병합한다.
+
+| 순서 | 문서 | 담는 것 |
+|------|------|---------|
+| 01 | [요구사항정의서](./99_inbox/01-requirements.md) | `REQ-` ID 정본. AUTH · CHAT · RAG · ADMIN · OPS 다섯 카테고리 |
+| 02 | [기술 스택 결정서](./99_inbox/02-tech-stack.md) | 선택 이유와 대안, 감수한 약점, 전환 조건 |
+| 03 | [역할/권한 매트릭스](./99_inbox/03-roles.md) | GUEST · USER · ADMIN 권한. **권한 없음을 404로 은닉하는 규칙** |
+| 04 | [정보구조도](./99_inbox/04-sitemap.md) | `SCR-` ID · 화면 목록 · 네비게이션 |
+| 05 | [기능명세서](./99_inbox/05-features.md) | `FEAT-` ID · 처리 흐름 · 예외 처리 |
+| 06 | [ERD 설계서](./99_inbox/06-erd.md) | 테이블 정의 · 인덱스 · 설계 원칙 |
+| 07 | [API 명세서](./99_inbox/07-api.md) | `API-` ID · 공통 규칙 · 에러 코드 |
+| 08 | [플로우차트](./99_inbox/08-flowchart.md) | `FLOW-` ID · 사용자 관점 분기 |
+| 09 | [와이어프레임 설계서](./99_inbox/09-wireframe.md) | 화면 배치 · UI 컴포넌트 · 인터랙션 |
+| 10 | [시나리오 케이스](./99_inbox/10-scenarios.md) | `TC-` ID · `EDGE-` ID · 테스트 결과 요약 |
 
 ## AI 사용 가이드
 
