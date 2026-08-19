@@ -44,6 +44,26 @@ export interface ChatMessage {
   attachments?: Attachment[]
 }
 
+/** 관리 화면의 RAG 문서(FEAT-ADMIN-002) */
+export interface RagDocument {
+  id: string
+  filename: string
+  byteSize: number
+  // in_progress 는 **업로드가 아니라 인덱싱** 중이라는 뜻. 완료돼야 검색에 잡힌다
+  status: 'in_progress' | 'completed' | 'failed'
+  uploadedByName: string
+  createdAt: string
+}
+
+/** 관리 화면의 사용자 목록. 초기화 대상을 고르는 용도라 여기서는 이메일이 필요하다 */
+export interface AdminUser {
+  id: string
+  email: string
+  name: string
+  role: 'user' | 'admin'
+  createdAt: string
+}
+
 export interface Attachment {
   id: string
   // 문서 업로드는 2026-07-28부터 받지 않음(모델에 전달되지 않아 오해를 만들었음).

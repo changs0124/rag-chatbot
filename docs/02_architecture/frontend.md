@@ -23,6 +23,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | `/login` | `LoginPage` — 로그인·회원가입 한 화면(모드 토글) | 공개 |
 | `/` | `ChatPage` | `ProtectedRoute` |
 | `/me` | `MyPage` | `ProtectedRoute` |
+| `/admin` | `AdminPage` — 문서 관리 · 사용자 관리 | `ProtectedRoute` + **관리자만** |
 | 그 외 | `/` 로 리다이렉트 | 해당 없음 |
 
 `frontend/src/components/ProtectedRoute.tsx` 는 세 갈래다 — `loading` 중이면 로딩 표시, 끝난 뒤 사용자가 없으면

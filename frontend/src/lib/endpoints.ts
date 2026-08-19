@@ -1,5 +1,15 @@
 import { adoptRefreshedToken, api, API_BASE, ApiError, getToken, handleUnauthorized } from './api'
-import type { Attachment, AuthResponse, ChatMessage, Citation, Conversation, Me, Theme } from './types'
+import type {
+  AdminUser,
+  Attachment,
+  AuthResponse,
+  ChatMessage,
+  Citation,
+  Conversation,
+  Me,
+  RagDocument,
+  Theme,
+} from './types'
 
 // 프로필 (마이페이지)
 export const updateName = (name: string) => api.patch<Me>('/api/profile/name', { name })
@@ -26,6 +36,19 @@ export function uploadFile(file: File, signal?: AbortSignal): Promise<Attachment
 
 // 전송 전에 첨부를 뺀 경우. 안 지우면 message_id 가 비어 있는 고아로 남아 회수 크론을 기다리게 됨
 export const deleteAttachment = (id: string) => api.del<void>(`/api/files/${id}`)
+
+// 관리자 (FEAT-ADMIN-002 · 003). 관리자가 아니면 서버가 404 를 준다 - 403 이 아니다
+export const listDocuments = () => api.get<RagDocument[]>('/api/admin/documents')
+export const deleteDocument = (id: string) => api.del<void>(`/api/admin/documents/${id}`)
+export const listAdminUsers = () => api.get<AdminUser[]>('/api/admin/users')
+export const resetUserPassword = (id: string) =>
+  api.post<{ temporaryPassword: string }>(`/api/admin/users/${id}/password-reset`)
+
+export function uploadDocument(file: File): Promise<RagDocument> {
+  const form = new FormData()
+  form.append('file', file)
+  return api.postForm<RagDocument>('/api/admin/documents', form)
+}
 
 export interface ChatStreamHandlers {
   onMeta?: (data: { messageId: string; conversationId: string }) => void
