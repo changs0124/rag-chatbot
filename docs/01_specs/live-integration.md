@@ -105,20 +105,30 @@
 **계획 단계에서 먼저 잴 것** : 대표 문서 몇 건을 올려 Vector Store의 실측 크기와 원본 크기의 비율을
 확인한다. 이 배율 하나가 월 비용을 한 자릿수 배 가른다. 추정으로 계산하지 않는다.
 
-토큰 사용량을 저장에 남기는 작업은 `docs/99_inbox/05-features.md` 의 FEAT-OPS-001에서 다룬다.
-그것이 들어가기 전에는 **앱 안에서 사용량을 볼 수단이 없다.**
+토큰 사용량은 이제 `messages.input_tokens` · `output_tokens` 에 남는다(FEAT-OPS-001).
+**집계 화면은 없으므로** 조회는 DB 직접 질의뿐이며, SQL 예시는 `docs/99_inbox/06-erd.md` 6절에 있다.
+`where input_tokens is not null` 조건을 빼면 목업·중단 턴이 0으로 섞여 턴당 평균이 실제보다 낮게 나온다.
 
 ## 5. 문서를 넣는 경로
 
-현재 `backend/src/main/java/com/ragchatbot/service/FileService.java` 는 이미지만 받고 PDF는 400으로
-거절한다. 이는 의도된 계약이다 — 문서 첨부가 모델에 전달되지 않는데도 업로드되어 "그 PDF를 근거로
-답했다"는 오해를 만들었기 때문이다.
+**제품 안에 있다**(FEAT-ADMIN-002). `POST /api/admin/documents` 로 올리면 백엔드가 OpenAI Files 에
+업로드하고 공용 Vector Store 에 연결한 뒤 `rag_documents` 에 기록한다 — 누가 언제 올렸는지가 저장소에 남는다.
 
-따라서 **공용 Vector Store에 문서를 넣는 경로는 현재 제품 안에 없다.** 2-1과 2-6은 OpenAI 대시보드에서
-수동으로 해야 한다.
+**단, 관리자 화면(`/admin`)은 아직 없다.** 지금은 API 를 직접 불러야 하고, 관리자 토큰이 필요하다.
 
-이 절차를 제품 안으로 들이는 작업은 `docs/99_inbox/05-features.md` 에서 다룬다. 그 전까지는
-누가 언제 어떤 문서를 올렸는지 저장소에 기록이 남지 않는다는 점을 감수한다.
+| 필요한 것 | 방법 |
+|-----------|------|
+| 관리자 계정 | `ADMIN_EMAILS` 에 이메일을 넣고 기동. 이미 가입한 계정이면 그 자리에서 승격됨 |
+| 업로드 | `POST /api/admin/documents` (multipart, 필드명 `file`). PDF · TXT · MD · DOCX, 최대 50MB |
+| 상태 확인 | `GET /api/admin/documents` — `status` 가 `completed` 여야 검색에 잡힘 |
+| 내리기 | `DELETE /api/admin/documents/{id}` |
+
+**2-1(문서 1건)과 2-6(전량)을 이 경로로 하면 된다.** OpenAI 대시보드를 거치지 않아도 되고, 그렇게 해야
+기록이 남는다. 대시보드에서 직접 올린 문서는 검색에는 잡히지만 `rag_documents` 에 행이 없어
+관리 화면에서 보이지도 지워지지도 않는다 — **두 경로를 섞지 말 것.**
+
+채팅 첨부(`backend/src/main/java/com/ragchatbot/service/FileService.java`)는 여전히 이미지만 받는다.
+그쪽은 비전 입력용이고 이쪽은 색인용이라 허용 목록이 반대다.
 
 ## 6. 되돌리기
 
