@@ -73,3 +73,6 @@ app:
     # 서명 시크릿 - 값은 env로 주입(커밋 금지). 테스트는 test 프로퍼티로 주입
     secret: ${JWT_SECRET:}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+    # 슬라이딩 재발급 임계(분). 남은 수명이 이보다 적으면 응답 헤더로 새 토큰을 실어 보냄.
+    # **0 이면 기능을 끔** - 종전 고정 만료 동작으로 되돌리는 경로임
+    refresh-threshold-minutes: ${JWT_REFRESH_THRESHOLD_MINUTES:30}

@@ -1,4 +1,4 @@
-import { api, API_BASE, ApiError, getToken, handleUnauthorized } from './api'
+import { adoptRefreshedToken, api, API_BASE, ApiError, getToken, handleUnauthorized } from './api'
 import type { Attachment, AuthResponse, ChatMessage, Citation, Conversation, Me, Theme } from './types'
 
 // 프로필 (마이페이지)
@@ -62,8 +62,9 @@ export async function streamChat(
     body: JSON.stringify(body),
     signal,
   })
+  // 이 경로는 api 래퍼를 안 거치므로 토큰 갱신·만료 처리를 여기서 직접 물림
+  adoptRefreshedToken(res)
   if (!res.ok || !res.body) {
-    // 이 경로는 api 래퍼를 안 거치므로 만료 처리를 여기서 직접 물림
     if (res.status === 401) handleUnauthorized('/api/chat')
     let message = `요청 실패 (${res.status})`
     try {
