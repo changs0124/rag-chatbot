@@ -107,7 +107,7 @@ erDiagram
 | password_hash | text | N | - | BCrypt 해시 |
 | name | text | N | - | 이름 |
 | theme | text | N | `'system'` | `light` \| `dark` \| `system` |
-| **role** | text | N | `'user'` | `user` \| `admin` — **신설(FEAT-ADMIN-001)** |
+| role | text | N | `'user'` | `user` \| `admin` (V5). 승격·강등은 `ADMIN_EMAILS` 명단으로만 |
 | password_changed_at | timestamptz | N | `date_trunc('second', now())` | **이전 발급 JWT의 무효화 기준선** |
 | created_at | timestamptz | N | `now()` | |
 | updated_at | timestamptz | N | `now()` | |
@@ -254,7 +254,7 @@ erDiagram
 | V2 | 이메일 소문자 정규화 + `password_changed_at` |
 | V3 | `messages.stopped` |
 | V4 | `messages.input_tokens` · `output_tokens` — FEAT-OPS-001 |
-| **V5 (예정)** | `users.role` — FEAT-ADMIN-001 |
+| V5 | `users.role` — FEAT-ADMIN-001 |
 | **V6 (예정)** | `rag_documents` 신설 — FEAT-ADMIN-002 |
 
 **기존 마이그레이션을 수정하지 않는다.** 새 변경은 항상 새 파일로 추가한다.

@@ -36,6 +36,11 @@ server:
 # 목업이 우연히 켜지는 경로를 없애려고 명시 옵트인으로 뒤집었음(2026-07-28 결정)
 app:
   mode: ${APP_MODE:}
+  admin:
+    # 관리자 이메일 명단(콤마 구분). 기동 시 이 명단으로 users.role 을 맞춤 -
+    # 명단에 있으면 admin, **빠지면 user 로 내림**. 앱에 권한 상승 API 는 두지 않음(FEAT-ADMIN-001).
+    # 비우면 관리자 0명이며 기동은 정상임
+    emails: ${ADMIN_EMAILS:}
   openai:
     # 실 연동(APP_MODE=live)에서만 사용. 공용 Vector Store를 env로 지정(대화별 스토어 대신, 공용 Store 결정)
     api-key: ${OPENAI_API_KEY:}

@@ -1,11 +1,14 @@
 package com.ragchatbot.service;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.ragchatbot.config.AdminRoleSynchronizer;
 import com.ragchatbot.domain.User;
 import com.ragchatbot.error.ApiExceptions.ConflictException;
 import com.ragchatbot.error.ApiExceptions.NotFoundException;
@@ -31,13 +34,17 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
 	private final RateLimiterService rateLimiter;
+	private final List<String> adminEmails;
 
 	public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtService jwtService,
-			RateLimiterService rateLimiter) {
+			RateLimiterService rateLimiter, @Value("${app.admin.emails:}") String adminEmails) {
 		this.userMapper = userMapper;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
 		this.rateLimiter = rateLimiter;
+		// 기동 시 동기화(AdminRoleSynchronizer)는 **이미 가입한** 계정만 손댐. 명단에 있으나 아직
+		// 가입하지 않은 이메일은 여기서 가입 시점에 반영해야 재기동 없이 관리자가 됨(FEAT-ADMIN-001)
+		this.adminEmails = AdminRoleSynchronizer.parse(adminEmails);
 	}
 
 	public AuthResponse signup(SignupRequest req) {
@@ -46,9 +53,10 @@ public class AuthService {
 			throw new ConflictException("이미 가입된 이메일");
 		});
 		UUID id = UUID.randomUUID();
-		User user = new User(id, email, passwordEncoder.encode(req.password()), req.name(), "system", null, null);
+		String role = adminEmails.contains(email) ? "admin" : "user";
+		User user = new User(id, email, passwordEncoder.encode(req.password()), req.name(), "system", role, null, null);
 		userMapper.insert(user);
-		return new AuthResponse(jwtService.issue(id, email), new MeResponse(id, email, req.name(), "system"));
+		return new AuthResponse(jwtService.issue(id, email), new MeResponse(id, email, req.name(), "system", role));
 	}
 
 	public AuthResponse login(LoginRequest req) {
@@ -63,13 +71,13 @@ public class AuthService {
 		}
 		User user = found.get();
 		return new AuthResponse(jwtService.issue(user.id(), user.email()),
-				new MeResponse(user.id(), user.email(), user.name(), user.theme()));
+				new MeResponse(user.id(), user.email(), user.name(), user.theme(), user.role()));
 	}
 
 	public MeResponse me(UUID userId) {
 		User user = userMapper.findById(userId)
 				.orElseThrow(() -> new NotFoundException("사용자 없음"));
-		return new MeResponse(user.id(), user.email(), user.name(), user.theme());
+		return new MeResponse(user.id(), user.email(), user.name(), user.theme(), user.role());
 	}
 
 	private static String normalizeEmail(String email) {
