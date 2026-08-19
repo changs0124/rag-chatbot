@@ -12,7 +12,7 @@ flowchart LR
   A["Spring Boot 3.5<br/>:8080"]
   D[("PostgreSQL<br/>Flyway")]
   F[("로컬 디스크<br/>FILE_STORAGE_ROOT")]
-  O["OpenAI<br/>GPT-4o + Vector Store"]
+  O["OpenAI<br/>GPT-4o + Vector Store + Files"]
 
   B -- "REST + JWT(Bearer)" --> A
   B -- "SSE (fetch + ReadableStream)" --> A
@@ -46,6 +46,7 @@ flowchart LR
 | `/login` | `LoginPage` — 로그인·회원가입 | 공개 |
 | `/` | `ChatPage` — 사이드바 + 메시지 목록 + 입력창 | `ProtectedRoute` (인증 필요) |
 | `/me` | `MyPage` — 이름·비밀번호·테마 변경 | `ProtectedRoute` (인증 필요) |
+| `/admin` | 문서 관리 · 사용자 관리 | `ProtectedRoute` + **관리자만**(아니면 `/` 로 되돌림) |
 | 그 외 | `/`로 리다이렉트 | 해당 없음 |
 
 ## API 엔드포인트 맵
@@ -71,6 +72,17 @@ flowchart LR
 | DELETE | `/api/files/{id}` | 첨부 삭제 (소유자만) | 필요 |
 | GET | `/api/files/{id}?token=…` | 첨부 서빙 | **서명 경로 토큰** |
 | POST | `/api/chat` | 채팅 — SSE 스트림 반환 | 필요 |
+| GET | `/api/admin/documents` | RAG 문서 목록 + 인덱싱 상태 | **관리자** |
+| POST | `/api/admin/documents` | RAG 문서 업로드 (multipart) | **관리자** |
+| DELETE | `/api/admin/documents/{id}` | RAG 문서 삭제 (소프트) | **관리자** |
+| GET | `/api/admin/users` | 사용자 목록 | **관리자** |
+| POST | `/api/admin/users/{id}/password-reset` | 임시 비밀번호 발급 (1회 반환) | **관리자** |
+
+`/api/admin/**` 는 관리자가 아니면 **403 이 아니라 404** 를 돌려준다 — 관리 기능의 존재 자체를
+드러내지 않는다(P-3, 소유권 위반과 같은 규칙).
+
+응답 헤더 `X-Refresh-Token` 은 토큰 만료가 임박했을 때만 실린다(FEAT-OPS-003).
+`CorsConfig` 의 노출 헤더에 등록돼 있어야 브라우저가 읽을 수 있다.
 
 `GET /api/files/{id}`만 Bearer가 아닌 쿼리 토큰을 쓴다. `<img src>`가 Authorization 헤더를 실을 수 없기 때문이며,
 검증은 `security/FileAccessTokenService.java`가 한다.
@@ -119,6 +131,7 @@ sequenceDiagram
 erDiagram
   users ||--o{ conversations : "user_id"
   users ||--o{ attachments : "user_id"
+  users ||--o{ rag_documents : "uploaded_by (restrict)"
   conversations ||--o{ messages : "conversation_id"
   messages ||--o{ citations : "message_id"
   messages ||--o{ attachments : "message_id (nullable)"
@@ -126,20 +139,24 @@ erDiagram
 
 | 테이블 | 핵심 컬럼 | 비고 |
 |--------|-----------|------|
-| `users` | `email`(lower 유일) · `password_hash` · `name` · `theme` · `password_changed_at` | `password_changed_at`이 이전 발급 JWT의 무효화 기준선(초 단위) |
+| `users` | `email`(lower 유일) · `password_hash` · `name` · `theme` · `role` · `password_changed_at` | `password_changed_at`이 이전 발급 JWT의 무효화 기준선(초 단위). `role`은 `ADMIN_EMAILS` 명단으로만 바뀜 |
 | `conversations` | `user_id` · `title` · `vector_store_id` | 삭제 시 하위 전부 cascade |
-| `messages` | `role`(user/assistant) · `content` · `status`(complete/error) · `stopped` | `streaming`은 DB에 없는 프론트 로컬 상태 |
+| `messages` | `role`(user/assistant) · `content` · `status`(complete/error) · `stopped` · `input_tokens` · `output_tokens` | `streaming`은 DB에 없는 프론트 로컬 상태. 토큰 컬럼은 **nullable** — 0은 "정말 0"과 구분되지 않음 |
 | `citations` | `message_id` · `seq` · `source_name` · `snippet` · `uri` | 출처를 영속화해 재조회 시에도 각주가 남게 함 |
 | `attachments` | `user_id` · `message_id`(nullable) · `storage_path` · `file_type` · `openai_file_id` | 업로드 시점엔 메시지 미연결 → 고아는 스케줄러가 회수 |
+| `rag_documents` | `filename` · `openai_file_id` · `vector_store_id` · `status` · `uploaded_by`(**restrict**) · `deleted_at` | **소프트 삭제를 쓰는 유일한 표.** 누가 언제 올리고 지웠는지가 감사 대상 |
 
-마이그레이션 이력 : `V1__init.sql`(초기) → `V2__auth_hardening.sql`(이메일 정규화 + 토큰 무효화 기준선) → `V3__message_stopped.sql`(중단 표시).
+마이그레이션 이력 : `V1__init.sql`(초기) → `V2__auth_hardening.sql`(이메일 정규화 + 토큰 무효화 기준선) →
+`V3__message_stopped.sql`(중단 표시) → `V4__message_token_usage.sql`(토큰 사용량) →
+`V5__user_role.sql`(관리자 권한) → `V6__rag_documents.sql`(RAG 문서).
 
 ## 외부 연동
 
 | 대상 | 용도 | 비고 |
 |------|------|------|
 | OpenAI Chat (`gpt-4o`) | 답변 생성 · 이미지(비전) 입력 | `OPENAI_MODEL`로 교체 가능 |
-| OpenAI Vector Store | RAG 검색 | `OPENAI_VECTOR_STORE_ID` — 대화별이 아닌 **공용 스토어** |
+| OpenAI Vector Store | RAG 검색 + 관리자 문서 등록 | `OPENAI_VECTOR_STORE_ID` — 대화별이 아닌 **공용 스토어**. 미설정이면 검색이 없고 문서 업로드도 400 |
+| OpenAI Files | 관리자 문서 업로드 | 채팅 첨부와 별개 경로(문서만 받음) |
 | 로컬 디스크 | 첨부 저장 | `FileStorage` 구현만 갈아끼우면 S3로 이동 가능 |
 
 `APP_MODE=mock`이면 OpenAI 호출이 전혀 일어나지 않고 `OpenAiMockService`가 목업 응답을 흘린다.
@@ -153,6 +170,8 @@ erDiagram
 |------|----------|--------|
 | 실행 모드 | `APP_MODE` | 없음(필수) |
 | JWT 시크릿 / 만료 | `JWT_SECRET` · `JWT_EXPIRATION_MINUTES` | 없음(필수) / 120분 |
+| 슬라이딩 재발급 임계 | `JWT_REFRESH_THRESHOLD_MINUTES` | 30분 (**0이면 기능 끔**) |
+| 관리자 이메일 명단 | `ADMIN_EMAILS` | 없음(관리자 0명). 명단에서 빠지면 다음 기동에 강등 |
 | SSE 타임아웃 | `SSE_TIMEOUT_MS` | 600000 |
 | 동시 스트림 상한 / 사용자별 | `CHAT_MAX_CONCURRENT_STREAMS` · `CHAT_MAX_CONCURRENT_PER_USER` | 8 / 1 |
 | 채팅·로그인 분당 상한 | `RATELIMIT_CHAT_PER_MINUTE` · `RATELIMIT_LOGIN_PER_MINUTE` | 20 / 10 |
@@ -168,3 +187,6 @@ erDiagram
 - **레이트리밋 키 축출 = 카운터 리셋** — 키 총량 상한을 넘으면 가장 오래 안 쓴 키부터 버려지므로, 그 사용자의 카운터가 초기화된다.
 - **Spring Boot 3.5.16** 은 OSS EOL 트랙이다. 업그레이드 재검토가 필요하다.
 - **`V3` 이전에 저장된 중단 답변**은 정상 완료분과 구분할 표시가 없다(소급 보정하지 않음).
+  `V4` 이전 메시지의 토큰 사용량도 마찬가지로 복원할 수 없어 비워 둔다.
+- **관리자 명단 변경에 재기동이 필요하다.** 앱에 권한 상승 API 를 두지 않은 대가다.
+- **사용량 집계 화면이 없다.** `messages` 에 기록만 하며 조회는 DB 직접 질의뿐이다.

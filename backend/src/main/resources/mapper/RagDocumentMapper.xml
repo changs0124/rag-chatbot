@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ragchatbot.mapper.RagDocumentMapper">
+
+	<resultMap id="documentResult" type="com.ragchatbot.domain.RagDocument">
+		<constructor>
+			<idArg column="id" javaType="java.util.UUID"/>
+			<arg column="filename" javaType="java.lang.String"/>
+			<arg column="openai_file_id" javaType="java.lang.String"/>
+			<arg column="vector_store_id" javaType="java.lang.String"/>
+			<!-- MyBatis 별칭 - `long`은 java.lang.Long 이라 레코드의 primitive 생성자를 못 찾음 -->
+			<arg column="byte_size" javaType="_long"/>
+			<arg column="status" javaType="java.lang.String"/>
+			<arg column="uploaded_by" javaType="java.util.UUID"/>
+			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
+			<arg column="deleted_at" javaType="java.time.OffsetDateTime"/>
+		</constructor>
+	</resultMap>
+
+	<resultMap id="summaryResult" type="com.ragchatbot.domain.RagDocumentSummary">
+		<constructor>
+			<idArg column="id" javaType="java.util.UUID"/>
+			<arg column="filename" javaType="java.lang.String"/>
+			<arg column="byte_size" javaType="_long"/>
+			<arg column="status" javaType="java.lang.String"/>
+			<arg column="uploaded_by_name" javaType="java.lang.String"/>
+			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
+		</constructor>
+	</resultMap>
+
+	<insert id="insert" parameterType="com.ragchatbot.domain.RagDocument">
+		insert into rag_documents
+			(id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by)
+		values
+			(#{id}, #{filename}, #{openaiFileId}, #{vectorStoreId}, #{byteSize}, #{status}, #{uploadedBy})
+	</insert>
+
+	<!-- 올린 사람 이름을 조인으로 함께 가져옴(N+1 방지). inner join 이어도 되는 이유는
+	     uploaded_by 가 on delete restrict 라 참조 대상이 사라지지 않기 때문임 -->
+	<select id="listAlive" resultMap="summaryResult">
+		select d.id, d.filename, d.byte_size, d.status, u.name as uploaded_by_name, d.created_at
+		from rag_documents d
+		join users u on u.id = d.uploaded_by
+		where d.deleted_at is null
+		order by d.created_at desc
+	</select>
+
+	<select id="findInProgressIds" resultType="java.util.UUID">
+		select id from rag_documents
+		where deleted_at is null and status = 'in_progress'
+	</select>
+
+	<select id="findAliveById" resultMap="documentResult">
+		select id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by,
+		       created_at, deleted_at
+		from rag_documents
+		where id = #{id} and deleted_at is null
+	</select>
+
+	<update id="updateStatus">
+		update rag_documents set status = #{status}
+		where id = #{id} and deleted_at is null
+	</update>
+
+	<!-- 이미 지워진 행은 건드리지 않음 - 두 번째 삭제가 0행을 돌려줘야 호출자가 404 로 귀결시킴 -->
+	<update id="softDelete">
+		update rag_documents set deleted_at = #{deletedAt}
+		where id = #{id} and deleted_at is null
+	</update>
+
+</mapper>

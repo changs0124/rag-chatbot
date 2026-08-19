@@ -12,17 +12,21 @@
 			<arg column="status" javaType="java.lang.String"/>
 			<!-- MyBatis 별칭 - `boolean`은 java.lang.Boolean 이라 레코드의 primitive 생성자를 못 찾음 -->
 			<arg column="stopped" javaType="_boolean"/>
+			<!-- Integer(박스형) - null 이 "모르는 것"을 뜻하므로 _int 로 받으면 0 으로 뭉개짐 -->
+			<arg column="input_tokens" javaType="java.lang.Integer"/>
+			<arg column="output_tokens" javaType="java.lang.Integer"/>
 			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
 		</constructor>
 	</resultMap>
 
 	<insert id="insert" parameterType="com.ragchatbot.domain.Message">
-		insert into messages (id, conversation_id, role, content, status, stopped)
-		values (#{id}, #{conversationId}, #{role}, #{content}, #{status}, #{stopped})
+		insert into messages (id, conversation_id, role, content, status, stopped, input_tokens, output_tokens)
+		values (#{id}, #{conversationId}, #{role}, #{content}, #{status}, #{stopped},
+		        #{inputTokens}, #{outputTokens})
 	</insert>
 
 	<select id="listByConversation" resultMap="messageResult">
-		select id, conversation_id, role, content, status, stopped, created_at
+		select id, conversation_id, role, content, status, stopped, input_tokens, output_tokens, created_at
 		from messages
 		where conversation_id = #{conversationId}
 		order by created_at asc

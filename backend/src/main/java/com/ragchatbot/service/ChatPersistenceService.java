@@ -32,11 +32,17 @@ public class ChatPersistenceService {
 		this.conversationMapper = conversationMapper;
 	}
 
-	/** stopped=true 는 사용자가 스트림을 끊어 <b>출처 판정 전에</b> 끝났음을 뜻함(무자료 배너 억제용) */
+	/**
+	 * stopped=true 는 사용자가 스트림을 끊어 <b>출처 판정 전에</b> 끝났음을 뜻함(무자료 배너 억제용).
+	 *
+	 * <p>토큰 사용량은 모르면 null 로 넘어옴(FEAT-OPS-001) - 중단·오류 경로는 완료 이벤트를 받지
+	 * 못해 값이 없음. 여기서 0 으로 바꾸지 않음.
+	 */
 	@Transactional
 	public void saveAssistant(UUID conversationId, UUID userId, UUID assistantMsgId, String content, String status,
-			boolean stopped, List<CitationData> citations) {
-		messageMapper.insert(new Message(assistantMsgId, conversationId, "assistant", content, status, stopped, null));
+			boolean stopped, List<CitationData> citations, Integer inputTokens, Integer outputTokens) {
+		messageMapper.insert(new Message(assistantMsgId, conversationId, "assistant", content, status, stopped,
+				inputTokens, outputTokens, null));
 		for (CitationData c : citations) {
 			citationMapper.insert(new Citation(UUID.randomUUID(), assistantMsgId, c.seq(), c.sourceName(),
 					c.snippet(), c.uri(), null));

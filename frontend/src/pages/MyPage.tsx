@@ -143,6 +143,20 @@ export default function MyPage() {
               ))}
             </div>
           </Card>
+
+          {/* 관리자에게만 렌더한다 — 눌러서 404 를 만나는 것보다 없는 편이 낫다.
+              이 판단은 노출용이고, 실제 차단은 서버가 404 로 한다 */}
+          {user?.role === 'admin' && (
+            <Card title="관리">
+              <Link
+                to="/admin"
+                className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas"
+              >
+                <span>📄 문서 관리</span>
+                <span className="text-ink-muted">→</span>
+              </Link>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -9,7 +9,9 @@ function stubFetch(sse: string) {
       controller.close()
     },
   })
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, body } as Response))
+  // 실제 Response 를 씀 - `{ ok, body }` 만 담은 리터럴은 headers 가 없어, 응답 헤더를 읽는
+  // 코드(슬라이딩 재발급)가 붙는 순간 스텁이 실물과 갈려 터진다
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status: 200 })))
 }
 
 const REQUEST = { conversationId: 'c1', message: '환불 정책', attachmentIds: [] }

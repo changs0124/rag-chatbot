@@ -14,13 +14,18 @@ vi.mock('../lib/endpoints', () => ({
 
 // AuthProvider가 기동 시 /api/auth/me 를 부름 - 서버가 없으면 실패해 토큰을 지워 버리므로
 // 토큰 저장소(getToken/setToken)는 실물을 쓰고 그 호출만 성공으로 세움
+/** 관리 메뉴 노출이 역할로 갈리므로 케이스마다 정한다 */
+let currentRole: 'user' | 'admin' = 'user'
+
 vi.mock('../lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../lib/api')>()
   return {
     ...actual,
     api: {
       ...actual.api,
-      get: vi.fn().mockResolvedValue({ id: 'u1', email: 'a@b.com', name: '사용자', theme: 'system' }),
+      get: vi.fn(() =>
+        Promise.resolve({ id: 'u1', email: 'a@b.com', name: '사용자', theme: 'system', role: currentRole }),
+      ),
     },
   }
 })
@@ -51,7 +56,10 @@ function renderMyPage() {
 }
 
 describe('MyPage 비밀번호 변경', () => {
-  beforeEach(() => setToken('old-token'))
+  beforeEach(() => {
+    setToken('old-token')
+    currentRole = 'user'
+  })
   afterEach(() => {
     cleanup()
     setToken(null)
@@ -65,7 +73,7 @@ describe('MyPage 비밀번호 변경', () => {
   it('변경에 성공하면 응답의 새 토큰으로 교체함', async () => {
     vi.mocked(updatePassword).mockResolvedValue({
       token: 'new-token',
-      user: { id: 'u1', email: 'a@b.com', name: '사용자', theme: 'system' },
+      user: { id: 'u1', email: 'a@b.com', name: '사용자', theme: 'system', role: 'user' },
     })
     renderMyPage()
     submitPasswordChange()
@@ -81,5 +89,26 @@ describe('MyPage 비밀번호 변경', () => {
 
     await waitFor(() => expect(screen.getByText(/오류가 발생했습니다/)).toBeInTheDocument())
     expect(getToken()).toBe('old-token')
+  })
+
+  /**
+   * TC-ADMIN-040 : 관리 메뉴는 관리자에게만 보인다.
+   *
+   * 노출 판단일 뿐 접근 제어가 아니다 — 눌러서 404 를 만나는 것보다 없는 편이 낫다는 것이지,
+   * 막는 것은 서버다. 두 역할을 모두 확인해야 "항상 보임" 구현이 걸러진다.
+   */
+  it('일반 사용자에게는 관리 메뉴가 보이지 않는다', async () => {
+    currentRole = 'user'
+    renderMyPage()
+
+    await screen.findByText('a@b.com')
+    expect(screen.queryByText('문서 관리')).not.toBeInTheDocument()
+  })
+
+  it('관리자에게는 관리 메뉴가 보인다', async () => {
+    currentRole = 'admin'
+    renderMyPage()
+
+    expect(await screen.findByText(/문서 관리/)).toBeInTheDocument()
   })
 })
