@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Fixed
+- **실 연동 절차의 준비물 표가 낡아 있던 것** — `ALLOWED_EMAIL_DOMAINS` 가 `live` 기동 필수가 됐는데 `docs/01_specs/live-integration.md` 1절에 없어, 그대로 따라가면 기동에서 막혔음. `ADMIN_EMAILS` 도 빠져 있어 문서를 올릴 사람이 없는 상태로 5절까지 가게 됐음
+  - **기동을 막는 것과 나중에 증상으로 드러나는 것**을 표로 갈랐음 — 뒤쪽이 더 찾기 어렵다
+- **`backend/.env.example` 이 "전량"을 주장하면서 2개가 빠져 있던 것** — `RATELIMIT_MAX_KEYS` · `SERVER_PORT`. `application.yml` 의 env 25개와 대조해 채웠음
+- `docs/02_architecture/` 에 가입 도메인 제한이 반영되지 않았던 것 — overview 운영 파라미터 · backend 인증 절
+
 ### Added
 - **가입 이메일 도메인 화이트리스트 (FEAT-AUTH-001 · REQ-AUTH-007)**
   지금은 `/api/auth/signup` 이 `permitAll` 이고 검증이 형식뿐이라 **URL 에 닿는 누구나 계정을 만들고 사내 문서 기반 답변을 받을 수 있다.** 백엔드를 인터넷에 노출하는 순간 성립하는 위험이다
