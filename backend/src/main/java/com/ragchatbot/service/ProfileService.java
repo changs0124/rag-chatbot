@@ -83,6 +83,6 @@ public class ProfileService {
 	}
 
 	private MeResponse toResponse(User u) {
-		return new MeResponse(u.id(), u.email(), u.name(), u.theme());
+		return new MeResponse(u.id(), u.email(), u.name(), u.theme(), u.role());
 	}
 }

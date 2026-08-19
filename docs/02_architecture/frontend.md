@@ -23,6 +23,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | `/login` | `LoginPage` — 로그인·회원가입 한 화면(모드 토글) | 공개 |
 | `/` | `ChatPage` | `ProtectedRoute` |
 | `/me` | `MyPage` | `ProtectedRoute` |
+| `/admin` | `AdminPage` — 문서 관리 · 사용자 관리 | `ProtectedRoute` + **관리자만** |
 | 그 외 | `/` 로 리다이렉트 | 해당 없음 |
 
 `frontend/src/components/ProtectedRoute.tsx` 는 세 갈래다 — `loading` 중이면 로딩 표시, 끝난 뒤 사용자가 없으면
@@ -50,6 +51,11 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 - 실패는 `ApiError(status, message)` 로 통일하고, 서버가 준 `message` 를 그대로 사용자에게 보여준다.
 - 비밀번호 변경 응답의 **새 토큰으로 반드시 교체**해야 한다. 서버가 변경 시각 이전 토큰을 전부 무효화하므로,
   교체하지 않으면 "변경했습니다"를 띄운 직후부터 모든 요청이 401 이 된다.
+- **응답 헤더 `X-Refresh-Token` 이 오면 토큰을 교체한다**(FEAT-OPS-003). 만료가 임박했을 때만 온다.
+  교체는 **두 곳에서** 일어나야 한다 — `api.ts` 의 fetch 래퍼와 `endpoints.ts` 의 채팅 스트림.
+  스트림은 래퍼를 거치지 않으므로 한쪽만 하면 **채팅만 쓰는 사용자는 갱신을 못 받고** 두 시간마다 튕긴다.
+  헤더가 없으면 기존 토큰을 그대로 둔다 — 서버가 CORS 노출 헤더 등록을 빠뜨리면 `null` 이 오는데,
+  그때 토큰을 지우면 멀쩡한 세션이 날아간다.
 
 ### 채팅 스트림 수신
 

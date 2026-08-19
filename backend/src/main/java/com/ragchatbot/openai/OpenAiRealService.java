@@ -18,9 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -192,6 +195,9 @@ public class OpenAiRealService implements OpenAiService {
 	ChatCompletion consumeStream(InputStream in, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage) {
 		StringBuilder buffer = new StringBuilder();
 		List<CitationData> citations = List.of();
+		// 사용량은 완료 이벤트에서만 옴. 못 받으면 null 로 남겨 "모르는 것"을 0 과 구분함(FEAT-OPS-001)
+		Integer inputTokens = null;
+		Integer outputTokens = null;
 		boolean completed = false;
 		boolean searchingSent = false;
 		boolean generatingSent = false;
@@ -222,7 +228,10 @@ public class OpenAiRealService implements OpenAiService {
 					onStage.accept(Stage.SEARCHING, List.of());
 					searchingSent = true;
 				} else if ("response.completed".equals(type)) {
-					citations = extractCitations(ev.path("response"));
+					JsonNode response = ev.path("response");
+					citations = extractCitations(response);
+					inputTokens = intOrNull(response.path("usage"), "input_tokens");
+					outputTokens = intOrNull(response.path("usage"), "output_tokens");
 					completed = true;
 				}
 			}
@@ -240,7 +249,18 @@ public class OpenAiRealService implements OpenAiService {
 
 		// 저장 텍스트 = 스트리밍으로 내보낸 것과 정확히 같음(화면·재조회 불일치 방지)
 		boolean noSource = citations.isEmpty();
-		return new ChatCompletion(buffer.toString(), citations, noSource);
+		return new ChatCompletion(buffer.toString(), citations, noSource, inputTokens, outputTokens);
+	}
+
+	/**
+	 * 사용량 필드 하나를 읽음. 없거나 숫자가 아니면 <b>null</b>(FEAT-OPS-001).
+	 *
+	 * <p>Jackson 의 {@code asInt()} 는 없는 노드에 0 을 주는데, 그러면 "usage 가 안 왔다"와
+	 * "정말 0 토큰"이 저장에서 구분되지 않음 - 합계·평균이 조용히 낮아짐.
+	 */
+	private static Integer intOrNull(JsonNode node, String field) {
+		JsonNode v = node.path(field);
+		return v.isNumber() ? v.asInt() : null;
 	}
 
 	/**
@@ -309,6 +329,102 @@ public class OpenAiRealService implements OpenAiService {
 		if (vectorStoreId != null && !vectorStoreId.isBlank()
 				&& !vectorStoreId.equals(sharedVectorStoreId)) {
 			deleteQuietly("/vector_stores/" + vectorStoreId, "vector_store", vectorStoreId);
+		}
+	}
+
+	// ── RAG 문서 관리(FEAT-ADMIN-002) ────────────────────────────────────────────
+
+	@Override
+	public boolean hasSharedVectorStore() {
+		return sharedVectorStoreId != null && !sharedVectorStoreId.isBlank();
+	}
+
+	/**
+	 * Files 업로드 → 공용 Vector Store 연결. 두 단계이며 <b>뒤 단계가 실패하면 고아 파일이 남으므로</b>
+	 * 즉시 삭제를 시도하고, 그것도 실패하면 경고 로그에 file_id 를 남김.
+	 *
+	 * <p>어느 경우에도 예외를 던짐 - 호출자가 DB 행을 만들지 않아야 함. 스토어에는 없는데 목록에만
+	 * 뜨는 상태가 가장 나쁨(화면에 보이는데 검색에는 안 잡히고 지울 수도 없음).
+	 */
+	@Override
+	public UploadedDocument uploadDocument(String filename, byte[] content, String contentType) {
+		MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
+		form.add("purpose", "assistants");
+		form.add("file", new NamedByteArrayResource(content, filename));
+
+		JsonNode uploaded = client.post()
+				.uri("/files")
+				.contentType(MediaType.MULTIPART_FORM_DATA)
+				.body(form)
+				.retrieve()
+				.body(JsonNode.class);
+
+		String fileId = uploaded == null ? null : uploaded.path("id").asText(null);
+		if (fileId == null || fileId.isBlank()) {
+			throw new IllegalStateException("OpenAI 파일 업로드 응답에 id 가 없음");
+		}
+
+		try {
+			client.post()
+					.uri("/vector_stores/" + sharedVectorStoreId + "/files")
+					.contentType(MediaType.APPLICATION_JSON)
+					.body(Map.of("file_id", fileId))
+					.retrieve()
+					.toBodilessEntity();
+		} catch (Exception e) {
+			// 연결에 실패하면 파일만 덩그러니 남음. 여기서 지우지 않으면 아무도 그 존재를 모름
+			deleteQuietly("/files/" + fileId, "file", fileId);
+			throw new IllegalStateException("Vector Store 연결 실패 - 업로드한 파일을 정리함", e);
+		}
+		return new UploadedDocument(fileId, sharedVectorStoreId);
+	}
+
+	/**
+	 * 인덱싱 상태. 응답의 상태 문자열을 우리 어휘(in_progress · completed · failed)로 좁힘.
+	 * <b>모르는 값을 completed 로 넘기지 않음</b> - 검색에 안 잡히는 문서를 "완료"로 보이게 하면
+	 * 관리자가 오독함(REQ-ADMIN-003 이 막으려는 상태).
+	 */
+	@Override
+	public String documentStatus(String vectorStoreId, String openaiFileId) {
+		try {
+			JsonNode node = client.get()
+					.uri("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId)
+					.retrieve()
+					.body(JsonNode.class);
+			String status = node == null ? "" : node.path("status").asText("");
+			return switch (status) {
+				case "completed" -> "completed";
+				case "in_progress" -> "in_progress";
+				default -> "failed";
+			};
+		} catch (Exception e) {
+			// 조회 자체가 실패한 것은 "인덱싱 실패"와 다르지만, 화면에 줄 수 있는 답은 둘뿐임.
+			// 상태를 모르는 동안 completed 로 두는 것보다 failed 가 안전한 쪽임
+			log.warn("openai 문서 상태 조회 실패 {}: {}", openaiFileId, e.getMessage());
+			return "failed";
+		}
+	}
+
+	/** 연결 해제 후 파일 삭제. 둘 다 실패해도 던지지 않음 - 호출자는 삭제 표시를 계속 진행함 */
+	@Override
+	public void deleteDocument(String vectorStoreId, String openaiFileId) {
+		deleteQuietly("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId,
+				"vector_store_file", openaiFileId);
+		deleteQuietly("/files/" + openaiFileId, "file", openaiFileId);
+	}
+
+	/** 멀티파트에 파일명을 실으려면 Resource 가 이름을 알아야 함 - ByteArrayResource 는 기본이 null */
+	private static final class NamedByteArrayResource extends ByteArrayResource {
+		private final String filename;
+
+		NamedByteArrayResource(byte[] bytes, String filename) {
+			super(bytes);
+			this.filename = filename;
+		}
+
+		@Override
+		public String getFilename() {
+			return filename;
 		}
 	}
 

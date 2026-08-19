@@ -21,11 +21,11 @@ class ChatHistoryTest {
 	private static final int BUDGET = 6000;
 
 	private static Message msg(String role, String content) {
-		return new Message(UUID.randomUUID(), UUID.randomUUID(), role, content, "complete", false, null);
+		return new Message(UUID.randomUUID(), UUID.randomUUID(), role, content, "complete", false, null, null, null);
 	}
 
 	private static Message msg(String role, String content, String status, boolean stopped) {
-		return new Message(UUID.randomUUID(), UUID.randomUUID(), role, content, status, stopped, null);
+		return new Message(UUID.randomUUID(), UUID.randomUUID(), role, content, status, stopped, null, null, null);
 	}
 
 	@Test

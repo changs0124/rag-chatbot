@@ -11,26 +11,55 @@
 			<arg column="password_hash" javaType="java.lang.String"/>
 			<arg column="name" javaType="java.lang.String"/>
 			<arg column="theme" javaType="java.lang.String"/>
+			<arg column="role" javaType="java.lang.String"/>
 			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
 			<arg column="updated_at" javaType="java.time.OffsetDateTime"/>
 		</constructor>
 	</resultMap>
 
 	<insert id="insert" parameterType="com.ragchatbot.domain.User">
-		insert into users (id, email, password_hash, name, theme)
-		values (#{id}, #{email}, #{passwordHash}, #{name}, #{theme})
+		insert into users (id, email, password_hash, name, theme, role)
+		values (#{id}, #{email}, #{passwordHash}, #{name}, #{theme}, #{role})
 	</insert>
 
 	<select id="findById" resultMap="userResult">
-		select id, email, password_hash, name, theme, created_at, updated_at
+		select id, email, password_hash, name, theme, role, created_at, updated_at
 		from users
 		where id = #{id}
 	</select>
 
 	<select id="findByEmail" resultMap="userResult">
-		select id, email, password_hash, name, theme, created_at, updated_at
+		select id, email, password_hash, name, theme, role, created_at, updated_at
 		from users
 		where email = #{email}
+	</select>
+
+	<!-- 명단 동기화(FEAT-ADMIN-001). 승격·강등을 **두 구문으로 나눔** - 한 CASE 에 밀어넣으면
+	     명단이 빈 경우 `case else ... end` 가 되어 문법 오류이고, 조건을 두 번 적게 됨.
+	     비교는 lower(email) 기준 - 앱의 정규화와 같은 눈금이어야 대소문자가 다른 명단도 맞음 -->
+
+	<!-- 명단에 없는 관리자를 내림. **명단이 비면 전원 강등**이며 그것이 맞음("관리자를 없앤다") -->
+	<update id="demoteAdminsNotIn">
+		update users set role = 'user'
+		where role = 'admin'
+		<if test="emails != null and emails.size() > 0">
+			and lower(email) not in
+			<foreach item="e" collection="emails" open="(" separator="," close=")">#{e}</foreach>
+		</if>
+	</update>
+
+	<!-- 명단에 있는 일반 사용자를 올림. 이미 admin 인 행은 건드리지 않아 반환값이 "실제 승격 수"가 됨 -->
+	<update id="promoteAdmins">
+		update users set role = 'admin'
+		where role = 'user'
+		and lower(email) in
+		<foreach item="e" collection="emails" open="(" separator="," close=")">#{e}</foreach>
+	</update>
+
+	<select id="listAll" resultMap="userResult">
+		select id, email, password_hash, name, theme, role, created_at, updated_at
+		from users
+		order by created_at asc
 	</select>
 
 	<update id="updateName">

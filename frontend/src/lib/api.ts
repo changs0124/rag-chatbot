@@ -45,6 +45,20 @@ export function handleUnauthorized(path: string): void {
   onUnauthorized?.()
 }
 
+/**
+ * 슬라이딩 재발급(FEAT-OPS-003). 만료가 가까우면 서버가 이 헤더로 새 토큰을 실어 보낸다.
+ *
+ * 두 곳에서 읽어야 한다 - 이 래퍼와 `endpoints.ts` 의 채팅 스트림. 스트림은 래퍼를 안 거치므로
+ * 여기만 하면 **채팅만 쓰는 사용자는 갱신을 못 받아** 두 시간마다 튕긴다.
+ *
+ * 서버가 CORS 노출 헤더에 등록하지 않으면 브라우저가 이 값을 숨겨 `null` 이 온다 - 그 경우
+ * 조용히 아무 일도 일어나지 않으므로, 서버 쪽 등록을 케이스로 잠가 두었다.
+ */
+export function adoptRefreshedToken(res: Response): void {
+  const next = res.headers.get('X-Refresh-Token')
+  if (next) setToken(next)
+}
+
 export class ApiError extends Error {
   status: number
 
@@ -80,6 +94,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body,
     signal: options.signal,
   })
+  adoptRefreshedToken(res)
   if (!res.ok) {
     if (res.status === 401) handleUnauthorized(path)
     let message = `요청 실패 (${res.status})`

@@ -22,10 +22,12 @@ public class JwtService {
 	private final Algorithm algorithm;
 	private final JWTVerifier verifier;
 	private final long expirationMinutes;
+	private final long refreshThresholdMinutes;
 
 	public JwtService(
 			@Value("${app.jwt.secret:}") String secret,
-			@Value("${app.jwt.expiration-minutes:120}") long expirationMinutes) {
+			@Value("${app.jwt.expiration-minutes:120}") long expirationMinutes,
+			@Value("${app.jwt.refresh-threshold-minutes:30}") long refreshThresholdMinutes) {
 		if (secret == null || secret.isBlank()) {
 			throw new IllegalStateException("app.jwt.secret 미설정 - JWT 서명 불가 (env JWT_SECRET 주입 필요)");
 		}
@@ -33,6 +35,24 @@ public class JwtService {
 		// audience "auth" 강제 - 파일 서명 토큰(aud="file")이 인증 Bearer로 통용되지 않게 분리
 		this.verifier = JWT.require(algorithm).withAudience("auth").build();
 		this.expirationMinutes = expirationMinutes;
+		this.refreshThresholdMinutes = refreshThresholdMinutes;
+	}
+
+	/**
+	 * 남은 수명이 임계 미만인지(FEAT-OPS-003). 매 요청 재발급하면 서명 연산이 요청마다 붙고 헤더가
+	 * 늘 커지므로, 만료가 가까울 때만 함 - 실제 발급은 사용자당 임계 간격에 한 번꼴이 됨.
+	 *
+	 * <p>임계가 {@code 0} 이면 언제나 false - 종전 고정 만료 동작으로 되돌리는 경로임.
+	 */
+	public boolean needsRefresh(DecodedJWT jwt) {
+		if (refreshThresholdMinutes <= 0) {
+			return false;
+		}
+		Instant expiresAt = jwt.getExpiresAtAsInstant();
+		if (expiresAt == null) {
+			return false;
+		}
+		return expiresAt.isBefore(Instant.now().plus(refreshThresholdMinutes, ChronoUnit.MINUTES));
 	}
 
 	public String issue(UUID userId, String email) {

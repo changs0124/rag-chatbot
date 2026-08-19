@@ -67,15 +67,37 @@ class ChatStreamAbortTest {
 			if (failure != null) {
 				throw failure;
 			}
-			return new ChatCompletion(String.join("", tokens), List.of(), true);
+			return new ChatCompletion(String.join("", tokens), List.of(), true, 100, 20);
 		}
 
 		@Override
 		public void deleteResources(String vectorStoreId, List<String> openaiFileIds) {
 		}
+
+		// 이 대역은 **채팅 경로만** 검증함. 문서 관리(FEAT-ADMIN-002)를 부르는 일이 없으므로
+		// 조용한 기본값 대신 던지게 둠 - 나중에 이 경로가 실수로 여기로 흘러오면 바로 드러남
+		@Override
+		public boolean hasSharedVectorStore() {
+			throw new UnsupportedOperationException("채팅 전용 대역");
+		}
+
+		@Override
+		public UploadedDocument uploadDocument(String filename, byte[] content, String contentType) {
+			throw new UnsupportedOperationException("채팅 전용 대역");
+		}
+
+		@Override
+		public String documentStatus(String vectorStoreId, String openaiFileId) {
+			throw new UnsupportedOperationException("채팅 전용 대역");
+		}
+
+		@Override
+		public void deleteDocument(String vectorStoreId, String openaiFileId) {
+			throw new UnsupportedOperationException("채팅 전용 대역");
+		}
 	}
 
-	private record Saved(String content, String status, boolean stopped) {
+	private record Saved(String content, String status, boolean stopped, Integer inputTokens, Integer outputTokens) {
 	}
 
 	/** 저장 호출을 기록만 하는 대역 */
@@ -88,8 +110,8 @@ class ChatStreamAbortTest {
 
 		@Override
 		public void saveAssistant(UUID conversationId, UUID userId, UUID assistantMsgId, String content, String status,
-				boolean stopped, List<OpenAiService.CitationData> citations) {
-			saves.add(new Saved(content, status, stopped));
+				boolean stopped, List<OpenAiService.CitationData> citations, Integer inputTokens, Integer outputTokens) {
+			saves.add(new Saved(content, status, stopped, inputTokens, outputTokens));
 		}
 	}
 

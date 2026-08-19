@@ -38,6 +38,20 @@ error/        ApiExceptions + GlobalExceptionHandler
 | `ConflictException` | 409 | `CONFLICT` |
 | `MaxUploadSizeExceededException` | 413 | `PAYLOAD_TOO_LARGE` |
 | `RateLimitException` | 429 | `RATE_LIMIT` |
+| **그 밖의 모든 예외** | 500 | `INTERNAL_ERROR` |
+
+마지막 줄이 **최종 폴백**이다(FEAT-OPS-002). 이것이 없던 동안에는 예상 못 한 예외만 Spring 기본
+형태(`timestamp`·`status`·`error`·`path`)로 나가 이 경로에서만 응답 계약이 깨졌고, 프론트는
+`message` 를 못 찾아 "요청 실패 (500)" 만 띄웠다.
+
+- 응답에 **예외 메시지를 싣지 않는다.** SQL 조각·클래스 이름이 그대로 나가면 정보 노출이다.
+  사용자에게 주는 것은 8자리 **상관 ID** 하나이고, 그 값으로 서버 로그를 찾는다.
+- 스택트레이스는 `ERROR` 로 남기며 상관 ID·메서드·경로를 함께 적는다. 관측 도구를 도입하지 않고
+  "오류가 났어요"를 로그의 한 줄과 이어 붙일 수 있는 유일한 수단이다.
+- **SSE 스트림 도중의 오류는 여기 오지 않는다.** 응답이 이미 시작돼 상태 코드를 바꿀 수 없고,
+  `ChatService` 가 `event: error` 로 따로 처리한다.
+- 스프링이 더 구체적인 핸들러를 먼저 고르므로 400·404 가 500 으로 뭉개지지 않는다. 그 성질에
+  기대기만 하면 조용히 깨지므로 케이스로 잠가 두었다.
 
 ## 인증
 
@@ -52,6 +66,17 @@ error/        ApiExceptions + GlobalExceptionHandler
   audience 를 나누지 않으면 짧은 수명의 파일 토큰이 인증 Bearer 로 통용된다. TTL 15분, `subject=fileId` 일치까지 확인한다.
 - permitAll 은 회원가입·로그인·헬스·파일 서빙뿐이다. SSE 비동기 재디스패치(`ASYNC`/`ERROR`)도 통과시킨다 —
   인증은 최초 `REQUEST` 디스패치에서 이미 검사됐다.
+- **만료가 임박하면 응답 헤더 `X-Refresh-Token` 으로 새 토큰을 보낸다**(FEAT-OPS-003).
+  임계는 `JWT_REFRESH_THRESHOLD_MINUTES`(기본 30분)이고 **0 이면 기능이 꺼져** 종전 고정 만료로 돌아간다.
+  검증을 통과한 뒤에만 발급한다 — 무효한 토큰을 갱신해 주면 만료가 무의미해진다.
+  `CorsConfig` 의 **노출 헤더 등록이 빠지면 브라우저가 값을 숨겨 조용히 아무 일도 일어나지 않으므로**
+  그 등록 자체를 케이스로 잠가 두었다.
+- **역할(`users.role`)은 JWT 에 담지 않는다**(FEAT-ADMIN-001). 담으면 강등이 토큰 만료까지 반영되지
+  않는다. 필터가 이미 요청마다 사용자 행을 읽고 있으므로 같은 조회에서 함께 읽는다 — 추가 쿼리가 없다.
+- 승격·강등은 환경변수 `ADMIN_EMAILS` 명단으로만 일어난다. **앱에 권한 상승 API 가 없다.**
+  기동 시 명단에 없는 관리자를 내리고 명단에 있는 사용자를 올린다 — 강등이 없으면 명단이 통제 수단이
+  되지 못한다. 명단에 있으나 미가입인 이메일은 가입 시점에 반영된다.
+- **권한 없음도 404 다.** 관리 기능의 존재 자체를 드러내지 않는다(`AdminAccessGuard`).
 
 ## 채팅 SSE 계약
 
@@ -122,6 +147,9 @@ SSE 타임아웃까지 기다리게 된다.
 | `V1__init.sql` | `users` · `conversations` · `messages` · `citations` · `attachments` + 인덱스 + `updated_at` 트리거 |
 | `V2__auth_hardening.sql` | 이메일 소문자 정규화 + `lower(email)` 유일 인덱스, `password_changed_at` 추가 |
 | `V3__message_stopped.sql` | `messages.stopped` 추가(소급 보정 없음) |
+| `V4__message_token_usage.sql` | `messages.input_tokens` · `output_tokens` 추가(nullable, 소급 보정 없음) |
+| `V5__user_role.sql` | `users.role` 추가 + `check (role in ('user','admin'))` |
+| `V6__rag_documents.sql` | `rag_documents` 신설 + 살아 있는 문서 인덱스 |
 
 테이블별 컬럼과 관계(ERD)는 [overview](./overview.md) 「데이터 모델」에 있다. 설계상 짚을 점만 적는다.
 
@@ -132,7 +160,13 @@ SSE 타임아웃까지 기다리게 된다.
 - `attachments.message_id` 는 nullable 이다 — 업로드 시점엔 메시지가 없다. 소유는 `user_id` 기준이고,
   연결되지 않은 채 남은 첨부는 스케줄러가 회수한다.
 - 재조회 질의는 **대화 단위로 한 번씩** 읽는다(`findByConversation`). 메시지마다 도는 형태는 메시지 수만큼
-  질의가 나가므로 쓰지 않는다.
+  질의가 나가므로 쓰지 않는다. 같은 이유로 문서 목록도 올린 사람 이름을 **조인으로 함께** 가져온다.
+- `messages.input_tokens` · `output_tokens` 는 **nullable 이다**(FEAT-OPS-001). `0` 을 기본값으로 두면
+  "모르는 것"과 "정말 0"이 합계에서 섞인다 — 사용자 메시지 · 목업 · 중단된 턴 · V4 이전 행이 모두
+  "모르는 것"이다. 조회는 `where input_tokens is not null` 로 거른다.
+- `rag_documents` 만 **소프트 삭제**를 쓰고 `uploaded_by` 만 `on delete restrict` 다. 나머지는 전부
+  hard delete + cascade 다. "언제 내려갔는가"와 "누가 올렸는가"가 감사 대상이라, 사용자 삭제가 막히는
+  편이 기록이 사라지는 것보다 낫다고 판단했다. **의도된 차이**이며 마이그레이션 주석에 남겼다.
 
 ## 파일
 
@@ -143,6 +177,29 @@ SSE 타임아웃까지 기다리게 된다.
 - 회수는 두 패스다 — 행 기준(`message_id is null`)과 저장소 스캔(파일은 있는데 행이 없음).
   대화 삭제 시 cascade 로 행이 먼저 사라지면 1차가 구조적으로 못 보기 때문이다.
   둘 다 최소 유예(10분)보다 최근 것은 어떤 cutoff 로도 지우지 않는다.
+
+## RAG 문서 (관리자)
+
+채팅 첨부와 **다른 경로**다(FEAT-ADMIN-002). 첨부는 비전 입력용이라 이미지만 받아 인라인으로 보내고,
+여기는 색인용이라 문서만 받아 공용 Vector Store 에 넣는다. **두 허용 목록이 서로 반대**이므로 규칙이
+새면 바로 드러나도록 케이스로 잠가 두었다.
+
+- 허용 : PDF · TXT · MD · DOCX, 최대 50MB. OpenAI 상한(512MB)보다 훨씬 낮게 잡았다 — 상한에 맞추면
+  요청 하나가 멀티파트 버퍼를 512MB 잡아 단일 인스턴스가 그대로 멎는다.
+- 매직바이트는 **PDF 만** 검사한다. txt·md 는 매직바이트가 없고 docx 는 zip 이라 `PK` 만으로는 다른
+  zip 과 구분되지 않는다. 검사할 수 없는 형식을 검사하는 척하지 않는다.
+- 업로드는 Files → Vector Store 연결 → DB 기록 순이고, **앞 단계가 실패하면 행을 만들지 않는다.**
+  가장 나쁜 상태는 스토어에는 없는데 목록에만 뜨는 것이다 — 화면에 보이는데 검색에는 안 잡히고
+  지울 수도 없다. 연결이 실패하면 올린 파일을 즉시 정리한다.
+- 반대로 삭제는 OpenAI 정리가 실패해도 `deleted_at` 을 채운다. 목록에 남겨두면 이미 검색에서 빠졌을 수
+  있어 상태가 더 헷갈린다 — 첨부 고아 회수와 같은 판단이다.
+- 목록은 `in_progress` 인 행만 상태를 다시 묻는다. 완료·실패는 더 바뀌지 않는다.
+- 목업 모드에서도 전 경로가 동작하며 파일 ID 에 `mock-` 접두가 붙는다.
+
+**관리자 비밀번호 초기화**(FEAT-ADMIN-003)는 기존 무효화 기준선을 그대로 타되 경계를 **현재 초의 끝**으로
+민다. 본인 변경은 "같은 초에 발급된 직전 토큰 1개"가 살아남는 틈을 감수하는데, 그 근거가 "토큰 주인이
+방금 바꾼 본인"이기 때문이다. 관리자 초기화에서는 토큰 주인이 다른 사람이고 그 세션을 끊는 것이 목적이라
+전제가 깨진다 — 여기서는 살려 둘 토큰이 없으므로 틈을 없앴다.
 
 ## 실행 모드
 

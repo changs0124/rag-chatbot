@@ -22,7 +22,7 @@ class UserMapperUuidTest extends AbstractPgIntegrationTest {
 	@Test
 	void uuid_insert_select_roundtrip() {
 		UUID id = UUID.randomUUID();
-		userMapper.insert(new User(id, "uuidtest@b.com", "hash", "홍길동", "system", null, null));
+		userMapper.insert(new User(id, "uuidtest@b.com", "hash", "홍길동", "system", "user", null, null));
 
 		User found = userMapper.findById(id).orElseThrow();
 		assertThat(found.id()).isEqualTo(id);
