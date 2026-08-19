@@ -67,7 +67,7 @@ class ChatStreamAbortTest {
 			if (failure != null) {
 				throw failure;
 			}
-			return new ChatCompletion(String.join("", tokens), List.of(), true);
+			return new ChatCompletion(String.join("", tokens), List.of(), true, 100, 20);
 		}
 
 		@Override
@@ -75,7 +75,7 @@ class ChatStreamAbortTest {
 		}
 	}
 
-	private record Saved(String content, String status, boolean stopped) {
+	private record Saved(String content, String status, boolean stopped, Integer inputTokens, Integer outputTokens) {
 	}
 
 	/** 저장 호출을 기록만 하는 대역 */
@@ -88,8 +88,8 @@ class ChatStreamAbortTest {
 
 		@Override
 		public void saveAssistant(UUID conversationId, UUID userId, UUID assistantMsgId, String content, String status,
-				boolean stopped, List<OpenAiService.CitationData> citations) {
-			saves.add(new Saved(content, status, stopped));
+				boolean stopped, List<OpenAiService.CitationData> citations, Integer inputTokens, Integer outputTokens) {
+			saves.add(new Saved(content, status, stopped, inputTokens, outputTokens));
 		}
 	}
 

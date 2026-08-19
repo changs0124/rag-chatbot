@@ -10,6 +10,11 @@
   - 템플릿 기본값이 이 저장소와 어긋나는 부분은 **골격만 따르고 값은 실제로 바꿈** — MySQL(`BIGINT AUTO_INCREMENT` · `DATETIME`) → PostgreSQL uuid · `timestamptz`, 응답 `{success,data}` → `{code,message}`, `/api/v1` → `/api`, 권한 없음 403 → 404 은닉. 그대로 옮기면 문서가 코드와 어긋남
   - 실제 스키마와 대조해 `06-erd.md` 2건을 고침 — 인덱스명을 비워뒀던 것(`idx_citations_message` 는 `(message_id, seq)` 복합)과 V1 의 `set_updated_at()` 트리거 누락
   - `docs/01_specs/live-integration.md` 신설 — 키·Vector Store 확보 후 투입 절차와 **실물로 확인된 적 없는 가정 5건**(이벤트명 · annotation 스키마)을 증상과 함께 나열함
+- **턴별 토큰 사용량 기록 (FEAT-OPS-001)** — 앱 안에서 비용을 볼 수단이 전혀 없었음. 완료 이벤트의 `usage` 를 이미 받고 있으면서 인용만 뽑고 버리던 것을 주움(추가 API 비용 0)
+  - `messages.input_tokens` · `output_tokens` 신설(V4). **nullable** — `0` 을 기본값으로 두면 "모르는 것"과 "정말 0"이 합계에서 섞임. 사용자 메시지 · 목업 · 중단된 턴 · V4 이전 행이 모두 "모르는 것"임
+  - 조회는 `where input_tokens is not null` 로 거름. 빼면 턴당 평균이 실제보다 낮게 나옴(SQL 예시는 `docs/99_inbox/06-erd.md` 6절)
+  - Jackson 의 `asInt()` 는 없는 노드에 0 을 주므로 쓰지 않음 — 그대로 쓰면 "usage 가 안 왔다"와 "정말 0 토큰"이 저장에서 구분되지 않음
+  - 화면은 만들지 않음. 무엇을 볼지는 데이터가 쌓인 뒤에 정함
 
 ## [2026-08-18]
 

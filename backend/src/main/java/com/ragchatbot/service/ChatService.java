@@ -89,7 +89,9 @@ public class ChatService {
 				messageIdsWithAttachments(conversation.id()), historyTokenBudget);
 
 		UUID userMsgId = UUID.randomUUID();
-		messageMapper.insert(new Message(userMsgId, conversation.id(), "user", message, "complete", false, null));
+		// 사용자 메시지에는 사용량이라는 개념이 없음 - null(FEAT-OPS-001)
+		messageMapper.insert(new Message(userMsgId, conversation.id(), "user", message, "complete", false,
+				null, null, null));
 		for (UUID attId : attachmentIds) {
 			attachmentMapper.linkToMessage(attId, userMsgId, userId);
 		}
@@ -191,7 +193,7 @@ public class ChatService {
 
 			// 어시스턴트 메시지 + 출처를 하나의 트랜잭션으로 저장(P-6)
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, completion.fullText(),
-					"complete", false, completion.citations());
+					"complete", false, completion.citations(), completion.inputTokens(), completion.outputTokens());
 			saved = true;
 
 			List<Map<String, Object>> citationPayload = new ArrayList<>();
@@ -228,8 +230,9 @@ public class ChatService {
 			return;
 		}
 		try {
+			// 중단·오류 경로는 완료 이벤트가 오기 전에 끝나 사용량을 알 수 없음 - 추정하지 않고 null
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, text, status, stopped,
-					List.of());
+					List.of(), null, null);
 		} catch (Exception ignored) {
 			// 저장 실패는 무시(이미 비정상 종료 경로)
 		}

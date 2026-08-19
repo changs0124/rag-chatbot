@@ -34,8 +34,15 @@ public interface OpenAiService {
 	record CitationData(int seq, String sourceName, String snippet, String uri) {
 	}
 
-	/** 채팅 결과. noSource=true면 무자료(citations 비어 있고 응답에 규정 접두, P-8) */
-	record ChatCompletion(String fullText, List<CitationData> citations, boolean noSource) {
+	/**
+	 * 채팅 결과. noSource=true면 무자료(citations 비어 있고 응답에 규정 접두, P-8).
+	 *
+	 * <p>{@code inputTokens}·{@code outputTokens} 는 이 턴이 실제로 쓴 토큰 수임(FEAT-OPS-001).
+	 * <b>모르면 null</b> - 목업 · usage 필드가 없는 응답 · 중단으로 완료 이벤트 전에 끝난 턴이 그렇다.
+	 * 0 으로 채우면 합계에서 "정말 0"과 구분되지 않아 턴당 평균이 거짓이 됨.
+	 */
+	record ChatCompletion(String fullText, List<CitationData> citations, boolean noSource,
+			Integer inputTokens, Integer outputTokens) {
 	}
 
 	/**

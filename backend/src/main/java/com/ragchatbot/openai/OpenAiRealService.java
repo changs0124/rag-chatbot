@@ -192,6 +192,9 @@ public class OpenAiRealService implements OpenAiService {
 	ChatCompletion consumeStream(InputStream in, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage) {
 		StringBuilder buffer = new StringBuilder();
 		List<CitationData> citations = List.of();
+		// 사용량은 완료 이벤트에서만 옴. 못 받으면 null 로 남겨 "모르는 것"을 0 과 구분함(FEAT-OPS-001)
+		Integer inputTokens = null;
+		Integer outputTokens = null;
 		boolean completed = false;
 		boolean searchingSent = false;
 		boolean generatingSent = false;
@@ -222,7 +225,10 @@ public class OpenAiRealService implements OpenAiService {
 					onStage.accept(Stage.SEARCHING, List.of());
 					searchingSent = true;
 				} else if ("response.completed".equals(type)) {
-					citations = extractCitations(ev.path("response"));
+					JsonNode response = ev.path("response");
+					citations = extractCitations(response);
+					inputTokens = intOrNull(response.path("usage"), "input_tokens");
+					outputTokens = intOrNull(response.path("usage"), "output_tokens");
 					completed = true;
 				}
 			}
@@ -240,7 +246,18 @@ public class OpenAiRealService implements OpenAiService {
 
 		// 저장 텍스트 = 스트리밍으로 내보낸 것과 정확히 같음(화면·재조회 불일치 방지)
 		boolean noSource = citations.isEmpty();
-		return new ChatCompletion(buffer.toString(), citations, noSource);
+		return new ChatCompletion(buffer.toString(), citations, noSource, inputTokens, outputTokens);
+	}
+
+	/**
+	 * 사용량 필드 하나를 읽음. 없거나 숫자가 아니면 <b>null</b>(FEAT-OPS-001).
+	 *
+	 * <p>Jackson 의 {@code asInt()} 는 없는 노드에 0 을 주는데, 그러면 "usage 가 안 왔다"와
+	 * "정말 0 토큰"이 저장에서 구분되지 않음 - 합계·평균이 조용히 낮아짐.
+	 */
+	private static Integer intOrNull(JsonNode node, String field) {
+		JsonNode v = node.path(field);
+		return v.isNumber() ? v.asInt() : null;
 	}
 
 	/**

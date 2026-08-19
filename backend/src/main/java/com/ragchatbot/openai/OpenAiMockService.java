@@ -107,7 +107,8 @@ public class OpenAiMockService implements OpenAiService {
 				}
 			}
 		}
-		return new ChatCompletion(fullText, citations, noSource);
+		// 목업은 실제 토큰을 쓰지 않으므로 사용량을 null 로 둠 - 숫자를 지어내면 합계가 거짓이 됨(FEAT-OPS-001)
+		return new ChatCompletion(fullText, citations, noSource, null, null);
 	}
 
 	@Override
