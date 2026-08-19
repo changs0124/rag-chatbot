@@ -9,7 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ragchatbot.config.AdminRoleSynchronizer;
+import com.ragchatbot.config.SignupPolicy;
 import com.ragchatbot.domain.User;
+import com.ragchatbot.error.ApiExceptions.BadRequestException;
 import com.ragchatbot.error.ApiExceptions.ConflictException;
 import com.ragchatbot.error.ApiExceptions.NotFoundException;
 import com.ragchatbot.error.ApiExceptions.UnauthorizedException;
@@ -34,14 +36,17 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
 	private final RateLimiterService rateLimiter;
+	private final SignupPolicy signupPolicy;
 	private final List<String> adminEmails;
 
 	public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtService jwtService,
-			RateLimiterService rateLimiter, @Value("${app.admin.emails:}") String adminEmails) {
+			RateLimiterService rateLimiter, SignupPolicy signupPolicy,
+			@Value("${app.admin.emails:}") String adminEmails) {
 		this.userMapper = userMapper;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
 		this.rateLimiter = rateLimiter;
+		this.signupPolicy = signupPolicy;
 		// 기동 시 동기화(AdminRoleSynchronizer)는 **이미 가입한** 계정만 손댐. 명단에 있으나 아직
 		// 가입하지 않은 이메일은 여기서 가입 시점에 반영해야 재기동 없이 관리자가 됨(FEAT-ADMIN-001)
 		this.adminEmails = AdminRoleSynchronizer.parse(adminEmails);
@@ -49,6 +54,11 @@ public class AuthService {
 
 	public AuthResponse signup(SignupRequest req) {
 		String email = normalizeEmail(req.email());
+		// **중복 검사보다 먼저** 함(FEAT-AUTH-001). 순서가 뒤집히면 거절할 주소에 대해 "이미 가입된
+		// 이메일"을 돌려주게 되어 계정 존재 여부가 샘 - 로그인에서 계정 유무를 숨기는 것과 같은 결임
+		if (!signupPolicy.isAllowed(email)) {
+			throw new BadRequestException(signupPolicy.rejectionMessage());
+		}
 		userMapper.findByEmail(email).ifPresent(u -> {
 			throw new ConflictException("이미 가입된 이메일");
 		});
