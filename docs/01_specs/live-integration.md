@@ -123,7 +123,7 @@
 확인한다. 이 배율 하나가 월 비용을 한 자릿수 배 가른다. 추정으로 계산하지 않는다.
 
 토큰 사용량은 이제 `messages.input_tokens` · `output_tokens` 에 남는다(FEAT-OPS-001).
-**집계 화면은 없으므로** 조회는 DB 직접 질의뿐이며, SQL 예시는 `docs/99_inbox/06-erd.md` 6절에 있다.
+**집계 화면은 없으므로** 조회는 DB 직접 질의뿐이며, SQL 예시는 `docs/01_specs/erd.md` 6절에 있다.
 `where input_tokens is not null` 조건을 빼면 목업·중단 턴이 0으로 섞여 턴당 평균이 실제보다 낮게 나온다.
 
 ## 5. 문서를 넣는 경로

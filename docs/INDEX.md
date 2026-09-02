@@ -47,44 +47,38 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 
 ## Docs 구조
 
-| 문서 | 설명 |
-|------|------|
-| [Specs](./01_specs/) | 기획·설계 문서. [OpenAI 실 연동 투입 절차](./01_specs/live-integration.md) |
-| [Architecture](./02_architecture/overview.md) | 시스템 전체 구조 · API 맵 · 데이터 흐름 |
-| [References](./03_references/) | 외부 레퍼런스 (디자인, API, 라이브러리) |
+1인 개발 + AI 협업 기준으로 **정본 하나만 남긴다.** 같은 사실을 두 곳에 적지 않는다.
+
+| 문서 | 담는 것 |
+|------|---------|
+| [요구사항정의서](./01_specs/requirements.md) | `REQ-` ID 정본. AUTH · CHAT · RAG · ADMIN · OPS 다섯 카테고리 |
+| [기능명세서](./01_specs/features.md) | `FEAT-` ID · 처리 흐름 · 예외 처리 · 범위 밖 |
+| [ERD 설계서](./01_specs/erd.md) | 테이블 정의 · 인덱스 · 설계 원칙 · 사용량 조회 SQL |
+| [API 명세서](./01_specs/api.md) | `API-` ID · 공통 규칙 · 에러 코드 |
+| [OpenAI 실 연동 투입 절차](./01_specs/live-integration.md) | `mock` → `live` 전환 절차와 비용 발생 지점 |
+| [Architecture](./02_architecture/overview.md) | 시스템 전체 구조 · API 맵 · 데이터 흐름 · 알려진 제약 |
+| [Frontend](./02_architecture/frontend.md) | 라우팅 · 상태관리 · 스트리밍 UI · 첨부 UI 계약 |
+| [Backend](./02_architecture/backend.md) | 레이어 · 인증 · SSE 계약 · 유량 제어 · **배포와 호스트 선정 근거** |
+| [디자인 시스템](./02_architecture/design-system.md) | 색 토큰 · 타이포 · 모션 · 컴포넌트 규칙 |
 | [Conventions](./CONVENTIONS.md) | 코드 스타일 & 패턴 규칙 |
-| [Feedback](./FEEDBACK.md) | 다건 수정 요청 일괄 전달 |
 | [Current Tasks](./04_tasks/current-sprint.md) | 현재 진행 중 작업 |
 | [Backlog](./04_tasks/backlog.md) | 전체 태스크 |
-| [Open Issues](./05_issues/open/) | 현재 이슈 |
 | [Changelog](./06_changelog/CHANGELOG.md) | 변경 이력 |
-| [Inbox](./99_inbox/) | 분류 전 문서. 아래 개발 문서 10종 + 재디자인 2종([디자인 시스템](./99_inbox/design-system.md) · [재디자인 와이어프레임](./99_inbox/redesign-wireframe.md)) |
 
-### 개발 문서 10종 (`docs/99_inbox/`)
+**정본 위치** — `REQ-` 는 요구사항정의서, `FEAT-` 는 기능명세서, `API-` 는 API 명세서,
+테이블·컬럼은 ERD 가 정본이다. 기능이 늘면 새 파일을 만들지 않고 해당 문서에 병합한다.
 
-`/project-docs-gen` 템플릿 체계다. 파일명 앞 숫자는 **의존 순서**이며, 앞 문서가 뒤 문서의 입력이 된다.
-프로젝트 전체를 누적해 담으므로 기능이 늘면 새 파일을 만들지 않고 해당 문서에 병합한다.
-
-| 순서 | 문서 | 담는 것 |
-|------|------|---------|
-| 01 | [요구사항정의서](./99_inbox/01-requirements.md) | `REQ-` ID 정본. AUTH · CHAT · RAG · ADMIN · OPS 다섯 카테고리 |
-| 02 | [기술 스택 결정서](./99_inbox/02-tech-stack.md) | 선택 이유와 대안, 감수한 약점, 전환 조건 |
-| 03 | [역할/권한 매트릭스](./99_inbox/03-roles.md) | GUEST · USER · ADMIN 권한. **권한 없음을 404로 은닉하는 규칙** |
-| 04 | [정보구조도](./99_inbox/04-sitemap.md) | `SCR-` ID · 화면 목록 · 네비게이션 |
-| 05 | [기능명세서](./99_inbox/05-features.md) | `FEAT-` ID · 처리 흐름 · 예외 처리 |
-| 06 | [ERD 설계서](./99_inbox/06-erd.md) | 테이블 정의 · 인덱스 · 설계 원칙 |
-| 07 | [API 명세서](./99_inbox/07-api.md) | `API-` ID · 공통 규칙 · 에러 코드 |
-| 08 | [플로우차트](./99_inbox/08-flowchart.md) | `FLOW-` ID · 사용자 관점 분기 |
-| 09 | [와이어프레임 설계서](./99_inbox/09-wireframe.md) | 화면 배치 · UI 컴포넌트 · 인터랙션 |
-| 10 | [시나리오 케이스](./99_inbox/10-scenarios.md) | `TC-` ID · `EDGE-` ID · 테스트 결과 요약 |
+**두지 않는 것** : 정보구조도 · 플로우차트 · 와이어프레임 · 시나리오 케이스 · 역할 매트릭스 ·
+기술 스택 결정서. 1인 개발에서는 구현과 위 문서가 정본이라 별도 문서가 곧 낡은 사본이 된다.
+각 문서의 판단 근거는 남겼다 — 호스트 선정과 역할 설계는 `docs/02_architecture/backend.md`,
+리스크는 `docs/02_architecture/overview.md` 「알려진 제약」이다.
 
 ## AI 사용 가이드
 
 이 프로젝트에서 AI와 협업할 때:
 1. 먼저 이 `INDEX.md`를 읽어서 프로젝트 전체를 파악
 2. `docs/CONVENTIONS.md`를 참고하여 코드 스타일 준수
-3. `docs/FEEDBACK.md`에 다건 수정 요청이 있으면 확인
-4. 작업 후 "리뷰해줘"로 코드 리뷰 & 변경사항 기록
+3. 작업 후 "리뷰해줘"로 코드 리뷰 & 변경사항 기록
 
 문서에 없는 파일 경로를 적으면 CI의 `scripts/check-doc-refs.sh`가 실패한다.
 

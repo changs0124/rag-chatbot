@@ -4,6 +4,25 @@
 
 ## [Unreleased]
 
+### Changed
+- **개발 문서 10종을 핵심 4종으로 줄이고 `docs/01_specs/` 로 옮김** — 1인 개발 + AI 협업에서는
+  문서가 늘수록 정본이 흩어지고, 구현이 앞서가면 나머지는 **낡은 사본**이 된다. 원래 분류 전
+  임시 보관함이던 inbox 에 12종이 그대로 눌러앉아 있었음
+  - 남긴 것 : `requirements.md` · `features.md` · `erd.md` · `api.md`. `REQ-` · `FEAT-` · `API-` ·
+    테이블 정의의 **ID 정본이 여기 하나씩만 있게 됨**
+  - 지운 것 : 정보구조도 · 플로우차트 · 와이어프레임 2종 · 시나리오 케이스 · 역할 매트릭스 ·
+    기술 스택 결정서. 화면 배치와 라우팅은 `docs/02_architecture/frontend.md` 와 구현이, 테스트
+    케이스는 실제 테스트 코드가 이미 정본이라 **같은 사실의 두 번째 사본**이었음
+  - **버리지 않고 옮긴 판단 근거** : 호스트 선정 경위(Oracle A1 좌초 · 대안별 탈락 사유 · 전환
+    조건)와 관리자 부여 방식 대안 비교는 `docs/02_architecture/backend.md` 로, 리스크 표는
+    `docs/02_architecture/overview.md` 「알려진 제약」으로 흡수함
+  - 디자인 시스템은 색 토큰·모션 규칙이 코드에서 역산되지 않아 `docs/02_architecture/design-system.md`
+    로 살림
+  - `FEEDBACK.md` 와 빈 스캐폴딩 폴더(`03_references/` · `05_issues/` · `diagrams/` · `completed/` ·
+    `99_inbox/`)를 제거함 — 만든 이래 한 번도 쓰지 않았고, 비어 있는 폴더가 INDEX 에서 링크로
+    보이면 **있는 줄 알고 찾게 된다**
+  - 삭제된 문서를 가리키던 상호 참조 13곳을 새 위치로 고쳤음(`scripts/check-doc-refs.sh` 통과)
+
 ### Fixed
 - **실 연동 절차의 준비물 표가 낡아 있던 것** — `ALLOWED_EMAIL_DOMAINS` 가 `live` 기동 필수가 됐는데 `docs/01_specs/live-integration.md` 1절에 없어, 그대로 따라가면 기동에서 막혔음. `ADMIN_EMAILS` 도 빠져 있어 문서를 올릴 사람이 없는 상태로 5절까지 가게 됐음
   - **기동을 막는 것과 나중에 증상으로 드러나는 것**을 표로 갈랐음 — 뒤쪽이 더 찾기 어렵다
@@ -20,7 +39,7 @@
     문제라 일정에 넣을 수 없다**는 것이 결론
   - 무료 PaaS 는 넷을 동시에 만족하는 곳이 없어 전부 탈락(영속 볼륨 · 콜드스타트 없음 · Postgres ·
     단일 인스턴스). Render 는 무료에서 디스크 불가라 **첨부가 재시작마다 소실**되고, Fly · Koyeb 은
-    무료 티어가 사라졌음. 대안별 탈락 사유는 `docs/99_inbox/02-tech-stack.md` 2.5
+    무료 티어가 사라졌음. 대안별 탈락 사유는 `docs/02_architecture/backend.md` 「배포」
   - **터널을 쓰는 이유는 우회가 아니라 권한임** — 서버가 사무실·캠퍼스 망에 놓여 라우터를 만질 수
     없고 공인 IP 도 없음. cloudflared 가 바깥으로 연결을 걸므로 인바운드 포트·포트포워딩·인그레스
     규칙이 전부 불필요해지고, TLS 종단을 Cloudflare 가 맡아 **Caddy 같은 리버스 프록시도 빠짐**
@@ -43,14 +62,14 @@
 ## [2026-08-19]
 
 ### Added
-- **개발 문서 10종 정비 (`/project-docs-gen` 체계)** — 코드가 먼저 있고 문서가 없던 상태를 뒤집음. `docs/99_inbox/` 에 `01-requirements` ~ `10-scenarios` 를 두고 `REQ-` · `FEAT-` · `SCR-` · `API-` · `FLOW-` · `TC-` ID 체계를 세움
+- **개발 문서 10종 정비 (`/project-docs-gen` 체계)** — 코드가 먼저 있고 문서가 없던 상태를 뒤집음. 개발 문서 10종을 두고 `REQ-` · `FEAT-` · `SCR-` · `API-` · `FLOW-` · `TC-` ID 체계를 세움(이후 핵심 4종만 `docs/01_specs/` 에 남김)
   - 기존 첨부 미리보기 3종은 **정본 파일명으로 옮겨 누적 병합**(`features.md` → `05-features.md` 등). 새 기능마다 파일을 늘리지 않고 한 문서에 쌓음
   - 템플릿 기본값이 이 저장소와 어긋나는 부분은 **골격만 따르고 값은 실제로 바꿈** — MySQL(`BIGINT AUTO_INCREMENT` · `DATETIME`) → PostgreSQL uuid · `timestamptz`, 응답 `{success,data}` → `{code,message}`, `/api/v1` → `/api`, 권한 없음 403 → 404 은닉. 그대로 옮기면 문서가 코드와 어긋남
   - 실제 스키마와 대조해 `06-erd.md` 2건을 고침 — 인덱스명을 비워뒀던 것(`idx_citations_message` 는 `(message_id, seq)` 복합)과 V1 의 `set_updated_at()` 트리거 누락
   - `docs/01_specs/live-integration.md` 신설 — 키·Vector Store 확보 후 투입 절차와 **실물로 확인된 적 없는 가정 5건**(이벤트명 · annotation 스키마)을 증상과 함께 나열함
 - **턴별 토큰 사용량 기록 (FEAT-OPS-001)** — 앱 안에서 비용을 볼 수단이 전혀 없었음. 완료 이벤트의 `usage` 를 이미 받고 있으면서 인용만 뽑고 버리던 것을 주움(추가 API 비용 0)
   - `messages.input_tokens` · `output_tokens` 신설(V4). **nullable** — `0` 을 기본값으로 두면 "모르는 것"과 "정말 0"이 합계에서 섞임. 사용자 메시지 · 목업 · 중단된 턴 · V4 이전 행이 모두 "모르는 것"임
-  - 조회는 `where input_tokens is not null` 로 거름. 빼면 턴당 평균이 실제보다 낮게 나옴(SQL 예시는 `docs/99_inbox/06-erd.md` 6절)
+  - 조회는 `where input_tokens is not null` 로 거름. 빼면 턴당 평균이 실제보다 낮게 나옴(SQL 예시는 `docs/01_specs/erd.md` 6절)
   - Jackson 의 `asInt()` 는 없는 노드에 0 을 주므로 쓰지 않음 — 그대로 쓰면 "usage 가 안 왔다"와 "정말 0 토큰"이 저장에서 구분되지 않음
   - 화면은 만들지 않음. 무엇을 볼지는 데이터가 쌓인 뒤에 정함
 - **예외 최종 폴백 + 요청 상관 ID (FEAT-OPS-002)** — `GlobalExceptionHandler` 에 `Exception` 핸들러가 없어, 예상 못 한 예외만 Spring 기본 형태(`timestamp`·`status`·`error`·`path`)로 나가 **이 경로에서만 응답 계약이 깨졌음**. 프론트는 `message` 를 못 찾아 "요청 실패 (500)" 만 띄웠고 서버 로그에도 어느 요청이었는지 상관 지을 기록이 없었음
@@ -112,7 +131,7 @@
   - **지운 카드의 업로드가 뒤늦게 성공하면 그 파일을 서버에서 지움** — 중단은 요청을 끊을 뿐 서버가 이미 받은 것을 되돌리지 않아, 지우지 않으면 회수 크론(기본 60분)을 기다리는 고아가 됨. 눈에 보이지 않는 경합이라 테스트로 잠금
   - 확대 화면에서 포인터 캡처를 잡음 — 확대 상태로 끌 때 손가락이 이미지 밖으로 나가면 이동이 멈추던 것
   - `frontend/src/test/setup.ts` 에 `PointerEvent` 폴리필 추가 — jsdom 에 없어서 핀치 검사가 밋밋한 `Event` 를 받고 "아무 일도 안 일어남"을 통과로 읽었음(실제로 그렇게 한 번 초록불이 났음)
-  - 프론트 테스트 32 → 52 케이스(`FRONTEND_MIN` 동반 상향). 설계 문서는 `docs/99_inbox/05-features.md` · `docs/99_inbox/09-wireframe.md` · `docs/99_inbox/10-scenarios.md`
+  - 프론트 테스트 32 → 52 케이스(`FRONTEND_MIN` 동반 상향). 설계 문서는 `docs/01_specs/features.md`
 
 ### Changed
 - **전 화면 재디자인 — Claude 계열 웜 톤 + 채팅 앱 구조** — 채팅 · 로그인 · 마이페이지를 한 번에 다시 칠함. 배치는 ChatGPT · Claude 를 따랐고, 색은 웜 크림 계열로 바꿈(회색 계열은 대화가 길어지는 화면에서 눈이 빨리 지침)
@@ -127,7 +146,7 @@
   - 카메라 모달 · 오류 경계 화면도 토큰으로 옮김 — 이 둘이 남아 있으면 테마를 바꿔도 두 화면만 예전 회색으로 튀어 보임
   - 파비콘 교체 — 말풍선 + 문서 + 출처 링크 모티프(생성 원본 `frontend/public/favicon-source.png`), `favicon.ico`(16·32·48) · `favicon-32.png` · `apple-touch-icon.png` 로 파생. 종전 Vite 기본 아이콘(`favicon.svg`) 제거
   - `frontend/index.html` 의 `lang` 을 `en` → `ko` 로 고침(문서는 한국어인데 영어로 선언돼 있어 스크린 리더가 잘못 읽음) + `theme-color` 를 테마별 `canvas` 값으로 지정
-  - 설계 문서 : `docs/99_inbox/design-system.md` · `docs/99_inbox/redesign-wireframe.md`
+  - 설계 문서 : `docs/02_architecture/design-system.md`
 - **사이드바 폭 조절(FEAT-UI-001)** — 데스크톱에서 경계를 끌어 200~420px 사이로 조절하고 `localStorage` 에 기억함. 끄는 동안에는 트랜지션을 걸지 않음(매 프레임 값이 바뀌는데 트랜지션이 있으면 손보다 늦게 따라와 고무줄처럼 보임)과 `user-select: none`(안 걸면 화면 글자가 선택돼 파랗게 반전됨)이 요점. 범위 밖 저장값은 무시하고 기본값으로 엶. 손잡이는 `role="separator"` 로 화살표 키에서도 동작함 — 마우스가 없으면 못 쓰는 기능을 만들지 않기 위함. 모바일 드로어에는 손잡이가 없음. 프론트 테스트 52 → 58
 - **진행 단계 문구가 참조한 자료명을 밝힘(R-11)** — 목업의 조회 단계 라벨이 `목업 코퍼스 조회 중` 에서 `목업 코퍼스 조회 중 - 이용 정책 문서 · FAQ 문서` 로 바뀜. 자료명은 화면 하단 출처 목록과 **같은 값**(`CitationData.sourceName`)에서 파생시켜, 진행 문구가 말한 자료와 실제로 붙는 출처가 어긋날 수 없게 함. 무자료 분기는 붙일 자료명이 없으므로 종전 문구 그대로임(P-10)
   - `stageLabel(Stage)` → `stageLabel(Stage, List<String> sources)`, `Consumer<Stage>` → `BiConsumer<Stage, List<String>>`. 라벨 소유권은 그대로 구현에 있음(P-2) - `ChatService` 는 구현이 준 자료명을 넘기기만 함
