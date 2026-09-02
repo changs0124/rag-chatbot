@@ -1,0 +1,72 @@
+# 자체 호스팅(우분투 서버) 배포 구성 - 앱 · DB · 터널 세 컨테이너.
+# 프론트는 Vercel 에 있으므로 여기 없음. 절차는 docs/02_architecture/backend.md 「배포」 참고.
+#
+# 인바운드 포트를 열지 않는다 - cloudflared 가 바깥으로 연결을 걸어 터널을 유지하므로
+# 공인 IP · 포트포워딩 · 방화벽 인바운드 규칙이 전부 필요 없다. TLS 는 Cloudflare 가 종단한다.
+#
+# 환경변수는 두 곳으로 나뉜다 :
+#   backend/.env - 앱 변수(정본은 backend/.env.example)
+#   .env         - compose 전용 변수(DB 비밀번호 · 터널 토큰). 정본은 .env.example
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ragchatbot}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 를 .env 에 넣을 것}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # 앱이 Flyway 로 스키마를 잡으므로 DB 가 실제로 받을 준비가 된 뒤에 떠야 한다
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ragchatbot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build: ./backend
+    env_file:
+      - backend/.env
+    environment:
+      # DB 접속은 여기서 조립한다 - backend/.env 에 DB_URL 이 있어도 이 값이 이긴다.
+      # 비밀번호를 .env 한 곳에만 두려는 것이고, 동시에 jdbc 스킴을 강제해
+      # 관리형 DB 형식(postgres://…)을 그대로 넣어 기동이 깨지는 사고를 막는다
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-ragchatbot}
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      FILE_STORAGE_ROOT: /data/uploads
+    volumes:
+      # 첨부는 로컬 디스크에 쌓인다. 이 볼륨을 떼면 업로드된 이미지가 사라진다
+      - uploads:/data/uploads
+    ports:
+      # 루프백에만 묶는다 - 외부 노출은 터널이 담당하므로 여기서 공개할 이유가 없다.
+      # 서버에서 curl 로 직접 찔러볼 때 쓴다
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      # JVM + Flyway 기동에 시간이 걸린다. 이 유예 동안의 실패는 재시작으로 세지 않음
+      start_period: 90s
+      retries: 3
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ http://app:8080 매핑은 Cloudflare 대시보드에 있다.
+    # 터널 설정을 저장소에 두지 않는 대신, 토큰만 있으면 어느 서버에서든 같은 주소로 붙는다
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN 을 .env 에 넣을 것}
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:

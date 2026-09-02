@@ -218,7 +218,7 @@ SSE 타임아웃까지 기다리게 된다.
 
 ## 배포
 
-두 갈래가 있다. **상시 공개**는 컨테이너를 호스트에 올리고, **데모**는 로컬 인스턴스를 터널로 노출한다.
+두 갈래가 있다. **상시 공개**는 자체 호스팅 서버에 컨테이너를 올리고, **데모**는 로컬 인스턴스를 터널로 노출한다.
 환경변수 요구사항은 어느 쪽이든 같다.
 
 필요한 환경변수와 각 값의 의미는 `backend/.env.example` 에 있다. 배포 시 반드시 확인할 것 :
@@ -235,15 +235,31 @@ SSE 타임아웃까지 기다리게 된다.
 스키마는 기동 시 Flyway 가 적용하므로 별도 마이그레이션 단계가 필요 없다.
 헬스체크 경로는 `GET /api/health`(인증 불필요)다.
 
-### 상시 공개 - 컨테이너
+### 상시 공개 - 자체 호스팅 서버
 
-호스트가 정해지지 않았으므로 특정 PaaS 형식 대신 **컨테이너 하나**(`backend/Dockerfile`)로 둔다.
-Railway · Render · Fly · Cloud Run 등이 그대로 받는다. 리슨 포트는 `PORT` 환경변수를 따르므로
-플랫폼이 주입하는 포트에 자동으로 맞는다.
+우분투 서버 한 대에 `docker-compose.yml` 로 **앱 · Postgres · cloudflared** 세 컨테이너를 띄운다.
+호스트 선정 경위와 탈락한 대안(Oracle Cloud 좌초 포함)은 `docs/99_inbox/02-tech-stack.md` 2.5 절에 있다.
 
-**첨부 파일은 로컬 디스크에 저장한다.** 컨테이너가 갈리면 사라지므로 `FILE_STORAGE_ROOT` 에
-영속 볼륨을 붙여야 한다(이미지 기본값 `/data/uploads`). 볼륨을 붙일 수 없는 환경이면
-`FileStorage` 구현을 S3 등으로 교체해야 한다.
+**인바운드 포트를 열지 않는다.** cloudflared 가 바깥으로 연결을 걸어 터널을 유지하므로 공인 IP ·
+포트포워딩 · 방화벽 인그레스 규칙이 전부 필요 없다 — 사무실·캠퍼스 망처럼 **라우터 권한이 없는
+환경에서도 성립하는 이유**가 이것이다. TLS 는 Cloudflare 가 종단하므로 인증서 관리도 없다.
+
+절차 :
+
+1. 서버에 Docker 와 compose 플러그인을 설치한다
+2. `backend/.env` 를 만든다(정본 `backend/.env.example`). **`DB_URL` · `DB_USERNAME` · `DB_PASSWORD` 는
+   넣어도 무시된다** — compose 가 덮어쓴다
+3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD` · `TUNNEL_TOKEN`
+4. Cloudflare 대시보드에서 터널을 만들고 공개 호스트명을 **`http://app:8080`** 에 매핑한다.
+   `localhost` 가 아니다 - cloudflared 는 별도 컨테이너라 compose 네트워크 이름으로 찾아간다
+5. `docker compose up -d --build`
+6. 백엔드 `ALLOWED_ORIGINS` 에 **Vercel 도메인**을, 프론트 `VITE_API_BASE_URL` 에 **터널 도메인**을 넣는다
+
+**첨부 파일은 로컬 디스크에 저장한다.** compose 의 `uploads` 볼륨이 `/data/uploads` 를 받으며,
+이 볼륨을 떼면 업로드된 이미지가 사라진다. 볼륨을 쓸 수 없는 환경이면 `FileStorage` 구현을
+S3 등으로 교체해야 한다.
+
+**DB 백업은 자동이 아니다.** `pg_dump` 를 정기 실행하지 않으면 서버 디스크가 죽을 때 대화가 함께 사라진다.
 
 ### 데모 - 로컬 + 터널
 
