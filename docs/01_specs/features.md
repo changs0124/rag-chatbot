@@ -4,7 +4,7 @@
 |------|------|
 | 프로젝트 | rag-chatbot |
 | 문서 버전 | v2.0 |
-| 최종 수정일 | 2026-08-19 |
+| 최종 수정일 | 2026-09-02 |
 | 작성자 | changs0124 |
 | 상태 | `초안` |
 
@@ -528,50 +528,3 @@ REQ-AUTH-006을 충족시키기 위한 선택이다.
 | 리프레시 토큰 | FEAT-OPS-003이 슬라이딩 재발급으로 대신한다 |
 | 가입 승인 대기 · 이메일 인증 | FEAT-AUTH-001 이 도메인 제한으로 대신한다. 도메인만으로 부족해지면 그때 올린다 |
 | 계정 삭제 | 도메인 정책 도입 이전에 만들어진 계정을 치우려면 필요하지만, 대화·첨부 정리 범위가 따로 커진다 |
-
----
-
-## 4. 구현 대상
-
-| 대상 | 변경 |
-|------|------|
-| `frontend/src/components/chat/Composer.tsx` | 카드 UI(썸네일 · 상태 · 모서리 × ) · objectURL 생성/회수 · 즉시 업로드 · 취소 삭제 · 드롭 · 붙여넣기 |
-| `frontend/src/hooks/useChat.ts` | 보내기 시점 업로드 제거. `onSend` 가 업로드 끝난 첨부 목록을 받도록 시그니처 변경 |
-| `frontend/src/components/chat/MessageList.tsx` | 썸네일을 버튼으로 감싸 확대 모달 연결 (그 말풍선의 첨부를 한 묶음으로 넘김) |
-| `frontend/src/lib/endpoints.ts` | 첨부 삭제 함수 추가 (`DELETE /api/files/{id}` — 서버에는 이미 있음) · 업로드에 `AbortSignal` 전달 |
-| `frontend/src/lib/api.ts` | `postForm` 이 `AbortSignal` 을 받도록 확장 |
-| `frontend/src/components/chat/ImageLightbox.tsx` | 신규. 확대 모달 (전송 전·후 공용) · 핀치 줌 · 포인터 캡처 |
-| `frontend/src/test/setup.ts` | jsdom 에 없는 `PointerEvent` 폴리필 (핀치 줌 검사용) |
-| `frontend/src/components/icons.tsx` | 좌우 · 내려받기 · 경고 아이콘 추가 |
-| `scripts/case-floors.env` | 프론트 케이스 수 하한(`FRONTEND_MIN`)을 실측값으로 상향 |
-
-**백엔드 변경 없음.** 업로드·삭제·고아 회수가 이미 이 모델을 지원한다.
-
-### FEAT-ADMIN-* · FEAT-OPS-* (미구현)
-
-신설 파일은 아직 저장소에 없으므로 경로를 확정 표기하지 않는다. 기존 파일만 경로로 적는다.
-
-| 대상 | 변경 |
-|------|------|
-| Flyway 마이그레이션 (신규 3건) | `users.role` 추가 · `messages` 토큰 컬럼 2개 추가 · `rag_documents` 신설 |
-| `backend/src/main/java/com/ragchatbot/domain/User.java` | `role` 필드 |
-| `backend/src/main/java/com/ragchatbot/domain/Message.java` | 토큰 필드 2개(nullable) |
-| `backend/src/main/resources/mapper/UserMapper.xml` | `role` 매핑 · 명단 동기화 구문 |
-| `backend/src/main/resources/mapper/MessageMapper.xml` | 토큰 컬럼 매핑 |
-| `backend/src/main/java/com/ragchatbot/security/JwtAuthenticationFilter.java` | 역할을 같은 조회에서 읽음 · 슬라이딩 재발급 헤더 |
-| `backend/src/main/java/com/ragchatbot/config/SecurityConfig.java` | 관리자 경로 등록 |
-| `backend/src/main/java/com/ragchatbot/config/CorsConfig.java` | `X-Refresh-Token` 노출 헤더 |
-| `backend/src/main/java/com/ragchatbot/error/GlobalExceptionHandler.java` | `Exception` 폴백 + 상관 ID |
-| `backend/src/main/java/com/ragchatbot/openai/OpenAiService.java` | 문서 관리 메서드 · `ChatCompletion` 에 usage |
-| `backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java` | Files/Vector Store 호출 · `usage` 파싱 |
-| `backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java` | 목업 문서 관리(`mock-` 접두) · usage `null` |
-| `backend/src/main/java/com/ragchatbot/service/ChatPersistenceService.java` | 토큰 값 저장 |
-| 관리자 컨트롤러·서비스·매퍼 (신규) | 문서 CRUD · 사용자 목록 · 비밀번호 초기화 |
-| 관리자 화면 (신규) | `/admin` — 문서 표 · 업로드 · 사용자 표 |
-| `frontend/src/App.tsx` | `/admin` 라우트 |
-| `frontend/src/pages/MyPage.tsx` | 관리 메뉴 (관리자에게만) |
-| `frontend/src/lib/api.ts` | 응답 헤더에서 토큰 교체 |
-| `frontend/src/lib/endpoints.ts` | 관리자 엔드포인트 · 스트림 경로 토큰 교체 |
-| `frontend/src/lib/types.ts` | `Me.role` · 문서 타입 |
-| `backend/.env.example` | `ADMIN_EMAILS` · `JWT_REFRESH_THRESHOLD_MINUTES` |
-| `scripts/case-floors.env` | 백엔드·프론트 케이스 수 하한을 실측값으로 상향 |

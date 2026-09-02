@@ -61,12 +61,20 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 | [Backend](./02_architecture/backend.md) | 레이어 · 인증 · SSE 계약 · 유량 제어 · **배포와 호스트 선정 근거** |
 | [디자인 시스템](./02_architecture/design-system.md) | 색 토큰 · 타이포 · 모션 · 컴포넌트 규칙 |
 | [Conventions](./CONVENTIONS.md) | 코드 스타일 & 패턴 규칙 |
+| [Feedback](./FEEDBACK.md) | 다건 수정 요청을 모아 한 번에 전달 · **지금 비어 있음** |
+| [References](./03_references/) | 외부 레퍼런스(디자인 · API · 라이브러리) · **지금 비어 있음** |
 | [Current Tasks](./04_tasks/current-sprint.md) | 현재 진행 중 작업 |
 | [Backlog](./04_tasks/backlog.md) | 전체 태스크 |
+| [Open Issues](./05_issues/open/) | 처리 중인 이슈(해결분은 `05_issues/resolved/`) · **지금 비어 있음** |
 | [Changelog](./06_changelog/CHANGELOG.md) | 변경 이력 |
 
 **정본 위치** — `REQ-` 는 요구사항정의서, `FEAT-` 는 기능명세서, `API-` 는 API 명세서,
 테이블·컬럼은 ERD 가 정본이다. 기능이 늘면 새 파일을 만들지 않고 해당 문서에 병합한다.
+
+**비어 있는 자리** : 위 표에 `지금 비어 있음` 이라 적힌 곳과 `99_inbox/` · `02_architecture/diagrams/` ·
+`04_tasks/completed/` 는 `project-docs` 스킬 골격을 지키느라 `.gitkeep` 으로 자리만 잡아 둔 것이다.
+**들어가 봐야 아무것도 없으니 헛걸음하지 말 것** — 대신 쓸 것이 생기면 새 자리를 만들지 말고 여기에 넣는다.
+`99_inbox/` 는 `/project-docs-gen` 산출물이 먼저 떨어지는 임시 보관함이다. 검토해 `01_specs/` 로 옮기고 비운다.
 
 **두지 않는 것** : 정보구조도 · 플로우차트 · 와이어프레임 · 시나리오 케이스 · 역할 매트릭스 ·
 기술 스택 결정서. 1인 개발에서는 구현과 위 문서가 정본이라 별도 문서가 곧 낡은 사본이 된다.
@@ -78,7 +86,8 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 이 프로젝트에서 AI와 협업할 때:
 1. 먼저 이 `INDEX.md`를 읽어서 프로젝트 전체를 파악
 2. `docs/CONVENTIONS.md`를 참고하여 코드 스타일 준수
-3. 작업 후 "리뷰해줘"로 코드 리뷰 & 변경사항 기록
+3. `docs/FEEDBACK.md`에 대기 중인 수정 요청이 있으면 먼저 확인
+4. 작업 후 "리뷰해줘"로 코드 리뷰 & 변경사항 기록
 
 문서에 없는 파일 경로를 적으면 CI의 `scripts/check-doc-refs.sh`가 실패한다.
 

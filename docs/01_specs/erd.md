@@ -240,11 +240,11 @@ erDiagram
 | 문자셋 | UTF-8 (PostgreSQL 기본) | utf8mb4 | utf8mb4는 MySQL 전용 개념이다 |
 | `updated_at` | **일부 테이블만** | 전 테이블 필수 | `messages` · `citations` 는 생성 후 바뀌지 않는다. 안 바뀌는 컬럼을 두면 "갱신되겠거니" 하는 오해를 만든다 |
 | `updated_at` 갱신 | **DB 트리거** (`set_updated_at()`) | 앱이 갱신 | `users` · `conversations` 에만 `trg_*_updated_at` 이 붙어 있다(V1). 앱이 빠뜨려도 값이 맞는다 |
+| 소유권 | **애플리케이션 코드가 검증** | DB RLS | `findByIdAndUser(...)` 형태로 조회 단계에서 막는다. RLS를 쓰지 않는다 |
 
 **`rag_documents` 에는 `updated_at` 과 트리거를 두지 않는다.** 이 테이블에서 바뀌는 값은 `status` 와
 `deleted_at` 둘뿐이고, 둘 다 **언제 바뀌었는지가 그 자체로 의미 있는** 값이라 별도 컬럼이 필요하다면
 그때 명시적으로 추가한다. 범용 `updated_at` 은 "무엇이 언제 바뀌었는지"를 뭉갠다.
-| 소유권 | **애플리케이션 코드가 검증** | DB RLS | `findByIdAndUser(...)` 형태로 조회 단계에서 막는다. RLS를 쓰지 않는다 |
 
 **마이그레이션 이력**
 

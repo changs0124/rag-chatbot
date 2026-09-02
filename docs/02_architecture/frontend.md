@@ -140,7 +140,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ## 테스트
 
 Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts`, `LoginPage.test.tsx`). 실행은 `npm test`.
-현재 11개 파일 59 케이스이며 하한은 `scripts/case-floors.env` 가 잠근다.
+케이스 수 하한은 `scripts/case-floors.env` 의 `FRONTEND_MIN` 이 잠근다 - **실측값이 정본이라 여기 숫자를 적지 않는다.**
 
 ## 배포 (Vercel)
 
