@@ -160,7 +160,7 @@ SSE 타임아웃까지 기다리게 된다.
 | `V5__user_role.sql` | `users.role` 추가 + `check (role in ('user','admin'))` |
 | `V6__rag_documents.sql` | `rag_documents` 신설 + 살아 있는 문서 인덱스 |
 
-테이블별 컬럼과 관계(ERD)는 [overview](./overview.md) 「데이터 모델」에 있다. 설계상 짚을 점만 적는다.
+테이블별 컬럼과 관계는 [erd.md](../01_specs/erd.md) 가 **정본**이다. 여기에는 설계상 짚을 점만 적는다.
 
 - 모든 PK 는 `uuid`(`gen_random_uuid()`). MyBatis 는 `UuidTypeHandler` 로 매핑하고,
   snake_case 컬럼 ↔ camelCase 프로퍼티는 `map-underscore-to-camel-case` 가 처리한다.
@@ -317,7 +317,7 @@ ngrok 문서는 interstitial 이 HTML 브라우저 요청에만 붙고 이미지
 
 통합 테스트는 Testcontainers 로 **실 PostgreSQL** 을 띄운다(`AbstractPgIntegrationTest`). H2 로 대체하지 않는다 —
 `gen_random_uuid()` · `timestamptz` · 트리거 · `lower(email)` 표현식 유일 인덱스가 실물과 갈린다.
-현재 104 케이스이며 하한은 `scripts/case-floors.env` 가 잠근다. 로컬 실행에 Docker 가 필요하다.
+케이스 수 하한은 `scripts/case-floors.env` 의 `BACKEND_MIN` 이 잠근다 - **실측값이 정본이라 여기 숫자를 적지 않는다.** 로컬 실행에 Docker 가 필요하다.
 
 통합 테스트는 **고아 회수 크론을 꺼 둔다**(`app.file.orphan-cleanup-cron=-`). `@EnableScheduling` 이 켜져 있어
 그냥 두면 테스트 도중 매시 정각에 실제로 발화하는데, 회수 대상이 DB 행과 공유 저장소 디렉터리라 결과가
