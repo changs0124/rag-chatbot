@@ -5,7 +5,6 @@
 ## 높은 우선순위
 
 - [ ] OpenAI 실 연동 마무리 — `APP_MODE=live` 경로(`OpenAiRealService`)를 실 응답과 대조. 무자료 임계·완료 이벤트명이 실물과 맞는지 확인
-- [ ] 백엔드 호스트 결정 — 컨테이너(`backend/Dockerfile`)는 준비됨. **첨부 영속 볼륨을 붙일 수 있는 곳**이어야 함(못 붙이면 `FileStorage` 를 S3 로 교체)
 - [ ] OpenAI 공용 Vector Store 구축 후 `OPENAI_VECTOR_STORE_ID` 주입 — 없으면 답변은 되지만 출처가 늘 0건
 
 ## 보통

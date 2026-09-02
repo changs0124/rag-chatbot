@@ -4,7 +4,7 @@
 |------|------|
 | 프로젝트 | rag-chatbot |
 | 문서 버전 | v1.0 |
-| 최종 수정일 | 2026-08-19 |
+| 최종 수정일 | 2026-09-02 |
 | 작성자 | changs0124 |
 | 상태 | `초안` |
 
@@ -23,7 +23,7 @@
 | 환경 | URL |
 |------|-----|
 | 개발 | `http://localhost:8080` |
-| 배포 | 백엔드 호스트 미정 (`docs/04_tasks/backlog.md` 참고) |
+| 배포 | 자체 호스팅(우분투) + Cloudflare Tunnel — 터널 도메인은 배포 시 정해진다. 절차와 선정 근거는 [backend.md](../02_architecture/backend.md) 「배포」 |
 
 **버전 세그먼트(`/v1`)를 두지 않는다.** 단일 클라이언트가 단일 백엔드를 부르는 사내 도구라
 버전 협상 상대가 없다. 프론트와 백엔드가 같은 저장소에서 함께 배포된다.
@@ -119,11 +119,11 @@
 | API-DELETE-002 | DELETE | `/api/files/{id}` | 첨부 삭제 | USER | 구현됨 |
 | API-GET-006 | GET | `/api/files/{id}?token=…` | 첨부 서빙 | **서명 토큰** | 구현됨 |
 | API-POST-005 | POST | `/api/chat` | 채팅 — **SSE 스트림** | USER | 구현됨 |
-| API-GET-007 | GET | `/api/admin/documents` | RAG 문서 목록 | ADMIN | **미구현** |
-| API-POST-006 | POST | `/api/admin/documents` | RAG 문서 업로드 | ADMIN | **미구현** |
-| API-DELETE-003 | DELETE | `/api/admin/documents/{id}` | RAG 문서 삭제 | ADMIN | **미구현** |
-| API-GET-008 | GET | `/api/admin/users` | 사용자 목록 | ADMIN | **미구현** |
-| API-POST-007 | POST | `/api/admin/users/{id}/password-reset` | 임시 비밀번호 발급 | ADMIN | **미구현** |
+| API-GET-007 | GET | `/api/admin/documents` | RAG 문서 목록 | ADMIN | 구현됨 |
+| API-POST-006 | POST | `/api/admin/documents` | RAG 문서 업로드 | ADMIN | 구현됨 |
+| API-DELETE-003 | DELETE | `/api/admin/documents/{id}` | RAG 문서 삭제 | ADMIN | 구현됨 |
+| API-GET-008 | GET | `/api/admin/users` | 사용자 목록 | ADMIN | 구현됨 |
+| API-POST-007 | POST | `/api/admin/users/{id}/password-reset` | 임시 비밀번호 발급 | ADMIN | 구현됨 |
 
 **페이지네이션이 없다.** 대화 목록·메시지 목록·문서 목록 모두 전량을 돌려준다. 사내 소규모 전제이며,
 양이 늘면 그때 넣는다. 지금 넣으면 쓰이지 않는 파라미터가 계약에 남는다.
@@ -258,7 +258,7 @@
 **알려진 약점** : 페이지를 오래 열어둔 뒤 새로 그려지는 이미지가 만료로 깨질 수 있다.
 백로그 「파일 URL 수명」 항목이다.
 
-### API-GET-007 / API-POST-006 / API-DELETE-003: RAG 문서 (미구현)
+### API-GET-007 / API-POST-006 / API-DELETE-003: RAG 문서
 
 **GET** `/api/admin/documents`
 
@@ -299,7 +299,7 @@
 | `BAD_REQUEST` | 400 | **`OPENAI_VECTOR_STORE_ID` 미설정** — 행을 만들지 않는다 |
 | `INTERNAL_ERROR` | 502 | OpenAI 장애. 업스트림 실패를 500으로 뭉개지 않는다 |
 
-### API-GET-008 / API-POST-007: 사용자 관리 (미구현)
+### API-GET-008 / API-POST-007: 사용자 관리
 
 **GET** `/api/admin/users`
 

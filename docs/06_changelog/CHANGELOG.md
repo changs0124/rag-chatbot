@@ -16,6 +16,23 @@
     목적이었으므로, 폴더를 지우는 대신 **링크 옆에 비었다고 쓰는 것으로** 같은 목적을 달성한다
   - 세운 것 : `FEEDBACK.md` · `03_references/{design,api,libraries}/` · `05_issues/{open,resolved}/` ·
     `99_inbox/` · `02_architecture/diagrams/` · `04_tasks/completed/` (전부 `.gitkeep`)
+- **문서가 구현을 못 따라온 자리 다섯을 잡음.** 전부 실제 코드와 대조해 확인했다.
+  이번 판의 원인은 하나다 — **구현이 끝났는데 계획 시점 문장이 그대로 남아 있었다.**
+  - `01_specs/api.md` — 관리자 API **5건이 `미구현`** 으로 적혀 있었다. `AdminController` 에 다섯 라우트가
+    전부 있고(`/documents` GET·POST·DELETE · `/users` · `/users/{id}/password-reset`), `V5`·`V6` 마이그레이션과
+    `AdminPage.tsx` 도 있다. 같은 저장소의 `02_architecture/overview.md` 는 이 5건을 구현분으로 적고 있어
+    **두 문서가 정면으로 갈려 있었다**
+  - `01_specs/api.md` Base URL — `백엔드 호스트 미정` → 자체 호스팅 + Cloudflare Tunnel 로 이미 닫힌 항목
+  - `01_specs/features.md` 「4. 구현 대상」 **48줄 삭제** — 구현 전 계획표다. 같은 문서 3절이 "10종 모두 구현 완료"
+    라고 적고 있어 한 문서 안에서 모순이었고, "신설 파일은 아직 저장소에 없다" 던 파일들이 전부 있었다.
+    **끝난 계획표는 git 이력이 정본**이고, 파일 목록을 남기면 리팩터링마다 낡는다
+  - `04_tasks/current-sprint.md` **87줄 → 18줄** — ②③ 이 `[x]` 인 채 「진행 중」에 있었고, ④ 가입 도메인
+    화이트리스트는 `SignupPolicy` 로 구현돼 `live` 기동을 막는데도 **"문서만 써 둔 상태"** 로 남아 있었다.
+    「완료」 절은 이 CHANGELOG 와 겹쳐 걷어냈다. 열린 것은 실 연동 투입 하나뿐이다
+  - `04_tasks/backlog.md` — 「백엔드 호스트 결정」 삭제(같은 날 닫힌 항목)
+- **테스트 케이스 수를 문서에서 걷어냄.** `02_architecture/backend.md` 는 `104`, `frontend.md` 는 `59` 로
+  각각 두 세대·한 세대 뒤처져 있었다(실제 하한은 `BACKEND_MIN=164` · `FRONTEND_MIN=74`).
+  **숫자를 세 곳에 두면 낡는다** — 문서에서 숫자를 빼고 `scripts/case-floors.env` 를 정본으로 가리키게 했다
 - **개발 문서 10종을 핵심 4종으로 줄이고 `docs/01_specs/` 로 옮김** — 1인 개발 + AI 협업에서는
   문서가 늘수록 정본이 흩어지고, 구현이 앞서가면 나머지는 **낡은 사본**이 된다. 원래 분류 전
   임시 보관함이던 inbox 에 12종이 그대로 눌러앉아 있었음
