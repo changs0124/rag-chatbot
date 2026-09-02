@@ -31,13 +31,13 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 
 ## 배포 준비 상태
 
-코드는 **키·Vector Store·호스트만 채우면 도는 상태**로 맞춰져 있다.
+코드는 **키·Vector Store·서버만 준비하면 도는 상태**로 맞춰져 있다.
 
 | 준비물 | 상태 |
 |--------|------|
 | 프론트 배포 | `frontend/vercel.json` (SPA 리라이트 포함). Vercel 환경변수 `VITE_API_BASE_URL` 만 넣으면 됨 |
-| 백엔드 배포 | `backend/Dockerfile` (호스트 무관 컨테이너, `PORT` 자동 대응) |
-| 환경변수 | `backend/.env.example` · `frontend/.env.example` 에 전량 + 빠뜨렸을 때의 증상까지 기재 |
+| 백엔드 배포 | `docker-compose.yml` (앱 · Postgres · cloudflared). 인바운드 포트를 열지 않는 터널 방식 |
+| 환경변수 | `backend/.env.example`(앱) · `.env.example`(compose) · `frontend/.env.example` 에 전량 + 빠뜨렸을 때의 증상까지 기재 |
 | DB 스키마 | 기동 시 Flyway 자동 적용 |
 | OpenAI 키 없이 | `APP_MODE=mock` 으로 전 경로가 목업으로 동작 |
 | Vector Store 없이 | `live` 라도 기동·응답은 되며, 출처가 0건이라 전부 "자료 없음"으로 표시됨 |
