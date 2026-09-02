@@ -58,7 +58,6 @@ bg-canvas · bg-surface · bg-raised · text-ink · text-ink-muted · border-lin
 ```
 
 `dark:` 는 색이 아닌 것(그림자 세기, 반투명 겹침 등)에만 남긴다.
-지금 코드의 `bg-white dark:bg-zinc-950` 짝은 전부 토큰 한 개로 접힌다.
 
 ## 2. 타이포
 

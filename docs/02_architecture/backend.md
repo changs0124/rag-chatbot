@@ -160,7 +160,7 @@ SSE 타임아웃까지 기다리게 된다.
 | `V5__user_role.sql` | `users.role` 추가 + `check (role in ('user','admin'))` |
 | `V6__rag_documents.sql` | `rag_documents` 신설 + 살아 있는 문서 인덱스 |
 
-테이블별 컬럼과 관계(ERD)는 [overview](./overview.md) 「데이터 모델」에 있다. 설계상 짚을 점만 적는다.
+테이블별 컬럼과 관계는 [erd.md](../01_specs/erd.md) 가 **정본**이다. 여기에는 설계상 짚을 점만 적는다.
 
 - 모든 PK 는 `uuid`(`gen_random_uuid()`). MyBatis 는 `UuidTypeHandler` 로 매핑하고,
   snake_case 컬럼 ↔ camelCase 프로퍼티는 `map-underscore-to-camel-case` 가 처리한다.
