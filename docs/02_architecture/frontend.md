@@ -1,7 +1,7 @@
 # Frontend Architecture
 
 React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브라우저) 단일 SPA.
-전체 시스템 그림과 API 목록은 [overview](./overview.md)에 있다. 여기서는 프론트 내부 설계만 다룬다.
+전체 시스템 그림은 [overview](./overview.md), API 계약은 [api.md](../01_specs/api.md) 에 있다. 여기서는 프론트 내부 설계만 다룬다.
 
 ## 폴더 구조
 

@@ -33,7 +33,7 @@
 - 방식 : JWT Bearer Token
 - 헤더 : `Authorization: Bearer {token}`
 - 만료 : 기본 120분 (`JWT_EXPIRATION_MINUTES`)
-- 갱신 : **슬라이딩 재발급** — 남은 수명이 임계 미만이면 응답 헤더 `X-Refresh-Token` 에 새 토큰이 실린다 (FEAT-OPS-003)
+- 갱신 : **슬라이딩 재발급** (FEAT-OPS-003). 헤더 계약과 CORS 노출 조건은 아래 「4. 응답 헤더」 참고
 
 **리프레시 토큰이 없다.** 별도 토큰·테이블·회전을 두는 대신 응답 헤더로 교체한다.
 `refresh_tokens` 테이블도 `POST /auth/refresh` 엔드포인트도 존재하지 않는다.

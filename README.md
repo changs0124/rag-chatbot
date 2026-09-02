@@ -37,14 +37,10 @@
 
 ## 배포 준비 상태
 
-키·Vector Store·서버만 준비하면 도는 상태로 맞춰 둠. 상세는 `docs/INDEX.md` 「배포 준비 상태」.
-
-| 준비물 | 위치 |
-|--------|------|
-| 프론트(Vercel) | `frontend/vercel.json` — SPA 리라이트 포함. 배포 : https://rag-chatbot-jade-pi.vercel.app |
-| 백엔드(자체 호스팅) | `docker-compose.yml` — 앱 · Postgres · cloudflared 세 컨테이너. 이미지는 `backend/Dockerfile` |
-| 환경변수 | `backend/.env.example`(앱) · `.env.example`(compose) · `frontend/.env.example` |
-| DB 스키마 | 기동 시 Flyway 자동 적용 |
+키·Vector Store·서버만 준비하면 도는 상태로 맞춰 둠.
+프론트는 Vercel(https://rag-chatbot-jade-pi.vercel.app), 백엔드는 자체 호스팅 + Cloudflare Tunnel 임.
+**준비물 표는 `docs/INDEX.md` 「배포 준비 상태」가 정본**이고, 계층별 절차는
+`docs/02_architecture/backend.md` · `docs/02_architecture/frontend.md` 에 있음.
 
 배포 시 빠뜨리기 쉬운 두 가지 : 백엔드 `ALLOWED_ORIGINS`(빠뜨리면 CORS 로 전 API 차단),
 프론트 `VITE_API_BASE_URL`(빠뜨리면 번들이 localhost 호출).

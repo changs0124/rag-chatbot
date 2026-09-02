@@ -16,6 +16,30 @@
     목적이었으므로, 폴더를 지우는 대신 **링크 옆에 비었다고 쓰는 것으로** 같은 목적을 달성한다
   - 세운 것 : `FEEDBACK.md` · `03_references/{design,api,libraries}/` · `05_issues/{open,resolved}/` ·
     `99_inbox/` · `02_architecture/diagrams/` · `04_tasks/completed/` (전부 `.gitkeep`)
+- **같은 표가 두세 곳에 있던 것을 정본 하나로 모음(-84줄).** 앞 항목에서 관리자 API 5건이
+  `api.md` 와 `overview.md` 로 **갈린 채 발견된 것**이 이 손질의 근거다 — 사본은 언젠가 갈리고,
+  갈린 순간 둘 중 어느 쪽이 맞는지 알 방법이 없다.
+
+  **정본 규칙** : `01_specs/` 가 계약과 근거의 정본, `02_architecture/` 는 계층 지도다.
+  아키텍처 문서는 **구조**를 적고, 계약·근거는 스펙 문서를 가리킨다.
+
+  | 옮긴 것 | 어디서 | 정본 |
+  |---------|--------|------|
+  | 엔드포인트 24행 표 | `overview.md` | `api.md` (overview 에는 7행 **묶음** 표만 남김 — 엔드포인트가 늘어도 안 낡는다) |
+  | 컬럼 정의 · ER 다이어그램 · 마이그레이션 이력 | `overview.md` · `backend.md` | `erd.md` |
+  | RAG 문서 허용 형식 · 용량 · 매직바이트 · 실패 처리 | `backend.md` | `features.md` FEAT-ADMIN-002 |
+  | 토큰 nullable 근거 · 집계 질의 | `backend.md` | `erd.md` (backend 에는 "조회할 때 걸러야 한다"만) |
+  | 백엔드 패키지 표 · 프론트 폴더 표 | `CONVENTIONS.md` | `backend.md` 「레이어」 · `frontend.md` 「폴더 구조」 |
+  | 배포 준비물 표 | `README.md` | `INDEX.md` 「배포 준비 상태」 |
+  | `REQ-CHAT-001~004` 문장 | `features.md` 0절 | `requirements.md` |
+  | `X-Refresh-Token` 계약 | `api.md` 인증 절 · `overview.md` | `api.md` 「4. 응답 헤더」 |
+
+  `CONVENTIONS.md` 에서는 **표만** 걷어내고 규칙(생성자 주입만 · 컴포넌트가 `fetch` 직접 호출 금지 ·
+  색은 토큰만)은 그대로 뒀다. 그 파일은 코드를 쓰기 전에 읽는 자리라 포인터만 남기면 세 파일을 더 열어야 한다.
+
+  **일부러 남긴 중복** : "중단은 실패가 아니다" 같은 **계층마다 결과가 다른 불변식**은 여섯 문서에 그대로 뒀다.
+  요구사항은 용어로, ERD 는 `stopped` 컬럼이 있는 이유로, API 는 응답 계약으로, 프론트는 배너를 안 붙이는
+  근거로 쓴다 — 같은 문장처럼 보이지만 각 문서가 그 자리에서 지켜야 할 것이라 포인터로 바꾸면 지킬 사람이 못 읽는다.
 - **문서가 구현을 못 따라온 자리 다섯을 잡음.** 전부 실제 코드와 대조해 확인했다.
   이번 판의 원인은 하나다 — **구현이 끝났는데 계획 시점 문장이 그대로 남아 있었다.**
   - `01_specs/api.md` — 관리자 API **5건이 `미구현`** 으로 적혀 있었다. `AdminController` 에 다섯 라우트가

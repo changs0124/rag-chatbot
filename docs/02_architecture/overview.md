@@ -51,41 +51,25 @@ flowchart LR
 
 ## API 엔드포인트 맵
 
-`backend/src/main/java/com/ragchatbot/web/` 컨트롤러 기준. 별도 표기가 없으면 **JWT Bearer 인증 필요**다.
+엔드포인트 **목록과 계약(요청·응답·에러 코드)은 [api.md](../01_specs/api.md) 가 정본**이다.
+여기에는 구조를 읽는 데 필요한 묶음과 인증 경계만 둔다 — 엔드포인트가 늘 때마다 두 곳을 고치지 않으려는 것이다.
 
-| 메서드 | 경로 | 설명 | 인증 |
-|--------|------|------|------|
-| GET | `/api/health` | 헬스체크 | 공개 |
-| POST | `/api/auth/signup` | 회원가입 → 토큰 + 사용자 | 공개 |
-| POST | `/api/auth/login` | 로그인 → 토큰 + 사용자 | 공개 |
-| GET | `/api/auth/me` | 현재 사용자 | 필요 |
-| GET | `/api/profile` | 프로필 조회 | 필요 |
-| PATCH | `/api/profile/name` | 이름 변경 | 필요 |
-| PATCH | `/api/profile/password` | 비밀번호 변경 → **새 토큰 반환**(이전 토큰 전부 무효) | 필요 |
-| PATCH | `/api/profile/theme` | 테마 변경 (`light\|dark\|system`) | 필요 |
-| GET | `/api/conversations` | 대화 목록 | 필요 |
-| POST | `/api/conversations` | 대화 생성 | 필요 |
-| PATCH | `/api/conversations/{id}` | 대화 제목 변경 | 필요 |
-| GET | `/api/conversations/{id}/messages` | 메시지 목록(출처·첨부 포함) | 필요 |
-| DELETE | `/api/conversations/{id}` | 대화 삭제 (OpenAI 리소스 정리 동반) | 필요 |
-| POST | `/api/files` | 첨부 업로드 (multipart, `message_id=null` 상태) | 필요 |
-| DELETE | `/api/files/{id}` | 첨부 삭제 (소유자만) | 필요 |
-| GET | `/api/files/{id}?token=…` | 첨부 서빙 | **서명 경로 토큰** |
-| POST | `/api/chat` | 채팅 — SSE 스트림 반환 | 필요 |
-| GET | `/api/admin/documents` | RAG 문서 목록 + 인덱싱 상태 | **관리자** |
-| POST | `/api/admin/documents` | RAG 문서 업로드 (multipart) | **관리자** |
-| DELETE | `/api/admin/documents/{id}` | RAG 문서 삭제 (소프트) | **관리자** |
-| GET | `/api/admin/users` | 사용자 목록 | **관리자** |
-| POST | `/api/admin/users/{id}/password-reset` | 임시 비밀번호 발급 (1회 반환) | **관리자** |
+| 묶음 | 경로 | 인증 |
+|------|------|------|
+| 헬스체크 | `/api/health` | 공개 |
+| 인증 | `/api/auth/**` | 가입·로그인은 공개, `me` 는 필요 |
+| 프로필 | `/api/profile/**` | 필요 |
+| 대화·메시지 | `/api/conversations/**` | 필요 |
+| 첨부 | `/api/files/**` | 업로드·삭제는 Bearer, **서빙만 서명 쿼리 토큰** |
+| 채팅 | `/api/chat` | 필요 (SSE) |
+| 관리자 | `/api/admin/**` | **관리자만** |
 
-`/api/admin/**` 는 관리자가 아니면 **403 이 아니라 404** 를 돌려준다 — 관리 기능의 존재 자체를
-드러내지 않는다(P-3, 소유권 위반과 같은 규칙).
+인증 경계에서 구조적으로 짚을 것 둘 :
 
-응답 헤더 `X-Refresh-Token` 은 토큰 만료가 임박했을 때만 실린다(FEAT-OPS-003).
-`CorsConfig` 의 노출 헤더에 등록돼 있어야 브라우저가 읽을 수 있다.
-
-`GET /api/files/{id}`만 Bearer가 아닌 쿼리 토큰을 쓴다. `<img src>`가 Authorization 헤더를 실을 수 없기 때문이며,
-검증은 `security/FileAccessTokenService.java`가 한다.
+- `/api/admin/**` 는 관리자가 아니면 **403 이 아니라 404** 를 돌려준다 — 관리 기능의 존재 자체를
+  드러내지 않는다(P-3, 소유권 위반과 같은 규칙).
+- `GET /api/files/{id}` 만 Bearer 가 아닌 쿼리 토큰을 쓴다. `<img src>` 가 Authorization 헤더를 실을 수
+  없기 때문이며, 검증은 `backend/src/main/java/com/ragchatbot/security/FileAccessTokenService.java` 가 한다.
 
 ## 데이터 흐름 — 채팅 한 턴
 
@@ -125,30 +109,15 @@ sequenceDiagram
 
 ## 데이터 모델
 
-`backend/src/main/resources/db/migration/` (Flyway, PostgreSQL). 모든 PK는 `uuid`.
+`backend/src/main/resources/db/migration/` (Flyway, PostgreSQL). 여섯 테이블이며 모든 PK 는 `uuid` 다.
+**스키마의 소유자는 마이그레이션 SQL** 이고, 앱 코드가 `alter` 하지 않는다.
 
-```mermaid
-erDiagram
-  users ||--o{ conversations : "user_id"
-  users ||--o{ attachments : "user_id"
-  users ||--o{ rag_documents : "uploaded_by (restrict)"
-  conversations ||--o{ messages : "conversation_id"
-  messages ||--o{ citations : "message_id"
-  messages ||--o{ attachments : "message_id (nullable)"
-```
+`users` — `conversations` — `messages` — `citations` 가 대화 한 줄기를 이루고, `attachments` 는
+`users`(소유)와 `messages`(연결, nullable)에 걸린다. `rag_documents` 만 대화 줄기 밖에 서서
+`users`(업로더)에만 걸린다.
 
-| 테이블 | 핵심 컬럼 | 비고 |
-|--------|-----------|------|
-| `users` | `email`(lower 유일) · `password_hash` · `name` · `theme` · `role` · `password_changed_at` | `password_changed_at`이 이전 발급 JWT의 무효화 기준선(초 단위). `role`은 `ADMIN_EMAILS` 명단으로만 바뀜 |
-| `conversations` | `user_id` · `title` · `vector_store_id` | 삭제 시 하위 전부 cascade |
-| `messages` | `role`(user/assistant) · `content` · `status`(complete/error) · `stopped` · `input_tokens` · `output_tokens` | `streaming`은 DB에 없는 프론트 로컬 상태. 토큰 컬럼은 **nullable** — 0은 "정말 0"과 구분되지 않음 |
-| `citations` | `message_id` · `seq` · `source_name` · `snippet` · `uri` | 출처를 영속화해 재조회 시에도 각주가 남게 함 |
-| `attachments` | `user_id` · `message_id`(nullable) · `storage_path` · `file_type` · `openai_file_id` | 업로드 시점엔 메시지 미연결 → 고아는 스케줄러가 회수 |
-| `rag_documents` | `filename` · `openai_file_id` · `vector_store_id` · `status` · `uploaded_by`(**restrict**) · `deleted_at` | **소프트 삭제를 쓰는 유일한 표.** 누가 언제 올리고 지웠는지가 감사 대상 |
-
-마이그레이션 이력 : `V1__init.sql`(초기) → `V2__auth_hardening.sql`(이메일 정규화 + 토큰 무효화 기준선) →
-`V3__message_stopped.sql`(중단 표시) → `V4__message_token_usage.sql`(토큰 사용량) →
-`V5__user_role.sql`(관리자 권한) → `V6__rag_documents.sql`(RAG 문서).
+**ER 다이어그램 · 컬럼 정의 · 인덱스 · 마이그레이션 이력은 [erd.md](../01_specs/erd.md) 가 정본**이다.
+그 스키마를 그렇게 정한 이유(nullable 토큰 · 소프트 삭제 · 재조회 질의)는 [backend](./backend.md) 「DB 스키마」에 있다.
 
 ## 외부 연동
 
