@@ -159,5 +159,5 @@ bg-canvas · bg-surface · bg-raised · text-ink · text-ink-muted · border-lin
 | `frontend/src/components/ErrorBoundary.tsx` | 토큰 · `100dvh` · accent 알약 버튼 |
 | `frontend/index.html` · `frontend/public/` | 파비콘 3종 · `theme-color` · `lang="ko"`(문서는 한국어인데 `en` 으로 선언돼 있었음) |
 
-화면 코드에 남은 `zinc-*` 색은 0건이다. 화면별 배치와 폭 조절 규격은
-`docs/99_inbox/redesign-wireframe.md` 에 있다.
+화면 코드에 남은 `zinc-*` 색은 0건이다. 화면별 배치와 폭 조절 규격은 구현이 정본이며,
+기능 단위 명세는 `docs/01_specs/features.md` 에 있다.
