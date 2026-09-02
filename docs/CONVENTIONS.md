@@ -17,20 +17,8 @@
 - import는 와일드카드 없이 개별 명시.
 
 ### 패키지 구조
-`backend/src/main/java/com/ragchatbot/` 아래 레이어별로 나눈다.
-
-| 패키지 | 역할 |
-|--------|------|
-| `web/` | `@RestController` — HTTP 경계만. 비즈니스 로직 없음 |
-| `web/dto/` | 요청·응답 DTO. `AuthDtos`처럼 **한 파일에 record 묶음**으로 둠 |
-| `service/` | 오케스트레이션·트랜잭션 경계 |
-| `mapper/` | MyBatis 인터페이스. SQL은 `backend/src/main/resources/mapper/*.xml` |
-| `domain/` | DB 행에 대응하는 record |
-| `openai/` | 외부 LLM 호출 경계. 인터페이스 + Mock/Real 두 구현 |
-| `security/` | JWT 필터·발급·현재 사용자 |
-| `storage/` | 파일 저장 추상화 (`FileStorage` + `LocalFileStorage`) |
-| `config/` | Security · CORS · Executor · 기동 가드 |
-| `error/` | `ApiExceptions` + `GlobalExceptionHandler` |
+레이어별 패키지 표는 [backend.md](./02_architecture/backend.md) 「레이어」가 정본이다.
+**새 클래스는 그 표의 자리에 넣고, 표에 없는 레이어를 새로 만들지 않는다.**
 
 ### 네이밍
 - 클래스 PascalCase, 메서드·필드 camelCase, 상수 UPPER_SNAKE_CASE
@@ -62,16 +50,8 @@
 - lint는 `oxlint` (`frontend/.oxlintrc.json`)
 
 ### 폴더 구조
-`frontend/src/` 아래:
-
-| 폴더 | 역할 |
-|------|------|
-| `pages/` | 라우트 단위 화면 (`ChatPage` · `LoginPage` · `MyPage`) |
-| `components/` | 재사용 컴포넌트. 기능이 커지면 `components/chat/`처럼 하위 폴더 |
-| `hooks/` | `use*` 커스텀 훅 |
-| `lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE) · `types.ts`(공유 타입) |
-| `auth/` · `theme/` | Context Provider |
-| `test/` | Vitest 셋업 |
+`frontend/src/` 아래 폴더 표는 [frontend.md](./02_architecture/frontend.md) 「폴더 구조」가 정본이다.
+**새 파일은 그 표의 자리에 넣고, 표에 없는 최상위 폴더를 새로 만들지 않는다.**
 
 ### 컴포넌트 패턴
 - 함수형 컴포넌트 + `export default function Xxx()`. 파일명 PascalCase(`ConfirmModal.tsx`).

@@ -1,7 +1,8 @@
 # Backend Architecture
 
 Java 17 + Spring Boot 3.5.16 + MyBatis 3.0.5 + PostgreSQL(Flyway). 단일 인스턴스 전제.
-전체 시스템 그림·엔드포인트 목록·운영 파라미터는 [overview](./overview.md)에 있다. 여기서는 API 설계 원칙과 DB 스키마를 다룬다.
+전체 시스템 그림과 운영 파라미터는 [overview](./overview.md), 엔드포인트 계약은 [api.md](../01_specs/api.md) 에 있다.
+여기서는 API 설계 원칙과 DB 스키마를 다룬다.
 
 ## 레이어
 
@@ -151,16 +152,8 @@ SSE 타임아웃까지 기다리게 된다.
 스키마의 소유자는 **Flyway 마이그레이션 SQL** 이다. 앱 코드가 `alter` 하지 않는다.
 새 변경은 `backend/src/main/resources/db/migration/` 에 파일을 추가하고, 기존 마이그레이션은 수정하지 않는다.
 
-| 마이그레이션 | 내용 |
-|--------------|------|
-| `V1__init.sql` | `users` · `conversations` · `messages` · `citations` · `attachments` + 인덱스 + `updated_at` 트리거 |
-| `V2__auth_hardening.sql` | 이메일 소문자 정규화 + `lower(email)` 유일 인덱스, `password_changed_at` 추가 |
-| `V3__message_stopped.sql` | `messages.stopped` 추가(소급 보정 없음) |
-| `V4__message_token_usage.sql` | `messages.input_tokens` · `output_tokens` 추가(nullable, 소급 보정 없음) |
-| `V5__user_role.sql` | `users.role` 추가 + `check (role in ('user','admin'))` |
-| `V6__rag_documents.sql` | `rag_documents` 신설 + 살아 있는 문서 인덱스 |
-
-테이블별 컬럼과 관계는 [erd.md](../01_specs/erd.md) 가 **정본**이다. 여기에는 설계상 짚을 점만 적는다.
+마이그레이션 이력 · 테이블별 컬럼 · 인덱스는 [erd.md](../01_specs/erd.md) 가 **정본**이다.
+여기에는 그 스키마를 그렇게 정한 **설계상의 이유**만 적는다.
 
 - 모든 PK 는 `uuid`(`gen_random_uuid()`). MyBatis 는 `UuidTypeHandler` 로 매핑하고,
   snake_case 컬럼 ↔ camelCase 프로퍼티는 `map-underscore-to-camel-case` 가 처리한다.
@@ -170,12 +163,10 @@ SSE 타임아웃까지 기다리게 된다.
   연결되지 않은 채 남은 첨부는 스케줄러가 회수한다.
 - 재조회 질의는 **대화 단위로 한 번씩** 읽는다(`findByConversation`). 메시지마다 도는 형태는 메시지 수만큼
   질의가 나가므로 쓰지 않는다. 같은 이유로 문서 목록도 올린 사람 이름을 **조인으로 함께** 가져온다.
-- `messages.input_tokens` · `output_tokens` 는 **nullable 이다**(FEAT-OPS-001). `0` 을 기본값으로 두면
-  "모르는 것"과 "정말 0"이 합계에서 섞인다 — 사용자 메시지 · 목업 · 중단된 턴 · V4 이전 행이 모두
-  "모르는 것"이다. 조회는 `where input_tokens is not null` 로 거른다.
-- `rag_documents` 만 **소프트 삭제**를 쓰고 `uploaded_by` 만 `on delete restrict` 다. 나머지는 전부
-  hard delete + cascade 다. "언제 내려갔는가"와 "누가 올렸는가"가 감사 대상이라, 사용자 삭제가 막히는
-  편이 기록이 사라지는 것보다 낫다고 판단했다. **의도된 차이**이며 마이그레이션 주석에 남겼다.
+- 토큰 사용량 컬럼이 **nullable 인 이유**(0 을 기본값으로 두면 "모르는 것"과 "정말 0"이 합계에서 섞인다)와
+  집계 질의는 [erd.md](../01_specs/erd.md) 에 있다. 여기서 알아야 할 것은 **조회할 때 반드시 걸러야 한다**는 것뿐이다.
+- `rag_documents` 만 **소프트 삭제 + `on delete restrict`** 이고 나머지는 hard delete + cascade 다.
+  **의도된 차이**이며 판단 근거는 [features.md](../01_specs/features.md) FEAT-ADMIN-002 「soft delete 를 쓰는 이유」에 있다.
 
 ## 파일
 
@@ -193,15 +184,12 @@ SSE 타임아웃까지 기다리게 된다.
 여기는 색인용이라 문서만 받아 공용 Vector Store 에 넣는다. **두 허용 목록이 서로 반대**이므로 규칙이
 새면 바로 드러나도록 케이스로 잠가 두었다.
 
-- 허용 : PDF · TXT · MD · DOCX, 최대 50MB. OpenAI 상한(512MB)보다 훨씬 낮게 잡았다 — 상한에 맞추면
-  요청 하나가 멀티파트 버퍼를 512MB 잡아 단일 인스턴스가 그대로 멎는다.
-- 매직바이트는 **PDF 만** 검사한다. txt·md 는 매직바이트가 없고 docx 는 zip 이라 `PK` 만으로는 다른
-  zip 과 구분되지 않는다. 검사할 수 없는 형식을 검사하는 척하지 않는다.
-- 업로드는 Files → Vector Store 연결 → DB 기록 순이고, **앞 단계가 실패하면 행을 만들지 않는다.**
-  가장 나쁜 상태는 스토어에는 없는데 목록에만 뜨는 것이다 — 화면에 보이는데 검색에는 안 잡히고
-  지울 수도 없다. 연결이 실패하면 올린 파일을 즉시 정리한다.
-- 반대로 삭제는 OpenAI 정리가 실패해도 `deleted_at` 을 채운다. 목록에 남겨두면 이미 검색에서 빠졌을 수
-  있어 상태가 더 헷갈린다 — 첨부 고아 회수와 같은 판단이다.
+허용 형식·용량·매직바이트 규칙과 **단계별 실패 처리표는 [features.md](../01_specs/features.md)
+FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
+
+- 쓰기 순서는 Files → Vector Store 연결 → DB 기록이고, **앞 단계가 실패하면 행을 만들지 않는다.**
+  가장 나쁜 상태는 스토어에는 없는데 목록에만 뜨는 것이다 — 화면에 보이는데 검색에는 안 잡히고 지울 수도 없다.
+- 삭제는 반대로 OpenAI 정리가 실패해도 `deleted_at` 을 채운다. 첨부 고아 회수와 같은 판단이다.
 - 목록은 `in_progress` 인 행만 상태를 다시 묻는다. 완료·실패는 더 바뀌지 않는다.
 - 목업 모드에서도 전 경로가 동작하며 파일 ID 에 `mock-` 접두가 붙는다.
 
