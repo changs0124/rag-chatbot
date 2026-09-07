@@ -13,6 +13,7 @@ vi.mock('../lib/endpoints', () => ({
   uploadDocument: vi.fn(),
   deleteDocument: vi.fn(),
   resetUserPassword: vi.fn(),
+  createAdminUser: vi.fn(),
 }))
 
 /** AuthProvider 가 기동 시 /api/auth/me 를 부른다. 역할에 따라 화면이 갈리므로 여기서 정한다 */
@@ -31,9 +32,8 @@ vi.mock('../lib/api', async (importOriginal) => {
   }
 })
 
-const { listDocuments, listAdminUsers, deleteDocument, resetUserPassword } = await import(
-  '../lib/endpoints'
-)
+const { listDocuments, listAdminUsers, deleteDocument, resetUserPassword, createAdminUser } =
+  await import('../lib/endpoints')
 
 function doc(over: Partial<RagDocument> = {}): RagDocument {
   return {
@@ -65,6 +65,7 @@ describe('관리자 화면', () => {
     setToken('t')
     vi.mocked(listDocuments).mockResolvedValue([])
     vi.mocked(listAdminUsers).mockResolvedValue([])
+    vi.mocked(createAdminUser).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
   })
 
   afterEach(() => {
@@ -184,6 +185,27 @@ describe('관리자 화면', () => {
 
     await screen.findByText('a@b.com')
     expect(screen.queryByRole('button', { name: '비밀번호 초기화' })).not.toBeInTheDocument()
+  })
+
+  /**
+   * 계정 발급은 이 화면에만 있다(FEAT-AUTH-001). 스스로 가입하는 길이 없어졌으므로,
+   * 이 폼이 사라지면 새 사용자가 <b>어디에서도</b> 태어나지 못한다.
+   */
+  it('계정을 발급하고 임시 비밀번호를 한 번 보여준다', async () => {
+    vi.mocked(createAdminUser).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    renderPage()
+
+    fireEvent.change(await screen.findByLabelText('이메일'), {
+      target: { value: 'new@b.com' },
+    })
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '새사원' } })
+    fireEvent.click(screen.getByRole('button', { name: '계정 추가' }))
+
+    await waitFor(() => expect(createAdminUser).toHaveBeenCalledWith('new@b.com', '새사원'))
+    expect(await screen.findByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
+    // 초기화와 달리 "기존 로그인 해제"가 아니라 "전달하세요"여야 한다 - 새 계정에는 끊을 세션이 없다
+    expect(screen.getByText(/전달하세요/)).toBeInTheDocument()
+    expect(screen.getByText(/다시 확인할 수 없습니다/)).toBeInTheDocument()
   })
 
   /** TC-ADMIN-041 : 일반 사용자는 되돌려진다 */

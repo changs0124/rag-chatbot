@@ -11,7 +11,6 @@ import com.ragchatbot.service.AuthService;
 import com.ragchatbot.dto.AuthDtos.AuthResponse;
 import com.ragchatbot.dto.AuthDtos.LoginRequest;
 import com.ragchatbot.dto.AuthDtos.MeResponse;
-import com.ragchatbot.dto.AuthDtos.SignupRequest;
 
 import jakarta.validation.Valid;
 
@@ -23,11 +22,6 @@ public class AuthController {
 
 	public AuthController(AuthService authService) {
 		this.authService = authService;
-	}
-
-	@PostMapping("/signup")
-	public AuthResponse signup(@Valid @RequestBody SignupRequest req) {
-		return authService.signup(req);
 	}
 
 	@PostMapping("/login")

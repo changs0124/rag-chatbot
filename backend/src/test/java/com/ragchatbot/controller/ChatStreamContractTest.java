@@ -39,7 +39,7 @@ class ChatStreamContractTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void sse_event_order_holds_with_stage_added() {
-		String token = signup("contract@b.com");
+		String token = createUser("contract@b.com");
 		var res = rest.exchange("/api/chat", HttpMethod.POST,
 				new HttpEntity<>(Map.of("conversationId", createConversation(token), "message", "이용 약관 안내"),
 						bearer(token)),

@@ -64,7 +64,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	void known_topic_streams_citations_and_persists() {
-		String token = signup("chat-known@b.com");
+		String token = createUser("chat-known@b.com");
 		String convId = createConversation(token);
 
 		var res = chat(token, Map.of("conversationId", convId, "message", "환불 정책 알려줘"));
@@ -86,7 +86,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	void citations_stay_attached_to_their_own_message() {
 		// 재조회는 대화 전체의 출처를 한 번에 읽어 메시지별로 나눠 담음 - 나누는 규칙이 어긋나면
 		// 출처가 남의 답변에 붙거나 사라짐. 답변이 하나뿐인 테스트로는 그 어긋남이 드러나지 않음
-		String token = signup("chat-cite-group@b.com");
+		String token = createUser("chat-cite-group@b.com");
 		String convId = createConversation(token);
 
 		chat(token, Map.of("conversationId", convId, "message", "환불 정책 알려줘")); // 출처 2건
@@ -117,7 +117,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void previous_turns_are_sent_to_the_model() {
-		String token = signup("chat-history@b.com");
+		String token = createUser("chat-history@b.com");
 		String convId = createConversation(token);
 
 		chat(token, Map.of("conversationId", convId, "message", "첫 질문"));
@@ -135,7 +135,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	/** 첫 턴에는 이력이 없어야 함 - 방금 보낸 메시지가 이력에 섞이면 같은 말이 두 번 전달됨 */
 	@Test
 	void first_turn_has_no_history() {
-		String token = signup("chat-history-first@b.com");
+		String token = createUser("chat-history-first@b.com");
 		String convId = createConversation(token);
 
 		chat(token, Map.of("conversationId", convId, "message", "첫 질문"));
@@ -146,7 +146,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	/** 과거 이미지는 재전송하지 않고 자리표시자만 남김 - 턴이 쌓일수록 비용이 폭증하는 것을 막음 */
 	@Test
 	void past_images_are_not_resent() {
-		String token = signup("chat-history-img@b.com");
+		String token = createUser("chat-history-img@b.com");
 		String convId = createConversation(token);
 		String attId = uploadImage(token);
 
@@ -159,7 +159,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void unknown_topic_streams_no_source() {
-		String token = signup("chat-unknown@b.com");
+		String token = createUser("chat-unknown@b.com");
 		String convId = createConversation(token);
 		var res = chat(token, Map.of("conversationId", convId, "message", "우주의 크기는 얼마나 되나"));
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -170,7 +170,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void image_only_message_allowed_and_passed() {
-		String token = signup("chat-img@b.com");
+		String token = createUser("chat-img@b.com");
 		String convId = createConversation(token);
 		String attId = uploadImage(token);
 
@@ -182,7 +182,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void attachments_survive_reload_with_fresh_url() {
 		// 재조회 응답에 첨부가 없어 새로고침하면 이미지가 사라졌음(Phase 3 리뷰 M3-6)
-		String token = signup("chat-reload@b.com");
+		String token = createUser("chat-reload@b.com");
 		String convId = createConversation(token);
 		String attId = uploadImage(token);
 		chat(token, Map.of("conversationId", convId, "message", "이 이미지", "attachmentIds", List.of(attId)));
@@ -210,7 +210,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void delete_conversation_calls_openai_cleanup() {
-		String token = signup("chat-del@b.com");
+		String token = createUser("chat-del@b.com");
 		String convId = createConversation(token);
 		chat(token, Map.of("conversationId", convId, "message", "가격 문의"));
 
@@ -223,7 +223,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void empty_message_no_attachment_400() {
-		String token = signup("chat-empty@b.com");
+		String token = createUser("chat-empty@b.com");
 		String convId = createConversation(token);
 		var res = chat(token, Map.of("conversationId", convId, "message", ""));
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -241,7 +241,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void rate_limit_returns_429_when_exceeded() {
-		String token = signup("chat-rl@b.com");
+		String token = createUser("chat-rl@b.com");
 		String convId = createConversation(token);
 		int perMinute = 5;
 		int attempts = perMinute * 2 + 1;

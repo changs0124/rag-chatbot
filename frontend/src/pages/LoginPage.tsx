@@ -6,27 +6,19 @@ import TextInput from '../components/TextInput'
 import { ApiError } from '../lib/api'
 
 export default function LoginPage() {
-  const { login, signup } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-
-  const isSignup = mode === 'signup'
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
     setBusy(true)
     try {
-      if (isSignup) {
-        await signup(email, password, name)
-      } else {
-        await login(email, password)
-      }
+      await login(email, password)
       navigate('/', { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '요청 중 오류가 발생했습니다')
@@ -56,22 +48,10 @@ export default function LoginPage() {
 
         <div className="rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-ambient)]">
           <div className="rounded-[1.375rem] bg-raised p-6 md:p-8">
-            <h2 className="text-lg font-semibold text-ink">{isSignup ? '회원가입' : '로그인'}</h2>
-            <p className="mt-1 mb-6 text-sm text-ink-muted">
-              {isSignup ? '계정을 만들어 시작하세요' : '계속하려면 로그인하세요'}
-            </p>
+            <h2 className="text-lg font-semibold text-ink">로그인</h2>
+            <p className="mt-1 mb-6 text-sm text-ink-muted">계속하려면 로그인하세요</p>
 
             <form onSubmit={onSubmit} className="space-y-3.5">
-              {isSignup && (
-                <Field label="이름">
-                  <TextInput
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    autoComplete="name"
-                  />
-                </Field>
-              )}
               <Field label="이메일">
                 <TextInput
                   type="email"
@@ -87,8 +67,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={isSignup ? 8 : undefined}
-                  autoComplete={isSignup ? 'new-password' : 'current-password'}
+                  autoComplete="current-password"
                 />
               </Field>
 
@@ -100,20 +79,14 @@ export default function LoginPage() {
                 disabled={busy}
                 className="h-12 w-full rounded-full bg-accent text-[15px] font-medium text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.01] active:scale-[0.99] disabled:scale-100 disabled:opacity-50"
               >
-                {busy ? '처리 중…' : isSignup ? '회원가입' : '로그인'}
+                {busy ? '처리 중…' : '로그인'}
               </button>
             </form>
 
-            <button
-              type="button"
-              onClick={() => {
-                setMode(isSignup ? 'login' : 'signup')
-                setError(null)
-              }}
-              className="mt-4 w-full text-center text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink"
-            >
-              {isSignup ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
-            </button>
+            {/* 스스로 계정을 만들 수 없으므로 진입점 대신 어디로 가야 하는지를 적는다 */}
+            <p className="mt-4 text-center text-sm text-ink-muted">
+              계정은 관리자가 발급합니다. 임시 비밀번호를 받은 뒤 로그인하세요.
+            </p>
           </div>
         </div>
       </div>

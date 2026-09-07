@@ -34,7 +34,6 @@ describe('api client', () => {
       const onExpire = vi.fn()
       setUnauthorizedHandler(onExpire)
       handleUnauthorized('/api/auth/login')
-      handleUnauthorized('/api/auth/signup')
       handleUnauthorized('/api/profile/password')
       expect(onExpire).not.toHaveBeenCalled()
       setUnauthorizedHandler(null)

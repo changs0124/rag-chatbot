@@ -43,7 +43,7 @@ flowchart LR
 
 | 경로 | 화면 | 접근 |
 |------|------|------|
-| `/login` | `LoginPage` — 로그인·회원가입 | 공개 |
+| `/login` | `LoginPage` — 로그인 | 공개 |
 | `/` | `ChatPage` — 사이드바 + 메시지 목록 + 입력창 | `ProtectedRoute` (인증 필요) |
 | `/me` | `MyPage` — 이름·비밀번호·테마 변경 | `ProtectedRoute` (인증 필요) |
 | `/admin` | 문서 관리 · 사용자 관리 | `ProtectedRoute` + **관리자만**(아니면 `/` 로 되돌림) |
@@ -57,7 +57,7 @@ flowchart LR
 | 묶음 | 경로 | 인증 |
 |------|------|------|
 | 헬스체크 | `/api/health` | 공개 |
-| 인증 | `/api/auth/**` | 가입·로그인은 공개, `me` 는 필요 |
+| 인증 | `/api/auth/**` | 로그인은 공개, `me` 는 필요 |
 | 프로필 | `/api/profile/**` | 필요 |
 | 대화·메시지 | `/api/conversations/**` | 필요 |
 | 첨부 | `/api/files/**` | 업로드·삭제는 Bearer, **서빙만 서명 쿼리 토큰** |
@@ -141,7 +141,7 @@ sequenceDiagram
 | JWT 시크릿 / 만료 | `JWT_SECRET` · `JWT_EXPIRATION_MINUTES` | 없음(필수) / 120분 |
 | 슬라이딩 재발급 임계 | `JWT_REFRESH_THRESHOLD_MINUTES` | 30분 (**0이면 기능 끔**) |
 | 관리자 이메일 명단 | `ADMIN_EMAILS` | 없음(관리자 0명). 명단에서 빠지면 다음 기동에 강등 |
-| 가입 허용 도메인 | `ALLOWED_EMAIL_DOMAINS` | 없음. **`live` 에서는 필수** — 비우면 기동 실패 |
+| 계정 허용 도메인 | `ALLOWED_EMAIL_DOMAINS` | 없음. **`live` 에서는 필수** — 비우면 기동 실패 |
 | SSE 타임아웃 | `SSE_TIMEOUT_MS` | 600000 |
 | 동시 스트림 상한 / 사용자별 | `CHAT_MAX_CONCURRENT_STREAMS` · `CHAT_MAX_CONCURRENT_PER_USER` | 8 / 1 |
 | 채팅·로그인 분당 상한 | `RATELIMIT_CHAT_PER_MINUTE` · `RATELIMIT_LOGIN_PER_MINUTE` | 20 / 10 |

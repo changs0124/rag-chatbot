@@ -53,7 +53,7 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	void unexpected_exception_returns_api_error_shape() {
-		String token = signup("boom-shape@b.com");
+		String token = createUser("boom-shape@b.com");
 		var res = get(token, "/api/test-boom");
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -65,7 +65,7 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	void response_carries_trace_id() {
-		String token = signup("boom-trace@b.com");
+		String token = createUser("boom-trace@b.com");
 		var res = get(token, "/api/test-boom");
 
 		String message = (String) res.getBody().get("message");
@@ -82,7 +82,7 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void internal_message_is_not_exposed() {
-		String token = signup("boom-leak@b.com");
+		String token = createUser("boom-leak@b.com");
 		var res = rest.exchange("/api/test-boom", HttpMethod.GET, new HttpEntity<>(bearer(token)), String.class);
 
 		assertThat(res.getBody()).doesNotContain(LEAKY_MESSAGE);
@@ -98,7 +98,7 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	void domain_exception_still_maps_to_its_own_status() {
-		String token = signup("boom-domain@b.com");
+		String token = createUser("boom-domain@b.com");
 		// 없는 대화 - ConversationService 가 NotFoundException 을 던짐
 		var res = get(token, "/api/conversations/11111111-1111-1111-1111-111111111111/messages");
 

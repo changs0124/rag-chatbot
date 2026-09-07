@@ -38,7 +38,7 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
  * 여기서 로그아웃시키면 안 됨 - 특히 비밀번호 변경은 현재 비밀번호 불일치가 401이라,
  * 오타 한 번에 멀쩡한 세션이 날아감.
  */
-const CREDENTIAL_PATHS = ['/api/auth/login', '/api/auth/signup', '/api/profile/password']
+const CREDENTIAL_PATHS = ['/api/auth/login', '/api/profile/password']
 
 export function handleUnauthorized(path: string): void {
   if (CREDENTIAL_PATHS.some((p) => path.startsWith(p))) return

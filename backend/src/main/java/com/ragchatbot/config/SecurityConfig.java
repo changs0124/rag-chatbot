@@ -16,7 +16,7 @@ import com.ragchatbot.security.JwtAuthenticationFilter;
 
 /**
  * 자체 이메일/비밀번호 + JWT stateless 인증.
- * permitAll : 회원가입/로그인/헬스. 그 외 /api/** 는 인증 필요(미인증 401).
+ * permitAll : 로그인/헬스. 그 외 /api/** 는 인증 필요(미인증 401).
  * P-3 소유권은 컨트롤러/서비스 코드가 별도 검증함.
  */
 @Configuration
@@ -38,7 +38,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						// SSE 비동기 재디스패치 - 인증은 최초 REQUEST 디스패치에서 검사됨(async/error 재검사 방지)
 						.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
 						// 파일 서빙은 서명 경로 토큰으로 검증(Bearer 불가한 <img src> 대응, M6/AC-22)
 						.requestMatchers(HttpMethod.GET, "/api/files/**").permitAll()

@@ -20,7 +20,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 | 경로 | 화면 | 보호 |
 |------|------|------|
-| `/login` | `LoginPage` — 로그인·회원가입 한 화면(모드 토글) | 공개 |
+| `/login` | `LoginPage` — 로그인 전용. 계정은 관리자가 발급한다 | 공개 |
 | `/` | `ChatPage` | `ProtectedRoute` |
 | `/me` | `MyPage` | `ProtectedRoute` |
 | `/admin` | `AdminPage` — 문서 관리 · 사용자 관리 | `ProtectedRoute` + **관리자만** |
@@ -173,5 +173,5 @@ Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts
 절차와 터널 도구 선택은 [backend.md](./backend.md) 「배포」 참고.
 
 토큰은 `localStorage` 에 둔다. 만료되면 어떤 요청에서든 세션을 비우고 로그인으로 돌아간다
-(`setUnauthorizedHandler`). 단 로그인·회원가입·비밀번호 변경의 401 은 "자격 증명이 틀렸다"는 뜻이라
+(`setUnauthorizedHandler`). 단 로그인·비밀번호 변경의 401 은 "자격 증명이 틀렸다"는 뜻이라
 세션을 유지한다 — 그러지 않으면 비밀번호 오타 한 번에 로그아웃된다.

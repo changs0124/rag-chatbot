@@ -37,7 +37,7 @@ class JwtSlidingRefreshTest extends AbstractPgIntegrationTest {
 	/** TC-OPS-020 : 만료가 가까우면 새 토큰이 헤더로 온다 */
 	@Test
 	void near_expiry_token_gets_refreshed() {
-		String token = signup("slide-near@b.com");
+		String token = createUser("slide-near@b.com");
 		var res = me(token);
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -53,7 +53,7 @@ class JwtSlidingRefreshTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void refreshed_token_authenticates() {
-		String token = signup("slide-usable@b.com");
+		String token = createUser("slide-usable@b.com");
 		String refreshed = me(token).getHeaders().getFirst(JwtAuthenticationFilter.REFRESH_HEADER);
 
 		var res = me(refreshed);
