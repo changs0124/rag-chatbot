@@ -1,31 +1,42 @@
-# after — 4차 최종 (비판 검토 4회 반영)
+# after — 5차 최종 (비판 검토 5회 반영)
 
-문서에 남은 문장을 문자 그대로 인용하고, 바로 아래에 전수 검증을 단다.
-'예:' 를 쓰지 않는다 — 전수를 주장하는 자리에 예시를 붙이면 그 자리가 다음 반례가 된다.
+규칙: 전수를 주장하는 자리에 예시를 붙이지 않는다.
+      4차에서 '예:' 라벨만 없애고 예시(insert(RagDocument) 괄호)는 남겼다가 5차에 걸렸다.
+      라벨이 아니라 예시가 문제다.
+
+================================================================
+문서> - **조회 전용 매핑은 예외다.** 조인 결과를 그대로 돌려주는 목록 조회는 `repository` 가
+문서>   `dto` 의 Response 를 **직접** 매핑할 수 있다. (...) 현재 그렇게 하는 것은
+문서>   `RagDocumentRepository.listAlive()` 한 건이다
+검증> XML 전체에서 com.ragchatbot.dto 등장 = 1건, 그것을 쓰는 select = 1건 (전수)
+      backend/src/main/resources/mapper/RagDocumentRepository.xml:21:	<resultMap id="summaryResult" type="com.ragchatbot.dto.AdminDtos$DocumentResponse">
+      backend/src/main/resources/mapper/RagDocumentRepository.xml:41:	<select id="listAlive" resultMap="summaryResult">
+검증> 조인 목록 조회지만 entity 를 매핑하는 것이 실재 — '조인이 섞인 목록·통계 조회는 dto 를
+      직접 매핑한다' 는 5차까지 검증 안 된 과잉 일반화였다. 그 반례:
+      38:	<select id="findByConversation" resultMap="attachmentResult">
+검증> '통계 조회' 는 원소가 0건이다 — count( · sum( · avg( · group by 전부 0
 
 ================================================================
 문서> - **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 6 · `<update>` 10
 문서>   · `<delete>` 3. 소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다.
-검증> XML statement 전수 = insert 6 · update 10 · delete 3
+검증> 6 · 10 · 3   (grep -c 로 기계 재현 가능)
 검증> 67:	<update id="softDelete">
-검증> XML 전체에서 com.ragchatbot.dto 등장 = 1건, 그것을 쓰는 것은 select 뿐 = 전수
-      backend/src/main/resources/mapper/RagDocumentRepository.xml:21:	<resultMap id="summaryResult" type="com.ragchatbot.dto.AdminDtos$DocumentResponse">
-      backend/src/main/resources/mapper/RagDocumentRepository.xml:41:	<select id="listAlive" resultMap="summaryResult">
+검증> XML 밖 쓰기 경로 = 0건 (@Insert/@Update/@Delete · JdbcTemplate · SqlSession · EntityManager)
 
 ================================================================
-문서> **`entity` 를 통째로 받는 것은 등록 6건뿐이고**(`insert(RagDocument)`),
-검증> entity 파라미터를 받는 메서드 전수 = 6건, 전부 insert
-      19:	void insert(Attachment attachment);
-      14:	void insert(Citation citation);
-      18:	void insert(Conversation conversation);
-      17:	void insert(Message message);
-      23:	void insert(RagDocument document);
-      19:	void insert(User user);
+문서> **`entity` 를 통째로 받는 것은 등록 6건뿐이고**,
+검증> entity 파라미터를 받는 메서드 전수 = 6건. 예시가 아니라 전수다:
+      	void insert(Attachment attachment);
+      	void insert(Citation citation);
+      	void insert(Conversation conversation);
+      	void insert(Message message);
+      	void insert(RagDocument document);
+      	void insert(User user);
 검증> insert 외에 entity 파라미터를 받는 메서드 = 0건
 
 ================================================================
 문서> **수정·삭제 13건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
-검증> update+delete = 13건. 아래가 전수이며 파라미터 타입은 UUID · String · OffsetDateTime · List<String> 뿐
+검증> update+delete = 13건. 아래가 전수. 파라미터 타입은 UUID · String · OffsetDateTime · List<String> 뿐
       	int linkToMessage(@Param("id") UUID id, @Param("messageId") UUID messageId, @Param("userId") UUID userId);
       	int deleteByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
       	int deleteById(@Param("id") UUID id);
@@ -41,20 +52,22 @@
       	int promoteAdmins(@Param("emails") List<String> emails);
 
 ================================================================
-## 네 번의 실패 기록 — 전부 핵심 뒤에 붙인 곁가지였다
+## 다섯 번의 실패 — 전부 핵심 뒤에 붙인 곁가지
 
-  1차 (#21)  '규칙이 entity 에 있다'                    거짓
-  2차 (#22)  '규칙은 service 에 있다'                   과잉 일반화 (config·dto 에도 있음)
-  3차 (#22)  '권한은 service, 입력 검증은 dto'          거짓 (권한은 네 곳으로 갈림)
-  4차 (#22)  '10건은 식별자와 바뀔 값을 스칼라로'       거짓 (그중 3건이 삭제문이라 바뀔 값이 없음)
+  1차 (#21)  '규칙이 entity 에 있다'                거짓
+  2차 (#22)  '규칙은 service 에 있다'               과잉 일반화
+  3차 (#22)  '권한은 service, 검증은 dto'           거짓 (권한은 네 곳)
+  4차 (#22)  '10건은 식별자와 바뀔 값을 스칼라로'   거짓 (3건이 삭제문)
+  5차 (#22)  '(insert(RagDocument))' 괄호           전수 주장에 붙은 예시
+             CHANGELOG '세 곳'                      실제 다섯 곳 열거
+             CHANGELOG '표준에 없는 ... service'    service 는 표준 어휘 (정본 표 12행)
+             backend.md '조인이 섞인 목록·통계'      반례 실재 · '통계' 원소 0건
 
-  3차에서 열거절을 지웠는데 그 자리에 성격이 같은 새 분해절(10/3)을 넣어 같은 함정을 다시 밟았다.
-  그래서 4차에서는 분해 자체를 없앴다. 13건을 나누지 않고 '전부 스칼라 또는 List' 로만 적는다 —
-  이 문장은 메서드가 추가돼도 낡지 않고, 나눠 세다 틀릴 자리가 없다.
-
-  '규칙의 자리는 entity/ 가 아니다' 불릿은 통째로 삭제했다. 논증이 성립하지 않았다 —
-  '메서드가 없다' 가 지우는 것은 '규칙 집행' 이라는 이유 하나뿐인데, updateName·updatePasswordHash·
-  updateTheme 처럼 update(User) 였다면 하나로 접혔을 자리가 실재해 '거칠 이유가 없다' 는 성립하지 않는다.
+  1~4차 오류는 전부 grep 으로 결판나지 않는 술어에 있었다 — '규칙이 어디 있는가',
+  '바뀔 값이 무엇인가'. 5차는 그 술어를 버리고 파라미터 타입 집합이라는 기계 판정 가능한
+  것으로 바꿨고, 그래서 13건 서술이 처음으로 전수 참이 됐다.
+  남은 결함은 (a) 네 판본을 재검토 없이 통과한 예시 괄호, (b) backend.md 를 정리하면서
+  CHANGELOG 로 자리를 옮긴 같은 종 두 건, (c) 5차에야 처음 대조된 앞 불릿이었다.
 
 ================================================================
 ## check-doc-refs
