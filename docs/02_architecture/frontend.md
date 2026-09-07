@@ -46,10 +46,11 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 ## API 통신
 
-- API 호출은 `frontend/src/lib/api.ts` 의 `api.get/post/patch/del/postForm` 을 통한다. 예외는 둘 —
-  채팅 스트림(아래)과 첨부 저장(`ImageLightbox.download()` 이 blob 으로 받아야 해서 `fetch` 를 직접 쓴다).
+- API 호출은 `frontend/src/lib/api.ts` 의 `api.get/post/patch/del/postForm` 을 통한다.
+  **컴포넌트·훅이 `fetch` 를 직접 부르는 곳은 둘** — 채팅 스트림(아래)과 첨부 저장
+  (`ImageLightbox.download()` 이 blob 으로 받아야 해서).
 - 엔드포인트는 `frontend/src/lib/endpoints.ts` 에 한 줄 함수로 노출한다.
-- **응답이 도착한** 실패는 `ApiError(status, message)` 로 통일하고, 서버가 `message` 를 주면 그대로 보여준다 — 없으면 `요청 실패 (n)` 로 떨어진다. 네트워크 단계 실패(CORS 거절·오프라인·중단)는 `fetch` 가 reject 되어 이 경로를 타지 않는다.
+- **응답이 도착한** 실패는 `ApiError(status, message)` 로 통일하고, 서버가 `message` 를 주면 그대로 보여준다 — 없으면 `요청 실패 (n)` 로 떨어진다. 네트워크 단계 실패(CORS 거절·오프라인·중단)는 `fetch` 또는 본문 읽기가 reject 되어 이 경로를 타지 않는다.
 - 비밀번호 변경 응답의 **새 토큰으로 반드시 교체**해야 한다. 서버가 변경 시각 이전 토큰을 전부 무효화하므로,
   교체하지 않으면 "변경했습니다"를 띄운 직후부터 모든 요청이 401 이 된다.
 - **응답 헤더 `X-Refresh-Token` 이 오면 토큰을 교체한다**(FEAT-OPS-003). 만료가 임박했을 때만 온다.
