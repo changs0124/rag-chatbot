@@ -64,6 +64,9 @@ exception/    ApiExceptions + GlobalExceptionHandler
 | `RateLimitException` | 429 | `RATE_LIMIT` |
 | `HttpMessageNotReadableException` | 400 | `BAD_REQUEST` |
 | `MethodArgumentTypeMismatchException` | 400 | `BAD_REQUEST` |
+| `NoResourceFoundException` | 404 | `NOT_FOUND` |
+| `HttpRequestMethodNotSupportedException` | 405 | `METHOD_NOT_ALLOWED` |
+| `HttpMediaTypeNotSupportedException` | 415 | `UNSUPPORTED_MEDIA_TYPE` |
 | **그 밖의 모든 예외** | 500 | `INTERNAL_ERROR` |
 
 마지막 줄이 **최종 폴백**이다(FEAT-OPS-002). 이것이 없던 동안에는 예상 못 한 예외만 Spring 기본
@@ -79,13 +82,18 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - 스프링은 더 구체적인 핸들러를 먼저 고르므로, `@ExceptionHandler(Exception.class)` 를 두어도
   전용 핸들러가 있는 예외는 그쪽으로 간다. **잠가 둔 것은 도메인 예외까지다**
   (`GlobalExceptionFallbackTest` — 예상 못 한 예외의 `ApiError` 모양 · 상관 ID · 내부 메시지 비노출 ·
-  도메인 예외가 제 상태를 지킨다). **Spring 내장 MVC 예외** 중 **요청을 읽을 수 없는 쪽은 측정해
-  잠갔다**(#38) — 깨진 JSON · UTF-8 이 아닌 인코딩 · 빈 본문 · 경로 변수 타입 불일치가 전부 폴백으로
-  떨어져 500 이었고, 지금은 전용 핸들러가 400 으로 내린다(TC-OPS-014~018).
-  **남은 것은 `없는 URL` · `미지원 메서드`(405) · `미지원 미디어 타입`(415) 셋이다** —
-  `GlobalExceptionHandler` 가 `ResponseEntityExceptionHandler` 를 상속하지 않아 그쪽은 여전히 폴백으로
-  떨어지며 **측정한 적이 없다.** `api.md` 상태 코드 표에 405·415 가 없어 명세부터 정해야 한다.
-  `docs/04_tasks/backlog.md` 에 등재돼 있다.
+  도메인 예외가 제 상태를 지킨다). **Spring 내장 MVC 예외는 두 갈래로 나눠 측정해 전부 잠갔다.**
+  **본문 파싱 쪽**(#38) — 깨진 JSON · UTF-8 이 아닌 인코딩 · 빈 본문 · 경로 변수 타입 불일치가 전부
+  폴백으로 떨어져 500 이었고, 지금은 전용 핸들러가 400 으로 내린다(TC-OPS-014~018).
+  **라우팅 쪽**(#45) — 없는 URL · 미지원 메서드 · 미지원 미디어 타입도 실측해 보니 셋 다 500 이었고,
+  지금은 각각 404 · 405 · 415 로 내린다(TC-OPS-019~021).
+- **`ResponseEntityExceptionHandler` 를 상속하지 않는 것은 의도된 선택이다.** 상속하면 그쪽 기본 구현이
+  Spring 6 의 `ProblemDetail`(RFC 7807 — `type`·`title`·`status`·`detail`·`instance`) 본문을 만들어
+  **`{code, message}` 응답 계약이 그 경로에서만 깨진다.** 대신 요청 잘못으로 분류되는 예외를 발견할
+  때마다 위 표에 `@ExceptionHandler` 를 한 줄씩 더한다. 바뀌는 표면이 그 예외 하나로 한정된다.
+- **405 응답에는 `Allow` 헤더를 함께 보낸다.** RFC 9110 §15.5.6 이 MUST 로 요구한다 — 없으면 보낸 쪽은
+  무엇으로 다시 쳐야 하는지 알 수 없어 상태 코드가 반쪽이 된다. 값은 `api.md` 「API 목록」에 이미
+  공개된 라우트 형태라 P-3(존재 은닉)와 충돌하지 않는다.
 
 ## 인증
 
