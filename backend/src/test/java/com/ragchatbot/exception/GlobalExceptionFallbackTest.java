@@ -236,7 +236,8 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 		assertThat(res.getBody().get("code")).isEqualTo("METHOD_NOT_ALLOWED");
-		assertThat(res.getHeaders().getFirst("Allow")).contains("POST");
+		// POST 하나만 보면 GET 이 빠져도 통과한다 - 라우트가 받는 메서드를 전부 단언한다
+		assertThat(res.getHeaders().getFirst("Allow")).contains("POST", "GET");
 	}
 
 	/**
