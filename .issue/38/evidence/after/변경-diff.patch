@@ -1,0 +1,247 @@
+commit 382855302431fd4146eece10631c721e1f9b432d
+Author: changs0124 <haeya0124@gmail.com>
+Date:   Mon Sep 7 20:17:47 2026 +0900
+
+    fix(backend): 읽을 수 없는 요청을 500 이 아니라 400 으로 내린다
+    
+    본문을 읽지 못한 요청이 500 INTERNAL_ERROR 로 나갔다. 보낸 쪽은 상관 ID 만
+    받아 무엇을 고쳐야 하는지 알 수 없었고, 단서는 서버 로그뿐이었다.
+    api.md:89 는 이 경우를 400 으로 규정하고 있으므로 명세 위반이기도 하다.
+    
+    GlobalExceptionHandler 에 핸들러가 없는 예외는 그것이 요청 잘못이든 서버
+    잘못이든 전부 @ExceptionHandler(Exception.class) 폴백으로 떨어진다.
+    HttpMessageNotReadableException 과 MethodArgumentTypeMismatchException 이
+    그렇게 새고 있었다.
+    
+    테스트를 먼저 써서 실패를 관찰했더니 새는 경로가 넷이었다 - 깨진 JSON 문법,
+    UTF-8 이 아닌 인코딩, 빈 본문, 경로 변수 타입 불일치. 마지막 것은 이슈에
+    후보로만 적었던 항목인데 실제로 500 이었다. /api/conversations/{id} 의 UUID
+    자리에 UUID 가 아닌 값이 오면 서버 오류로 잡혔다. 없는 UUID(404)와 UUID 가
+    아닌 값(400)은 다른 사건이다.
+    
+    네 경로 모두 원인이 "클라이언트 입력을 읽을 수 없음" 한 갈래라 두 핸들러가
+    받는다. 예외 메시지는 싣지 않는다 - 파서 예외에는 본문 조각과 클래스 이름이
+    들어 있어 폴백과 같은 이유로 노출 대상이 아니다. TC-OPS-018 이 이것을 잠근다.
+    
+    405(HttpRequestMethodNotSupportedException)와 415(HttpMediaTypeNotSupported
+    Exception)도 같은 폴백으로 새지만 이번 범위에서 뺐다. api.md:86-95 의 상태
+    코드 표에 두 코드가 없고 403 은 "애플리케이션은 쓰지 않는다" 고 못박혀 있어,
+    지금 매핑하면 계약에 없던 상태 코드가 새로 생긴다. 원인도 라우팅 단계로 다르다.
+    
+    클래스 주석이 "스프링이 더 구체적인 핸들러를 먼저 고르므로 400·404 가 500 으로
+    뭉개지지 않음" 이라고 단언하고 있었으나, 그 보장은 핸들러가 있는 예외에만
+    성립한다. 이 주석이 정확했다면 애초에 의심했을 지점이라 함께 고친다.
+    
+    테스트 172건 통과(신규 5건). 래칫 규칙대로 BACKEND_MIN 을 실측값으로 올린다.
+    
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+    Claude-Session: https://claude.ai/code/session_01MKWgf8XrMXjBAHxmMGLaFr
+
+diff --git a/backend/src/main/java/com/ragchatbot/exception/GlobalExceptionHandler.java b/backend/src/main/java/com/ragchatbot/exception/GlobalExceptionHandler.java
+index 31790f0..c3b0de0 100644
+--- a/backend/src/main/java/com/ragchatbot/exception/GlobalExceptionHandler.java
++++ b/backend/src/main/java/com/ragchatbot/exception/GlobalExceptionHandler.java
+@@ -6,9 +6,11 @@ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.ResponseEntity;
++import org.springframework.http.converter.HttpMessageNotReadableException;
+ import org.springframework.web.bind.MethodArgumentNotValidException;
+ import org.springframework.web.bind.annotation.ExceptionHandler;
+ import org.springframework.web.bind.annotation.RestControllerAdvice;
++import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+ import org.springframework.web.multipart.MaxUploadSizeExceededException;
+ 
+ import jakarta.servlet.http.HttpServletRequest;
+@@ -75,10 +77,44 @@ public class GlobalExceptionHandler {
+ 		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ApiError("RATE_LIMIT", ex.getMessage()));
+ 	}
+ 
++	/**
++	 * 요청 본문을 읽지 못함 - 깨진 JSON · UTF-8 이 아닌 바이트 · 빈 본문이 전부 여기로 옴.
++	 *
++	 * <p><b>보낸 쪽 잘못이므로 400 이다.</b> 이 핸들러가 없으면 폴백이 받아 500 이 나가고, 그러면
++	 * 상관 ID 만 남아 보내는 쪽은 무엇을 고쳐야 하는지 알 수 없다. 실제로 인코딩이 어긋난
++	 * 클라이언트에서 이 경로를 밟았다(TC-OPS-014~016).
++	 *
++	 * <p>예외 메시지는 싣지 않음 - 파서 예외에는 본문 조각과 클래스 이름이 들어 있어
++	 * {@link #handleUnexpected} 와 같은 이유로 노출 대상이 아님(TC-OPS-018).
++	 */
++	@ExceptionHandler(HttpMessageNotReadableException.class)
++	public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex) {
++		log.warn("요청 본문을 읽지 못함: {}", ex.getMostSpecificCause().getMessage());
++		return ResponseEntity.badRequest()
++				.body(new ApiError("BAD_REQUEST", "요청 본문을 읽을 수 없음 (JSON 형식과 인코딩을 확인할 것)"));
++	}
++
++	/**
++	 * 경로·쿼리 변수의 타입이 어긋남 - UUID 자리에 UUID 가 아닌 값이 온 경우 등.
++	 *
++	 * <p>없는 UUID(404)와 UUID 가 아닌 값(400)은 다른 사건이다. 변수 이름은 우리가 정의한 API 표면이라
++	 * 밝혀도 새는 것이 없고, 밝혀야 어디를 고칠지 알 수 있다.
++	 */
++	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
++	public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
++		return ResponseEntity.badRequest()
++				.body(new ApiError("BAD_REQUEST", "요청 값의 형식이 올바르지 않음: " + ex.getName()));
++	}
++
+ 	/**
+ 	 * 최종 폴백(FEAT-OPS-002). 위 핸들러에 걸리지 않은 예외만 여기로 옴 - 스프링이 더 구체적인
+ 	 * 핸들러를 먼저 고르므로 400·404 가 500 으로 뭉개지지 않음.
+ 	 *
++	 * <p><b>그 보장은 핸들러가 있는 예외에만 성립함.</b> 핸들러가 없으면 그것이 요청 잘못이든
++	 * 서버 잘못이든 전부 여기로 와서 500 이 됨 - 실제로 {@code HttpMessageNotReadableException} 이
++	 * 그렇게 새어 깨진 JSON 이 500 으로 나갔음(#38). 요청 잘못으로 분류되는 예외를 새로 발견하면
++	 * 폴백에 맡기지 말고 위에 핸들러를 추가할 것.</p>
++	 *
+ 	 * <p><b>예외 메시지를 응답에 싣지 않음.</b> SQL 조각·클래스 이름이 그대로 나가면 정보 노출임.
+ 	 * 사용자에게 주는 것은 상관 ID 하나이고, 그 값으로 로그를 찾음 - 관측 도구를 붙이지 않고
+ 	 * "오류가 났어요"를 서버 로그의 한 줄과 이어 붙일 수 있는 유일한 수단임.
+diff --git a/backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java b/backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java
+index 64b185f..c9e2eeb 100644
+--- a/backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java
++++ b/backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java
+@@ -8,8 +8,10 @@ import org.junit.jupiter.api.Test;
+ import org.springframework.boot.test.context.TestConfiguration;
+ import org.springframework.context.annotation.Bean;
+ import org.springframework.http.HttpEntity;
++import org.springframework.http.HttpHeaders;
+ import org.springframework.http.HttpMethod;
+ import org.springframework.http.HttpStatus;
++import org.springframework.http.MediaType;
+ import org.springframework.test.context.ContextConfiguration;
+ import org.springframework.web.bind.annotation.GetMapping;
+ import org.springframework.web.bind.annotation.RestController;
+@@ -105,4 +107,100 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
+ 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+ 		assertThat(res.getBody().get("code")).isEqualTo("NOT_FOUND");
+ 	}
++
++	/** 본문을 문자열 그대로 보냄 - 깨진 JSON 은 객체로는 만들 수 없으므로 직렬화를 거치지 않음 */
++	@SuppressWarnings("rawtypes")
++	private org.springframework.http.ResponseEntity<Map> postRaw(String token, String path, String body) {
++		HttpHeaders headers = bearer(token);
++		headers.setContentType(MediaType.APPLICATION_JSON);
++		return rest.exchange(path, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
++	}
++
++	/**
++	 * TC-OPS-014 : 문법이 깨진 JSON 본문은 400 이다.
++	 *
++	 * <p>읽을 수 없는 본문은 <b>서버 잘못이 아니라 요청 잘못</b>이다. 500 으로 내리면 상관 ID 만 남고
++	 * 원인이 응답에서 사라져, 보내는 쪽은 무엇을 고쳐야 하는지 알 수 없다.
++	 */
++	@SuppressWarnings("unchecked")
++	@Test
++	void malformed_json_body_is_bad_request() {
++		String token = createUser("boom-json@b.com");
++		var res = postRaw(token, "/api/chat", "{\"conversationId\": BROKEN}");
++
++		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
++		assertThat(res.getBody()).containsKeys("code", "message");
++		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
++	}
++
++	/**
++	 * TC-OPS-015 : 인코딩이 어긋난 본문도 400 이다.
++	 *
++	 * <p>UTF-8 이 아닌 바이트가 섞이면 파서가 같은 예외를 던진다. 실제로 밟은 경로다 - 한글을
++	 * CP949 로 보내는 클라이언트가 있으면 이렇게 된다. 문법 오류와 원인이 같으므로 함께 잠근다.
++	 */
++	@SuppressWarnings("unchecked")
++	@Test
++	void invalid_encoding_body_is_bad_request() {
++		String token = createUser("boom-encoding@b.com");
++		HttpHeaders headers = bearer(token);
++		headers.setContentType(MediaType.APPLICATION_JSON);
++		// 0xBF 는 UTF-8 에서 시작 바이트가 될 수 없음
++		byte[] body = new byte[] { '{', '"', 'm', '"', ':', '"', (byte) 0xBF, '"', '}' };
++		var res = rest.exchange("/api/chat", HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
++
++		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
++		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
++	}
++
++	/**
++	 * TC-OPS-016 : 본문이 아예 없어도 400 이다.
++	 *
++	 * <p>빈 본문은 파서가 읽을 것이 없다며 같은 예외를 던진다. 셋 다 "요청을 읽을 수 없음" 한 갈래라
++	 * 한 핸들러가 받는다.
++	 */
++	@SuppressWarnings("unchecked")
++	@Test
++	void empty_body_is_bad_request() {
++		String token = createUser("boom-empty@b.com");
++		var res = postRaw(token, "/api/chat", "");
++
++		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
++		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
++	}
++
++	/**
++	 * TC-OPS-017 : 경로 변수의 타입이 어긋나도 400 이다.
++	 *
++	 * <p>UUID 자리에 UUID 가 아닌 값이 오면 스프링이 변환에 실패한다. 이것도 보낸 쪽 잘못이므로
++	 * 500 이 아니다. 없는 UUID(404)와 UUID 가 아닌 값(400)은 다른 사건이다.
++	 */
++	@SuppressWarnings("unchecked")
++	@Test
++	void path_variable_type_mismatch_is_bad_request() {
++		String token = createUser("boom-pathvar@b.com");
++		var res = get(token, "/api/conversations/not-a-uuid/messages");
++
++		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
++		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
++	}
++
++	/**
++	 * TC-OPS-018 : 400 으로 내려도 내부 정보는 여전히 새지 않는다.
++	 *
++	 * <p>파서 예외 메시지에는 클래스 이름과 본문 조각이 들어 있다. 상태 코드를 고치면서
++	 * 그것을 그대로 실어 보내면 TC-OPS-012 로 막아 둔 노출이 다른 문으로 되살아난다.
++	 */
++	@Test
++	void bad_request_does_not_expose_internals() {
++		String token = createUser("boom-json-leak@b.com");
++		HttpHeaders headers = bearer(token);
++		headers.setContentType(MediaType.APPLICATION_JSON);
++		var res = rest.exchange("/api/chat", HttpMethod.POST,
++				new HttpEntity<>("{\"conversationId\": BROKEN}", headers), String.class);
++
++		assertThat(res.getBody()).doesNotContain("HttpMessageNotReadableException");
++		assertThat(res.getBody()).doesNotContain("JsonParseException");
++		assertThat(res.getBody()).doesNotContain("com.ragchatbot");
++	}
+ }
+diff --git a/docs/01_specs/api.md b/docs/01_specs/api.md
+index f665ae4..b22fcf7 100644
+--- a/docs/01_specs/api.md
++++ b/docs/01_specs/api.md
+@@ -71,13 +71,13 @@
+ 
+ | code | HTTP | 발생 지점 |
+ |------|------|----------|
+-| `BAD_REQUEST` | 400 | 검증 실패 · 파일 형식/크기 |
++| `BAD_REQUEST` | 400 | 검증 실패 · 파일 형식/크기 · **요청을 읽을 수 없음**(깨진 JSON · 잘못된 인코딩 · 빈 본문 · 경로 변수 타입 불일치) |
+ | `UNAUTHORIZED` | 401 | 자격 증명 불일치 |
+ | `NOT_FOUND` | 404 | 리소스 없음 **또는 소유권·권한 위반 은닉** |
+ | `CONFLICT` | 409 | 이메일 중복 |
+ | `PAYLOAD_TOO_LARGE` | 413 | 멀티파트 하드 한도 초과 |
+ | `RATE_LIMIT` | 429 | 분당 상한 · 동시 스트림 상한 |
+-| `INTERNAL_ERROR` | 500 | **예상하지 못한 예외**. 본문에 상관 ID가 실림(FEAT-OPS-002) |
++| `INTERNAL_ERROR` | 500 | **예상하지 못한 예외**. 본문에 상관 ID가 실림(FEAT-OPS-002). 요청이 잘못된 경우는 여기로 오지 않는다 — 그쪽은 400 이다 |
+ 
+ ### HTTP 상태 코드
+ 
+diff --git a/scripts/case-floors.env b/scripts/case-floors.env
+index 8bf0ba0..50be865 100644
+--- a/scripts/case-floors.env
++++ b/scripts/case-floors.env
+@@ -7,5 +7,5 @@
+ #   케이스가 준 것과 테스트를 지운 것은 숫자만으로 구분되지 않음
+ # - skip 케이스는 세지 않음
+ 
+-BACKEND_MIN=167
++BACKEND_MIN=172
+ FRONTEND_MIN=76
