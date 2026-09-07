@@ -1,0 +1,249 @@
+commit 34002ef2e049d2f2599bdd2748b47dc041100be0
+Author: changs0124 <haeya0124@gmail.com>
+Date:   Mon Sep 7 23:50:47 2026 +0900
+
+    feat(chat): 검색 도구가 붙는 턴에 근거 지시를 함께 보낸다
+    
+    RAG 근거 부착이 전적으로 모델 재량이었다. 요청 바디에 instructions 도
+    tool_choice 도 없어 기본값 auto 로 돌았고, 모델이 "일반 지식으로 답할 수
+    있다" 고 판단해 file_search 를 건너뛰면 annotation 이 0건이 된다. 그러면
+    noSource = citations.isEmpty() 가 true 가 되어 화면에 「자료 없음」이 뜬다 -
+    스토어에 분명히 있는 내용을 물어도 그렇게 될 수 있다.
+    
+    더 나쁜 것은 그 화면이 다른 원인 셋과 구분되지 않는다는 점이다.
+    VECTOR_STORE_ID 미주입 · vs_ ID 오타 · 인용 추출 실패가 전부 같은
+    「자료 없음」으로 보인다.
+    
+    instructions 를 싣는다. 사내 규정·절차처럼 조직마다 다른 내용은 검색 결과에
+    근거하고, 못 찾았으면 못 찾았다고 먼저 밝히라는 지시다.
+    
+    강제하지는 않는다. tool_choice 로 file_search 를 강제하면 부착률은 오르지만
+    단순 인사말에도 검색이 붙어 턴당 비용과 응답 지연이 는다. 대가는 편차이며,
+    실 연동에서 부착률을 재 본 뒤 다시 판단할 자리다.
+    
+    **검색 도구가 붙을 때만 싣는다.** 스토어가 없는데 "사내 문서를 먼저 찾아본다"
+    고 지시하면 모델에게 없는 도구를 쓰라고 하는 셈이라 답변이 어긋난다. 지시와
+    도구는 같이 붙거나 같이 빠져야 한다.
+    
+    테스트는 스텁 서버로 실제 요청 바디를 잡아 확인한다(OpenAiRealDeleteResources
+    Test 가 쓰던 방식). 셋을 잠근다 - 스토어가 있으면 instructions 가 실리는지,
+    없으면 안 실리는지, 그리고 tool_choice 를 보내지 않는지. 마지막 것은 지금
+    아무것도 안 하는 것처럼 보이지만 정책을 강제로 바꾸는 순간 깨지므로,
+    그때가 눈에 띈다.
+    
+    여기서 잠그는 것은 보내는 쪽뿐이다. 모델이 지시를 따르는지는 실 연동에서만
+    잴 수 있다. live-integration.md 3-2 에 그 한계와 재판단 기준을 적었다.
+    
+    프롬프트는 상수로 둔다. 정책이 하나뿐이라 값을 바꿔 가며 운영할 이유가 아직
+    없다 - 필요해지면 그때 env 로 뺀다.
+    
+    검증 : ./mvnw -B clean verify 180건 통과 · 케이스 하한 180/180 ·
+    문서 참조 199/192 · 응답 계약 4곳 일치.
+    
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+    Claude-Session: https://claude.ai/code/session_01MKWgf8XrMXjBAHxmMGLaFr
+
+diff --git a/backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java b/backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java
+index 062e1ae..8adf983 100644
+--- a/backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java
++++ b/backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java
+@@ -55,6 +55,31 @@ public class OpenAiRealService implements OpenAiService {
+ 	private final String model;
+ 	private final String sharedVectorStoreId;
+ 
++	/**
++	 * 검색 도구가 붙은 턴에 함께 보내는 지시(#39).
++	 *
++	 * <p><b>왜 필요한가</b> — {@code tool_choice} 를 주지 않으면 기본값이 {@code auto} 라 file_search 호출
++	 * 여부가 모델 재량이다. 모델이 "일반 지식으로 답할 수 있다" 고 판단해 검색을 건너뛰면 annotation 이
++	 * 0건이 되고, {@code noSource = citations.isEmpty()} 가 true 가 되어 화면에 「자료 없음」이 뜬다.
++	 * 스토어에 분명히 있는 내용을 물어도 그렇게 될 수 있다.
++	 *
++	 * <p><b>왜 강제하지 않는가</b> — {@code tool_choice} 로 file_search 를 강제하면 근거 부착률은 오르지만
++	 * 단순 인사말에도 검색이 붙어 턴당 비용과 응답 지연이 는다. 프롬프트로 유도하되 강제하지 않는 쪽을
++	 * 골랐다. 편차가 남는 것은 아는 대가이며, 실 연동에서 부착률을 재 본 뒤 다시 판단한다.
++	 *
++	 * <p>env 로 빼지 않았다. 지금은 정책이 하나뿐이고, 값을 바꿔 가며 운영할 이유가 아직 없다.
++	 */
++	static final String RAG_INSTRUCTIONS = """
++			너는 사내 문서를 근거로 답하는 도우미다.
++
++			- 질문에 답하기 전에 file_search 로 사내 문서를 먼저 찾아본다. 사내 규정·절차·제도처럼 \
++			조직마다 다른 내용은 일반 지식으로 답하지 말고 반드시 검색 결과에 근거한다.
++			- 검색 결과에 근거가 있으면 그 내용만으로 답하고, 어느 문서에서 왔는지 알 수 있게 인용을 남긴다.
++			- 검색해도 근거를 찾지 못했으면 **찾지 못했다고 먼저 밝힌 뒤** 일반적인 설명을 덧붙인다. \
++			근거가 없는 내용을 사내 규정인 것처럼 말하지 않는다.
++			- 한국어로 답한다.
++			""";
++
+ 	public OpenAiRealService(
+ 			@Value("${app.openai.api-key:}") String apiKey,
+ 			@Value("${app.openai.model:gpt-4o}") String model,
+@@ -116,6 +141,8 @@ public class OpenAiRealService implements OpenAiService {
+ 					"vector_store_ids", List.of(storeId))));
+ 			// 스니펫 노출을 위해 검색 결과 본문까지 받음
+ 			body.put("include", List.of("file_search_call.results"));
++			// 검색 도구가 붙을 때만 지시를 싣는다 - 스토어가 없으면 근거를 찾으라는 말이 거짓이 된다
++			body.put("instructions", RAG_INSTRUCTIONS);
+ 		}
+ 
+ 		return client.post()
+diff --git a/backend/src/test/java/com/ragchatbot/openai/OpenAiRealInstructionsTest.java b/backend/src/test/java/com/ragchatbot/openai/OpenAiRealInstructionsTest.java
+new file mode 100644
+index 0000000..3dadcad
+--- /dev/null
++++ b/backend/src/test/java/com/ragchatbot/openai/OpenAiRealInstructionsTest.java
+@@ -0,0 +1,107 @@
++package com.ragchatbot.openai;
++
++import static org.assertj.core.api.Assertions.assertThat;
++
++import java.io.IOException;
++import java.net.InetSocketAddress;
++import java.nio.charset.StandardCharsets;
++import java.util.List;
++import java.util.concurrent.CopyOnWriteArrayList;
++
++import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.BeforeEach;
++import org.junit.jupiter.api.Test;
++
++import com.sun.net.httpserver.HttpServer;
++
++import com.ragchatbot.openai.OpenAiService.ChatInput;
++
++/**
++ * 검색 지시를 요청에 싣는지 검증함(#39).
++ *
++ * <p>{@code tool_choice} 를 주지 않으면 기본값이 {@code auto} 라 file_search 호출 여부가 모델 재량이다.
++ * 모델이 검색을 건너뛰면 annotation 이 0건이 되고 화면에는 「자료 없음」이 뜬다 — 스토어에 분명히 있는
++ * 내용을 물어도 그렇게 될 수 있다. 지시로 유도하되 강제하지 않는 쪽을 골랐으므로,
++ * <b>지시가 실제로 실려 나가는지</b>가 이 선택이 성립하는 최소 조건이다.
++ *
++ * <p>모델이 그 지시를 따르는지는 여기서 잴 수 없다. 실 연동에서 부착률로 확인할 몫이다.
++ * 여기서 잠그는 것은 <b>보내는 쪽</b>이다.
++ */
++class OpenAiRealInstructionsTest {
++
++	private HttpServer server;
++	private final List<String> bodies = new CopyOnWriteArrayList<>();
++	private String baseUrl;
++
++	@BeforeEach
++	void startServer() throws IOException {
++		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
++		server.createContext("/", exchange -> {
++			bodies.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
++			// 스트림을 파싱하기 전에 끊는다 - 이 테스트가 보는 것은 보낸 쪽이다
++			exchange.sendResponseHeaders(500, -1);
++			exchange.close();
++		});
++		server.start();
++		baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
++	}
++
++	@AfterEach
++	void stopServer() {
++		server.stop(0);
++	}
++
++	private void chat(String storeId) {
++		var service = new OpenAiRealService("test-key", "gpt-4o", storeId, baseUrl, null);
++		try {
++			service.streamChat(new ChatInput("연차는 언제 소멸하나요?", List.of(), null, List.of()),
++					token -> {
++					}, (stage, sources) -> {
++					});
++		} catch (RuntimeException expected) {
++			// 스텁이 500 을 돌려주므로 예외가 난다. 검증 대상은 그 전에 보낸 바디다
++		}
++	}
++
++	/** 스토어가 붙은 턴에는 지시가 실린다 */
++	@Test
++	void sends_rag_instructions_when_vector_store_is_attached() {
++		chat("shared-store");
++
++		assertThat(bodies).hasSize(1);
++		assertThat(bodies.get(0))
++				.withFailMessage("검색 도구는 붙었는데 instructions 가 없음 - 검색 호출이 모델 재량으로 남는다 (보낸 바디: %s)",
++						bodies.get(0))
++				.contains("\"instructions\"")
++				.contains("file_search");
++	}
++
++	/**
++	 * 스토어가 없으면 지시를 싣지 않는다.
++	 *
++	 * <p>검색 도구가 없는데 "사내 문서를 먼저 찾아본다" 고 지시하면 <b>모델에게 없는 도구를 쓰라고
++	 * 하는 셈</b>이라 답변이 어긋난다. 지시와 도구는 같이 붙거나 같이 빠져야 한다.
++	 */
++	@Test
++	void omits_instructions_when_no_vector_store() {
++		chat("");
++
++		assertThat(bodies).hasSize(1);
++		assertThat(bodies.get(0))
++				.doesNotContain("\"instructions\"")
++				.doesNotContain("file_search");
++	}
++
++	/**
++	 * 강제하지 않는다 — {@code tool_choice} 를 보내지 않는다.
++	 *
++	 * <p>이 선택은 비용·지연 때문이다(단순 인사말에도 검색이 붙는 것을 피한다). 나중에 강제로 바꾸려면
++	 * 이 케이스를 함께 고쳐야 하므로, <b>정책이 바뀌는 순간이 눈에 띈다.</b>
++	 */
++	@Test
++	void does_not_force_tool_choice() {
++		chat("shared-store");
++
++		assertThat(bodies.get(0)).doesNotContain("tool_choice");
++	}
++}
+diff --git a/docs/01_specs/live-integration.md b/docs/01_specs/live-integration.md
+index a5750ab..3f4f1f3 100644
+--- a/docs/01_specs/live-integration.md
++++ b/docs/01_specs/live-integration.md
+@@ -178,7 +178,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
+ | 전 답변에 「자료 없음」 | `OPENAI_VECTOR_STORE_ID` 가 비었는지 | 비면 `file_search` 툴이 아예 안 붙는다. 2-3 업로드가 400 으로 거부됐다면 이쪽이 확실하다 |
+ | 〃 | `vs_` ID 오타 | 업로드가 500 으로 실패한다. 서버 로그에 `openai … 400`·`404` 가 남는다 |
+ | 〃 | 인용 추출(가정 C) | 업로드는 `completed` 인데 출처만 0건이면 이쪽 |
+-| 〃 | 모델이 검색을 건너뜀 | 위 셋이 아니면 남는 것은 이것이다. 요청에 `tool_choice` 를 주지 않아 호출 여부가 모델 재량이다 |
++| 〃 | 모델이 검색을 건너뜀 | 위 셋이 아니면 남는 것은 이것이다. `instructions` 로 유도하되 `tool_choice` 로 강제하지는 않는다(아래 3-2) |
+ | 채팅이 `"응답 생성 중 오류"` 로 끝남 | 서버 로그 | OpenAI 응답 본문은 화면에 내려가지 않는다. 단서는 `openai responses api error <코드>: {...}` 한 줄뿐이다 |
+ | 업로드가 `"처리 중 오류가 발생했습니다 (오류 번호: …)"` | 서버 로그 | 같은 이유로 원인이 화면에 없다. 오류 번호로 로그를 찾는다 |
+ 
+@@ -189,6 +189,21 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
+ docker compose logs app | grep -iE "openai|vector|관리자"
+ ```
+ 
++### 3-2. 검색 호출 정책 — 유도하되 강제하지 않는다
++
++`tool_choice` 를 보내지 않는다. 기본값 `auto` 이므로 **file_search 호출 여부는 모델이 정한다.**
++대신 검색 도구가 붙는 턴에 `instructions` 로 「사내 규정·절차처럼 조직마다 다른 내용은 반드시 검색
++결과에 근거하고, 못 찾았으면 못 찾았다고 먼저 밝히라」고 지시한다(#39).
++
++강제하지 않는 이유는 비용과 지연이다 — `tool_choice` 로 file_search 를 강제하면 단순 인사말에도
++검색이 붙어 턴당 비용이 늘고 응답이 느려진다. **대가는 편차다.** 지시를 넣어도 모델이 검색을
++건너뛰는 턴이 남을 수 있고, 그때 화면은 「자료 없음」이 된다 — 3-1 표의 「모델이 검색을 건너뜀」 행이 이것이다.
++
++**실 연동에서 부착률을 재 본 뒤 다시 판단할 자리다.** 스토어에 확실히 있는 내용을 여러 번 물어
++인용이 붙는 비율을 보고, 낮으면 `tool_choice` 강제로 옮긴다. 지시가 실제로 실려 나가는지는
++`OpenAiRealInstructionsTest` 가 잠그고 있으므로, 부착률이 낮다면 원인은 보내는 쪽이 아니라 모델 쪽이다.
++
++
+ ## 4. 비용이 발생하는 지점
+ 
+ 투입 전에 알고 있어야 하는 과금 요소다. 수치는 2026-08 기준이며 변동한다.
+diff --git a/scripts/case-floors.env b/scripts/case-floors.env
+index 70d1743..4f3cb98 100644
+--- a/scripts/case-floors.env
++++ b/scripts/case-floors.env
+@@ -7,5 +7,5 @@
+ #   케이스가 준 것과 테스트를 지운 것은 숫자만으로 구분되지 않음
+ # - skip 케이스는 세지 않음
+ 
+-BACKEND_MIN=177
++BACKEND_MIN=180
+ FRONTEND_MIN=76
