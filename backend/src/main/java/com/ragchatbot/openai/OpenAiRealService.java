@@ -55,6 +55,31 @@ public class OpenAiRealService implements OpenAiService {
 	private final String model;
 	private final String sharedVectorStoreId;
 
+	/**
+	 * 검색 도구가 붙은 턴에 함께 보내는 지시(#39).
+	 *
+	 * <p><b>왜 필요한가</b> — {@code tool_choice} 를 주지 않으면 기본값이 {@code auto} 라 file_search 호출
+	 * 여부가 모델 재량이다. 모델이 "일반 지식으로 답할 수 있다" 고 판단해 검색을 건너뛰면 annotation 이
+	 * 0건이 되고, {@code noSource = citations.isEmpty()} 가 true 가 되어 화면에 「자료 없음」이 뜬다.
+	 * 스토어에 분명히 있는 내용을 물어도 그렇게 될 수 있다.
+	 *
+	 * <p><b>왜 강제하지 않는가</b> — {@code tool_choice} 로 file_search 를 강제하면 근거 부착률은 오르지만
+	 * 단순 인사말에도 검색이 붙어 턴당 비용과 응답 지연이 는다. 프롬프트로 유도하되 강제하지 않는 쪽을
+	 * 골랐다. 편차가 남는 것은 아는 대가이며, 실 연동에서 부착률을 재 본 뒤 다시 판단한다.
+	 *
+	 * <p>env 로 빼지 않았다. 지금은 정책이 하나뿐이고, 값을 바꿔 가며 운영할 이유가 아직 없다.
+	 */
+	static final String RAG_INSTRUCTIONS = """
+			너는 사내 문서를 근거로 답하는 도우미다.
+
+			- 질문에 답하기 전에 file_search 로 사내 문서를 먼저 찾아본다. 사내 규정·절차·제도처럼 \
+			조직마다 다른 내용은 일반 지식으로 답하지 말고 반드시 검색 결과에 근거한다.
+			- 검색 결과에 근거가 있으면 그 내용만으로 답하고, 어느 문서에서 왔는지 알 수 있게 인용을 남긴다.
+			- 검색해도 근거를 찾지 못했으면 **찾지 못했다고 먼저 밝힌 뒤** 일반적인 설명을 덧붙인다. \
+			근거가 없는 내용을 사내 규정인 것처럼 말하지 않는다.
+			- 한국어로 답한다.
+			""";
+
 	public OpenAiRealService(
 			@Value("${app.openai.api-key:}") String apiKey,
 			@Value("${app.openai.model:gpt-4o}") String model,
@@ -116,6 +141,8 @@ public class OpenAiRealService implements OpenAiService {
 					"vector_store_ids", List.of(storeId))));
 			// 스니펫 노출을 위해 검색 결과 본문까지 받음
 			body.put("include", List.of("file_search_call.results"));
+			// 검색 도구가 붙을 때만 지시를 싣는다 - 스토어가 없으면 근거를 찾으라는 말이 거짓이 된다
+			body.put("instructions", RAG_INSTRUCTIONS);
 		}
 
 		return client.post()
