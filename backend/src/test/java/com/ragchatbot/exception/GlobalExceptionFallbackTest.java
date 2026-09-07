@@ -203,4 +203,59 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 		assertThat(res.getBody()).doesNotContain("JsonParseException");
 		assertThat(res.getBody()).doesNotContain("com.ragchatbot");
 	}
+
+	/**
+	 * TC-OPS-019 : 없는 URL 은 404 다.
+	 *
+	 * <p>라우팅 단계에서 새는 예외 셋 중 첫째다. 전용 핸들러가 없으면 폴백이 받아 500 이 되고,
+	 * 오타 난 URL 을 친 쪽은 자기 잘못이라는 사실조차 알 수 없다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void unknown_url_is_not_found() {
+		String token = createUser("boom-nourl@b.com");
+		var res = get(token, "/api/nope");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(res.getBody()).containsKeys("code", "message");
+		assertThat(res.getBody().get("code")).isEqualTo("NOT_FOUND");
+	}
+
+	/**
+	 * TC-OPS-020 : 미지원 메서드는 405 이고 Allow 헤더를 단다.
+	 *
+	 * <p>/api/conversations 는 POST·GET 만 있다. RFC 9110 §15.5.6 이 405 응답에 Allow 를 MUST 로
+	 * 요구하므로 상태 코드와 헤더를 함께 잠근다 - 헤더가 없으면 보낸 쪽은 무엇으로 다시 쳐야 하는지 모른다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void unsupported_method_is_method_not_allowed() {
+		String token = createUser("boom-method@b.com");
+		var res = rest.exchange("/api/conversations", HttpMethod.DELETE,
+				new HttpEntity<>(bearer(token)), Map.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+		assertThat(res.getBody().get("code")).isEqualTo("METHOD_NOT_ALLOWED");
+		// POST 하나만 보면 GET 이 빠져도 통과한다 - 라우트가 받는 메서드를 전부 단언한다
+		assertThat(res.getHeaders().getFirst("Allow")).contains("POST", "GET");
+	}
+
+	/**
+	 * TC-OPS-021 : 미지원 미디어 타입은 415 다.
+	 *
+	 * <p>본문을 읽을 수 없는 것(400·TC-OPS-014)과 다른 사건이다. 이쪽은 본문에 닿기 전, 협상 단계에서
+	 * 거절된다. 같은 400 으로 뭉뚱그리면 보낸 쪽은 JSON 문법을 고쳐야 하는지 헤더를 고쳐야 하는지 모른다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void unsupported_media_type_is_rejected() {
+		String token = createUser("boom-media@b.com");
+		HttpHeaders headers = bearer(token);
+		headers.setContentType(MediaType.TEXT_PLAIN);
+		var res = rest.exchange("/api/chat", HttpMethod.POST,
+				new HttpEntity<>("그냥 평문", headers), Map.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+		assertThat(res.getBody().get("code")).isEqualTo("UNSUPPORTED_MEDIA_TYPE");
+	}
 }
