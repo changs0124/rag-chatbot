@@ -1,0 +1,54 @@
+# after — 변경 후. 문서 문장별 코드 재대조
+
+규칙: 단정문·전수 주장에는 전수 근거를 붙인다. 전수를 주장하는 자리에 예시를 붙이지 않는다.
+      줄 번호와 회차 번호는 싣지 않는다.
+
+================================================================
+문서> | 201 | 생성 성공 | 문서 업로드. 대화 생성·첨부 업로드는 **200** 이다 |
+검증> @ResponseStatus 전수 = 1건. 그것이 문서 업로드다:
+      backend/src/main/java/com/ragchatbot/controller/AdminController.java:54:	@ResponseStatus(HttpStatus.CREATED)
+검증> 대화 생성·첨부 업로드에는 @ResponseStatus 도 ResponseEntity 도 없다 -> 200:
+      36:	public ConversationResponse create(@RequestBody(required = false) CreateConversationRequest req) {
+      34:	public AttachmentResponse upload(@RequestParam("file") MultipartFile file) {
+
+================================================================
+문서> | `INTERNAL_ERROR` | 500 | OpenAI 장애. 업스트림 실패에도 상관 ID 로 로그를 추적한다 |
+문서> | 3단계(Files 업로드) 실패 | 아무것도 안 남는다. `500` |
+검증> 코드 전체에 502 · BAD_GATEWAY = 0건
+검증> OpenAI 실패 예외:
+      IllegalStateException 7 건
+검증> 그 예외를 받는 핸들러와 상태:
+      89:	@ExceptionHandler(Exception.class)
+검증> 문서가 새로 주장하는 '상관 ID 로 로그 추적' 이 실재하는가:
+      28: * 를 못 찾아 "요청 실패 (500)" 만 띄웠음. 서버 로그에도 어느 요청이었는지 상관 지을 기록이 없었음.
+      83:	 * 사용자에게 주는 것은 상관 ID 하나이고, 그 값으로 로그를 찾음 - 관측 도구를 붙이지 않고
+      92:		String traceId = UUID.randomUUID().toString().substring(0, 8);
+
+================================================================
+문서> | 5단계(DB 기록) 실패 | ... 지금은 보상 처리가 없어 OpenAI 쪽 파일이 고아로 남는다 —
+문서>   `OrphanCleanupScheduler` 는 로컬 첨부만 회수하므로 이 경로를 덮지 않는다 |
+검증> upload() 의 insert 는 try/catch 로 감싸여 있지 않다:
+      115:		documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
+검증> 고아 회수 장치가 따로 있어 '남는다' 가 과장인지 확인 -> 회수 대상이 다르다:
+      OrphanCleanupScheduler 는 fileService.cleanupOrphans() 로 로컬 첨부만 회수한다.
+      RagDocument · openai · vectorStore 참조 0건 = 이 경로를 덮지 않는다.
+      backend/src/main/java/com/ragchatbot/service/OrphanCleanupScheduler.java
+      19:public class OrphanCleanupScheduler {
+
+================================================================
+문서> **성공 상태는 컨트롤러가 정한다** — 문서 업로드가 @ResponseStatus(CREATED), 삭제 3곳이
+문서> ResponseEntity.noContent(), 파일 서빙이 ResponseEntity<Resource> 로 Content-Type 을 직접 싣는다.
+검증> 세 범주 전수:
+      backend/src/main/java/com/ragchatbot/controller/AdminController.java:54:	@ResponseStatus(HttpStatus.CREATED)
+      backend/src/main/java/com/ragchatbot/controller/AdminController.java:65:		return ResponseEntity.noContent().build();
+      backend/src/main/java/com/ragchatbot/controller/ConversationController.java:59:		return ResponseEntity.noContent().build();
+      backend/src/main/java/com/ragchatbot/controller/FileController.java:42:		return ResponseEntity.noContent().build();
+      backend/src/main/java/com/ragchatbot/controller/FileController.java:50:	public ResponseEntity<Resource> serve(@PathVariable UUID id,
+
+================================================================
+## 잔존 확인
+  502 = 0건 · '연결 해제를 시도' = 0건
+
+## check-doc-refs
+  참조 수집 182건 · 실재 검사 180건
+  문서 참조 검사 통과

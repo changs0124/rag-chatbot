@@ -1,0 +1,39 @@
+# before — 변경 전
+
+## 대상 5지점의 원문
+
+[1] api.md — 201 대상
+    84:| 201 | 생성 성공 | 대화 생성 · 첨부 업로드 · 문서 업로드 |
+[2] api.md — 502
+    300:| `INTERNAL_ERROR` | 502 | OpenAI 장애. 업스트림 실패를 500으로 뭉개지 않는다 |
+[3] features.md — 3단계 실패 502
+    280:| 3단계(Files 업로드) 실패 | 아무것도 안 남는다. `502` |
+[4] features.md — 없는 보상 로직
+    282:| 5단계(DB 기록) 실패 | 스토어에는 들어갔는데 기록이 없는 상태로 **가장 나쁘다**. 연결 해제를 시도하고 실패 시 경고 로그에 `file_id` 를 남긴다 |
+[5] backend.md — 컨트롤러 상태코드
+    - **컨트롤러는 얇게.** `@Valid` 검증 → 서비스 호출 → DTO 반환. 사용자 식별은 `CurrentUser.id()`.
+    - **상태 코드를 컨트롤러가 만들지 않는다.** 서비스가 도메인 예외를 던지고 `GlobalExceptionHandler` 가 단독으로 매핑한다.
+      삭제류만 `ResponseEntity.noContent()` 를 직접 쓴다.
+    CONVENTIONS.md 사본:
+    31:- 삭제류는 `ResponseEntity<Void>` + `noContent()`, 그 외는 DTO를 그대로 반환한다.
+
+## 반증 — 코드가 실제로 무엇을 하는가
+
+@ResponseStatus 전수 (201 은 여기 하나뿐):
+    backend/src/main/java/com/ragchatbot/controller/AdminController.java:54:	@ResponseStatus(HttpStatus.CREATED)
+  → ConversationController.create() · FileController.upload() 에는 없다 = 200
+
+502 · BAD_GATEWAY 가 코드에 있는가:
+  → OpenAI 실패는 IllegalStateException 이고, @ExceptionHandler(Exception.class) 가 500 으로 받는다
+
+upload() 가 insert 를 try/catch 하는가:
+    115:		documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
+    → try/catch 없음. 보상(연결 해제) 코드가 존재하지 않는다
+
+컨트롤러가 상태 코드를 만드는가:
+    backend/src/main/java/com/ragchatbot/controller/AdminController.java:54:	@ResponseStatus(HttpStatus.CREATED)
+    backend/src/main/java/com/ragchatbot/controller/AdminController.java:65:		return ResponseEntity.noContent().build();
+    backend/src/main/java/com/ragchatbot/controller/ConversationController.java:59:		return ResponseEntity.noContent().build();
+    backend/src/main/java/com/ragchatbot/controller/FileController.java:42:		return ResponseEntity.noContent().build();
+    backend/src/main/java/com/ragchatbot/controller/FileController.java:50:	public ResponseEntity<Resource> serve(@PathVariable UUID id,
+    → 생성 201 · 삭제 204 · 파일 서빙 ResponseEntity<Resource> 를 컨트롤러가 직접 정한다
