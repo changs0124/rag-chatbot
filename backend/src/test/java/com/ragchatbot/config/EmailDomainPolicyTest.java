@@ -8,15 +8,15 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * 가입 도메인 화이트리스트 판정 (FEAT-AUTH-001 · TC-AUTH-003~007 · 009 · 010).
+ * 계정 도메인 화이트리스트 판정 (FEAT-AUTH-001 · TC-AUTH-003~007 · 009 · 010).
  *
  * <p>DB 를 띄우지 않고 확인할 수 있는 부분이라 단위 테스트로 분리했다.
  * HTTP 계약(상태 코드·검사 순서)은 {@code AuthDomainAllowlistTest} 가 본다.
  */
-class SignupPolicyTest {
+class EmailDomainPolicyTest {
 
-	private static SignupPolicy policy(String mode, String domains, String admins) {
-		return new SignupPolicy(mode, domains, admins);
+	private static EmailDomainPolicy policy(String mode, String domains, String admins) {
+		return new EmailDomainPolicy(mode, domains, admins);
 	}
 
 	@Test
@@ -48,7 +48,7 @@ class SignupPolicyTest {
 	/** TC-AUTH-006 : 여러 도메인 */
 	@Test
 	void multiple_domains_are_allowed() {
-		SignupPolicy p = policy("mock", "company.com,partner.co.kr", "");
+		EmailDomainPolicy p = policy("mock", "company.com,partner.co.kr", "");
 		assertThat(p.isAllowed("a@company.com")).isTrue();
 		assertThat(p.isAllowed("b@partner.co.kr")).isTrue();
 		assertThat(p.isAllowed("c@other.com")).isFalse();
@@ -57,7 +57,7 @@ class SignupPolicyTest {
 	/** TC-AUTH-007 : 관리자 명단은 도메인 검사를 면제받는다 - 없으면 부트스트랩이 막힌다 */
 	@Test
 	void admin_list_bypasses_domain_check() {
-		SignupPolicy p = policy("mock", "company.com", "ops@outside.dev");
+		EmailDomainPolicy p = policy("mock", "company.com", "ops@outside.dev");
 		assertThat(p.isAllowed("ops@outside.dev")).isTrue();
 		assertThat(p.isAllowed("other@outside.dev")).isFalse();
 	}
@@ -88,7 +88,7 @@ class SignupPolicyTest {
 	/** 표기 흔들림 흡수 - 공백·대문자·`@` 접두·중복 */
 	@Test
 	void domain_list_is_normalized() {
-		assertThat(SignupPolicy.parseDomains(" @Company.COM , company.com ,, partner.co.kr "))
+		assertThat(EmailDomainPolicy.parseDomains(" @Company.COM , company.com ,, partner.co.kr "))
 				.isEqualTo(List.of("company.com", "partner.co.kr"));
 	}
 

@@ -35,8 +35,8 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	private UserRepository userRepository;
 
 	/** 가입 후 그 계정을 관리자로 올리고 토큰을 돌려줌 */
-	private String signupAdmin(String email) {
-		String token = signup(email);
+	private String createAdminUser(String email) {
+		String token = createUser(email);
 		userRepository.promoteAdmins(List.of(email));
 		return token;
 	}
@@ -79,7 +79,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	void admin_uploads_pdf_and_sees_it_in_list() {
-		String token = signupAdmin("doc-upload@b.com");
+		String token = createAdminUser("doc-upload@b.com");
 
 		var created = upload(token, "취업규칙.pdf", pdf(), "application/pdf");
 		assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -110,7 +110,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void list_row_carries_every_contract_field_from_its_own_source() {
 		String email = "doc-contract@b.com";
-		String token = signupAdmin(email);
+		String token = createAdminUser(email);
 		byte[] content = pdf();
 		var created = upload(token, "계약고정.pdf", content, "application/pdf");
 		String id = (String) created.getBody().get("id");
@@ -143,7 +143,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void image_is_rejected_as_document() {
-		String token = signupAdmin("doc-image@b.com");
+		String token = createAdminUser("doc-image@b.com");
 
 		var res = upload(token, "photo.png", new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }, "image/png");
 
@@ -153,7 +153,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	/** TC-ADMIN-013 : 확장자만 PDF인 파일은 400 (매직바이트 검사) */
 	@Test
 	void fake_pdf_is_rejected() {
-		String token = signupAdmin("doc-fake@b.com");
+		String token = createAdminUser("doc-fake@b.com");
 
 		var res = upload(token, "fake.pdf", "이건 PDF가 아님".getBytes(StandardCharsets.UTF_8),
 				"application/pdf");
@@ -164,7 +164,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	/** 매직바이트가 없는 형식(txt·md)은 검사하지 않으므로 통과해야 한다 - 검사하는 척하지 않음 */
 	@Test
 	void text_document_without_magic_bytes_is_accepted() {
-		String token = signupAdmin("doc-text@b.com");
+		String token = createAdminUser("doc-text@b.com");
 
 		var res = upload(token, "FAQ.md", "# 자주 묻는 질문".getBytes(StandardCharsets.UTF_8), "text/markdown");
 
@@ -175,7 +175,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	void list_is_newest_first() {
-		String token = signupAdmin("doc-order@b.com");
+		String token = createAdminUser("doc-order@b.com");
 		upload(token, "먼저.pdf", pdf(), "application/pdf");
 		upload(token, "나중.pdf", pdf(), "application/pdf");
 
@@ -188,7 +188,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	void deleted_document_disappears_from_list() {
-		String token = signupAdmin("doc-delete@b.com");
+		String token = createAdminUser("doc-delete@b.com");
 		var created = upload(token, "지울문서.pdf", pdf(), "application/pdf");
 		String id = (String) created.getBody().get("id");
 
@@ -208,7 +208,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void delete_is_soft_and_keeps_the_row() {
-		String token = signupAdmin("doc-soft@b.com");
+		String token = createAdminUser("doc-soft@b.com");
 		var created = upload(token, "감사대상.pdf", pdf(), "application/pdf");
 		String id = (String) created.getBody().get("id");
 
@@ -224,7 +224,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	/** 이미 지운 문서를 또 지우면 404 */
 	@Test
 	void deleting_twice_is_not_found() {
-		String token = signupAdmin("doc-twice@b.com");
+		String token = createAdminUser("doc-twice@b.com");
 		var created = upload(token, "두번.pdf", pdf(), "application/pdf");
 		String id = (String) created.getBody().get("id");
 		rest.exchange("/api/admin/documents/" + id, HttpMethod.DELETE,
@@ -239,7 +239,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	/** TC-ADMIN-018 : 일반 사용자는 목록을 못 본다 — 403 이 아니라 404 */
 	@Test
 	void plain_user_gets_not_found_on_list() {
-		String token = signup("doc-plain@b.com");
+		String token = createUser("doc-plain@b.com");
 
 		// 오류 본문은 ApiError 객체라 List 로 못 받음 - 상태 코드만 보면 되므로 String 으로 받는다
 		var res = rest.exchange("/api/admin/documents", HttpMethod.GET,
@@ -251,10 +251,10 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	/** TC-ADMIN-019 : 일반 사용자는 문서를 못 지운다 */
 	@Test
 	void plain_user_cannot_delete() {
-		String adminToken = signupAdmin("doc-owner@b.com");
+		String adminToken = createAdminUser("doc-owner@b.com");
 		var created = upload(adminToken, "보호대상.pdf", pdf(), "application/pdf");
 		String id = (String) created.getBody().get("id");
-		String plainToken = signup("doc-intruder@b.com");
+		String plainToken = createUser("doc-intruder@b.com");
 
 		var res = rest.exchange("/api/admin/documents/" + id, HttpMethod.DELETE,
 				new HttpEntity<>(bearer(plainToken)), Void.class);
@@ -282,7 +282,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void deleting_uploader_is_blocked_by_reference() {
-		String token = signupAdmin("doc-uploader@b.com");
+		String token = createAdminUser("doc-uploader@b.com");
 		upload(token, "이력보존.pdf", pdf(), "application/pdf");
 		UUID uploaderId = jdbc.queryForObject("select id from users where email = ?", UUID.class,
 				"doc-uploader@b.com");
@@ -295,7 +295,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	/** TC-ADMIN-021 : 목업 모드에서 파일 ID 가 mock- 으로 시작해 실 데이터와 섞이지 않는다 */
 	@Test
 	void mock_mode_marks_file_ids() {
-		String token = signupAdmin("doc-mock@b.com");
+		String token = createAdminUser("doc-mock@b.com");
 		var created = upload(token, "목업.pdf", pdf(), "application/pdf");
 		String id = (String) created.getBody().get("id");
 

@@ -27,8 +27,8 @@ class ConversationCrossAccessTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void owner_can_access_stranger_gets_404() {
-		String tokenA = signup("owner@b.com");
-		String tokenB = signup("stranger@b.com");
+		String tokenA = createUser("owner@b.com");
+		String tokenB = createUser("stranger@b.com");
 		String convId = createConversation(tokenA);
 
 		// A - 메시지 조회 200
@@ -54,7 +54,7 @@ class ConversationCrossAccessTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void owner_can_delete_own() {
-		String tokenA = signup("del@b.com");
+		String tokenA = createUser("del@b.com");
 		String convId = createConversation(tokenA);
 		var del = rest.exchange("/api/conversations/" + convId, HttpMethod.DELETE,
 				new HttpEntity<>(bearer(tokenA)), Void.class);
@@ -68,7 +68,7 @@ class ConversationCrossAccessTest extends AbstractPgIntegrationTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	void owner_can_rename() {
-		String token = signup("rename@b.com");
+		String token = createUser("rename@b.com");
 		String convId = createConversation(token);
 		var res = rest.exchange("/api/conversations/" + convId, HttpMethod.PATCH,
 				new HttpEntity<>(Map.of("title", "바뀐 제목"), bearer(token)), Map.class);
@@ -78,8 +78,8 @@ class ConversationCrossAccessTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void stranger_cannot_rename_404() {
-		String owner = signup("rn-owner@b.com");
-		String stranger = signup("rn-stranger@b.com");
+		String owner = createUser("rn-owner@b.com");
+		String stranger = createUser("rn-stranger@b.com");
 		String convId = createConversation(owner);
 		var res = rest.exchange("/api/conversations/" + convId, HttpMethod.PATCH,
 				new HttpEntity<>(Map.of("title", "침입"), bearer(stranger)), Map.class);

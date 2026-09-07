@@ -24,7 +24,7 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	void update_name_is_reflected() {
-		String token = signup("prof-name@b.com");
+		String token = createUser("prof-name@b.com");
 		var res = patch(token, "/api/profile/name", Map.of("name", "새이름"), Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(res.getBody().get("name")).isEqualTo("새이름");
@@ -36,9 +36,10 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("rawtypes")
 	@Test
 	void update_password_changes_login() {
-		String token = signup("prof-pw@b.com");
+		String temporary = issueAccount("prof-pw@b.com");
+		String token = login("prof-pw@b.com", temporary);
 		var changed = patch(token, "/api/profile/password",
-				Map.of("currentPassword", "password123", "newPassword", "newpassword1"), Map.class);
+				Map.of("currentPassword", temporary, "newPassword", "newpassword1"), Map.class);
 		assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		var newLogin = rest.postForEntity("/api/auth/login",
@@ -46,7 +47,7 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 		assertThat(newLogin.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		var oldLogin = rest.postForEntity("/api/auth/login",
-				Map.of("email", "prof-pw@b.com", "password", "password123"), Map.class);
+				Map.of("email", "prof-pw@b.com", "password", temporary), Map.class);
 		assertThat(oldLogin.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 	}
 
@@ -59,9 +60,10 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("rawtypes")
 	@Test
 	void update_password_returns_usable_token() {
-		String oldToken = signup("prof-pw3@b.com");
+		String temporary = issueAccount("prof-pw3@b.com");
+		String oldToken = login("prof-pw3@b.com", temporary);
 		var changed = patch(oldToken, "/api/profile/password",
-				Map.of("currentPassword", "password123", "newPassword", "newpassword1"), Map.class);
+				Map.of("currentPassword", temporary, "newPassword", "newpassword1"), Map.class);
 		assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		// 같은 초에 발급되면 클레임이 모두 같아 문자열까지 동일할 수 있음 - "다른 값"이 아니라
@@ -76,7 +78,7 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void update_password_wrong_current_401() {
-		String token = signup("prof-pw2@b.com");
+		String token = createUser("prof-pw2@b.com");
 		var res = patch(token, "/api/profile/password",
 				Map.of("currentPassword", "wrongpassword", "newPassword", "newpassword1"), Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
@@ -85,7 +87,7 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	void update_theme_valid_and_invalid() {
-		String token = signup("prof-theme@b.com");
+		String token = createUser("prof-theme@b.com");
 		var ok = patch(token, "/api/profile/theme", Map.of("theme", "dark"), Map.class);
 		assertThat(ok.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(ok.getBody().get("theme")).isEqualTo("dark");

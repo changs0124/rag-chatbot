@@ -18,7 +18,7 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  * 같은 구문을 검증한다. 러너가 그 구문을 부른다는 사실은 명단이 주입된 이 컨텍스트에서
  * 가입 계정의 역할로 함께 드러난다.
  */
-@TestPropertySource(properties = "app.admin.emails=boot-admin@b.com")
+@TestPropertySource(properties = "app.admin.emails=root@rag.test,boot-admin@b.com")
 class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 
 	@Autowired
@@ -31,7 +31,7 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 	/** TC-ADMIN-001 : 명단에 있는 계정이 admin 으로 승격된다 */
 	@Test
 	void listed_account_is_promoted() {
-		signup("promote-me@b.com");
+		createUser("promote-me@b.com");
 		assertThat(roleOf("promote-me@b.com")).isEqualTo("user");
 
 		userRepository.promoteAdmins(List.of("promote-me@b.com"));
@@ -47,7 +47,7 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void unlisted_account_is_demoted() {
-		signup("demote-me@b.com");
+		createUser("demote-me@b.com");
 		userRepository.promoteAdmins(List.of("demote-me@b.com"));
 		assertThat(roleOf("demote-me@b.com")).isEqualTo("admin");
 
@@ -59,7 +59,7 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 	/** TC-ADMIN-003 : 대소문자가 달라도 승격된다 - 비교가 lower(email) 기준 */
 	@Test
 	void listed_account_matches_case_insensitively() {
-		signup("mixed-case@b.com");
+		createUser("mixed-case@b.com");
 
 		userRepository.promoteAdmins(AdminRoleSynchronizer.parse("Mixed-Case@B.COM"));
 
@@ -69,7 +69,7 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 	/** 명단을 통째로 비우면 전원이 user 로 내려온다 - "관리자를 없앤다"가 성립해야 함 */
 	@Test
 	void empty_list_demotes_everyone() {
-		signup("wipe-me@b.com");
+		createUser("wipe-me@b.com");
 		userRepository.promoteAdmins(List.of("wipe-me@b.com"));
 		assertThat(roleOf("wipe-me@b.com")).isEqualTo("admin");
 
@@ -79,28 +79,25 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * TC-ADMIN-004 : 명단에 있으나 아직 가입하지 않은 계정은, 가입 시점에 관리자가 된다.
+	 * TC-ADMIN-004 : 명단에 있는 주소는 기동 러너가 <b>계정째로</b> 만들고 관리자로 둔다.
 	 *
-	 * <p>기동 동기화는 이미 가입한 계정만 손대므로 이 경로가 없으면 명단에 미리 넣어 둔 사람이
-	 * 가입해도 일반 사용자가 되고, 재기동해야만 관리자가 된다.
+	 * <p>회원가입이 있던 시절에는 이 자리가 「명단에 있는 사람이 가입하면 관리자가 된다」였다.
+	 * 가입이 사라지면 계정을 만드는 것은 관리자뿐인데, 그 첫 관리자가 없으면 아무도 아무것도 만들 수
+	 * 없다. 그래서 러너가 만든다 - 이 케이스가 그 고리를 지킨다.
 	 */
-	@SuppressWarnings("rawtypes")
 	@Test
-	void listed_but_unregistered_becomes_admin_on_signup() {
-		// 이 클래스의 명단(app.admin.emails)에 있는 주소로 지금 가입한다
-		var res = rest.postForEntity("/api/auth/signup",
-				java.util.Map.of("email", "boot-admin@b.com", "password", "password123", "name", "운영"),
-				java.util.Map.class);
-
-		assertThat(res.getStatusCode().is2xxSuccessful()).isTrue();
+	void listed_but_missing_account_is_created_as_admin() {
+		// 이 클래스의 명단(app.admin.emails)에 있는 주소. 기동 시 러너가 이미 만들어 뒀어야 한다
 		assertThat(roleOf("boot-admin@b.com")).isEqualTo("admin");
+		assertThat(jdbc.queryForObject("select password_hash from users where email = ?", String.class,
+				"boot-admin@b.com")).startsWith("$2");
 	}
 
-	/** 가입 응답과 /api/auth/me 가 role 을 실어야 프론트가 관리 메뉴 노출을 판단할 수 있다 */
+	/** 계정 발급으로 태어난 사용자도 /api/auth/me 가 role 을 실어야 프론트가 관리 메뉴 노출을 판단할 수 있다 */
 	@SuppressWarnings("unchecked")
 	@Test
 	void me_response_carries_role() {
-		String token = signup("role-visible@b.com");
+		String token = createUser("role-visible@b.com");
 
 		var me = rest.exchange("/api/auth/me", org.springframework.http.HttpMethod.GET,
 				new org.springframework.http.HttpEntity<>(bearer(token)), java.util.Map.class);

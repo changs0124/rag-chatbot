@@ -63,7 +63,7 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void mock_emits_exact_stage_list_in_order_for_known_topic() {
-		String body = chat(signup("stage-known@b.com"), "환불 정책 알려줘");
+		String body = chat(createUser("stage-known@b.com"), "환불 정책 알려줘");
 		// 정확 목록 비교 - 부분집합이 아니라 3종이 순서까지 일치해야 함(기준 낮춤 금지)
 		assertThat(stageKeys(body)).containsExactly("analyzing", "searching", "generating");
 	}
@@ -71,14 +71,14 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 	@Test
 	void mock_emits_same_stage_list_when_no_source() {
 		// 무자료 분기도 동일한 3종 - 목업·라이브가 분기에 따라 어긋나지 않게 함(P-8)
-		String body = chat(signup("stage-nosource@b.com"), "우주의 크기는 얼마나 되나");
+		String body = chat(createUser("stage-nosource@b.com"), "우주의 크기는 얼마나 되나");
 		assertThat(body).contains("\"noSource\":true");
 		assertThat(stageKeys(body)).containsExactly("analyzing", "searching", "generating");
 	}
 
 	@Test
 	void mock_uses_mock_only_labels() {
-		String body = chat(signup("stage-label@b.com"), "가격 문의");
+		String body = chat(createUser("stage-label@b.com"), "가격 문의");
 		assertThat(body).contains("질문 분석 중(목업)").contains("목업 코퍼스 조회 중").contains("답변 작성 중(목업)");
 		assertThat(body).doesNotContain(LIVE_SEARCH_LABEL); // AC-24 : 라이브 라벨 재사용 금지
 	}
@@ -89,21 +89,21 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void mock_search_label_names_the_sources_it_used() {
-		String body = chat(signup("stage-sources@b.com"), "환불 규정");
+		String body = chat(createUser("stage-sources@b.com"), "환불 규정");
 		assertThat(body).contains("목업 코퍼스 조회 중 - 이용 정책 문서 · FAQ 문서");
 	}
 
 	/** 무자료 분기에는 붙일 자료명이 없음 - 참조한 적 없는 이름을 지어내지 않음(P-10) */
 	@Test
 	void mock_search_label_has_no_source_names_when_nothing_matched() {
-		String body = chat(signup("stage-nosources@b.com"), "우주의 크기는 얼마나 되나");
+		String body = chat(createUser("stage-nosources@b.com"), "우주의 크기는 얼마나 되나");
 		assertThat(body).contains("목업 코퍼스 조회 중");
 		assertThat(body).doesNotContain("이용 정책 문서");
 	}
 
 	@Test
 	void no_stage_event_after_first_token() {
-		List<String> names = eventNames(chat(signup("stage-after@b.com"), "배송 정책"));
+		List<String> names = eventNames(chat(createUser("stage-after@b.com"), "배송 정책"));
 		int firstToken = names.indexOf("token");
 		assertThat(firstToken).as("token 이벤트가 있어야 함").isGreaterThanOrEqualTo(0);
 		assertThat(names.subList(firstToken, names.size())).doesNotContain("stage");
