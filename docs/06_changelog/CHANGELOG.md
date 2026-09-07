@@ -5,6 +5,34 @@
 ## [Unreleased]
 
 ### Changed
+- **`RagDocumentSummary` 를 없애고 문서 목록 조회를 Response DTO 로 직접 매핑(#21).** 이 타입은 자기
+  Javadoc 이 "목록 화면용 투영" 이라 적고 있었고 소프트 삭제도 식별자 생명주기도 없어 엔티티가 아니었다.
+  자리만 옮기려다 **`AdminDtos.DocumentResponse` 와 필드가 완전히 같다**는 것을 발견했고, `toResponse()`
+  는 그 여섯 개를 그대로 옮겨 담기만 했다.
+
+  **기각한 대안** : 같은 모양의 타입을 `dto/` 로 옮겨 둘 다 두는 것. 변환이 필드 복사뿐이라 실수할
+  자리만 남는다. MyBatis 는 JPA 와 달리 `resultMap` 에 임의 타입을 지정할 수 있어 조회에서 엔티티를
+  건너뛸 수 있으므로, 중간 타입 없이 `resultMap type` 만 바꿨다(중첩 record 라 바이너리명 `$` 표기).
+
+  **이것이 `repository` 가 `dto` 를 import 하는 저장소 최초 사례**다. 대가로 SQL 이 응답 스펙에
+  직결되므로 `backend.md` 「레이어」에 예외와 그 대가를 함께 못 박았다. 근거를 남기지 않으면 다음 사람이
+  "계층 위반" 으로 읽고 되돌린다. 응답 스펙은 바뀌지 않았다 — 컨트롤러가 직렬화하는 클래스가 이전에도
+  `DocumentResponse` 였으므로 바뀐 것은 그 객체를 누가 생성하는가뿐이다.
+- **백엔드 패키지 이름을 계층형 표준 어휘로 통일(#19, 71파일).** `web/` → `controller/` ·
+  `web/dto/` → `dto/` · `mapper/` → `repository/`(인터페이스 6개 클래스명 포함) · `domain/` → `entity/` ·
+  `error/` → `exception/`. `mapper` 는 MyBatis·SI 관행 어휘인데 `dto` 와 섞여 있었고 `web`·`domain`·`error`
+  는 어느 세트에도 속하지 않았다. `service`·`config`·`security`·`storage`·`openai` 는 이름을 바꾸지 않았다.
+
+  **MyBatis 는 패키지 경로를 문자열로 들고 있어 컴파일러가 못 잡는 자리가 다섯 곳**이라 전부 실물과
+  1:1 로 대조했다 — XML 의 `namespace`(인터페이스 FQCN) · `resultMap type` · `parameterType`(엔티티·DTO
+  FQCN), `application.yml` 의 `type-aliases-package` · `type-handlers-package`(패키지 경로).
+  `namespace` 가 어긋나면 컴파일은 통과하고 런타임에 `BindingException: Invalid bound statement` 로
+  터진다. `mapper-locations` 가 가리키는
+  `resources/mapper/` **폴더명은 표준 구조상 유지**하고 파일명만 `*Repository.xml` 로 맞췄다.
+
+  동작 변경은 없다. 트리 델타는 295 insertions / 295 deletions 이지만, 대칭은 순수 리네이밍의
+  필요조건일 뿐이라 그것만으로는 근거가 되지 않는다. 실제로 대조한 것은 **변경된 295 라인이 전부
+  옛 이름 → 새 이름 치환(그에 딸린 들여쓰기 조정 포함)**이라는 사실이다.
 - **`project-docs` 스캐폴딩을 도로 세움 — 같은 날 걷어낸 것을 되돌림.** 아래 항목에서 `FEEDBACK.md` 와
   빈 폴더 다섯을 제거했는데, 같은 날 되돌렸다. 왔다 갔다 한 자리이므로 판단이 어디서 갈렸는지 적어 둔다
   - **걷어낸 근거** : 비어 있는 폴더가 INDEX 에 링크로 보이면 있는 줄 알고 찾게 된다
