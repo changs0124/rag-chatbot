@@ -1,32 +1,31 @@
-# after — 3차 (비판 검토 3회 반영본)
+# after — 4차 최종 (비판 검토 4회 반영)
 
-세 번 틀린 원인이 전부 같다: 검증한 명제보다 강한 명제를 문서에 적었다.
-이번에는 문서 문장을 그대로 붙이고 바로 아래에 검증을 단다. 두 줄을 나란히 볼 수 있어야 한다.
+문서에 남은 문장을 문자 그대로 인용하고, 바로 아래에 전수 검증을 단다.
+'예:' 를 쓰지 않는다 — 전수를 주장하는 자리에 예시를 붙이면 그 자리가 다음 반례가 된다.
 
 ================================================================
 문서> - **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 6 · `<update>` 10
 문서>   · `<delete>` 3. 소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다.
-검증> XML statement 개수 = insert 6 · update 10 · delete 3
-검증> softDelete 는 <update> 태그다 (세는 기준을 문장에 명시한 이유)
-      67:	<update id="softDelete">
-검증> XML 전체에서 com.ragchatbot.dto 등장 = 1건이고 그것을 쓰는 것은 select 뿐
+검증> XML statement 전수 = insert 6 · update 10 · delete 3
+검증> 67:	<update id="softDelete">
+검증> XML 전체에서 com.ragchatbot.dto 등장 = 1건, 그것을 쓰는 것은 select 뿐 = 전수
       backend/src/main/resources/mapper/RagDocumentRepository.xml:21:	<resultMap id="summaryResult" type="com.ragchatbot.dto.AdminDtos$DocumentResponse">
-      41:	<select id="listAlive" resultMap="summaryResult">
+      backend/src/main/resources/mapper/RagDocumentRepository.xml:41:	<select id="listAlive" resultMap="summaryResult">
 
 ================================================================
-문서> 등록은 `entity` 를 통째로 받고(`insert(RagDocument)`),
-검증> insert 6건 전부 entity 파라미터
-      	void insert(Attachment attachment);
-      	void insert(Citation citation);
-      	void insert(Conversation conversation);
-      	void insert(Message message);
-      	void insert(RagDocument document);
-      	void insert(User user);
+문서> **`entity` 를 통째로 받는 것은 등록 6건뿐이고**(`insert(RagDocument)`),
+검증> entity 파라미터를 받는 메서드 전수 = 6건, 전부 insert
+      19:	void insert(Attachment attachment);
+      14:	void insert(Citation citation);
+      18:	void insert(Conversation conversation);
+      17:	void insert(Message message);
+      23:	void insert(RagDocument document);
+      19:	void insert(User user);
+검증> insert 외에 entity 파라미터를 받는 메서드 = 0건
 
 ================================================================
-문서> **수정·삭제 13건은 전부 `entity` 를 받지 않는다.**
-검증> update+delete = 13건
-검증> 그중 entity 파라미터를 받는 것 = 0건 (아래는 13건 전수 시그니처)
+문서> **수정·삭제 13건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
+검증> update+delete = 13건. 아래가 전수이며 파라미터 타입은 UUID · String · OffsetDateTime · List<String> 뿐
       	int linkToMessage(@Param("id") UUID id, @Param("messageId") UUID messageId, @Param("userId") UUID userId);
       	int deleteByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
       	int deleteById(@Param("id") UUID id);
@@ -42,37 +41,20 @@
       	int promoteAdmins(@Param("emails") List<String> emails);
 
 ================================================================
-문서> 10건은 식별자와 바뀔 값을 스칼라로 넘기고(`updateStatus(id, status)` · `softDelete(id, deletedAt)`),
-문서> 3건은 바뀔 값을 SQL 이 들고 대상 조건만 넘긴다 — `touch` 는 `updated_at = now()`,
-문서> `demoteAdminsNotIn` · `promoteAdmins` 는 `role` 값을 SQL 이 들고 이메일 `List` 를 <foreach> 로 펼친다.
-검증> SQL 이 바뀔 값을 드는 3건 — 전수. 이 범주에 속하는데 빠진 것이 없음을 확인
-      touch:       44:		update conversations set updated_at = now() where id = #{id} and user_id = #{userId}
-      demote:      43:		update users set role = 'user'
-      promote:     53:		update users set role = 'admin'
-검증> 나머지 10건은 바뀔 값을 자바가 넘긴다 (반례 아님) — 예:
-      linkToMessage: 30:		update attachments set message_id = #{messageId}
-      updatePasswordHash: 72:		update users set password_hash = #{passwordHash}, password_changed_at = #{changedAt}
+## 네 번의 실패 기록 — 전부 핵심 뒤에 붙인 곁가지였다
 
-================================================================
-문서> - **규칙의 자리는 `entity/` 가 아니다.** record 6개는 전부 메서드가 없는 값 그릇이라,
-문서>   수정·삭제까지 굳이 entity 를 거칠 이유가 없다.
-검증> entity record 6개의 메서드 수 (이 문장이 주장하는 전부다)
-      Attachment.java      0개
-      Citation.java        0개
-      Conversation.java    0개
-      Message.java         0개
-      RagDocument.java     0개
-      User.java            0개
+  1차 (#21)  '규칙이 entity 에 있다'                    거짓
+  2차 (#22)  '규칙은 service 에 있다'                   과잉 일반화 (config·dto 에도 있음)
+  3차 (#22)  '권한은 service, 입력 검증은 dto'          거짓 (권한은 네 곳으로 갈림)
+  4차 (#22)  '10건은 식별자와 바뀔 값을 스칼라로'       거짓 (그중 3건이 삭제문이라 바뀔 값이 없음)
 
-      ※ 1·2차에 있던 '그럼 규칙은 어디 있나' 열거절은 삭제했다.
-         1차: '규칙이 entity 에'      → 거짓
-         2차: '규칙은 service 에'     → 과잉 일반화 (config·dto 에도 있음)
-         3차: '권한은 service, 검증은 dto' → 거짓
-              권한은 config/SecurityConfig · security/FileAccessTokenService ·
-              service/AdminAccessGuard · SQL 의 user_id 조건으로 갈려 있고,
-              업로드 MIME·용량·매직바이트 검증은 service/FileService 에 있다.
-         결론(entity 를 거칠 이유가 없다)은 record 가 비었다는 사실만으로 성립한다.
-         열거절은 논증에 기여하지 않으면서 틀릴 표면적만 늘렸다.
+  3차에서 열거절을 지웠는데 그 자리에 성격이 같은 새 분해절(10/3)을 넣어 같은 함정을 다시 밟았다.
+  그래서 4차에서는 분해 자체를 없앴다. 13건을 나누지 않고 '전부 스칼라 또는 List' 로만 적는다 —
+  이 문장은 메서드가 추가돼도 낡지 않고, 나눠 세다 틀릴 자리가 없다.
+
+  '규칙의 자리는 entity/ 가 아니다' 불릿은 통째로 삭제했다. 논증이 성립하지 않았다 —
+  '메서드가 없다' 가 지우는 것은 '규칙 집행' 이라는 이유 하나뿐인데, updateName·updatePasswordHash·
+  updateTheme 처럼 update(User) 였다면 하나로 접혔을 자리가 실재해 '거칠 이유가 없다' 는 성립하지 않는다.
 
 ================================================================
 ## check-doc-refs
