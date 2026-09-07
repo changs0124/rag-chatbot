@@ -1,8 +1,8 @@
-# after — 5차 최종 (비판 검토 5회 반영)
+# after — 변경 후 전수 대조
 
-규칙: 전수를 주장하는 자리에 예시를 붙이지 않는다.
-      4차에서 '예:' 라벨만 없애고 예시(insert(RagDocument) 괄호)는 남겼다가 5차에 걸렸다.
-      라벨이 아니라 예시가 문제다.
+규칙 1: 전수를 주장하는 자리에 예시를 붙이지 않는다. 라벨('예:')이 아니라 예시가 문제다.
+규칙 2: 회차 번호와 줄 번호를 싣지 않는다. 다음 커밋에 낡는다.
+규칙 3: 문서 문장을 그대로 인용하고 바로 아래에 검증을 단다.
 
 ================================================================
 문서> - **조회 전용 매핑은 예외다.** 조인 결과를 그대로 돌려주는 목록 조회는 `repository` 가
@@ -11,10 +11,11 @@
 검증> XML 전체에서 com.ragchatbot.dto 등장 = 1건, 그것을 쓰는 select = 1건 (전수)
       backend/src/main/resources/mapper/RagDocumentRepository.xml:21:	<resultMap id="summaryResult" type="com.ragchatbot.dto.AdminDtos$DocumentResponse">
       backend/src/main/resources/mapper/RagDocumentRepository.xml:41:	<select id="listAlive" resultMap="summaryResult">
-검증> 조인 목록 조회지만 entity 를 매핑하는 것이 실재 — '조인이 섞인 목록·통계 조회는 dto 를
-      직접 매핑한다' 는 5차까지 검증 안 된 과잉 일반화였다. 그 반례:
-      38:	<select id="findByConversation" resultMap="attachmentResult">
-검증> '통계 조회' 는 원소가 0건이다 — count( · sum( · avg( · group by 전부 0
+검증> 저장소의 조인 3건이 이 범주로 정확히 갈린다:
+      listAlive          44:		join users u on u.id = d.uploaded_by
+      findByConversation 41:		join messages m on a.message_id = m.id
+      listAlive 는 u.name 을 결과에 싣는다 -> 엔티티로 못 받는다 -> dto 직접 매핑
+      나머지 둘은 조인을 필터로만 쓴다      -> entity 매핑
 
 ================================================================
 문서> - **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 6 · `<update>` 10
@@ -36,7 +37,7 @@
 
 ================================================================
 문서> **수정·삭제 13건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
-검증> update+delete = 13건. 아래가 전수. 파라미터 타입은 UUID · String · OffsetDateTime · List<String> 뿐
+검증> update+delete = 13건. 아래가 전수. 타입은 UUID · String · OffsetDateTime · List<String> 뿐
       	int linkToMessage(@Param("id") UUID id, @Param("messageId") UUID messageId, @Param("userId") UUID userId);
       	int deleteByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
       	int deleteById(@Param("id") UUID id);
@@ -52,22 +53,21 @@
       	int promoteAdmins(@Param("emails") List<String> emails);
 
 ================================================================
-## 다섯 번의 실패 — 전부 핵심 뒤에 붙인 곁가지
+## 이 문단이 여섯 번 block 된 이유
 
-  1차 (#21)  '규칙이 entity 에 있다'                거짓
-  2차 (#22)  '규칙은 service 에 있다'               과잉 일반화
-  3차 (#22)  '권한은 service, 검증은 dto'           거짓 (권한은 네 곳)
-  4차 (#22)  '10건은 식별자와 바뀔 값을 스칼라로'   거짓 (3건이 삭제문)
-  5차 (#22)  '(insert(RagDocument))' 괄호           전수 주장에 붙은 예시
-             CHANGELOG '세 곳'                      실제 다섯 곳 열거
-             CHANGELOG '표준에 없는 ... service'    service 는 표준 어휘 (정본 표 12행)
-             backend.md '조인이 섞인 목록·통계'      반례 실재 · '통계' 원소 0건
+  여섯 번 다 핵심 명제가 아니라 그 뒤에 붙인 분해·귀속절에서 틀렸다.
+  매번 검증한 명제보다 강한 명제를 적었고, 곁가지를 지운 자리에 같은 성격의
+  새 곁가지를 넣기를 반복했다.
 
-  1~4차 오류는 전부 grep 으로 결판나지 않는 술어에 있었다 — '규칙이 어디 있는가',
-  '바뀔 값이 무엇인가'. 5차는 그 술어를 버리고 파라미터 타입 집합이라는 기계 판정 가능한
-  것으로 바꿨고, 그래서 13건 서술이 처음으로 전수 참이 됐다.
-  남은 결함은 (a) 네 판본을 재검토 없이 통과한 예시 괄호, (b) backend.md 를 정리하면서
-  CHANGELOG 로 자리를 옮긴 같은 종 두 건, (c) 5차에야 처음 대조된 앞 불릿이었다.
+  구조적으로 바뀐 지점: 앞선 오류는 전부 grep 으로 결판나지 않는 술어에 있었다
+  ('규칙이 어디 있는가' · '바뀔 값이 무엇인가'). 최종 문장은 그 술어를 버리고
+  파라미터 타입 집합과 XML 태그 수라는 기계 판정 가능한 것으로 바꿨다.
+
+  마지막 라운드에서는 고치는 대신 지웠다 — CHANGELOG 의 곁가지 세 절과
+  이 파일·리포트의 줄 번호·회차 서사를 삭제했다.
+
+  남은 위험: 6 · 10 · 3 · 13 을 지킬 CI 가드가 없다. <update> 하나가 추가되면
+  이 문장은 CI 한 줄 안 깨고 조용히 거짓이 된다.
 
 ================================================================
 ## check-doc-refs
