@@ -13,13 +13,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ragchatbot.domain.Attachment;
-import com.ragchatbot.error.ApiExceptions.BadRequestException;
-import com.ragchatbot.error.ApiExceptions.NotFoundException;
-import com.ragchatbot.mapper.AttachmentMapper;
+import com.ragchatbot.entity.Attachment;
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.exception.ApiExceptions.NotFoundException;
+import com.ragchatbot.repository.AttachmentRepository;
 import com.ragchatbot.security.FileAccessTokenService;
 import com.ragchatbot.storage.FileStorage;
-import com.ragchatbot.web.dto.FileDtos.AttachmentResponse;
+import com.ragchatbot.dto.FileDtos.AttachmentResponse;
 
 /**
  * 파일 업로드/검증/서빙/고아 정리.
@@ -53,13 +53,13 @@ public class FileService {
 			"image/webp", new AllowedType("webp", "image", 10 * MB, new byte[] { 0x52, 0x49, 0x46, 0x46 }, "image/webp"));
 
 	private final FileStorage fileStorage;
-	private final AttachmentMapper attachmentMapper;
+	private final AttachmentRepository attachmentRepository;
 	private final FileAccessTokenService fileTokenService;
 
-	public FileService(FileStorage fileStorage, AttachmentMapper attachmentMapper,
+	public FileService(FileStorage fileStorage, AttachmentRepository attachmentRepository,
 			FileAccessTokenService fileTokenService) {
 		this.fileStorage = fileStorage;
-		this.attachmentMapper = attachmentMapper;
+		this.attachmentRepository = attachmentRepository;
 		this.fileTokenService = fileTokenService;
 	}
 
@@ -94,7 +94,7 @@ public class FileService {
 
 		String storagePath = fileStorage.store(userId, type.extension(), bytes);
 		UUID id = UUID.randomUUID();
-		attachmentMapper.insert(new Attachment(id, null, userId, storagePath, type.fileType(), null, null));
+		attachmentRepository.insert(new Attachment(id, null, userId, storagePath, type.fileType(), null, null));
 		return new AttachmentResponse(id, type.fileType(), buildUrl(id, userId));
 	}
 
@@ -106,7 +106,7 @@ public class FileService {
 		} catch (Exception e) {
 			throw new NotFoundException("파일 없음");
 		}
-		Attachment att = attachmentMapper.findByIdAndUser(fileId, userId)
+		Attachment att = attachmentRepository.findByIdAndUser(fileId, userId)
 				.orElseThrow(() -> new NotFoundException("파일 없음"));
 		String mediaType = ALLOWED.values().stream()
 				.filter(t -> att.storagePath().endsWith("." + t.extension()))
@@ -117,10 +117,10 @@ public class FileService {
 	}
 
 	public void delete(UUID userId, UUID fileId) {
-		Attachment att = attachmentMapper.findByIdAndUser(fileId, userId)
+		Attachment att = attachmentRepository.findByIdAndUser(fileId, userId)
 				.orElseThrow(() -> new NotFoundException("파일 없음"));
 		fileStorage.delete(att.storagePath());
-		attachmentMapper.deleteByIdAndUser(fileId, userId);
+		attachmentRepository.deleteByIdAndUser(fileId, userId);
 	}
 
 	/**
@@ -134,10 +134,10 @@ public class FileService {
 	public int cleanupOrphans(OffsetDateTime cutoff) {
 		OffsetDateTime floor = OffsetDateTime.now().minusMinutes(MIN_ORPHAN_AGE_MINUTES);
 		OffsetDateTime effective = cutoff.isAfter(floor) ? floor : cutoff;
-		var orphans = attachmentMapper.findOrphans(effective);
+		var orphans = attachmentRepository.findOrphans(effective);
 		for (Attachment a : orphans) {
 			fileStorage.delete(a.storagePath());
-			attachmentMapper.deleteById(a.id());
+			attachmentRepository.deleteById(a.id());
 		}
 		return orphans.size();
 	}
@@ -159,7 +159,7 @@ public class FileService {
 		OffsetDateTime floor = OffsetDateTime.now().minusMinutes(MIN_ORPHAN_AGE_MINUTES);
 		Instant effective = (cutoff.isAfter(floor) ? floor : cutoff).toInstant();
 
-		Set<String> referenced = new HashSet<>(attachmentMapper.findAllStoragePaths());
+		Set<String> referenced = new HashSet<>(attachmentRepository.findAllStoragePaths());
 		int removed = 0;
 		for (FileStorage.StoredFile file : fileStorage.listAll()) {
 			if (referenced.contains(file.storagePath()) || !file.lastModified().isBefore(effective)) {

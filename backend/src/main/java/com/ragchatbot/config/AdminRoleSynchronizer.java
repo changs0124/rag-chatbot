@@ -11,7 +11,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.ragchatbot.mapper.UserMapper;
+import com.ragchatbot.repository.UserRepository;
 
 /**
  * 관리자 명단 동기화(FEAT-ADMIN-001 · REQ-ADMIN-004).
@@ -49,14 +49,14 @@ public class AdminRoleSynchronizer {
 	}
 
 	@Bean
-	ApplicationRunner syncAdminRoles(UserMapper userMapper,
+	ApplicationRunner syncAdminRoles(UserRepository userRepository,
 			@Value("${app.admin.emails:}") String adminEmails) {
 		return args -> {
 			List<String> emails = parse(adminEmails);
 			// 강등을 먼저 한다. 명단이 비어도 돌려야 "명단을 통째로 비워 관리자를 없앤다"가 성립함
-			int demoted = userMapper.demoteAdminsNotIn(emails);
+			int demoted = userRepository.demoteAdminsNotIn(emails);
 			// in () 은 유효한 SQL 이 아니므로 빈 명단에서는 부르지 않는다
-			int promoted = emails.isEmpty() ? 0 : userMapper.promoteAdmins(emails);
+			int promoted = emails.isEmpty() ? 0 : userRepository.promoteAdmins(emails);
 			log.info("관리자 명단 동기화 : 명단 {}건 · 승격 {}건 · 강등 {}건", emails.size(), promoted, demoted);
 		};
 	}

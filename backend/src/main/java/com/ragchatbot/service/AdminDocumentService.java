@@ -12,14 +12,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ragchatbot.domain.RagDocument;
-import com.ragchatbot.domain.RagDocumentSummary;
-import com.ragchatbot.error.ApiExceptions.BadRequestException;
-import com.ragchatbot.error.ApiExceptions.NotFoundException;
-import com.ragchatbot.mapper.RagDocumentMapper;
+import com.ragchatbot.entity.RagDocument;
+import com.ragchatbot.entity.RagDocumentSummary;
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.exception.ApiExceptions.NotFoundException;
+import com.ragchatbot.repository.RagDocumentRepository;
 import com.ragchatbot.openai.OpenAiService;
 import com.ragchatbot.openai.OpenAiService.UploadedDocument;
-import com.ragchatbot.web.dto.AdminDtos.DocumentResponse;
+import com.ragchatbot.dto.AdminDtos.DocumentResponse;
 
 /**
  * RAG 문서 관리(FEAT-ADMIN-002). 업로드 · 목록 · 삭제.
@@ -52,11 +52,11 @@ public class AdminDocumentService {
 			"text/markdown", "md",
 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
 
-	private final RagDocumentMapper documentMapper;
+	private final RagDocumentRepository documentRepository;
 	private final OpenAiService openAiService;
 
-	public AdminDocumentService(RagDocumentMapper documentMapper, OpenAiService openAiService) {
-		this.documentMapper = documentMapper;
+	public AdminDocumentService(RagDocumentRepository documentRepository, OpenAiService openAiService) {
+		this.documentRepository = documentRepository;
 		this.openAiService = openAiService;
 	}
 
@@ -65,15 +65,15 @@ public class AdminDocumentService {
 	 * 완료·실패는 더 바뀌지 않으므로 전 행을 매번 조회하지 않는다.
 	 */
 	public List<DocumentResponse> list() {
-		for (UUID id : documentMapper.findInProgressIds()) {
-			documentMapper.findAliveById(id).ifPresent(doc -> {
+		for (UUID id : documentRepository.findInProgressIds()) {
+			documentRepository.findAliveById(id).ifPresent(doc -> {
 				String current = openAiService.documentStatus(doc.vectorStoreId(), doc.openaiFileId());
 				if (!current.equals(doc.status())) {
-					documentMapper.updateStatus(doc.id(), current);
+					documentRepository.updateStatus(doc.id(), current);
 				}
 			});
 		}
-		return documentMapper.listAlive().stream().map(AdminDocumentService::toResponse).toList();
+		return documentRepository.listAlive().stream().map(AdminDocumentService::toResponse).toList();
 	}
 
 	/**
@@ -113,10 +113,10 @@ public class AdminDocumentService {
 		UploadedDocument uploaded = openAiService.uploadDocument(filename, bytes, file.getContentType());
 
 		UUID id = UUID.randomUUID();
-		documentMapper.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
+		documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
 				bytes.length, "in_progress", adminId, null, null));
 
-		return documentMapper.listAlive().stream()
+		return documentRepository.listAlive().stream()
 				.filter(d -> d.id().equals(id))
 				.findFirst()
 				.map(AdminDocumentService::toResponse)
@@ -131,12 +131,12 @@ public class AdminDocumentService {
 	 * 첨부 고아 회수와 같은 판단이다.
 	 */
 	public void delete(UUID documentId) {
-		RagDocument doc = documentMapper.findAliveById(documentId)
+		RagDocument doc = documentRepository.findAliveById(documentId)
 				.orElseThrow(() -> new NotFoundException("문서 없음"));
 
 		openAiService.deleteDocument(doc.vectorStoreId(), doc.openaiFileId());
 
-		int deleted = documentMapper.softDelete(documentId, OffsetDateTime.now());
+		int deleted = documentRepository.softDelete(documentId, OffsetDateTime.now());
 		if (deleted == 0) {
 			// 조회와 삭제 사이에 누가 먼저 지웠음. 결과는 같으므로 오류로 올리지 않음
 			log.warn("rag 문서 {} 가 이미 삭제돼 있었음", documentId);

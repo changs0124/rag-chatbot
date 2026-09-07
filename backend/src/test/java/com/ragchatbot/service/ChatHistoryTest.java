@@ -9,7 +9,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.ragchatbot.domain.Message;
+import com.ragchatbot.entity.Message;
 import com.ragchatbot.openai.OpenAiService.Turn;
 
 /**

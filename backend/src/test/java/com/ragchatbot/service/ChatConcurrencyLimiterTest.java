@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.ragchatbot.error.ApiExceptions.RateLimitException;
+import com.ragchatbot.exception.ApiExceptions.RateLimitException;
 
 /**
  * 동시 스트림 상한(back-pressure, 2026-07-28 결정). 스프링 없이 계수 규칙만 잼.

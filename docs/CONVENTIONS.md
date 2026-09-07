@@ -22,7 +22,7 @@
 
 ### 네이밍
 - 클래스 PascalCase, 메서드·필드 camelCase, 상수 UPPER_SNAKE_CASE
-- 컨트롤러 `XxxController` · 서비스 `XxxService` · 매퍼 `XxxMapper` · DTO 묶음 `XxxDtos`
+- 컨트롤러 `XxxController` · 서비스 `XxxService` · 리포지터리 `XxxRepository` · DTO 묶음 `XxxDtos`
 - DB 컬럼은 snake_case, 자바 프로퍼티는 camelCase (`mybatis.configuration.map-underscore-to-camel-case: true`가 매핑)
 
 ### DI·컨트롤러 패턴

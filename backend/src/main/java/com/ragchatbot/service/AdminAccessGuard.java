@@ -4,8 +4,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import com.ragchatbot.error.ApiExceptions.NotFoundException;
-import com.ragchatbot.mapper.UserMapper;
+import com.ragchatbot.exception.ApiExceptions.NotFoundException;
+import com.ragchatbot.repository.UserRepository;
 
 /**
  * 관리자 권한 확인(FEAT-ADMIN-001).
@@ -19,15 +19,15 @@ import com.ragchatbot.mapper.UserMapper;
 @Service
 public class AdminAccessGuard {
 
-	private final UserMapper userMapper;
+	private final UserRepository userRepository;
 
-	public AdminAccessGuard(UserMapper userMapper) {
-		this.userMapper = userMapper;
+	public AdminAccessGuard(UserRepository userRepository) {
+		this.userRepository = userRepository;
 	}
 
 	/** 관리자가 아니면 404. 메시지에도 관리 기능의 존재를 드러내지 않는다 */
 	public void requireAdmin(UUID userId) {
-		boolean admin = userMapper.findById(userId)
+		boolean admin = userRepository.findById(userId)
 				.map(u -> "admin".equals(u.role()))
 				.orElse(false);
 		if (!admin) {

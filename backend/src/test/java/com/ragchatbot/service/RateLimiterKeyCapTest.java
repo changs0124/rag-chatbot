@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
-import com.ragchatbot.error.ApiExceptions.RateLimitException;
+import com.ragchatbot.exception.ApiExceptions.RateLimitException;
 
 /**
  * 카운터 키 총량 상한(2026-07-28 결정). 종전에는 <b>한 분 안에서</b> 서로 다른 키가 상한 없이 쌓였음 -

@@ -8,14 +8,14 @@ import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ragchatbot.domain.User;
-import com.ragchatbot.error.ApiExceptions.BadRequestException;
-import com.ragchatbot.error.ApiExceptions.NotFoundException;
-import com.ragchatbot.error.ApiExceptions.UnauthorizedException;
-import com.ragchatbot.mapper.UserMapper;
+import com.ragchatbot.entity.User;
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.exception.ApiExceptions.NotFoundException;
+import com.ragchatbot.exception.ApiExceptions.UnauthorizedException;
+import com.ragchatbot.repository.UserRepository;
 import com.ragchatbot.security.JwtService;
-import com.ragchatbot.web.dto.AuthDtos.AuthResponse;
-import com.ragchatbot.web.dto.AuthDtos.MeResponse;
+import com.ragchatbot.dto.AuthDtos.AuthResponse;
+import com.ragchatbot.dto.AuthDtos.MeResponse;
 
 /**
  * 마이페이지 - 이름/비밀번호/테마 변경 (AC-15·16). 소유자 본인만(userId는 JWT에서).
@@ -25,12 +25,12 @@ public class ProfileService {
 
 	private static final Set<String> THEMES = Set.of("light", "dark", "system");
 
-	private final UserMapper userMapper;
+	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
 
-	public ProfileService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtService jwtService) {
-		this.userMapper = userMapper;
+	public ProfileService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
 	}
@@ -41,7 +41,7 @@ public class ProfileService {
 
 	/** 갱신 후 한 번만 읽음 - 없는 사용자면 갱신이 0행이고 그 뒤 조회가 404 를 냄(선행 조회가 불필요) */
 	public MeResponse updateName(UUID userId, String name) {
-		userMapper.updateName(userId, name.trim());
+		userRepository.updateName(userId, name.trim());
 		return toResponse(require(userId));
 	}
 
@@ -65,7 +65,7 @@ public class ProfileService {
 		String hash = passwordEncoder.encode(newPassword);
 		// JWT iat 는 초 단위로 내림되므로 기준선도 초로 자름 - 눈금이 같아야 같은 초 발급분이 살아남음
 		OffsetDateTime changedAt = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-		userMapper.updatePasswordHash(userId, hash, changedAt);
+		userRepository.updatePasswordHash(userId, hash, changedAt);
 		// 갱신되는 값은 해시뿐이라 다시 읽지 않음
 		return new AuthResponse(jwtService.issue(userId, user.email()), toResponse(user));
 	}
@@ -74,12 +74,12 @@ public class ProfileService {
 		if (!THEMES.contains(theme)) {
 			throw new BadRequestException("허용되지 않은 테마: " + theme);
 		}
-		userMapper.updateTheme(userId, theme);
+		userRepository.updateTheme(userId, theme);
 		return toResponse(require(userId));
 	}
 
 	private User require(UUID userId) {
-		return userMapper.findById(userId).orElseThrow(() -> new NotFoundException("사용자 없음"));
+		return userRepository.findById(userId).orElseThrow(() -> new NotFoundException("사용자 없음"));
 	}
 
 	private MeResponse toResponse(User u) {

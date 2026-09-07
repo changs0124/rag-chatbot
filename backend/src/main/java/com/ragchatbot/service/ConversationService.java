@@ -10,20 +10,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.ragchatbot.domain.Attachment;
-import com.ragchatbot.domain.Citation;
-import com.ragchatbot.domain.Conversation;
-import com.ragchatbot.error.ApiExceptions.NotFoundException;
-import com.ragchatbot.mapper.AttachmentMapper;
-import com.ragchatbot.mapper.CitationMapper;
-import com.ragchatbot.mapper.ConversationMapper;
-import com.ragchatbot.mapper.MessageMapper;
+import com.ragchatbot.entity.Attachment;
+import com.ragchatbot.entity.Citation;
+import com.ragchatbot.entity.Conversation;
+import com.ragchatbot.exception.ApiExceptions.NotFoundException;
+import com.ragchatbot.repository.AttachmentRepository;
+import com.ragchatbot.repository.CitationRepository;
+import com.ragchatbot.repository.ConversationRepository;
+import com.ragchatbot.repository.MessageRepository;
 import com.ragchatbot.openai.OpenAiService;
 import com.ragchatbot.storage.FileStorage;
-import com.ragchatbot.web.dto.ConversationDtos.CitationResponse;
-import com.ragchatbot.web.dto.ConversationDtos.ConversationResponse;
-import com.ragchatbot.web.dto.ConversationDtos.MessageResponse;
-import com.ragchatbot.web.dto.FileDtos.AttachmentResponse;
+import com.ragchatbot.dto.ConversationDtos.CitationResponse;
+import com.ragchatbot.dto.ConversationDtos.ConversationResponse;
+import com.ragchatbot.dto.ConversationDtos.MessageResponse;
+import com.ragchatbot.dto.FileDtos.AttachmentResponse;
 
 /**
  * 대화 CRUD. 모든 접근은 requireOwned 를 통과함(P-3, AC-1). 남의 것은 404로 은닉.
@@ -33,21 +33,21 @@ public class ConversationService {
 
 	private static final Logger log = LoggerFactory.getLogger(ConversationService.class);
 
-	private final ConversationMapper conversationMapper;
-	private final MessageMapper messageMapper;
-	private final AttachmentMapper attachmentMapper;
-	private final CitationMapper citationMapper;
+	private final ConversationRepository conversationRepository;
+	private final MessageRepository messageRepository;
+	private final AttachmentRepository attachmentRepository;
+	private final CitationRepository citationRepository;
 	private final FileStorage fileStorage;
 	private final OpenAiService openAiService;
 	private final FileService fileService;
 
-	public ConversationService(ConversationMapper conversationMapper, MessageMapper messageMapper,
-			AttachmentMapper attachmentMapper, CitationMapper citationMapper, FileStorage fileStorage,
+	public ConversationService(ConversationRepository conversationRepository, MessageRepository messageRepository,
+			AttachmentRepository attachmentRepository, CitationRepository citationRepository, FileStorage fileStorage,
 			OpenAiService openAiService, FileService fileService) {
-		this.conversationMapper = conversationMapper;
-		this.messageMapper = messageMapper;
-		this.attachmentMapper = attachmentMapper;
-		this.citationMapper = citationMapper;
+		this.conversationRepository = conversationRepository;
+		this.messageRepository = messageRepository;
+		this.attachmentRepository = attachmentRepository;
+		this.citationRepository = citationRepository;
 		this.fileStorage = fileStorage;
 		this.openAiService = openAiService;
 		this.fileService = fileService;
@@ -56,18 +56,18 @@ public class ConversationService {
 	public ConversationResponse create(UUID userId, String title) {
 		UUID id = UUID.randomUUID();
 		String finalTitle = (title == null || title.isBlank()) ? "새 대화" : title.trim();
-		conversationMapper.insert(new Conversation(id, userId, finalTitle, null, null, null));
+		conversationRepository.insert(new Conversation(id, userId, finalTitle, null, null, null));
 		return findOwnedResponse(id, userId);
 	}
 
 	public ConversationResponse rename(UUID userId, UUID conversationId, String title) {
 		requireOwned(conversationId, userId);
-		conversationMapper.updateTitle(conversationId, userId, title.trim());
+		conversationRepository.updateTitle(conversationId, userId, title.trim());
 		return findOwnedResponse(conversationId, userId);
 	}
 
 	public List<ConversationResponse> list(UUID userId) {
-		return conversationMapper.listByUser(userId).stream()
+		return conversationRepository.listByUser(userId).stream()
 				.map(c -> new ConversationResponse(c.id(), c.title(), c.createdAt(), c.updatedAt()))
 				.toList();
 	}
@@ -78,17 +78,17 @@ public class ConversationService {
 
 		// 첨부·출처 모두 대화 단위로 한 번에 읽어 메시지별로 나눠 담음(메시지마다 조회하지 않음)
 		Map<UUID, List<AttachmentResponse>> attachmentsByMessage = new LinkedHashMap<>();
-		for (Attachment a : attachmentMapper.findByConversation(conversationId)) {
+		for (Attachment a : attachmentRepository.findByConversation(conversationId)) {
 			attachmentsByMessage.computeIfAbsent(a.messageId(), k -> new ArrayList<>())
 					.add(new AttachmentResponse(a.id(), a.fileType(), fileService.issueUrl(a.id(), userId)));
 		}
 		Map<UUID, List<CitationResponse>> citationsByMessage = new LinkedHashMap<>();
-		for (Citation c : citationMapper.findByConversation(conversationId)) {
+		for (Citation c : citationRepository.findByConversation(conversationId)) {
 			citationsByMessage.computeIfAbsent(c.messageId(), k -> new ArrayList<>())
 					.add(new CitationResponse(c.seq(), c.sourceName(), c.snippet(), c.uri()));
 		}
 
-		return messageMapper.listByConversation(conversationId).stream()
+		return messageRepository.listByConversation(conversationId).stream()
 				.map(m -> new MessageResponse(m.id(), m.role(), m.content(), m.status(), m.stopped(), m.createdAt(),
 						citationsByMessage.getOrDefault(m.id(), List.of()),
 						attachmentsByMessage.getOrDefault(m.id(), List.of())))
@@ -109,7 +109,7 @@ public class ConversationService {
 	 */
 	public void delete(UUID userId, UUID conversationId) {
 		Conversation conversation = requireOwned(conversationId, userId);
-		List<Attachment> attachments = attachmentMapper.findByConversation(conversationId);
+		List<Attachment> attachments = attachmentRepository.findByConversation(conversationId);
 		List<String> openaiFileIds = new ArrayList<>();
 		List<String> paths = new ArrayList<>();
 		for (Attachment a : attachments) {
@@ -119,7 +119,7 @@ public class ConversationService {
 			}
 		}
 
-		conversationMapper.deleteByIdAndUser(conversationId, userId); // cascade - 단일 문장
+		conversationRepository.deleteByIdAndUser(conversationId, userId); // cascade - 단일 문장
 
 		for (String path : paths) {
 			try {
@@ -138,7 +138,7 @@ public class ConversationService {
 	}
 
 	private Conversation requireOwned(UUID conversationId, UUID userId) {
-		return conversationMapper.findByIdAndUser(conversationId, userId)
+		return conversationRepository.findByIdAndUser(conversationId, userId)
 				.orElseThrow(() -> new NotFoundException("대화 없음"));
 	}
 

@@ -15,21 +15,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.ragchatbot.domain.Attachment;
-import com.ragchatbot.domain.Conversation;
-import com.ragchatbot.domain.Message;
-import com.ragchatbot.error.ApiExceptions.BadRequestException;
-import com.ragchatbot.error.ApiExceptions.NotFoundException;
-import com.ragchatbot.mapper.AttachmentMapper;
-import com.ragchatbot.mapper.ConversationMapper;
-import com.ragchatbot.mapper.MessageMapper;
+import com.ragchatbot.entity.Attachment;
+import com.ragchatbot.entity.Conversation;
+import com.ragchatbot.entity.Message;
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.exception.ApiExceptions.NotFoundException;
+import com.ragchatbot.repository.AttachmentRepository;
+import com.ragchatbot.repository.ConversationRepository;
+import com.ragchatbot.repository.MessageRepository;
 import com.ragchatbot.openai.OpenAiService;
 import com.ragchatbot.openai.OpenAiService.AttachmentRef;
 import com.ragchatbot.openai.OpenAiService.ChatCompletion;
 import com.ragchatbot.openai.OpenAiService.ChatInput;
 import com.ragchatbot.openai.OpenAiService.Stage;
 import com.ragchatbot.openai.OpenAiService.Turn;
-import com.ragchatbot.web.dto.ChatDtos.ChatRequest;
+import com.ragchatbot.dto.ChatDtos.ChatRequest;
 
 /**
  * 채팅 오케스트레이션(Phase 5, SSE).
@@ -43,19 +43,19 @@ public class ChatService {
 	/** 과거 턴의 이미지 자리표시자 - 이미지를 다시 보내지 않아도 "그때 첨부가 있었다"는 사실은 남김 */
 	static final String IMAGE_PLACEHOLDER = "(이미지 첨부)";
 
-	private final ConversationMapper conversationMapper;
-	private final MessageMapper messageMapper;
-	private final AttachmentMapper attachmentMapper;
+	private final ConversationRepository conversationRepository;
+	private final MessageRepository messageRepository;
+	private final AttachmentRepository attachmentRepository;
 	private final OpenAiService openAiService;
 	private final ChatPersistenceService chatPersistence;
 	private final int historyTokenBudget;
 
-	public ChatService(ConversationMapper conversationMapper, MessageMapper messageMapper,
-			AttachmentMapper attachmentMapper, OpenAiService openAiService, ChatPersistenceService chatPersistence,
+	public ChatService(ConversationRepository conversationRepository, MessageRepository messageRepository,
+			AttachmentRepository attachmentRepository, OpenAiService openAiService, ChatPersistenceService chatPersistence,
 			@Value("${app.chat.history-token-budget:6000}") int historyTokenBudget) {
-		this.conversationMapper = conversationMapper;
-		this.messageMapper = messageMapper;
-		this.attachmentMapper = attachmentMapper;
+		this.conversationRepository = conversationRepository;
+		this.messageRepository = messageRepository;
+		this.attachmentRepository = attachmentRepository;
 		this.openAiService = openAiService;
 		this.chatPersistence = chatPersistence;
 		this.historyTokenBudget = historyTokenBudget;
@@ -68,7 +68,7 @@ public class ChatService {
 	/** 동기 준비 - 소유권/검증 + 사용자 메시지 저장 + 첨부 연결 */
 	@Transactional
 	public PreparedChat prepare(UUID userId, ChatRequest req) {
-		Conversation conversation = conversationMapper.findByIdAndUser(req.conversationId(), userId)
+		Conversation conversation = conversationRepository.findByIdAndUser(req.conversationId(), userId)
 				.orElseThrow(() -> new NotFoundException("대화 없음"));
 
 		String message = req.message() == null ? "" : req.message().trim();
@@ -79,28 +79,28 @@ public class ChatService {
 
 		List<AttachmentRef> refs = new ArrayList<>();
 		for (UUID attId : attachmentIds) {
-			Attachment att = attachmentMapper.findByIdAndUser(attId, userId)
+			Attachment att = attachmentRepository.findByIdAndUser(attId, userId)
 					.orElseThrow(() -> new NotFoundException("첨부 없음"));
 			refs.add(new AttachmentRef(att.fileType(), att.storagePath(), att.openaiFileId()));
 		}
 
 		// 이력은 **새 사용자 메시지를 넣기 전에** 읽음 - 넣고 읽으면 방금 보낸 것이 이력에 섞여 중복됨
-		List<Turn> history = buildHistory(messageMapper.listByConversation(conversation.id()),
+		List<Turn> history = buildHistory(messageRepository.listByConversation(conversation.id()),
 				messageIdsWithAttachments(conversation.id()), historyTokenBudget);
 
 		UUID userMsgId = UUID.randomUUID();
 		// 사용자 메시지에는 사용량이라는 개념이 없음 - null(FEAT-OPS-001)
-		messageMapper.insert(new Message(userMsgId, conversation.id(), "user", message, "complete", false,
+		messageRepository.insert(new Message(userMsgId, conversation.id(), "user", message, "complete", false,
 				null, null, null));
 		for (UUID attId : attachmentIds) {
-			attachmentMapper.linkToMessage(attId, userMsgId, userId);
+			attachmentRepository.linkToMessage(attId, userMsgId, userId);
 		}
 		return new PreparedChat(conversation.id(), message, refs, conversation.vectorStoreId(), history);
 	}
 
 	private Set<UUID> messageIdsWithAttachments(UUID conversationId) {
 		Set<UUID> ids = new HashSet<>();
-		for (Attachment a : attachmentMapper.findByConversation(conversationId)) {
+		for (Attachment a : attachmentRepository.findByConversation(conversationId)) {
 			ids.add(a.messageId());
 		}
 		return ids;
