@@ -1,0 +1,26 @@
+# after — 변경 후
+
+## 전체 빌드 + 테스트
+[INFO] Tests run: 164, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+## RagDocumentSummary 참조
+$ grep -rn 'RagDocumentSummary' backend/src/ docs/  ->  0건
+
+## MyBatis 중첩 record 바이너리명 해석 확인
+21:	<resultMap id="summaryResult" type="com.ragchatbot.dto.AdminDtos$DocumentResponse">
+41:	<select id="listAlive" resultMap="summaryResult">
+AdminDocumentFlowTest: Tests run: 13, Failures: 0, Errors: 0
+
+## API 계약 무변경 근거 (테스트 단언 그대로 통과)
+90:			assertThat(r.get("filename")).isEqualTo("취업규칙.pdf");
+92:			assertThat(r.get("uploadedByName")).isEqualTo("사용자");
+142:		assertThat(rows.get(0).get("filename")).isEqualTo("나중.pdf");
+
+## 변경 규모
+ .../com/ragchatbot/entity/RagDocumentSummary.java   | 21 ---------------------
+ .../repository/RagDocumentRepository.java           |  4 ++--
+ .../ragchatbot/service/AdminDocumentService.java    |  9 +--------
+ .../main/resources/mapper/RagDocumentRepository.xml |  2 +-
+ docs/02_architecture/backend.md                     | 10 ++++++++++
+ 5 files changed, 14 insertions(+), 32 deletions(-)

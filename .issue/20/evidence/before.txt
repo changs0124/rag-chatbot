@@ -1,0 +1,32 @@
+# before — 변경 전
+
+## 두 타입의 필드 대조
+
+### entity/RagDocumentSummary
+public record RagDocumentSummary(
+		UUID id,
+		String filename,
+		long byteSize,
+		String status,
+		String uploadedByName,
+		OffsetDateTime createdAt) {
+}
+
+### dto/AdminDtos.DocumentResponse
+	public record DocumentResponse(UUID id, String filename, long byteSize, String status,
+			String uploadedByName, OffsetDateTime createdAt) {
+	}
+
+## 변환 함수 (순수 복사)
+	private static DocumentResponse toResponse(RagDocumentSummary d) {
+		return new DocumentResponse(d.id(), d.filename(), d.byteSize(), d.status(),
+				d.uploadedByName(), d.createdAt());
+	}
+
+## RagDocumentSummary 참조
+main/java/com/ragchatbot/entity/RagDocumentSummary.java:14:public record RagDocumentSummary(
+main/java/com/ragchatbot/repository/RagDocumentRepository.java:12:import com.ragchatbot.entity.RagDocumentSummary;
+main/java/com/ragchatbot/repository/RagDocumentRepository.java:30:	List<RagDocumentSummary> listAlive();
+main/java/com/ragchatbot/service/AdminDocumentService.java:16:import com.ragchatbot.entity.RagDocumentSummary;
+main/java/com/ragchatbot/service/AdminDocumentService.java:146:	private static DocumentResponse toResponse(RagDocumentSummary d) {
+main/resources/mapper/RagDocumentRepository.xml:21:	<resultMap id="summaryResult" type="com.ragchatbot.entity.RagDocumentSummary">
