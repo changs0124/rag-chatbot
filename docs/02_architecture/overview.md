@@ -148,7 +148,7 @@ sequenceDiagram
 | 레이트리밋 키 총량 | `RATELIMIT_MAX_KEYS` | 10000 (초과 시 LRU 축출 = 카운터 리셋) |
 | 첨부 저장 루트 | `FILE_STORAGE_ROOT` | `./uploads` |
 | 고아 첨부 회수 | `ORPHAN_TTL_MINUTES` · `ORPHAN_CLEANUP_CRON` | 60분 / 매시 정각 |
-| 업로드 하드 한도 | 해당 없음 — yml 고정값 | 파일 25MB · 요청 30MB (타입별 상한은 코드가 400으로 선검사) |
+| 업로드 하드 한도 | 해당 없음 — yml 고정값 | 파일 26MB · 요청 31MB (타입별 상한 이미지 10MB · 문서 25MB 는 코드가 400으로 선검사) |
 | CORS 허용 출처 | `ALLOWED_ORIGINS` | `http://localhost:5173` |
 
 ## 알려진 제약
