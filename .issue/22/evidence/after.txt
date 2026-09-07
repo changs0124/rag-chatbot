@@ -1,50 +1,51 @@
-# after — 변경 후
+# after — 변경 후 (비판 검토 block 반영본)
 
-## 교체된 문장 (backend.md)
-- **이 예외는 조회에만 적용된다.** 쓰기 경로는 `dto` 를 매핑하지 않는다. 등록은 `entity` 를 통째로 받고
-  (`insert(RagDocument)`), 수정·삭제는 식별자와 바뀔 값만 스칼라 파라미터로 받는다
-  (`updateStatus(id, status)` · `softDelete(id, deletedAt)`). `entity/` 의 record 는 값을 담기만 하고
-  규칙은 `service/` 에 있으므로, 수정·삭제까지 굳이 entity 를 거칠 이유가 없다.
+## 절 단위 대조 — 문서의 각 절 = 아래 검증 명제
+   1차 시도가 실패한 원인이 '검증한 명제와 적은 명제가 달랐던 것'이므로,
+   이번에는 절마다 무엇을 검증했는지 명시한다.
 
-## 새 문장이 코드에서 참인가 — 항목별 대조
+[절 1] "쓰기 경로(insert 6 · update 10 · delete 3)는 dto 를 매핑하지 않는다"
+  검증: XML 의 insert/update/delete 개수 = 6 / 10 / 3
+  검증: XML 전체에서 com.ragchatbot.dto 등장 = 1건, 그것을 쓰는 것은 select 뿐
+    backend/src/main/resources/mapper/RagDocumentRepository.xml:21:	<resultMap id="summaryResult" type="com.ragchatbot.dto.AdminDtos$DocumentResponse">
+    41:	<select id="listAlive" resultMap="summaryResult">
 
-주장 1) 등록은 entity 를 통째로 받는다
-  	void insert(Attachment attachment);
-  	void insert(Citation citation);
-  	void insert(Conversation conversation);
-  	void insert(Message message);
-  	void insert(RagDocument document);
-  	void insert(User user);
+[절 2] "등록은 entity 를 통째로 받는다"  /  "수정·삭제는 entity 를 받지 않는다"
+  검증: insert 6건 전부 entity 파라미터
+    	void insert(Attachment attachment);
+    	void insert(Citation citation);
+    	void insert(Conversation conversation);
+    	void insert(Message message);
+    	void insert(RagDocument document);
+    	void insert(User user);
+  검증: update/delete 가 entity 를 받는 곳 = 0건
+    0건
 
-주장 2) 수정·삭제는 식별자와 바뀔 값만 스칼라로 받는다  (entity 를 받는 update/delete 0건)
-  	int deleteByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
-  	int deleteById(@Param("id") UUID id);
-  	int deleteByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
-  	int updateTitle(@Param("id") UUID id, @Param("userId") UUID userId, @Param("title") String title);
-  	int updateStatus(@Param("id") UUID id, @Param("status") String status);
-  	int softDelete(@Param("id") UUID id, @Param("deletedAt") OffsetDateTime deletedAt);
-  	void updateName(@Param("id") UUID id, @Param("name") String name);
-  	void updatePasswordHash(@Param("id") UUID id, @Param("passwordHash") String passwordHash,
-  	void updateTheme(@Param("id") UUID id, @Param("theme") String theme);
-  	int demoteAdminsNotIn(@Param("emails") List<String> emails);
-  	int promoteAdmins(@Param("emails") List<String> emails);
+[절 3] "대개는 스칼라지만, 바뀔 값을 SQL 이 들고 대상 조건만 넘기는 것도 있다"
+  ※ 1차 시도는 여기를 '식별자와 바뀔 값만 스칼라' 라고 단정해 block 됐다. 반례 실재:
+    	int touch(@Param("id") UUID id, @Param("userId") UUID userId);
+    	int demoteAdminsNotIn(@Param("emails") List<String> emails);
+    		update conversations set updated_at = now() where id = #{id} and user_id = #{userId}
+    			<foreach item="e" collection="emails" open="(" separator="," close=")">#{e}</foreach>
+  ※ 1차 시도는 update/delete 를 11건으로 셌으나 실제 13건 —
+     이름이 update/delete 로 시작하지 않는 linkToMessage · touch 를 놓쳤다
 
-주장 3) entity record 는 값만 담고 규칙은 service 에 있다
-  Attachment.java      메서드 0개
-  Citation.java        메서드 0개
-  Conversation.java    메서드 0개
-  Message.java         메서드 0개
-  RagDocument.java     메서드 0개
-  User.java            메서드 0개
-
-## CHANGELOG [Unreleased] 에 추가됨
-8:- **`RagDocumentSummary` 를 없애고 문서 목록 조회를 Response DTO 로 직접 매핑(#21).** 이 타입은 자기
-21:- **백엔드 패키지 이름을 계층형 표준 어휘로 통일(#19, 71파일).** `web/` → `controller/` ·
+[절 4] "규칙의 자리는 entity/ 가 아니다"
+  검증: entity record 6개 메서드 수
+    Attachment.java      0개
+    Citation.java        0개
+    Conversation.java    0개
+    Message.java         0개
+    RagDocument.java     0개
+    User.java            0개
+  검증: service 12개 클래스 · dto Bean Validation 9건 · config 의 AdminRoleSynchronizer·SignupPolicy 실재
+  ※ 1차 시도는 '규칙은 service 에 있다' 고 단정했으나 config·dto 에도 있어 과잉 일반화였다
 
 ## check-doc-refs
-  참조 수집 181건 · 실재 검사 179건 / 문서 참조 검사 통과
+  참조 수집 181건 · 실재 검사 179건
+  문서 참조 검사 통과
 
 ## 변경 규모
- docs/02_architecture/backend.md |  6 ++++--
- docs/06_changelog/CHANGELOG.md  | 26 ++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+), 2 deletions(-)
+   docs/02_architecture/backend.md | 13 +++++++++----
+   docs/06_changelog/CHANGELOG.md  |  5 +++--
+   2 files changed, 12 insertions(+), 6 deletions(-)
