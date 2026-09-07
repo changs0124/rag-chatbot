@@ -64,7 +64,7 @@
 두 필드뿐이다. `timestamp` 는 응답 헤더에 이미 있고, `path` 는 요청한 쪽이 안다.
 **단 `GlobalExceptionHandler` 를 거치지 않는 오류는 이 형태가 아니다** — 미인증 401 은 `SecurityConfig` 의
 진입점이 직접 내므로 Spring 기본 오류 본문이고, `server.error.include-message` 를 설정하지 않아 기본값
-`never` 가 적용되어 `message` 가 없다. CORS 403 은 평문 `Invalid CORS request` 다.
+`never` 가 적용되어 `message` 가 없다. CORS 403 은 JSON 이 아닌 평문이다.
 
 **서버가 `message` 를 주면 프론트는 그대로 보여준다**(없으면 `요청 실패 (n)`). 따라서 서버 메시지는 사용자가 읽을 수 있는
 한국어여야 하고, **내부 정보(SQL·클래스명)를 담아서는 안 된다.**

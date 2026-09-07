@@ -12,6 +12,7 @@
 - [ ] Spring Boot 3.5.16 업그레이드 재검토 (OSS EOL 트랙)
 - [ ] 단일 인스턴스 전제 해소 — 레이트리밋·동시 스트림 카운터가 인메모리라 수평 확장 시 실효 한도가 인스턴스 수만큼 곱해짐
 - [ ] 대화 삭제 중 파일 삭제가 실패하면 그 파일이 영구 잔류함 — 고아 회수가 `attachments` 행 기준이라 cascade 삭제 후에는 찾지 못함 (`ConversationService.delete` 주석 참고)
+- [ ] Spring 내장 MVC 예외(깨진 JSON · 없는 URL · 미지원 메서드)가 500 으로 뭉개질 가능성 — `GlobalExceptionHandler` 가 `ResponseEntityExceptionHandler` 를 상속하지 않고 `@ExceptionHandler(Exception.class)` 를 두고 있어, 전용 핸들러가 없는 400·404·405 가 폴백으로 떨어진다. 실측 후 문서와 코드 중 어느 쪽을 맞출지 결정할 것 (`backend.md` 「예외 → 상태 매핑」의 "400·404 가 500 으로 뭉개지지 않는다" 서술이 함께 걸림)
 - [ ] RAG 문서 업로드 5단계(DB 기록) 실패 시 OpenAI 파일과 스토어 연결이 영구 잔류함 — 보상 처리가 없고 고아 회수는 로컬 첨부만 본다 (`AdminDocumentService.upload` 참고)
 - [ ] 첨부 저장소 S3 이전 검토 (`FileStorage` 구현 교체)
 

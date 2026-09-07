@@ -35,7 +35,7 @@
 
 ### 예외·에러
 - 도메인 예외는 `ApiExceptions`의 `BadRequestException` / `NotFoundException` 등을 던지고,
-  오류 HTTP 매핑은 `GlobalExceptionHandler`가 한다 — 서블릿 필터 단계에서 나가는 오류(미인증 401 ·
+  오류 HTTP 매핑은 `GlobalExceptionHandler`가 한다 — 서블릿 필터 단계에서 나가는 오류(예: 미인증 401 ·
   CORS 403)는 이 경로를 거치지 않으며 `ApiError` 본문이 아니다. 컨트롤러에서 **오류** 상태 코드를
   직접 만들지 않는다.
 
@@ -70,7 +70,7 @@
 ### API 통신
 - 컴포넌트가 `fetch`를 직접 부르지 않는다. `lib/api.ts`의 `api.get/post/patch/del/postForm`을 통해서만 호출한다.
 - 엔드포인트는 `lib/endpoints.ts`에 **한 줄짜리 함수**로 노출한다.
-- 실패는 `ApiError(status, message)`로 통일. 서버가 `message`를 주면 그대로 보여주고, 없으면 `요청 실패 (n)`로 떨어진다.
+- **응답이 도착한** 실패는 `ApiError(status, message)`로 통일. 서버가 `message`를 주면 그대로 보여주고, 없으면 `요청 실패 (n)`로 떨어진다. 네트워크 단계 실패(CORS 거절·오프라인·중단)는 응답이 없어 이 경로를 타지 않는다.
 - 채팅 스트림은 `EventSource`가 아니라 **fetch + ReadableStream** 이다. `EventSource`는 Authorization 헤더를 못 싣는다.
 
 ### 스타일
