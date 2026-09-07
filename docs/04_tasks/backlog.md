@@ -12,8 +12,6 @@
 - [ ] Spring Boot 3.5.16 업그레이드 재검토 (OSS EOL 트랙)
 - [ ] 단일 인스턴스 전제 해소 — 레이트리밋·동시 스트림 카운터가 인메모리라 수평 확장 시 실효 한도가 인스턴스 수만큼 곱해짐
 - [ ] 대화 삭제 중 파일 삭제가 실패하면 그 파일이 영구 잔류함 — 고아 회수가 `attachments` 행 기준이라 cascade 삭제 후에는 찾지 못함 (`ConversationService.delete` 주석 참고)
-- [ ] Spring 내장 MVC 예외 중 **없는 URL · 미지원 메서드(405) · 미지원 미디어 타입(415)** 이 500 으로 뭉개질 가능성 — `GlobalExceptionHandler` 가 `ResponseEntityExceptionHandler` 를 상속하지 않고 `@ExceptionHandler(Exception.class)` 를 두고 있어 전용 핸들러가 없는 쪽은 폴백으로 떨어진다. **`api.md` 상태 코드 표에 405·415 가 아예 없으므로 명세부터 정해야 한다** — 지금 매핑하면 계약에 없던 코드가 새로 생긴다.
-  - 이 항목의 나머지 절반(**깨진 JSON · 잘못된 인코딩 · 빈 본문 · 경로 변수 타입 불일치**)은 #38 에서 실측하고 400 으로 잠갔다(TC-OPS-014~018). 넷 다 실제로 500 이었다.
 - [ ] RAG 문서 업로드 5단계(DB 기록) 실패 시 OpenAI 파일과 스토어 연결이 영구 잔류함 — 보상 처리가 없고 고아 회수는 로컬 첨부만 본다 (`AdminDocumentService.upload` 참고)
 - [ ] 프론트 테스트 파일이 타입 검사를 안 거침 — `tsconfig.app.json` 이 `src/**/*.test.ts(x)` 를 exclude 하고 vitest 는 타입을 보지 않는다. exclude 를 걷으면 기존 오류 3건(`ErrorBoundary.test.tsx` JSX 반환 타입 · `useChat.test.ts` 인자 수 2곳)을 먼저 고쳐야 한다. #25 에서 실측했고, 원인이 달라 그 PR 에 섞지 않았다
 - [ ] `check-doc-refs.sh` 가 섹션 이름을 검사하지 않음 — 파일 경로의 실재만 본다. #28 에서 `backend.md` 가 `frontend.md` 의 없는 섹션(「데이터·오류」)을 가리켰는데 게이트가 통과했다. 「…」 안의 이름을 대상 파일의 헤딩과 대조하면 잡히지만, 헤딩 표기가 문서마다 일정한지 먼저 확인해야 한다

@@ -1,17 +1,22 @@
 package com.ragchatbot.exception;
 
+import java.util.Set;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -107,13 +112,61 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
+	 * 없는 URL - 어느 라우트에도 걸리지 않음.
+	 *
+	 * <p>Spring Boot 3.2+ 는 정적 리소스 체인이 {@code NoResourceFoundException} 을 던짐
+	 * ({@code NoHandlerFoundException} 이 아님 - 실측으로 확인함). 폴백에 맡기면 오타 난 URL 이
+	 * 500 이 되어, 보낸 쪽은 자기 잘못이라는 사실조차 알 수 없었음.
+	 *
+	 * <p><b>경로를 응답에 싣지 않음.</b> 보낸 쪽이 이미 아는 값이라 실어도 얻는 것이 없고,
+	 * 그대로 되돌려 주면 반사 출력 경로가 하나 생김.
+	 */
+	@ExceptionHandler(NoResourceFoundException.class)
+	public ResponseEntity<ApiError> handleNoResource(NoResourceFoundException ex) {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+				.body(new ApiError("NOT_FOUND", "요청한 경로가 없음"));
+	}
+
+	/**
+	 * 라우트는 있으나 그 메서드를 받지 않음.
+	 *
+	 * <p><b>{@code Allow} 헤더를 함께 보냄.</b> RFC 9110 §15.5.6 이 405 응답에 이 헤더를 MUST 로
+	 * 요구함 - 없으면 보낸 쪽은 무엇으로 다시 쳐야 하는지 알 수 없어 상태 코드가 반쪽이 됨.
+	 * 값은 우리가 정의한 API 표면이라 밝혀도 새는 것이 없음(P-3 는 <i>리소스의 존재</i>를 가리는
+	 * 원칙이고, 라우트 형태는 api.md 에 이미 공개돼 있음).
+	 */
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	public ResponseEntity<ApiError> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
+		var builder = ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED);
+		Set<HttpMethod> allowed = ex.getSupportedHttpMethods();
+		if (allowed != null && !allowed.isEmpty()) {
+			builder.allow(allowed.toArray(new HttpMethod[0]));
+		}
+		return builder.body(new ApiError("METHOD_NOT_ALLOWED", "이 경로가 받지 않는 메서드"));
+	}
+
+	/**
+	 * Content-Type 이 그 라우트와 맞지 않음.
+	 *
+	 * <p><b>본문을 읽을 수 없는 것(400)과 다른 사건임.</b> 이쪽은 본문에 닿기 전 협상 단계에서
+	 * 거절됨. 같은 400 으로 뭉뚱그리면 보낸 쪽은 JSON 문법을 고쳐야 하는지 헤더를 고쳐야 하는지
+	 * 구분할 수 없음.
+	 */
+	@ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+	public ResponseEntity<ApiError> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
+		return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+				.body(new ApiError("UNSUPPORTED_MEDIA_TYPE", "지원하지 않는 Content-Type"));
+	}
+
+	/**
 	 * 최종 폴백(FEAT-OPS-002). 위 핸들러에 걸리지 않은 예외만 여기로 옴 - 스프링이 더 구체적인
 	 * 핸들러를 먼저 고르므로 400·404 가 500 으로 뭉개지지 않음.
 	 *
 	 * <p><b>그 보장은 핸들러가 있는 예외에만 성립함.</b> 핸들러가 없으면 그것이 요청 잘못이든
 	 * 서버 잘못이든 전부 여기로 와서 500 이 됨 - 실제로 {@code HttpMessageNotReadableException} 이
-	 * 그렇게 새어 깨진 JSON 이 500 으로 나갔음(#38). 요청 잘못으로 분류되는 예외를 새로 발견하면
-	 * 폴백에 맡기지 말고 위에 핸들러를 추가할 것.</p>
+	 * 그렇게 새어 깨진 JSON 이 500 으로 나갔음(#38). 라우팅 단계 셋(없는 URL · 405 · 415)도 같은
+	 * 이유로 새고 있었음(#45). 요청 잘못으로 분류되는 예외를 새로 발견하면 폴백에 맡기지 말고
+	 * 위에 핸들러를 추가할 것.</p>
 	 *
 	 * <p><b>예외 메시지를 응답에 싣지 않음.</b> SQL 조각·클래스 이름이 그대로 나가면 정보 노출임.
 	 * 사용자에게 주는 것은 상관 ID 하나이고, 그 값으로 로그를 찾음 - 관측 도구를 붙이지 않고
