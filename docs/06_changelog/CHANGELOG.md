@@ -29,8 +29,9 @@
   `BindingException: Invalid bound statement` 로 터진다. `mapper-locations` 가 가리키는
   `resources/mapper/` **폴더명은 표준 구조상 유지**하고 파일명만 `*Repository.xml` 로 맞췄다.
 
-  동작 변경은 없다. 트리 델타가 295 insertions / 295 deletions 로 완전 대칭이라 리네이밍 외의 내용이
-  섞이지 않았음이 형태로 드러난다.
+  동작 변경은 없다. 트리 델타는 295 insertions / 295 deletions 이고, 변경된 전 라인이 패키지 선언 ·
+  import · FQCN 문자열 · 클래스명뿐이다. 대칭은 순수 리네이밍의 필요조건일 뿐이라 그것만으로는 근거가
+  되지 않는다.
 - **`project-docs` 스캐폴딩을 도로 세움 — 같은 날 걷어낸 것을 되돌림.** 아래 항목에서 `FEEDBACK.md` 와
   빈 폴더 다섯을 제거했는데, 같은 날 되돌렸다. 왔다 갔다 한 자리이므로 판단이 어디서 갈렸는지 적어 둔다
   - **걷어낸 근거** : 비어 있는 폴더가 INDEX 에 링크로 보이면 있는 줄 알고 찾게 된다
