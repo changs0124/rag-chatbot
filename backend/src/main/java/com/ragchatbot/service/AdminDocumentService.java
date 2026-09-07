@@ -39,8 +39,12 @@ public class AdminDocumentService {
 	 * 최대 크기. OpenAI 상한(512MB)보다 훨씬 낮게 둔다 - 상한에 맞추면 요청 하나가 멀티파트 버퍼를
 	 * 512MB 잡아 단일 인스턴스가 그대로 멎는다. 사내 규정 문서는 대부분 수 MB다.
 	 * 필요해지면 스트리밍 업로드로 바꾼 뒤 올린다.
+	 *
+	 * <p><b>{@code application.yml} 의 {@code max-file-size} 보다 낮아야 한다.</b> 같거나 높으면
+	 * 멀티파트가 먼저 걷어차 이 검사가 실행되지 않고(도달 불가능한 분기), 사용자는 형식을 밝히는
+	 * 400 대신 413 을 받는다. 이미지 경로가 10MB(코드) &lt; 26MB(멀티파트)로 도는 것과 같은 구조다.
 	 */
-	private static final long MAX_SIZE = 50 * MB;
+	private static final long MAX_SIZE = 25 * MB;
 
 	/** PDF 매직바이트. txt·md 는 매직바이트가 없고 docx 는 zip 이라 `PK` 만으로는 다른 zip 과 구분되지 않는다 */
 	private static final byte[] PDF_MAGIC = { 0x25, 0x50, 0x44, 0x46 }; // %PDF

@@ -232,7 +232,7 @@ docker compose logs app | grep -iE "openai|vector|관리자"
 | 필요한 것 | 방법 |
 |-----------|------|
 | 관리자 계정 | `ADMIN_EMAILS` 에 이메일을 넣고 기동. 계정이 있으면 그 자리에서 승격되고, **없으면 계정째로 만들어지며 임시 비밀번호가 기동 로그에 한 번 찍힌다** — 이 주소는 `ALLOWED_EMAIL_DOMAINS` 밖이어도 만들어진다 |
-| 업로드 | `POST /api/admin/documents` (multipart, 필드명 `file`). PDF · TXT · MD · DOCX, 최대 50MB |
+| 업로드 | `POST /api/admin/documents` (multipart, 필드명 `file`). PDF · TXT · MD · DOCX, 최대 25MB |
 | 상태 확인 | `GET /api/admin/documents` — `status` 가 `completed` 여야 검색에 잡힘 |
 | 내리기 | `DELETE /api/admin/documents/{id}` |
 

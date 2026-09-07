@@ -150,6 +150,29 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 	}
 
+	/**
+	 * TC-ADMIN-025 : 상한을 넘긴 문서는 <b>413 이 아니라 400</b> 이다.
+	 *
+	 * <p>코드 상한(25MB)이 멀티파트 하드 한도(26MB)보다 낮아야 이 검사가 먼저 걸린다. 둘이 같거나
+	 * 뒤집히면 멀티파트가 먼저 걷어차 <b>이 분기가 도달 불가능해지고</b> 사용자는 원인을 밝히지 않는
+	 * 413 만 받는다 - #35 이전이 정확히 그 상태였다(코드 50MB · 멀티파트 25MB).
+	 *
+	 * <p>이 케이스가 413 으로 바뀌면 두 값의 순서가 뒤집혔다는 뜻이다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void oversized_document_is_rejected_by_service_not_multipart() {
+		String token = createAdminUser("doc-oversize@b.com");
+		byte[] tooBig = new byte[25 * 1024 * 1024 + 1024]; // 25MiB + 1KiB
+
+		var res = upload(token, "대용량.txt", tooBig, "text/plain");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
+		// 무엇이 문제인지 밝히는 메시지여야 한다 - 413 의 "업로드 용량 한도 초과" 와 구분되는 지점
+		assertThat((String) res.getBody().get("message")).contains("25MB");
+	}
+
 	/** TC-ADMIN-013 : 확장자만 PDF인 파일은 400 (매직바이트 검사) */
 	@Test
 	void fake_pdf_is_rejected() {

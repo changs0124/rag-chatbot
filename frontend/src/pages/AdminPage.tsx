@@ -171,7 +171,7 @@ export default function AdminPage() {
             <span className="text-sm text-ink">
               {uploading ? '올리는 중…' : '파일을 선택해 올립니다'}
             </span>
-            <span className="text-xs text-ink-muted">PDF · TXT · MD · DOCX · 최대 50MB</span>
+            <span className="text-xs text-ink-muted">PDF · TXT · MD · DOCX · 최대 25MB</span>
             <input
               ref={fileInput}
               type="file"
