@@ -14,7 +14,7 @@
 > 권한 없음 403 · 리프레시 토큰이다. 이 저장소는 **래핑 없는 원시 DTO · `/api` · 404 은닉 ·
 > 슬라이딩 재발급**이다. 사유는 각 절에 적는다.
 >
-> 컨트롤러 정본은 `backend/src/main/java/com/ragchatbot/web/` 다.
+> 컨트롤러 정본은 `backend/src/main/java/com/ragchatbot/controller/` 다.
 
 ## 1. API 공통 규칙
 

@@ -6,11 +6,11 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ragchatbot.domain.Citation;
-import com.ragchatbot.domain.Message;
-import com.ragchatbot.mapper.CitationMapper;
-import com.ragchatbot.mapper.ConversationMapper;
-import com.ragchatbot.mapper.MessageMapper;
+import com.ragchatbot.entity.Citation;
+import com.ragchatbot.entity.Message;
+import com.ragchatbot.repository.CitationRepository;
+import com.ragchatbot.repository.ConversationRepository;
+import com.ragchatbot.repository.MessageRepository;
 import com.ragchatbot.openai.OpenAiService.CitationData;
 
 /**
@@ -21,15 +21,15 @@ import com.ragchatbot.openai.OpenAiService.CitationData;
 @Service
 public class ChatPersistenceService {
 
-	private final MessageMapper messageMapper;
-	private final CitationMapper citationMapper;
-	private final ConversationMapper conversationMapper;
+	private final MessageRepository messageRepository;
+	private final CitationRepository citationRepository;
+	private final ConversationRepository conversationRepository;
 
-	public ChatPersistenceService(MessageMapper messageMapper, CitationMapper citationMapper,
-			ConversationMapper conversationMapper) {
-		this.messageMapper = messageMapper;
-		this.citationMapper = citationMapper;
-		this.conversationMapper = conversationMapper;
+	public ChatPersistenceService(MessageRepository messageRepository, CitationRepository citationRepository,
+			ConversationRepository conversationRepository) {
+		this.messageRepository = messageRepository;
+		this.citationRepository = citationRepository;
+		this.conversationRepository = conversationRepository;
 	}
 
 	/**
@@ -41,12 +41,12 @@ public class ChatPersistenceService {
 	@Transactional
 	public void saveAssistant(UUID conversationId, UUID userId, UUID assistantMsgId, String content, String status,
 			boolean stopped, List<CitationData> citations, Integer inputTokens, Integer outputTokens) {
-		messageMapper.insert(new Message(assistantMsgId, conversationId, "assistant", content, status, stopped,
+		messageRepository.insert(new Message(assistantMsgId, conversationId, "assistant", content, status, stopped,
 				inputTokens, outputTokens, null));
 		for (CitationData c : citations) {
-			citationMapper.insert(new Citation(UUID.randomUUID(), assistantMsgId, c.seq(), c.sourceName(),
+			citationRepository.insert(new Citation(UUID.randomUUID(), assistantMsgId, c.seq(), c.sourceName(),
 					c.snippet(), c.uri(), null));
 		}
-		conversationMapper.touch(conversationId, userId);
+		conversationRepository.touch(conversationId, userId);
 	}
 }

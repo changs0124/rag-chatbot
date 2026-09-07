@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.ragchatbot.error.ApiExceptions.UnauthorizedException;
+import com.ragchatbot.exception.ApiExceptions.UnauthorizedException;
 
 /**
  * SecurityContext에서 인증된 userId를 꺼내는 헬퍼.

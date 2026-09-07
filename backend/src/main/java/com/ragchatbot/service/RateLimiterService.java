@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.ragchatbot.error.ApiExceptions.RateLimitException;
+import com.ragchatbot.exception.ApiExceptions.RateLimitException;
 
 /**
  * 사용자별 분당 요청 상한(비용 통제, D-1). 고정 윈도우 방식.

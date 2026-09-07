@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.ragchatbot.error.ApiExceptions.RateLimitException;
+import com.ragchatbot.exception.ApiExceptions.RateLimitException;
 
 /**
  * 동시 스트림 상한(back-pressure). 레이트리밋이 <b>분당 횟수</b>를 재는 것과 달리 여기서는
