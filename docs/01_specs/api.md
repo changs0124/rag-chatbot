@@ -270,7 +270,7 @@
 |------|-----|
 | 허용 형식 | PDF · TXT · MD · DOCX |
 | 형식 판정 | content-type 1차. **모를 때만**(`application/octet-stream`·빈 값) 파일 확장자 2차 |
-| 최대 크기 | 50MB |
+| 최대 크기 | 25MB |
 | 매직바이트 | **PDF만** 검사(`%PDF`). 확장자로 판정한 경우에도 그대로 검사한다 |
 
 **Response 201:** 문서 DTO 하나.
