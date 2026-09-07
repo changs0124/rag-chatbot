@@ -21,12 +21,13 @@
 - **백엔드 패키지 이름을 계층형 표준 어휘로 통일(#19, 71파일).** `web/` → `controller/` ·
   `web/dto/` → `dto/` · `mapper/` → `repository/`(인터페이스 6개 클래스명 포함) · `domain/` → `entity/` ·
   `error/` → `exception/`. `mapper` 는 MyBatis·SI 관행 어휘인데 `dto` 와 섞여 있었고 `web`·`domain`·`error`
-  는 어느 세트에도 속하지 않았다. 표준 계층에 없는 `config`·`service`·`security`·`storage`·`openai` 는 그대로 뒀다.
+  는 어느 세트에도 속하지 않았다. `service` 는 이미 표준 어휘와 같아 그대로 뒀고, 표준 계층 어휘 밖인
+  `config`·`security`·`storage`·`openai` 도 건드리지 않았다.
 
-  **MyBatis 는 패키지 경로를 문자열로 들고 있어 컴파일러가 못 잡는 자리가 세 곳**이라 인터페이스 FQCN 과
-  1:1 로 대조했다 — XML 의 `namespace` · `resultMap type` · `parameterType`, `application.yml` 의
-  `type-aliases-package` · `type-handlers-package`. 어긋나면 컴파일은 통과하고 런타임에
-  `BindingException: Invalid bound statement` 로 터진다. `mapper-locations` 가 가리키는
+  **MyBatis 는 패키지 경로를 문자열로 들고 있어 컴파일러가 못 잡는 자리가 다섯 곳**이라 전부 실물과
+  1:1 로 대조했다 — XML 의 `namespace`(인터페이스 FQCN) · `resultMap type` · `parameterType`(엔티티·DTO
+  FQCN), `application.yml` 의 `type-aliases-package` · `type-handlers-package`(패키지 경로).
+  어긋나면 컴파일은 통과하고 런타임에 `BindingException: Invalid bound statement` 로 터진다. `mapper-locations` 가 가리키는
   `resources/mapper/` **폴더명은 표준 구조상 유지**하고 파일명만 `*Repository.xml` 로 맞췄다.
 
   동작 변경은 없다. 트리 델타는 295 insertions / 295 deletions 이지만, 대칭은 순수 리네이밍의
