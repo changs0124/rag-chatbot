@@ -1,0 +1,53 @@
+# after — 변경 후
+
+## 전체 빌드 + 테스트
+[INFO] Tests run: 164, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+## 구 패키지 경로 잔존
+$ grep -rn 'com.ragchatbot.(domain|mapper|web|error)' backend/src/  →  0건
+
+## 패키지 트리
+main/java/com/ragchatbot/controller/AdminController.java
+main/java/com/ragchatbot/controller/AuthController.java
+main/java/com/ragchatbot/controller/ChatController.java
+main/java/com/ragchatbot/controller/ConversationController.java
+main/java/com/ragchatbot/controller/FileController.java
+main/java/com/ragchatbot/controller/HealthController.java
+main/java/com/ragchatbot/controller/ProfileController.java
+main/java/com/ragchatbot/dto/AdminDtos.java
+main/java/com/ragchatbot/dto/AuthDtos.java
+main/java/com/ragchatbot/dto/ChatDtos.java
+main/java/com/ragchatbot/dto/ConversationDtos.java
+main/java/com/ragchatbot/dto/FileDtos.java
+main/java/com/ragchatbot/dto/ProfileDtos.java
+main/java/com/ragchatbot/entity/Attachment.java
+main/java/com/ragchatbot/entity/Citation.java
+main/java/com/ragchatbot/entity/Conversation.java
+main/java/com/ragchatbot/entity/Message.java
+main/java/com/ragchatbot/entity/RagDocument.java
+main/java/com/ragchatbot/entity/RagDocumentSummary.java
+main/java/com/ragchatbot/entity/User.java
+main/java/com/ragchatbot/exception/ApiExceptions.java
+main/java/com/ragchatbot/exception/GlobalExceptionHandler.java
+main/java/com/ragchatbot/repository/AttachmentRepository.java
+main/java/com/ragchatbot/repository/CitationRepository.java
+main/java/com/ragchatbot/repository/ConversationRepository.java
+main/java/com/ragchatbot/repository/handler/UuidTypeHandler.java
+main/java/com/ragchatbot/repository/MessageRepository.java
+main/java/com/ragchatbot/repository/RagDocumentRepository.java
+main/java/com/ragchatbot/repository/UserRepository.java
+test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java
+test/java/com/ragchatbot/controller/AdminUserFlowTest.java
+test/java/com/ragchatbot/controller/AuthDomainAllowlistTest.java
+test/java/com/ragchatbot/controller/AuthFlowTest.java
+test/java/com/ragchatbot/controller/ChatBackPressureTest.java
+test/java/com/ragchatbot/controller/ChatFlowTest.java
+test/java/com/ragchatbot/controller/ChatStageHonestyTest.java
+test/java/com/ragchatbot/controller/ChatStreamContractTest.java
+test/java/com/ragchatbot/controller/ConversationCrossAccessTest.java
+test/java/com/ragchatbot/controller/FileFlowTest.java
+test/java/com/ragchatbot/controller/HealthControllerTest.java
+test/java/com/ragchatbot/controller/ProfileFlowTest.java
+test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java
+test/java/com/ragchatbot/repository/UserRepositoryUuidTest.java

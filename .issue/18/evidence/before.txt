@@ -1,0 +1,49 @@
+# before — 변경 전 (main 기준)
+
+## 컴파일
+$ ./mvnw -q -o clean test-compile  →  EXIT=0
+
+## 패키지 트리
+main/java/com/ragchatbot/domain/Attachment.java
+main/java/com/ragchatbot/domain/Citation.java
+main/java/com/ragchatbot/domain/Conversation.java
+main/java/com/ragchatbot/domain/Message.java
+main/java/com/ragchatbot/domain/RagDocument.java
+main/java/com/ragchatbot/domain/RagDocumentSummary.java
+main/java/com/ragchatbot/domain/User.java
+main/java/com/ragchatbot/error/ApiExceptions.java
+main/java/com/ragchatbot/error/GlobalExceptionHandler.java
+main/java/com/ragchatbot/mapper/AttachmentMapper.java
+main/java/com/ragchatbot/mapper/CitationMapper.java
+main/java/com/ragchatbot/mapper/ConversationMapper.java
+main/java/com/ragchatbot/mapper/handler/UuidTypeHandler.java
+main/java/com/ragchatbot/mapper/MessageMapper.java
+main/java/com/ragchatbot/mapper/RagDocumentMapper.java
+main/java/com/ragchatbot/mapper/UserMapper.java
+main/java/com/ragchatbot/web/AdminController.java
+main/java/com/ragchatbot/web/AuthController.java
+main/java/com/ragchatbot/web/ChatController.java
+main/java/com/ragchatbot/web/ConversationController.java
+main/java/com/ragchatbot/web/dto/AdminDtos.java
+main/java/com/ragchatbot/web/dto/AuthDtos.java
+main/java/com/ragchatbot/web/dto/ChatDtos.java
+main/java/com/ragchatbot/web/dto/ConversationDtos.java
+main/java/com/ragchatbot/web/dto/FileDtos.java
+main/java/com/ragchatbot/web/dto/ProfileDtos.java
+main/java/com/ragchatbot/web/FileController.java
+main/java/com/ragchatbot/web/HealthController.java
+main/java/com/ragchatbot/web/ProfileController.java
+test/java/com/ragchatbot/error/GlobalExceptionFallbackTest.java
+test/java/com/ragchatbot/mapper/UserMapperUuidTest.java
+test/java/com/ragchatbot/web/AdminDocumentFlowTest.java
+test/java/com/ragchatbot/web/AdminUserFlowTest.java
+test/java/com/ragchatbot/web/AuthDomainAllowlistTest.java
+test/java/com/ragchatbot/web/AuthFlowTest.java
+test/java/com/ragchatbot/web/ChatBackPressureTest.java
+test/java/com/ragchatbot/web/ChatFlowTest.java
+test/java/com/ragchatbot/web/ChatStageHonestyTest.java
+test/java/com/ragchatbot/web/ChatStreamContractTest.java
+test/java/com/ragchatbot/web/ConversationCrossAccessTest.java
+test/java/com/ragchatbot/web/FileFlowTest.java
+test/java/com/ragchatbot/web/HealthControllerTest.java
+test/java/com/ragchatbot/web/ProfileFlowTest.java
