@@ -1,60 +1,58 @@
-## 수정 완료
+## 최종 리포트 (4차)
 
-문서만 바뀌므로 스크린샷 대신 **주장별 코드 대조**를 증거로 남긴다.
+문서만 바뀌므로 스크린샷 대신 **주장별 전수 대조**를 증거로 남긴다.
 
-### 무엇이 거짓이었나
+### 무엇이 문제였나
 
-`backend.md` 세 번째 불릿:
+`#21` 이 `backend.md` 「레이어」에 넣은 불릿이 코드에 없는 패턴을 불변식으로 적었다.
 
-> 등록·**수정·삭제는 반드시 `entity` 를 경유한다.** 비즈니스 규칙이 엔티티 쪽에 있으므로 이 예외는 조회에만 적용된다.
+> 등록·**수정·삭제는 반드시 `entity` 를 경유한다.** 비즈니스 규칙이 엔티티 쪽에 있으므로
 
-두 주장이 모두 거짓이었다.
+두 주장 다 거짓이었다. 수정·삭제 **13건**이 전부 스칼라·컬렉션 파라미터를 받고, `entity/` record 6개는 **전부 메서드가 0개**다.
 
-**주장 A — 수정·삭제가 entity 를 경유한다** → repository 의 update/delete 계열 **11개가 전부 스칼라 파라미터**를 받는다.
+### 네 번 고쳤고, 네 번 다 같은 자리에서 틀렸다
 
-```
-ConversationRepository  deleteByIdAndUser(id, userId) · updateTitle(id, userId, title)
-RagDocumentRepository   updateStatus(id, status) · softDelete(id, deletedAt)
-UserRepository          updateName · updatePasswordHash · updateTheme · demoteAdminsNotIn · promoteAdmins
-AttachmentRepository    deleteByIdAndUser(id, userId) · deleteById(id)
-```
+| 회차 | 틀린 자리 | 판정 |
+|---|---|---|
+| 1차 (#21) | 「규칙이 `entity` 에 있다」 | 거짓 |
+| 2차 (#22) | 「규칙은 `service` 에 있다」 | 과잉 일반화 — `config` · `dto` 에도 있음 |
+| 3차 (#22) | 「권한은 `service`, 입력 검증은 `dto`」 | 거짓 — 권한은 네 곳으로 갈림 |
+| 4차 (#22) | 「**10건**은 식별자와 바뀔 값을 스칼라로」 | 거짓 — 그중 3건이 삭제문이라 「바뀔 값」이 없음 |
 
-entity 를 받는 것은 `insert` 6개뿐이다.
+**전부 핵심 명제가 아니라 그 뒤에 붙인 분해·귀속절이다.** 3차에서 열거절을 지웠는데, 그 자리에 성격이 똑같은 새 분해절(10/3)을 넣어 같은 함정을 다시 밟았다. 증거 파일이 직접 쓴 진단 — 「열거절은 논증에 기여하지 않으면서 틀릴 표면적만 늘렸다」 — 이 10/3 분해에도 한 글자 안 고치고 그대로 적용된다.
 
-**주장 B — 비즈니스 규칙이 엔티티 쪽에 있다** → `entity/` record 6개가 **전부 메서드 0개**다.
+### 최종 문장
 
-```
-Attachment 0 · Citation 0 · Conversation 0 · Message 0 · RagDocument 0 · User 0
-```
-
-같은 문서 `:11`(`service/ 오케스트레이션 · 트랜잭션 경계`)·`:14`(`entity/ DB 행에 대응하는 record`)와 **정면으로 모순**된다.
-
-### 고친 문장
+분해를 없앴다. 13건을 나누지 않는다.
 
 ```
-- **이 예외는 조회에만 적용된다.** 쓰기 경로는 `dto` 를 매핑하지 않는다. 등록은 `entity` 를 통째로 받고
-  (`insert(RagDocument)`), 수정·삭제는 식별자와 바뀔 값만 스칼라 파라미터로 받는다
-  (`updateStatus(id, status)` · `softDelete(id, deletedAt)`). `entity/` 의 record 는 값을 담기만 하고
-  규칙은 `service/` 에 있으므로, 수정·삭제까지 굳이 entity 를 거칠 이유가 없다.
+- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 6 · `<update>` 10 · `<delete>` 3.
+  소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다. **`entity` 를 통째로 받는 것은 등록
+  6건뿐이고**(`insert(RagDocument)`), **수정·삭제 13건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
 ```
 
-예외 확대를 막는 첫 문장("이 예외는 조회에만 적용된다")은 참이므로 살렸고, 그 뒤를 **관측된 실제 패턴**으로 바꿨다.
+이 문장은 메서드가 추가돼도 낡지 않고, **나눠 세다 틀릴 자리가 없다.**
 
-**고친 문장이 코드에서 참인지 다시 grep 으로 대조했다.** 이번 오류의 원인이 "확인 없이 적은 것" 이므로 이 단계를 생략하지 않았다.
+**「규칙의 자리는 `entity/` 가 아니다」 불릿은 통째로 삭제했다.** 논증이 성립하지 않았다 — 「메서드가 없다」가 지우는 것은 *규칙 집행*이라는 이유 하나뿐인데, `updateName` · `updatePasswordHash` · `updateTheme` 처럼 `update(User)` 였다면 하나로 접혔을 자리가 실재한다. 그리고 규칙의 실제 배치는 같은 문서 `:16,18`(`security/` · `config/`)과 `:190`(업로드 검증 순서)이 **이미 정확하게** 적고 있다. 정본이 있는 사실을 두 번째 자리에 요약하는 것은 `aa7638b` 에서 이미 정리한 안티패턴이다.
 
-### 왜 생겼나
+### 전수 검증
 
-볼트 노트의 일반 원칙("실무 기준선 — 등록·수정·삭제는 반드시 Entity 경유")을 **코드로 확인하지 않고 이 저장소의 불변식으로 옮겨 적었다.** 일반적으로 권장되는 설계와, 이 저장소가 실제로 하고 있는 것은 다른 이야기다.
+```
+주장> <insert> 6 · <update> 10 · <delete> 3
+검증> 6 · 10 · 3   (softDelete 는 <update id="softDelete"> 로 실재)
 
-**CI 가 못 잡은 이유** : `scripts/check-doc-refs.sh` 는 **파일 경로만** 검사한다. 클래스·메서드 이름과 불변식 문장은 어떤 정적 검사로도 안 잡힌다. `#21` 은 파일 경로를 하나도 안 바꿨으므로 이 게이트가 구조적으로 볼 수 없는 변경이었다.
+주장> 쓰기 경로는 dto 를 매핑하지 않는다
+검증> XML 전체에서 com.ragchatbot.dto 등장 = 1건 (RagDocumentRepository.xml:21)
+      그것을 쓰는 것은 <select id="listAlive"> (:41) 뿐 = 전수
 
-### CHANGELOG
+주장> entity 를 통째로 받는 것은 등록 6건뿐
+검증> insert(Attachment) · insert(Citation) · insert(Conversation)
+      insert(Message) · insert(RagDocument) · insert(User)
+      insert 외에 entity 파라미터를 받는 메서드 = 0건
 
-`[Unreleased] ### Changed` 에 #19 · #21 을 추가했다. 그 절은 훨씬 작은 변경(선행 조회 제거, 카운터 필드 삭제)까지 적고 있는데 71파일 리네이밍과 계층 예외 최초 도입이 빠져 있었다.
-
-`#21` 항목에는 **삭제된 타입명 `RagDocumentSummary` 를 남겼다** — 옛 문서나 이슈에서 그 이름을 만난 사람이 "왜 없어졌는지" 를 찾을 자리가 된다. 기각한 대안(같은 모양 타입 하나 더 두기)도 함께 적었다.
-
-### 검증
+주장> 수정·삭제 13건은 전부 식별자·값 스칼라 또는 이메일 List 를 받는다
+검증> update+delete = 13건. 파라미터 타입 전수 = UUID · String · OffsetDateTime · List<String>
+```
 
 ```
 $ sh scripts/check-doc-refs.sh
@@ -62,8 +60,23 @@ $ sh scripts/check-doc-refs.sh
 문서 참조 검사 통과
 ```
 
-```
-2 files changed, 30 insertions(+), 2 deletions(-)
-```
+### CHANGELOG
 
-문서만 바뀌므로 `./mvnw` 는 돌리지 않았다.
+`[Unreleased] ### Changed` 에 #19 · #21 을 추가했다. 그 절은 훨씬 작은 변경까지 적고 있는데 71파일 리네이밍과 계층 예외 최초 도입이 빠져 있었다. `#21` 항목에는 **삭제된 타입명 `RagDocumentSummary`** 와 기각한 대안(같은 모양 타입 하나 더 두기)을 남겼다.
+
+#19 의 근거 문장도 두 번 고쳤다. 처음엔 「대칭이라 형태로 드러난다」였는데 **대칭은 필요조건일 뿐 충분조건이 아니다**(한 줄 고치고 한 줄 지워도 대칭이다). 다음엔 「전 라인이 패키지 선언 · import · FQCN 문자열 · 클래스명뿐」이라 적었는데 이것도 거짓이었다 — `this.userMapper = userMapper;` → `this.userRepository = userRepository;` 같은 식별자 라인에는 그 넷 중 아무것도 없다. 최종적으로 「옛 이름 → 새 이름 치환과 그에 딸린 들여쓰기 조정뿐」으로 적었다.
+
+### 증거 형식을 세 번 바꿨다
+
+- 1차 : grep 출력만 나열 → 주장과 검증이 다른지 눈으로 못 맞춤
+- 2차 : 절마다 검증 명제 부기 → 여전히 **존재 검사**로 **배타적 배치**를 주장
+- 3차 : 문서 문장을 문자 그대로 인용 → 「예:」 2건으로 전수를 주장
+- **4차 : 「예:」 를 없앴다.** 전수를 주장하는 자리에 예시를 붙이면 그 자리가 다음 반례가 된다
+
+### 절차 결함 하나
+
+`after.txt` 는 세 번 갱신하면서 **이 `comment.md` 는 1차 시점 그대로 방치**했다. PR 에 커밋돼 이슈에 렌더링되는 리포트인데, 존재하지 않는 문장을 「고친 문장」으로 싣고 13건을 11건으로 세고 있었다. 이 코멘트가 그 재작성본이다.
+
+### 범위 밖으로 넘긴 것
+
+`backend.md:36-38` 의 또 다른 거짓 불변식(「상태 코드를 컨트롤러가 만들지 않는다 … 삭제류만 `noContent()`」)은 원인이 #23 과 같아 [그쪽에 넘겼다](https://github.com/changs0124/rag-chatbot/issues/23#issuecomment-5564172789).
