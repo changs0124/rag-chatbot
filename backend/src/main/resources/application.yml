@@ -12,9 +12,11 @@ spring:
     password: ${DB_PASSWORD:}
   servlet:
     multipart:
-      # 타입별 상한(이미지 10MB/문서 20MB)은 코드가 400으로 먼저 검사. 이 하드 한도 초과는 413
-      max-file-size: 25MB
-      max-request-size: 30MB
+      # 타입별 상한(이미지 10MB/문서 25MB)은 코드가 400으로 먼저 검사. 이 하드 한도 초과는 413.
+      # **코드 상한보다 높게 둔다** - 같으면 멀티파트가 먼저 걷어차 코드의 400 검사가 죽은 분기가 되고,
+      # 사용자는 무엇이 문제인지 밝히는 400 대신 413 만 받는다(#35). 1MB 여유가 그 역할이다
+      max-file-size: 26MB
+      max-request-size: 31MB
   flyway:
     # P-4 : 스키마의 소유자는 마이그레이션 SQL. 기동 시 자동 적용
     enabled: true
