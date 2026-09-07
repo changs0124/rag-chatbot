@@ -29,6 +29,8 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 
 `APP_MODE`는 기본값이 없다. 미설정이면 `AppModeGuard`가 기동을 막는다 — 목업이 우연히 켜지는 경로를 없애기 위한 의도적 설계다.
 
+**`./mvnw` 로 띄울 때 `backend/.env` 는 읽히지 않는다.** dotenv 로더가 없어서 셸에 직접 넣어야 한다(`export $(grep -v '^#' backend/.env | xargs)`). `.env` 를 그대로 읽는 것은 `docker compose` 뿐이며, DB까지 함께 뜨므로 그쪽이 더 간단하다 — `docker compose up -d --build db app`.
+
 ## 배포 준비 상태
 
 코드는 **키·Vector Store·서버만 준비하면 도는 상태**로 맞춰져 있다.

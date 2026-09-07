@@ -324,7 +324,9 @@ S3 등으로 교체해야 한다.
 프론트는 Vercel(https)에 있고 백엔드는 로컬이므로 `http://공인IP:8080` 직결은 성립하지 않는다 —
 https 페이지가 http 를 부르면 브라우저가 mixed content 로 막는다. 터널이 https 종단을 대신 맡는다.
 
-1. 백엔드를 평소대로 띄운다(`./mvnw spring-boot:run`, `:8080`)
+1. 백엔드를 평소대로 띄운다(`./mvnw spring-boot:run`, `:8080`).
+   **이 경로는 `backend/.env` 를 읽지 않는다** — dotenv 로더가 없어 환경변수를 셸에 직접 넣어야 한다.
+   `.env` 를 그대로 쓰려면 `docker compose up -d --build db app` 으로 띄운다
 2. 터널을 연다 — `ngrok http 8080` 또는 `cloudflared tunnel --url http://localhost:8080`
 3. 백엔드 `ALLOWED_ORIGINS` 에 **Vercel 도메인**을 넣는다. 터널 주소가 아니다 —
    이 값은 백엔드의 공개 주소가 아니라 **요청을 보내는 화면의 출처**다
