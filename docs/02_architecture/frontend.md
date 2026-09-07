@@ -46,7 +46,8 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 ## API 통신
 
-- 컴포넌트가 `fetch` 를 직접 부르지 않는다. `frontend/src/lib/api.ts` 의 `api.get/post/patch/del/postForm` 만 쓴다.
+- API 호출은 `frontend/src/lib/api.ts` 의 `api.get/post/patch/del/postForm` 을 통한다. 예외는 둘 —
+  채팅 스트림(아래)과 첨부 저장(`ImageLightbox.download()` 이 blob 으로 받아야 해서 `fetch` 를 직접 쓴다).
 - 엔드포인트는 `frontend/src/lib/endpoints.ts` 에 한 줄 함수로 노출한다.
 - **응답이 도착한** 실패는 `ApiError(status, message)` 로 통일하고, 서버가 `message` 를 주면 그대로 보여준다 — 없으면 `요청 실패 (n)` 로 떨어진다. 네트워크 단계 실패(CORS 거절·오프라인·중단)는 `fetch` 가 reject 되어 이 경로를 타지 않는다.
 - 비밀번호 변경 응답의 **새 토큰으로 반드시 교체**해야 한다. 서버가 변경 시각 이전 토큰을 전부 무효화하므로,
