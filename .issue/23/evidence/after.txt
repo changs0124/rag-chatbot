@@ -76,3 +76,22 @@
 ## check-doc-refs
   참조 수집 182건 · 실재 검사 180건
   문서 참조 검사 통과
+
+================================================================
+## 5차 추가 — 같은 절의 이웃 줄
+
+문서> - API 호출은 lib/api.ts 의 api.get/... 을 통한다. 예외는 둘 — 채팅 스트림(아래)과
+문서>   첨부 저장(ImageLightbox.download() 이 blob 으로 받아야 해서 fetch 를 직접 쓴다).
+검증> 저장소 전체의 fetch( 전수 = 3곳. 새 문장의 래퍼 + 예외 둘과 1:1 대응:
+      frontend/src/lib/api.ts:91:  const res = await fetch(BASE + path, {
+      frontend/src/lib/endpoints.ts:82:  const res = await fetch(API_BASE + '/api/chat', {
+      frontend/src/components/chat/ImageLightbox.tsx:109:      const res = await fetch(current.src)
+
+      ※ 직전 판본은 '컴포넌트가 fetch 를 직접 부르지 않는다' 였고 거짓이었다.
+        ImageLightbox.tsx:109 가 API_BASE + a.url(API-GET-006)을 직접 부른다.
+        내가 고친 두 줄의 바로 두 줄 위, 같은 절이다 — '건드린 줄이 속한 절 전체'
+        규칙을 세워 놓고 이웃 줄을 스윕하지 않았다.
+
+## check-doc-refs
+  참조 수집 182건 · 실재 검사 180건
+  문서 참조 검사 통과
