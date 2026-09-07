@@ -296,6 +296,13 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 5. `docker compose up -d --build`
 6. 백엔드 `ALLOWED_ORIGINS` 에 **Vercel 도메인**을, 프론트 `VITE_API_BASE_URL` 에 **터널 도메인**을 넣는다
 
+**이미지 빌드는 `mvnw` 를 쓰지 않는다.** build 스테이지가 `maven:3.9.16-eclipse-temurin-17-alpine` 이라
+Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip 을 Maven Central 에서 내려받는데,
+의존성 해석보다 앞선 단계라 레이어 캐시로도 덮이지 않고 Central 이 거절하면 이미지 빌드가 통째로 멎는다.
+버전은 wrapper 가 쓰던 3.9.16 과 같게 고정했고, `mvnw` 자체는 로컬·CI 용으로 그대로 남는다.
+**의존성 해석은 여전히 Central 을 타므로** 그쪽은 재시도 두 번으로 덮는다 — 없앤 것은 배포판이라는 한 홉이다.
+멀티스테이지라 최종 이미지는 `eclipse-temurin:17-jre-alpine` 그대로이며, 실측 크기 차이는 45바이트였다.
+
 **첨부 파일은 로컬 디스크에 저장한다.** compose 의 `uploads` 볼륨이 `/data/uploads` 를 받으며,
 이 볼륨을 떼면 업로드된 이미지가 사라진다. 볼륨을 쓸 수 없는 환경이면 `FileStorage` 구현을
 S3 등으로 교체해야 한다.
