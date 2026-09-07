@@ -6,9 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -76,8 +78,42 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
+	 * 요청 본문을 읽지 못함 - 깨진 JSON · UTF-8 이 아닌 바이트 · 빈 본문이 전부 여기로 옴.
+	 *
+	 * <p><b>보낸 쪽 잘못이므로 400 이다.</b> 이 핸들러가 없으면 폴백이 받아 500 이 나가고, 그러면
+	 * 상관 ID 만 남아 보내는 쪽은 무엇을 고쳐야 하는지 알 수 없다. 실제로 인코딩이 어긋난
+	 * 클라이언트에서 이 경로를 밟았다(TC-OPS-014~016).
+	 *
+	 * <p>예외 메시지는 싣지 않음 - 파서 예외에는 본문 조각과 클래스 이름이 들어 있어
+	 * {@link #handleUnexpected} 와 같은 이유로 노출 대상이 아님(TC-OPS-018).
+	 */
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex) {
+		log.warn("요청 본문을 읽지 못함: {}", ex.getMostSpecificCause().getMessage());
+		return ResponseEntity.badRequest()
+				.body(new ApiError("BAD_REQUEST", "요청 본문을 읽을 수 없음 (JSON 형식과 인코딩을 확인할 것)"));
+	}
+
+	/**
+	 * 경로·쿼리 변수의 타입이 어긋남 - UUID 자리에 UUID 가 아닌 값이 온 경우 등.
+	 *
+	 * <p>없는 UUID(404)와 UUID 가 아닌 값(400)은 다른 사건이다. 변수 이름은 우리가 정의한 API 표면이라
+	 * 밝혀도 새는 것이 없고, 밝혀야 어디를 고칠지 알 수 있다.
+	 */
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+		return ResponseEntity.badRequest()
+				.body(new ApiError("BAD_REQUEST", "요청 값의 형식이 올바르지 않음: " + ex.getName()));
+	}
+
+	/**
 	 * 최종 폴백(FEAT-OPS-002). 위 핸들러에 걸리지 않은 예외만 여기로 옴 - 스프링이 더 구체적인
 	 * 핸들러를 먼저 고르므로 400·404 가 500 으로 뭉개지지 않음.
+	 *
+	 * <p><b>그 보장은 핸들러가 있는 예외에만 성립함.</b> 핸들러가 없으면 그것이 요청 잘못이든
+	 * 서버 잘못이든 전부 여기로 와서 500 이 됨 - 실제로 {@code HttpMessageNotReadableException} 이
+	 * 그렇게 새어 깨진 JSON 이 500 으로 나갔음(#38). 요청 잘못으로 분류되는 예외를 새로 발견하면
+	 * 폴백에 맡기지 말고 위에 핸들러를 추가할 것.</p>
 	 *
 	 * <p><b>예외 메시지를 응답에 싣지 않음.</b> SQL 조각·클래스 이름이 그대로 나가면 정보 노출임.
 	 * 사용자에게 주는 것은 상관 ID 하나이고, 그 값으로 로그를 찾음 - 관측 도구를 붙이지 않고
