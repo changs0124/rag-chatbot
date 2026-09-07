@@ -3,6 +3,7 @@ package com.ragchatbot.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -91,6 +92,47 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 			// 올린 사람 이름이 실려야 감사 기록이 화면에서 읽힘(REQ-ADMIN-002)
 			assertThat(r.get("uploadedByName")).isEqualTo("사용자");
 		});
+	}
+
+	/**
+	 * 목록 한 행이 계약의 여섯 필드를 <b>제 출처에서</b> 실어 온다.
+	 *
+	 * <p>`summaryResult` 는 위치 기반 `<constructor>` 라 SQL 이 응답 스펙에 직결돼 있다.
+	 * 값을 단언하지 않으면 결선이 어긋나도 조용히 통과한다 - `byte_size` 를 `0` 으로, `status` 를
+	 * 리터럴로, `created_at` 을 <b>올린 사람의 가입 시각</b>으로 바꿔도 이 파일의 나머지 케이스는
+	 * 전부 통과했다(#25 실측).
+	 *
+	 * <p>반대로 <b>arg 순서 교환은 여기서 막는 대상이 아니다.</b> 타입이 다르면 생성자를 못 찾아
+	 * 질의 시점에 터지고, 타입 시퀀스를 보존하는 교환은 String 셋(filename·status·uploadedByName)
+	 * 사이뿐인데 3원소 순열은 항등이 아니면 최소 둘을 움직여 위 케이스의 두 단언에 걸린다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void list_row_carries_every_contract_field_from_its_own_source() {
+		String email = "doc-contract@b.com";
+		String token = signupAdmin(email);
+		byte[] content = pdf();
+		var created = upload(token, "계약고정.pdf", content, "application/pdf");
+		String id = (String) created.getBody().get("id");
+
+		List<Map<String, Object>> rows = list(token).getBody();
+		Map<String, Object> row = rows.stream().filter(r -> id.equals(r.get("id"))).findFirst().orElseThrow();
+
+		// 필드가 늘거나 줄면 프론트의 RagDocument 와 어긋난다 - scripts/check-response-contract.sh 가 이름을, 여기가 값을 본다
+		assertThat(row).containsOnlyKeys("id", "filename", "byteSize", "status", "uploadedByName", "createdAt");
+		assertThat(row.get("filename")).isEqualTo("계약고정.pdf");
+		assertThat(row.get("uploadedByName")).isEqualTo("사용자");
+		// 실제로 올린 바이트 수. 리터럴이나 다른 컬럼으로 바뀌면 여기서 갈린다
+		assertThat(((Number) row.get("byteSize")).longValue()).isEqualTo(content.length);
+		// 목업은 인덱싱을 기다릴 것이 없으므로 목록 조회가 in_progress 를 completed 로 올려 둔다
+		assertThat(row.get("status")).isEqualTo("completed");
+		// 문서 행의 생성 시각이어야 한다 - 조인한 users 쪽 created_at 을 집어와도 타입이 같아 안 터진다.
+		// 두 시각을 재서 비교하는 것이 아니라 **같은 컬럼 값을 두 경로로 읽어** 맞추는 것이므로
+		// CONVENTIONS 의 "시각에 등호를 걸지 않는다" 에 걸리지 않는다 - 시계 해상도와 무관하다
+		OffsetDateTime documentCreatedAt = jdbc.queryForObject(
+				"select created_at from rag_documents where id = ?::uuid", OffsetDateTime.class, id);
+		assertThat(OffsetDateTime.parse((String) row.get("createdAt")).toInstant())
+				.isEqualTo(documentCreatedAt.toInstant());
 	}
 
 	/**
