@@ -36,13 +36,15 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - **컨트롤러는 얇게.** `@Valid` 검증 → 서비스 호출 → DTO 반환이 기본이다. 사용자 식별은 `CurrentUser.id()`.
 - **오류 상태 코드를 컨트롤러가 만들지 않는다.** 서비스가 도메인 예외를 던지고 `GlobalExceptionHandler` 가
   매핑한다. **미인증 401 만 예외** — `SecurityConfig` 의 `authenticationEntryPoint` 가 `sendError` 로 직접
-  내므로 `ApiError` 본문이 아니다. 핸들러 밖에서 상태를 만드는 곳은 이 한 곳뿐이다.
+  내므로 `ApiError` 가 아니라 Spring 기본 오류 본문이고 `message` 가 없다. 프론트는 이 경우
+  `요청 실패 (401)` 로 떨어진다(`frontend/src/lib/api.ts`).
 - **성공 상태는 컨트롤러가 정한다** — 문서 업로드가 `@ResponseStatus(CREATED)`, 삭제 3곳이
-  `ResponseEntity.noContent()`. 나머지 성공 응답은 전부 200 이고, 그중 **본문 형태만** 컨트롤러가 정한다 —
+  `ResponseEntity.noContent()`. 나머지는 컨트롤러가 상태를 지정하지 않아 200 이고, 그중 **본문 형태만** 컨트롤러가 정한다 —
   파일 서빙이 `ResponseEntity<Resource>`(Content-Type), 채팅이 `SseEmitter`(text/event-stream).
 - **소유권 위반은 403 이 아니라 404 로 은닉한다.** 남의 리소스는 "없는 것"으로 보인다.
   검증은 조회 단계에서 `findByIdAndUser(...)` 형태로 막는다 — DB RLS 가 없으므로 애플리케이션 코드가 유일한 관문이다.
-- **응답 본문은 `ApiError(code, message)` 로 통일한다.** 프론트는 `message` 를 그대로 노출한다.
+- **오류 응답 본문은 `ApiError(code, message)` 로 통일한다 — 위 미인증 401 만 예외다.**
+  프론트는 `message` 를 그대로 노출한다.
 
 ### 예외 → 상태 매핑
 

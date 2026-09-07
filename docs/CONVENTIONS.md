@@ -28,14 +28,16 @@
 ### DI·컨트롤러 패턴
 - **생성자 주입만** 쓴다. `@Autowired` 필드 주입 금지. 필드는 `private final`.
 - 컨트롤러는 얇게: 검증 애너테이션(`@Valid`) → 서비스 호출 → DTO 반환이 기본. 사용자 식별은 `CurrentUser.id()`.
-- 성공 상태 코드는 컨트롤러가 정한다. 자세한 규칙은 [backend.md](./02_architecture/backend.md) 「API 설계 원칙」이 정본이다.
+- 성공 상태는 컨트롤러가 정한다 — 삭제류는 `ResponseEntity<Void>` + `noContent()`(204), 문서 업로드만
+  `@ResponseStatus(CREATED)`(201), 그 외는 200. 성공 상태·본문 형태의 자세한 규칙은
+  [backend.md](./02_architecture/backend.md) 「API 설계 원칙」이 정본이다.
 - 소유권 검증은 **애플리케이션 코드가** 한다(DB RLS 없음). `findByIdAndUser(...)` 형태로 조회 단계에서 막는다.
 
 ### 예외·에러
 - 도메인 예외는 `ApiExceptions`의 `BadRequestException` / `NotFoundException` 등을 던지고,
-  오류 HTTP 매핑은 `GlobalExceptionHandler`가 한다. 컨트롤러에서 **오류** 상태 코드를 직접 만들지 않는다
-  (미인증 401 은 예외 — `SecurityConfig` 의 `authenticationEntryPoint` 가 직접 낸다).
-  성공 상태와 본문 형태는 위 「DI·컨트롤러 패턴」의 포인터를 따른다.
+  오류 HTTP 매핑은 `GlobalExceptionHandler`가 한다 — 미인증 401 만 예외로, `SecurityConfig` 의
+  `authenticationEntryPoint` 가 직접 내며 `ApiError` 본문이 아니다. 컨트롤러에서 **오류** 상태 코드를
+  직접 만들지 않는다.
 
 ### 스키마
 - **스키마의 소유자는 Flyway 마이그레이션 SQL**이다. 앱 코드가 `alter`하지 않는다.
