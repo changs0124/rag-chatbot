@@ -1,53 +1,77 @@
-# after — 변경 후. 문서 문장별 코드 재대조
+# after — 변경 후 절 단위 전수 대조
 
-규칙: 단정문·전수 주장에는 전수 근거를 붙인다. 전수를 주장하는 자리에 예시를 붙이지 않는다.
-      줄 번호와 회차 번호는 싣지 않는다.
+절차 규칙 (이번 검토에서 추가)
+  1. 문서 문장 -> 코드 대조뿐 아니라, 고친 명제의 부정형을 docs 전체에 되던져 남은 사본을 찾는다.
+  2. 줄을 건드리면 그 줄 전체가 검증 대상이다. 바꾼 어절만 보지 않는다.
+  3. 전수를 주장하는 자리에 예시를 붙이지 않는다. 줄 번호·회차 번호를 싣지 않는다.
 
 ================================================================
-문서> | 201 | 생성 성공 | 문서 업로드. 대화 생성·첨부 업로드는 **200** 이다 |
-검증> @ResponseStatus 전수 = 1건. 그것이 문서 업로드다:
+문서> | 201 | 생성 성공 | 문서 업로드 한 곳뿐. 회원가입·대화 생성·첨부 업로드를 포함한
+문서>   나머지 생성 경로는 전부 **200** 이다 |
+검증> @ResponseStatus 전수 = 1건:
       backend/src/main/java/com/ragchatbot/controller/AdminController.java:54:	@ResponseStatus(HttpStatus.CREATED)
-검증> 대화 생성·첨부 업로드에는 @ResponseStatus 도 ResponseEntity 도 없다 -> 200:
-      36:	public ConversationResponse create(@RequestBody(required = false) CreateConversationRequest req) {
-      34:	public AttachmentResponse upload(@RequestParam("file") MultipartFile file) {
+검증> 나머지 생성 경로 전수 (셋 다 DTO 반환 = 200):
+      backend/src/main/java/com/ragchatbot/controller/AuthController.java:29:	public AuthResponse signup(@Valid @RequestBody SignupRequest req) {
+      backend/src/main/java/com/ragchatbot/controller/ConversationController.java:36:	public ConversationResponse create(@RequestBody(required = false) CreateConversationRequest req) {
+      backend/src/main/java/com/ragchatbot/controller/FileController.java:34:	public AttachmentResponse upload(@RequestParam("file") MultipartFile file) {
 
 ================================================================
 문서> | `INTERNAL_ERROR` | 500 | OpenAI 장애. 업스트림 실패에도 상관 ID 로 로그를 추적한다 |
 문서> | 3단계(Files 업로드) 실패 | 아무것도 안 남는다. `500` |
-검증> 코드 전체에 502 · BAD_GATEWAY = 0건
-검증> OpenAI 실패 예외:
-      IllegalStateException 7 건
-검증> 그 예외를 받는 핸들러와 상태:
-      89:	@ExceptionHandler(Exception.class)
-검증> 문서가 새로 주장하는 '상관 ID 로 로그 추적' 이 실재하는가:
-      28: * 를 못 찾아 "요청 실패 (500)" 만 띄웠음. 서버 로그에도 어느 요청이었는지 상관 지을 기록이 없었음.
-      83:	 * 사용자에게 주는 것은 상관 ID 하나이고, 그 값으로 로그를 찾음 - 관측 도구를 붙이지 않고
+검증> 502 · BAD_GATEWAY 전수 = 0건 (backend · frontend · docs)
+검증> INTERNAL_ERROR 를 내는 곳과 그 상태:
       92:		String traceId = UUID.randomUUID().toString().substring(0, 8);
+      93:		log.error("처리되지 않은 예외 [{}] {} {}", traceId, request.getMethod(), request.getRequestURI(), ex);
+      94:		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+      95:				.body(new ApiError("INTERNAL_ERROR", "처리 중 오류가 발생했습니다 (오류 번호: " + traceId + ")"));
 
 ================================================================
-문서> | 5단계(DB 기록) 실패 | ... 지금은 보상 처리가 없어 OpenAI 쪽 파일이 고아로 남는다 —
-문서>   `OrphanCleanupScheduler` 는 로컬 첨부만 회수하므로 이 경로를 덮지 않는다 |
-검증> upload() 의 insert 는 try/catch 로 감싸여 있지 않다:
+문서> | 5단계(DB 기록) 실패 | ... 보상 처리가 없어 파일과 스토어 연결이 모두 남고,
+문서>   관리 화면에서 보이지 않는 채 **검색에는 계속 잡힌다**. `OrphanCleanupScheduler` 는
+문서>   로컬 첨부만 회수하므로 이 경로를 덮지 않는다 |
+검증> insert 가 try/catch 밖:
       115:		documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
-검증> 고아 회수 장치가 따로 있어 '남는다' 가 과장인지 확인 -> 회수 대상이 다르다:
-      OrphanCleanupScheduler 는 fileService.cleanupOrphans() 로 로컬 첨부만 회수한다.
-      RagDocument · openai · vectorStore 참조 0건 = 이 경로를 덮지 않는다.
-      backend/src/main/java/com/ragchatbot/service/OrphanCleanupScheduler.java
-      19:public class OrphanCleanupScheduler {
+검증> 잔류물이 둘인 근거 — 삭제가 둘을 지운다:
+      411-		deleteQuietly("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId,
+      413-		deleteQuietly("/files/" + openaiFileId, "file", openaiFileId);
+검증> 스케줄러가 무엇을 회수하는가 (1차·2차 패스 모두):
+      37:			int removed = fileService.cleanupOrphans(cutoff);
+      47:			int removed = fileService.cleanupUnreferencedFiles(cutoff);
+      RagDocument · openai · vectorStore 참조 0건 = 이 경로를 덮지 않는다
 
 ================================================================
-문서> **성공 상태는 컨트롤러가 정한다** — 문서 업로드가 @ResponseStatus(CREATED), 삭제 3곳이
-문서> ResponseEntity.noContent(), 파일 서빙이 ResponseEntity<Resource> 로 Content-Type 을 직접 싣는다.
-검증> 세 범주 전수:
-      backend/src/main/java/com/ragchatbot/controller/AdminController.java:54:	@ResponseStatus(HttpStatus.CREATED)
+문서> - **오류 상태 코드를 컨트롤러가 만들지 않는다.** ... **미인증 401 만 예외** —
+문서>   SecurityConfig 의 authenticationEntryPoint 가 sendError 로 직접 내므로 ApiError 본문이
+문서>   아니다. 핸들러 밖에서 상태를 만드는 곳은 이 한 곳뿐이다.
+검증> sendError/setStatus 전수 (GlobalExceptionHandler 제외) = 1건:
+      backend/src/main/java/com/ragchatbot/config/SecurityConfig.java:47:						(req, res, ex) -> res.sendError(401, "Unauthorized")))
+
+================================================================
+문서> - **성공 상태는 컨트롤러가 정한다** — 문서 업로드가 @ResponseStatus(CREATED), 삭제 3곳이
+문서>   ResponseEntity.noContent(). 나머지 성공 응답은 전부 200 이고, 그중 **본문 형태만**
+문서>   컨트롤러가 정한다 — 파일 서빙이 ResponseEntity<Resource>, 채팅이 SseEmitter.
+검증> 삭제 = @DeleteMapping 3개, 전부 noContent():
       backend/src/main/java/com/ragchatbot/controller/AdminController.java:65:		return ResponseEntity.noContent().build();
       backend/src/main/java/com/ragchatbot/controller/ConversationController.java:59:		return ResponseEntity.noContent().build();
       backend/src/main/java/com/ragchatbot/controller/FileController.java:42:		return ResponseEntity.noContent().build();
+검증> 본문 형태를 정하는 둘 (전수):
+      backend/src/main/java/com/ragchatbot/controller/ChatController.java:45:	public SseEmitter chat(@RequestBody ChatRequest req) {
       backend/src/main/java/com/ragchatbot/controller/FileController.java:50:	public ResponseEntity<Resource> serve(@PathVariable UUID id,
+검증> 반환 형태 분포: DTO/List 16 · ResponseEntity 4 · SseEmitter 1
 
 ================================================================
+문서> - 컨트롤러는 얇게: ... DTO 반환이 기본. (CONVENTIONS.md)
+검증> 16/21 이 DTO 반환. 사본이 정본보다 강했던 상태(CONVENTIONS 'DTO 반환' vs
+      backend.md '응답 반환')를 양쪽 '기본' 으로 맞췄다.
+
+================================================================
+## 역방향 검사 — 고친 명제의 부정형이 docs 에 남아 있는가
+
 ## 잔존 확인
   502 = 0건 · '연결 해제를 시도' = 0건
+
+## 미결 결함 추적
+  15:- [ ] RAG 문서 업로드 5단계(DB 기록) 실패 시 OpenAI 파일과 스토어 연결이 영구 잔류함 — 보상 처리가 없고 고아 회수는 로컬 첨부만 본다 (`AdminDocumentService.upload` 참고)
 
 ## check-doc-refs
   참조 수집 182건 · 실재 검사 180건
