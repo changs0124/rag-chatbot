@@ -27,13 +27,17 @@
 
 ### DI·컨트롤러 패턴
 - **생성자 주입만** 쓴다. `@Autowired` 필드 주입 금지. 필드는 `private final`.
-- 컨트롤러는 얇게: 검증 애너테이션(`@Valid`) → 서비스 호출 → DTO 반환. 사용자 식별은 `CurrentUser.id()`.
-- 삭제류는 `ResponseEntity<Void>` + `noContent()`, 그 외는 DTO를 그대로 반환한다.
+- 컨트롤러는 얇게: 검증 애너테이션(`@Valid`) → 서비스 호출 → DTO 반환이 기본. 사용자 식별은 `CurrentUser.id()`.
+- 성공 상태는 컨트롤러가 정한다 — 삭제류는 `ResponseEntity<Void>` + `noContent()`(204), 문서 업로드만
+  `@ResponseStatus(CREATED)`(201), 그 외는 200. 성공 상태·본문 형태의 자세한 규칙은
+  [backend.md](./02_architecture/backend.md) 「API 설계 원칙」이 정본이다.
 - 소유권 검증은 **애플리케이션 코드가** 한다(DB RLS 없음). `findByIdAndUser(...)` 형태로 조회 단계에서 막는다.
 
 ### 예외·에러
 - 도메인 예외는 `ApiExceptions`의 `BadRequestException` / `NotFoundException` 등을 던지고,
-  HTTP 매핑은 `GlobalExceptionHandler`가 단독으로 한다. 컨트롤러에서 상태 코드를 직접 만들지 않는다.
+  오류 HTTP 매핑은 `GlobalExceptionHandler`가 한다 — 서블릿 필터 단계에서 나가는 오류(예: 미인증 401 ·
+  CORS 403)는 이 경로를 거치지 않으며 `ApiError` 본문이 아니다. 컨트롤러에서 **오류** 상태 코드를
+  직접 만들지 않는다.
 
 ### 스키마
 - **스키마의 소유자는 Flyway 마이그레이션 SQL**이다. 앱 코드가 `alter`하지 않는다.
@@ -64,9 +68,10 @@
 - 서버 캐시 라이브러리(react-query 등)도 없다. 필요한 시점에 직접 호출하고 로컬 상태를 갱신한다.
 
 ### API 통신
-- 컴포넌트가 `fetch`를 직접 부르지 않는다. `lib/api.ts`의 `api.get/post/patch/del/postForm`을 통해서만 호출한다.
+- API 호출은 `lib/api.ts`의 `api.get/post/patch/del/postForm`을 통한다. **컴포넌트·훅이 `fetch`를 직접
+  부르는 곳은 둘** — 채팅 스트림(아래)과 첨부 저장(`ImageLightbox.download()`이 blob으로 받아야 해서).
 - 엔드포인트는 `lib/endpoints.ts`에 **한 줄짜리 함수**로 노출한다.
-- 실패는 `ApiError(status, message)`로 통일. 서버 응답 본문의 `message`를 그대로 사용자에게 보여준다.
+- **응답이 도착한** 실패는 `ApiError(status, message)`로 통일. 서버가 `message`를 주면 그대로 보여주고, 없으면 `요청 실패 (n)`로 떨어진다. 네트워크 단계 실패(CORS 거절·오프라인·중단)는 `fetch` 또는 본문 읽기가 reject 되어 이 경로를 타지 않는다.
 - 채팅 스트림은 `EventSource`가 아니라 **fetch + ReadableStream** 이다. `EventSource`는 Authorization 헤더를 못 싣는다.
 
 ### 스타일

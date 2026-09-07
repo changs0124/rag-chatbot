@@ -33,12 +33,18 @@ exception/    ApiExceptions + GlobalExceptionHandler
 
 ## API 설계 원칙
 
-- **컨트롤러는 얇게.** `@Valid` 검증 → 서비스 호출 → DTO 반환. 사용자 식별은 `CurrentUser.id()`.
-- **상태 코드를 컨트롤러가 만들지 않는다.** 서비스가 도메인 예외를 던지고 `GlobalExceptionHandler` 가 단독으로 매핑한다.
-  삭제류만 `ResponseEntity.noContent()` 를 직접 쓴다.
+- **컨트롤러는 얇게.** `@Valid` 검증 → 서비스 호출 → DTO 반환이 기본이다. 사용자 식별은 `CurrentUser.id()`.
+- **오류 상태 코드를 컨트롤러가 만들지 않는다.** 서비스가 도메인 예외를 던지고 `GlobalExceptionHandler` 가
+  매핑한다. **서블릿 필터 단계에서 나가는 오류는 이 경로를 거치지 않는다** — 미인증 401(`SecurityConfig` 의
+  `authenticationEntryPoint` 가 `sendError`, Spring 기본 오류 본문에 `message` 없음) · CORS 403(Spring
+  `CorsFilter` 가 평문). 어느 쪽도 `ApiError` 가 아니다.
+- **성공 상태는 컨트롤러가 정한다** — 문서 업로드가 `@ResponseStatus(CREATED)`(201), 삭제 3곳이
+  `ResponseEntity.noContent()`(204), 파일 서빙이 `ResponseEntity.ok()`(200 + Content-Type).
+  그 밖의 핸들러는 반환값을 그대로 돌려주고 상태를 지정하지 않는다. 채팅만 `SseEmitter`(text/event-stream) 다.
 - **소유권 위반은 403 이 아니라 404 로 은닉한다.** 남의 리소스는 "없는 것"으로 보인다.
   검증은 조회 단계에서 `findByIdAndUser(...)` 형태로 막는다 — DB RLS 가 없으므로 애플리케이션 코드가 유일한 관문이다.
-- **응답 본문은 `ApiError(code, message)` 로 통일한다.** 프론트는 `message` 를 그대로 노출한다.
+- **`GlobalExceptionHandler` 를 거친 오류 응답 본문은 `ApiError(code, message)` 다.** 서버가 `message` 를
+  주면 프론트는 그대로 노출한다. 위 필터 단계 오류는 이 형태가 아니다.
 
 ### 예외 → 상태 매핑
 
