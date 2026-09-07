@@ -1,0 +1,230 @@
+commit 9cbf9443a72b970a10f34ea46edf73d331c94811
+Author: changs0124 <haeya0124@gmail.com>
+Date:   Mon Sep 7 20:24:38 2026 +0900
+
+    fix(backend): 형식을 모를 때만 확장자를 보고 .md · .docx 를 받는다
+    
+    화면은 .md 와 .docx 를 고를 수 있게 열어 두는데 서버가 content-type 으로만
+    판정해, 같은 파일이 사용자 PC 설정에 따라 되기도 하고 안 되기도 했다.
+    
+    브라우저는 File.type 을 OS 의 MIME 레지스트리에서 채운다. Windows 에서 .md 는
+    등록이 없는 경우가 흔하고 그때 값이 비어 application/octet-stream 으로 온다.
+    .docx 도 Office 가 없는 환경에서 같은 결이다. 그러면 화면이 허용한다고 적은
+    형식을 화면이 거부하는 모습이 된다. 실기동으로 확인했다.
+    
+      POST /api/admin/documents -F "file=@note.md;type=application/octet-stream"
+      → 400 지원하지 않는 문서 형식: application/octet-stream
+    
+    매직바이트로 푸는 길은 코드가 이미 배제해 두었다 - :45 주석대로 txt·md 는
+    시그니처가 없고 docx 는 zip 이라 PK 만으로 구분되지 않는다. 그래서 content-type
+    을 1차로 두고 형식을 모를 때만 파일명 확장자를 2차로 본다.
+    
+    폴백을 "모를 때" 로 좁히는 것이 핵심이다. image/png 처럼 형식을 아는데 목록에
+    없는 것까지 확장자를 봐 주면 파일명만 바꿔 낸 파일이 통과해 검사가 사실상
+    해제된다. 확장자로 형식을 정한 뒤에도 PDF 매직바이트 검사는 그대로 돈다.
+    
+    신규 케이스 5건 중 3건을 이 방어에 쓴다 - 허용 목록에 없는 확장자(.exe),
+    매직바이트 우회(위장.pdf), 아는 형식의 폴백 금지(image/png + .md 파일명).
+    
+    거부 메시지도 고친다. 형식을 모를 때 content-type 을 되뇌면 octet-stream 을
+    지원하지 않는다는 말로 읽히는데, 실제로는 확장자가 목록에 없어서 막힌 것이다.
+    판정 근거가 된 쪽을 보여준다.
+    
+    features.md 와 api.md 에 형식 판정 규칙을 적는다. 테스트 172건 통과(신규 5건),
+    래칫 규칙대로 BACKEND_MIN 을 실측값으로 올린다.
+    
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+    Claude-Session: https://claude.ai/code/session_01MKWgf8XrMXjBAHxmMGLaFr
+
+diff --git a/backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java b/backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java
+index 8e7e95a..5baf10c 100644
+--- a/backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java
++++ b/backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java
+@@ -51,6 +51,42 @@ public class AdminDocumentService {
+ 			"text/markdown", "md",
+ 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
+ 
++	/**
++	 * 형식을 <b>모른다</b>고 볼 content-type.
++	 *
++	 * <p>브라우저는 {@code File.type} 을 OS 의 MIME 레지스트리에서 채운다. 등록이 없으면 값이 비고
++	 * {@code application/octet-stream} 으로 전송된다 - Windows 의 {@code .md}, Office 가 없는 환경의
++	 * {@code .docx} 가 여기 해당한다. 이것은 "받지 않기로 한 형식" 이 아니라 "형식을 모름" 이다.
++	 */
++	private static boolean isUnknownType(String contentType) {
++		return contentType == null || contentType.isBlank()
++				|| "application/octet-stream".equalsIgnoreCase(contentType.trim());
++	}
++
++	/**
++	 * 확장자를 정한다. content-type 이 1차, <b>형식을 모를 때만</b> 파일명이 2차다.
++	 *
++	 * <p>폴백을 "모를 때" 로 좁히는 것이 핵심이다. {@code image/png} 처럼 형식을 아는데 목록에 없는
++	 * 것까지 확장자를 봐 주면 파일명만 바꿔 낸 파일이 통과해 <b>검사가 사실상 해제된다</b>.
++	 * 폴백으로 확장자를 얻어도 뒤의 매직바이트 검사는 그대로 돈다.
++	 */
++	private static String resolveExtension(MultipartFile file) {
++		String byType = ALLOWED.get(file.getContentType());
++		if (byType != null) {
++			return byType;
++		}
++		if (!isUnknownType(file.getContentType())) {
++			return null;
++		}
++		String name = file.getOriginalFilename();
++		int dot = name == null ? -1 : name.lastIndexOf('.');
++		if (dot < 0 || dot == name.length() - 1) {
++			return null;
++		}
++		String extension = name.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
++		return ALLOWED.containsValue(extension) ? extension : null;
++	}
++
+ 	private final RagDocumentRepository documentRepository;
+ 	private final OpenAiService openAiService;
+ 
+@@ -89,10 +125,11 @@ public class AdminDocumentService {
+ 		if (file == null || file.isEmpty()) {
+ 			throw new BadRequestException("빈 파일");
+ 		}
+-		String extension = ALLOWED.get(file.getContentType());
++		String extension = resolveExtension(file);
+ 		if (extension == null) {
+-			throw new BadRequestException(
+-					"지원하지 않는 문서 형식: " + file.getContentType() + " (허용: PDF · TXT · MD · DOCX)");
++			// 형식을 모를 때는 content-type 을 되뇌어 봐야 도움이 안 된다 - 판정 근거가 된 쪽을 보여준다
++			String shown = isUnknownType(file.getContentType()) ? file.getOriginalFilename() : file.getContentType();
++			throw new BadRequestException("지원하지 않는 문서 형식: " + shown + " (허용: PDF · TXT · MD · DOCX)");
+ 		}
+ 		byte[] bytes;
+ 		try {
+diff --git a/backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java b/backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java
+index a88761e..9947964 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java
+@@ -171,6 +171,81 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
+ 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+ 	}
+ 
++	/**
++	 * TC-ADMIN-020 : MIME 이 등록되지 않은 환경에서 올린 .md 도 받는다.
++	 *
++	 * <p>브라우저는 {@code File.type} 을 <b>OS 의 MIME 레지스트리</b>에서 채운다. Windows 에서
++	 * {@code .md} 는 등록돼 있지 않은 경우가 흔하고, 그때 값이 비어 {@code application/octet-stream}
++	 * 으로 전송된다. 화면은 {@code .md} 를 고를 수 있게 열어 두었으므로, 이것을 거부하면
++	 * <b>화면이 허용한 형식을 화면이 거부하는</b> 모습이 된다.
++	 */
++	@Test
++	void markdown_sent_as_octet_stream_is_accepted() {
++		String token = createAdminUser("doc-octet-md@b.com");
++
++		var res = upload(token, "규정.md", "# 사내 규정".getBytes(StandardCharsets.UTF_8),
++				"application/octet-stream");
++
++		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
++	}
++
++	/** TC-ADMIN-021 : .docx 도 같다 - Office 가 없는 환경에서 octet-stream 으로 온다 */
++	@Test
++	void docx_sent_as_octet_stream_is_accepted() {
++		String token = createAdminUser("doc-octet-docx@b.com");
++
++		var res = upload(token, "계약서.docx", "PK …".getBytes(StandardCharsets.UTF_8),
++				"application/octet-stream");
++
++		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
++	}
++
++	/**
++	 * TC-ADMIN-022 : 폴백은 허용 목록을 넓히지 않는다.
++	 *
++	 * <p>형식을 모를 때 확장자를 보는 것이지, 아무거나 받는 것이 아니다. 허용 목록에 없는
++	 * 확장자는 octet-stream 으로 와도 거부한다 - 그러지 않으면 이 변경이 곧 검사 해제가 된다.
++	 */
++	@Test
++	void unknown_extension_as_octet_stream_is_still_rejected() {
++		String token = createAdminUser("doc-octet-exe@b.com");
++
++		var res = upload(token, "설치.exe", new byte[] { 0x4D, 0x5A }, "application/octet-stream");
++
++		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
++	}
++
++	/**
++	 * TC-ADMIN-023 : 폴백이 매직바이트 검사를 우회하지 않는다.
++	 *
++	 * <p>확장자로 형식을 정한 뒤에도 PDF 는 내용을 본다. 여기가 뚫리면 확장자만 바꿔 낸 파일이
++	 * 그대로 통과하므로, TC-ADMIN-013 이 막아 둔 것을 다른 문으로 되살리는 셈이 된다.
++	 */
++	@Test
++	void octet_stream_fallback_still_checks_pdf_magic() {
++		String token = createAdminUser("doc-octet-fakepdf@b.com");
++
++		var res = upload(token, "위장.pdf", "이건 PDF가 아님".getBytes(StandardCharsets.UTF_8),
++				"application/octet-stream");
++
++		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
++	}
++
++	/**
++	 * TC-ADMIN-024 : 형식을 아는데 허용 목록에 없으면 확장자를 보지 않는다.
++	 *
++	 * <p>{@code image/png} 는 "모르는 형식" 이 아니라 "받지 않기로 한 형식" 이다. 확장자를
++	 * {@code .md} 로 바꿔 보내도 통과해서는 안 된다 - 폴백은 <b>모를 때만</b> 도는 길이다.
++	 */
++	@Test
++	void known_but_disallowed_type_does_not_fall_back_to_extension() {
++		String token = createAdminUser("doc-png-as-md@b.com");
++
++		var res = upload(token, "위장.md", new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }, "image/png");
++
++		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
++	}
++
+ 	/** TC-ADMIN-015 : 목록은 최신순 */
+ 	@SuppressWarnings("unchecked")
+ 	@Test
+diff --git a/docs/01_specs/api.md b/docs/01_specs/api.md
+index f665ae4..2d3cc9b 100644
+--- a/docs/01_specs/api.md
++++ b/docs/01_specs/api.md
+@@ -269,8 +269,9 @@
+ | 항목 | 값 |
+ |------|-----|
+ | 허용 형식 | PDF · TXT · MD · DOCX |
++| 형식 판정 | content-type 1차. **모를 때만**(`application/octet-stream`·빈 값) 파일 확장자 2차 |
+ | 최대 크기 | 50MB |
+-| 매직바이트 | **PDF만** 검사(`%PDF`) |
++| 매직바이트 | **PDF만** 검사(`%PDF`). 확장자로 판정한 경우에도 그대로 검사한다 |
+ 
+ **Response 201:** 문서 DTO 하나.
+ 
+diff --git a/docs/01_specs/features.md b/docs/01_specs/features.md
+index f1775e7..8bffc2e 100644
+--- a/docs/01_specs/features.md
++++ b/docs/01_specs/features.md
+@@ -246,6 +246,13 @@ FEAT-OPS-* 3종은 서로 독립이며 **원인이 달라 커밋을 나눈다.**
+ **매직바이트는 PDF만 검사한다.** txt·md는 매직바이트가 없고 docx는 zip 컨테이너라 `PK` 만으로는
+ 다른 zip과 구분되지 않는다. **검사할 수 없는 형식을 검사하는 척하지 않는다.**
+ 
++**형식 판정은 content-type이 1차, 파일 확장자가 2차다.** 브라우저는 `File.type` 을 OS의 MIME
++레지스트리에서 채우므로, 등록이 없으면 값이 비고 `application/octet-stream` 으로 온다 — Windows의
++`.md`, Office가 없는 환경의 `.docx` 가 여기 해당한다. 그때만 파일명의 확장자를 보고 허용 목록과
++대조한다. **형식을 아는데 목록에 없으면(예: `image/png`) 확장자를 보지 않는다** — 그것까지 봐 주면
++파일명만 바꿔 낸 파일이 통과해 검사가 사실상 해제된다. 확장자로 형식을 정한 뒤에도 PDF 매직바이트
++검사는 그대로 돈다.
++
+ **처리 흐름 — 업로드:**
+ 
+ 1. 관리자 권한을 확인한다 (아니면 404)
+diff --git a/scripts/case-floors.env b/scripts/case-floors.env
+index 8bf0ba0..50be865 100644
+--- a/scripts/case-floors.env
++++ b/scripts/case-floors.env
+@@ -7,5 +7,5 @@
+ #   케이스가 준 것과 테스트를 지운 것은 숫자만으로 구분되지 않음
+ # - skip 케이스는 세지 않음
+ 
+-BACKEND_MIN=167
++BACKEND_MIN=172
+ FRONTEND_MIN=76
