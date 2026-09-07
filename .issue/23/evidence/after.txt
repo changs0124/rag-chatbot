@@ -1,78 +1,98 @@
 # after — 변경 후 절 단위 전수 대조
 
-절차 규칙 (이번 검토에서 추가)
-  1. 문서 문장 -> 코드 대조뿐 아니라, 고친 명제의 부정형을 docs 전체에 되던져 남은 사본을 찾는다.
-  2. 줄을 건드리면 그 줄 전체가 검증 대상이다. 바꾼 어절만 보지 않는다.
-  3. 전수를 주장하는 자리에 예시를 붙이지 않는다. 줄 번호·회차 번호를 싣지 않는다.
+절차 규칙
+  1. 역방향 검사는 **이번 회차에 새로 쓴 명제에도** 돌린다. 직전 명제만 재확인하면 새 사본을 놓친다.
+  2. 줄을 건드리면 그 줄이 속한 **절 전체**가 검증 대상이다. 바꾼 어절도, 그 줄만도 아니다.
+  3. grep 으로 확인한 전칭은 **자사 코드 밖에서 나오는 상태를 못 본다**(프레임워크 필터 등).
+     확인할 수 없는 전칭은 다듬지 말고 없앤다.
+  4. '전수' 라벨은 실제 전수일 때만 쓴다. 예시를 붙이지 않는다.
 
 ================================================================
 문서> | 201 | 생성 성공 | 문서 업로드 한 곳뿐. 회원가입·대화 생성·첨부 업로드를 포함한
 문서>   나머지 생성 경로는 전부 **200** 이다 |
-검증> @ResponseStatus 전수 = 1건:
+검증> @ResponseStatus 전수 = 1건 · ResponseEntity.created 전수 = 0건
       backend/src/main/java/com/ragchatbot/controller/AdminController.java:54:	@ResponseStatus(HttpStatus.CREATED)
-검증> 나머지 생성 경로 전수 (셋 다 DTO 반환 = 200):
-      backend/src/main/java/com/ragchatbot/controller/AuthController.java:29:	public AuthResponse signup(@Valid @RequestBody SignupRequest req) {
-      backend/src/main/java/com/ragchatbot/controller/ConversationController.java:36:	public ConversationResponse create(@RequestBody(required = false) CreateConversationRequest req) {
-      backend/src/main/java/com/ragchatbot/controller/FileController.java:34:	public AttachmentResponse upload(@RequestParam("file") MultipartFile file) {
+검증> 엔드포인트 핸들러 전수 = 22개. 그중 상태를 지정하는 것은 위 1건과 noContent() 3건뿐
 
 ================================================================
-문서> | `INTERNAL_ERROR` | 500 | OpenAI 장애. 업스트림 실패에도 상관 ID 로 로그를 추적한다 |
-문서> | 3단계(Files 업로드) 실패 | 아무것도 안 남는다. `500` |
+문서> | `INTERNAL_ERROR` | 500 | ... | 3단계(Files 업로드) 실패 | ... `500` |
 검증> 502 · BAD_GATEWAY 전수 = 0건 (backend · frontend · docs)
-검증> INTERNAL_ERROR 를 내는 곳과 그 상태:
       92:		String traceId = UUID.randomUUID().toString().substring(0, 8);
       93:		log.error("처리되지 않은 예외 [{}] {} {}", traceId, request.getMethod(), request.getRequestURI(), ex);
       94:		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
       95:				.body(new ApiError("INTERNAL_ERROR", "처리 중 오류가 발생했습니다 (오류 번호: " + traceId + ")"));
 
 ================================================================
-문서> | 5단계(DB 기록) 실패 | ... 보상 처리가 없어 파일과 스토어 연결이 모두 남고,
-문서>   관리 화면에서 보이지 않는 채 **검색에는 계속 잡힌다**. `OrphanCleanupScheduler` 는
-문서>   로컬 첨부만 회수하므로 이 경로를 덮지 않는다 |
-검증> insert 가 try/catch 밖:
+문서> | 5단계(DB 기록) 실패 | ... 파일과 스토어 연결이 모두 남고, 관리 화면에서 보이지 않는 채
+문서>   **검색에는 계속 잡힌다**. `OrphanCleanupScheduler` 는 로컬 첨부만 회수 ... |
+검증> insert 가 try/catch 밖 · deleteDocument 가 둘을 지움 = 실패 시 둘 다 잔류
       115:		documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
-검증> 잔류물이 둘인 근거 — 삭제가 둘을 지운다:
       411-		deleteQuietly("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId,
       413-		deleteQuietly("/files/" + openaiFileId, "file", openaiFileId);
-검증> 스케줄러가 무엇을 회수하는가 (1차·2차 패스 모두):
+검증> 관리 화면은 listAlive() = DB 행 기준 -> 행 없으면 비가시
+검증> 검색은 vector store 기준이고 rag_documents 를 보지 않음 -> 계속 잡힘
+검증> 스케줄러 1차·2차 패스 모두 attachments 행·로컬 저장소만 봄
       37:			int removed = fileService.cleanupOrphans(cutoff);
       47:			int removed = fileService.cleanupUnreferencedFiles(cutoff);
-      RagDocument · openai · vectorStore 참조 0건 = 이 경로를 덮지 않는다
 
 ================================================================
-문서> - **오류 상태 코드를 컨트롤러가 만들지 않는다.** ... **미인증 401 만 예외** —
-문서>   SecurityConfig 의 authenticationEntryPoint 가 sendError 로 직접 내므로 ApiError 본문이
-문서>   아니다. 핸들러 밖에서 상태를 만드는 곳은 이 한 곳뿐이다.
-검증> sendError/setStatus 전수 (GlobalExceptionHandler 제외) = 1건:
-      backend/src/main/java/com/ragchatbot/config/SecurityConfig.java:47:						(req, res, ex) -> res.sendError(401, "Unauthorized")))
+문서> - **오류 상태 코드를 컨트롤러가 만들지 않는다.** ... **미인증 401 만 예외** — ...
+문서>   `ApiError` 가 아니라 Spring 기본 오류 본문이고 `message` 가 없다.
+검증> 진입점:
+      47-						(req, res, ex) -> res.sendError(401, "Unauthorized")))
+검증> ERROR 디스패치가 permitAll = 이 경로가 살아 있다는 근거:
+      40:						.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
+검증> 프론트가 message 없는 본문을 어떻게 처리하는가:
+      4:// 화면에는 그냥 "요청 실패"로만 보임. 원인을 콘솔에 남겨 둠(Vercel 환경변수 누락이 흔함)
+      27: * 없으면 사용자는 "요청 실패 (401)"만 보고 재로그인 경로를 찾지 못함.
+
+      ※ 이전 판본의 '핸들러 밖에서 상태를 만드는 곳은 이 한 곳뿐이다' 는 삭제했다.
+        grep sendError|setStatus 로는 프레임워크가 내는 상태를 볼 수 없다 — 실제로
+        CorsConfig 허용 목록에 걸린 요청을 Spring CorsFilter 가 403 으로 되돌린다.
+        확인할 수 없는 전칭이라 다듬지 않고 없앴다. api.md 의 403 행에 그 사실을 적었다.
 
 ================================================================
-문서> - **성공 상태는 컨트롤러가 정한다** — 문서 업로드가 @ResponseStatus(CREATED), 삭제 3곳이
-문서>   ResponseEntity.noContent(). 나머지 성공 응답은 전부 200 이고, 그중 **본문 형태만**
-문서>   컨트롤러가 정한다 — 파일 서빙이 ResponseEntity<Resource>, 채팅이 SseEmitter.
-검증> 삭제 = @DeleteMapping 3개, 전부 noContent():
+문서> - **오류 응답 본문은 `ApiError(code, message)` 로 통일한다 — 위 미인증 401 만 예외다.**
+검증> 역방향 검사 — 'ApiError' 를 docs 전체에 되던진 결과:
+      docs/01_specs/features.md:365:`ApiError{code, message}` 형태로 나가고 서버 로그에 남게 한다.
+      docs/02_architecture/backend.md:39:  내므로 `ApiError` 가 아니라 Spring 기본 오류 본문이고 `message` 가 없다. 프론트는 이 경우
+      docs/02_architecture/backend.md:46:- **오류 응답 본문은 `ApiError(code, message)` 로 통일한다 — 위 미인증 401 만 예외다.**
+      docs/02_architecture/frontend.md:51:- 실패는 `ApiError(status, message)` 로 통일하고, 서버가 준 `message` 를 그대로 사용자에게 보여준다.
+      docs/CONVENTIONS.md:39:  `authenticationEntryPoint` 가 직접 내며 `ApiError` 본문이 아니다. 컨트롤러에서 **오류** 상태 코드를
+      docs/CONVENTIONS.md:73:- 실패는 `ApiError(status, message)`로 통일. 서버 응답 본문의 `message`를 그대로 사용자에게 보여준다.
+      features.md 는 GlobalExceptionHandler 의 Exception 핸들러로 범위가 좁혀져 있어 사본이 아니다.
+      frontend.md · CONVENTIONS.md 의 ApiError(status, message) 는 프론트의 다른 타입이다
+      (frontend/src/lib/api.ts 의 class ApiError).
+
+================================================================
+문서> - 성공 상태는 컨트롤러가 정한다 — 삭제류는 noContent()(204), 문서 업로드만
+문서>   @ResponseStatus(CREATED)(201), 그 외는 200. (CONVENTIONS.md)
+검증> #17 이 CHANGELOG 에 'CONVENTIONS.md 는 표만 걷어내고 규칙은 남긴다' 고 기록했다.
+      직전 판본은 규칙을 지우고 포인터만 남겨 그 결정을 뒤집었다. 규칙을 복원하고
+      포인터를 병기해 양쪽을 만족시켰다.
       backend/src/main/java/com/ragchatbot/controller/AdminController.java:65:		return ResponseEntity.noContent().build();
       backend/src/main/java/com/ragchatbot/controller/ConversationController.java:59:		return ResponseEntity.noContent().build();
       backend/src/main/java/com/ragchatbot/controller/FileController.java:42:		return ResponseEntity.noContent().build();
-검증> 본문 형태를 정하는 둘 (전수):
-      backend/src/main/java/com/ragchatbot/controller/ChatController.java:45:	public SseEmitter chat(@RequestBody ChatRequest req) {
-      backend/src/main/java/com/ragchatbot/controller/FileController.java:50:	public ResponseEntity<Resource> serve(@PathVariable UUID id,
-검증> 반환 형태 분포: DTO/List 16 · ResponseEntity 4 · SseEmitter 1
 
 ================================================================
-문서> - 컨트롤러는 얇게: ... DTO 반환이 기본. (CONVENTIONS.md)
-검증> 16/21 이 DTO 반환. 사본이 정본보다 강했던 상태(CONVENTIONS 'DTO 반환' vs
-      backend.md '응답 반환')를 양쪽 '기본' 으로 맞췄다.
-
-================================================================
-## 역방향 검사 — 고친 명제의 부정형이 docs 에 남아 있는가
+## 반환 형태 분포 (전수 22개)
+        4 MeResponse
+        3 ResponseEntity<Void>
+        3 AuthResponse
+        2 ConversationResponse
+        1 TemporaryPasswordResponse
+        1 SseEmitter
+        1 ResponseEntity<Resource>
+        1 Map<String, String>
+        1 List<MessageResponse>
+        1 List<DocumentResponse>
+        1 List<ConversationResponse>
+        1 List<AdminUserResponse>
+        1 AttachmentResponse
 
 ## 잔존 확인
   502 = 0건 · '연결 해제를 시도' = 0건
 
-## 미결 결함 추적
-  15:- [ ] RAG 문서 업로드 5단계(DB 기록) 실패 시 OpenAI 파일과 스토어 연결이 영구 잔류함 — 보상 처리가 없고 고아 회수는 로컬 첨부만 본다 (`AdminDocumentService.upload` 참고)
-
 ## check-doc-refs
-  참조 수집 182건 · 실재 검사 180건
+  참조 수집 183건 · 실재 검사 181건
   문서 참조 검사 통과
