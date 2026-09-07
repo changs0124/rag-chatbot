@@ -28,7 +28,7 @@
 ### DI·컨트롤러 패턴
 - **생성자 주입만** 쓴다. `@Autowired` 필드 주입 금지. 필드는 `private final`.
 - 컨트롤러는 얇게: 검증 애너테이션(`@Valid`) → 서비스 호출 → DTO 반환. 사용자 식별은 `CurrentUser.id()`.
-- 삭제류는 `ResponseEntity<Void>` + `noContent()`, 그 외는 DTO를 그대로 반환한다.
+- 성공 상태 코드는 컨트롤러가 정한다. 자세한 규칙은 [backend.md](./02_architecture/backend.md) 「API 설계 원칙」이 정본이다.
 - 소유권 검증은 **애플리케이션 코드가** 한다(DB RLS 없음). `findByIdAndUser(...)` 형태로 조회 단계에서 막는다.
 
 ### 예외·에러

@@ -33,9 +33,10 @@ exception/    ApiExceptions + GlobalExceptionHandler
 
 ## API 설계 원칙
 
-- **컨트롤러는 얇게.** `@Valid` 검증 → 서비스 호출 → DTO 반환. 사용자 식별은 `CurrentUser.id()`.
-- **상태 코드를 컨트롤러가 만들지 않는다.** 서비스가 도메인 예외를 던지고 `GlobalExceptionHandler` 가 단독으로 매핑한다.
-  삭제류만 `ResponseEntity.noContent()` 를 직접 쓴다.
+- **컨트롤러는 얇게.** `@Valid` 검증 → 서비스 호출 → 응답 반환. 사용자 식별은 `CurrentUser.id()`.
+- **오류 상태 코드를 컨트롤러가 만들지 않는다.** 서비스가 도메인 예외를 던지고 `GlobalExceptionHandler` 가 단독으로 매핑한다.
+  **성공 상태는 컨트롤러가 정한다** — 문서 업로드가 `@ResponseStatus(CREATED)`, 삭제 3곳이
+  `ResponseEntity.noContent()`, 파일 서빙이 `ResponseEntity<Resource>` 로 Content-Type 을 직접 싣는다.
 - **소유권 위반은 403 이 아니라 404 로 은닉한다.** 남의 리소스는 "없는 것"으로 보인다.
   검증은 조회 단계에서 `findByIdAndUser(...)` 형태로 막는다 — DB RLS 가 없으므로 애플리케이션 코드가 유일한 관문이다.
 - **응답 본문은 `ApiError(code, message)` 로 통일한다.** 프론트는 `message` 를 그대로 노출한다.
