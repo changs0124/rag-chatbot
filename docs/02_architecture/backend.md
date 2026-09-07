@@ -19,6 +19,16 @@ config/       Security · CORS · Executor · 기동 가드
 exception/    ApiExceptions + GlobalExceptionHandler
 ```
 
+- **조회 전용 매핑은 예외다.** 조인이 섞인 목록·통계 조회는 `repository` 가 `dto` 의 Response 를 **직접**
+  매핑한다. MyBatis 는 JPA 와 달리 `resultMap` 에 임의 타입을 지정할 수 있어 중간 엔티티가 필요 없다.
+  현재 `RagDocumentRepository.listAlive()` 가 `AdminDtos.DocumentResponse` 를 바로 돌려준다.
+  중첩 record 이므로 XML 에는 바이너리명 `com.ragchatbot.dto.AdminDtos$DocumentResponse` 로 쓴다.
+- **그 대가로 SQL 이 응답 스펙에 직결된다.** 해당 엔드포인트의 응답 필드를 바꾸려면 XML 도 함께 고쳐야 한다.
+  같은 모양의 타입을 하나 더 두고 서비스에서 옮겨 담는 편이 나아 보일 수 있으나, 그 변환은 필드 복사일 뿐이라
+  실수할 자리만 늘린다.
+- **등록·수정·삭제는 반드시 `entity` 를 경유한다.** 비즈니스 규칙이 엔티티 쪽에 있으므로 이 예외는
+  조회에만 적용된다.
+
 ## API 설계 원칙
 
 - **컨트롤러는 얇게.** `@Valid` 검증 → 서비스 호출 → DTO 반환. 사용자 식별은 `CurrentUser.id()`.

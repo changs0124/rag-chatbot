@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ragchatbot.entity.RagDocument;
-import com.ragchatbot.entity.RagDocumentSummary;
 import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.repository.RagDocumentRepository;
@@ -73,7 +72,7 @@ public class AdminDocumentService {
 				}
 			});
 		}
-		return documentRepository.listAlive().stream().map(AdminDocumentService::toResponse).toList();
+		return documentRepository.listAlive();
 	}
 
 	/**
@@ -119,7 +118,6 @@ public class AdminDocumentService {
 		return documentRepository.listAlive().stream()
 				.filter(d -> d.id().equals(id))
 				.findFirst()
-				.map(AdminDocumentService::toResponse)
 				.orElseThrow(() -> new IllegalStateException("방금 넣은 문서를 다시 찾지 못함: " + id));
 	}
 
@@ -141,11 +139,6 @@ public class AdminDocumentService {
 			// 조회와 삭제 사이에 누가 먼저 지웠음. 결과는 같으므로 오류로 올리지 않음
 			log.warn("rag 문서 {} 가 이미 삭제돼 있었음", documentId);
 		}
-	}
-
-	private static DocumentResponse toResponse(RagDocumentSummary d) {
-		return new DocumentResponse(d.id(), d.filename(), d.byteSize(), d.status(),
-				d.uploadedByName(), d.createdAt());
 	}
 
 	private static boolean startsWith(byte[] data, byte[] prefix) {
