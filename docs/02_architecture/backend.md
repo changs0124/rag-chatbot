@@ -62,6 +62,8 @@ exception/    ApiExceptions + GlobalExceptionHandler
 | `ConflictException` | 409 | `CONFLICT` |
 | `MaxUploadSizeExceededException` | 413 | `PAYLOAD_TOO_LARGE` |
 | `RateLimitException` | 429 | `RATE_LIMIT` |
+| `HttpMessageNotReadableException` | 400 | `BAD_REQUEST` |
+| `MethodArgumentTypeMismatchException` | 400 | `BAD_REQUEST` |
 | **그 밖의 모든 예외** | 500 | `INTERNAL_ERROR` |
 
 마지막 줄이 **최종 폴백**이다(FEAT-OPS-002). 이것이 없던 동안에는 예상 못 한 예외만 Spring 기본
@@ -77,9 +79,13 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - 스프링은 더 구체적인 핸들러를 먼저 고르므로, `@ExceptionHandler(Exception.class)` 를 두어도
   전용 핸들러가 있는 예외는 그쪽으로 간다. **잠가 둔 것은 도메인 예외까지다**
   (`GlobalExceptionFallbackTest` — 예상 못 한 예외의 `ApiError` 모양 · 상관 ID · 내부 메시지 비노출 ·
-  도메인 예외가 제 상태를 지킨다). **Spring 내장 MVC 예외**(깨진 JSON · 없는 URL · 미지원 메서드)를
-  잠근 케이스는 없다 — `GlobalExceptionHandler` 가 `ResponseEntityExceptionHandler` 를 상속하지 않아
-  그쪽이 어디로 떨어지는지는 **측정한 적이 없다.** `docs/04_tasks/backlog.md` 에 등재돼 있다.
+  도메인 예외가 제 상태를 지킨다). **Spring 내장 MVC 예외** 중 **요청을 읽을 수 없는 쪽은 측정해
+  잠갔다**(#38) — 깨진 JSON · UTF-8 이 아닌 인코딩 · 빈 본문 · 경로 변수 타입 불일치가 전부 폴백으로
+  떨어져 500 이었고, 지금은 전용 핸들러가 400 으로 내린다(TC-OPS-014~018).
+  **남은 것은 `없는 URL` · `미지원 메서드`(405) · `미지원 미디어 타입`(415) 셋이다** —
+  `GlobalExceptionHandler` 가 `ResponseEntityExceptionHandler` 를 상속하지 않아 그쪽은 여전히 폴백으로
+  떨어지며 **측정한 적이 없다.** `api.md` 상태 코드 표에 405·415 가 없어 명세부터 정해야 한다.
+  `docs/04_tasks/backlog.md` 에 등재돼 있다.
 
 ## 인증
 
