@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.ragchatbot.entity.RagDocument;
-import com.ragchatbot.entity.RagDocumentSummary;
+import com.ragchatbot.dto.AdminDtos.DocumentResponse;
 
 /**
  * RAG 문서 매퍼(FEAT-ADMIN-002). SQL은 mapper/RagDocumentRepository.xml.
@@ -27,7 +27,7 @@ public interface RagDocumentRepository {
 	 *
 	 * <p>올린 사람 이름을 <b>조인으로 함께</b> 가져옴 - 문서마다 따로 조회하면 N+1 이 됨
 	 */
-	List<RagDocumentSummary> listAlive();
+	List<DocumentResponse> listAlive();
 
 	/** 아직 인덱싱 중인 문서의 id. 이 행만 OpenAI 에 상태를 다시 물음(완료·실패는 더 바뀌지 않음) */
 	List<UUID> findInProgressIds();

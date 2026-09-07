@@ -18,7 +18,7 @@
 		</constructor>
 	</resultMap>
 
-	<resultMap id="summaryResult" type="com.ragchatbot.entity.RagDocumentSummary">
+	<resultMap id="summaryResult" type="com.ragchatbot.dto.AdminDtos$DocumentResponse">
 		<constructor>
 			<idArg column="id" javaType="java.util.UUID"/>
 			<arg column="filename" javaType="java.lang.String"/>
