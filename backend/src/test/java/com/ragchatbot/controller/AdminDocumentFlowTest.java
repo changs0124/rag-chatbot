@@ -171,6 +171,81 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 	}
 
+	/**
+	 * TC-ADMIN-020 : MIME 이 등록되지 않은 환경에서 올린 .md 도 받는다.
+	 *
+	 * <p>브라우저는 {@code File.type} 을 <b>OS 의 MIME 레지스트리</b>에서 채운다. Windows 에서
+	 * {@code .md} 는 등록돼 있지 않은 경우가 흔하고, 그때 값이 비어 {@code application/octet-stream}
+	 * 으로 전송된다. 화면은 {@code .md} 를 고를 수 있게 열어 두었으므로, 이것을 거부하면
+	 * <b>화면이 허용한 형식을 화면이 거부하는</b> 모습이 된다.
+	 */
+	@Test
+	void markdown_sent_as_octet_stream_is_accepted() {
+		String token = createAdminUser("doc-octet-md@b.com");
+
+		var res = upload(token, "규정.md", "# 사내 규정".getBytes(StandardCharsets.UTF_8),
+				"application/octet-stream");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+	}
+
+	/** TC-ADMIN-021 : .docx 도 같다 - Office 가 없는 환경에서 octet-stream 으로 온다 */
+	@Test
+	void docx_sent_as_octet_stream_is_accepted() {
+		String token = createAdminUser("doc-octet-docx@b.com");
+
+		var res = upload(token, "계약서.docx", "PK …".getBytes(StandardCharsets.UTF_8),
+				"application/octet-stream");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+	}
+
+	/**
+	 * TC-ADMIN-022 : 폴백은 허용 목록을 넓히지 않는다.
+	 *
+	 * <p>형식을 모를 때 확장자를 보는 것이지, 아무거나 받는 것이 아니다. 허용 목록에 없는
+	 * 확장자는 octet-stream 으로 와도 거부한다 - 그러지 않으면 이 변경이 곧 검사 해제가 된다.
+	 */
+	@Test
+	void unknown_extension_as_octet_stream_is_still_rejected() {
+		String token = createAdminUser("doc-octet-exe@b.com");
+
+		var res = upload(token, "설치.exe", new byte[] { 0x4D, 0x5A }, "application/octet-stream");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
+	/**
+	 * TC-ADMIN-023 : 폴백이 매직바이트 검사를 우회하지 않는다.
+	 *
+	 * <p>확장자로 형식을 정한 뒤에도 PDF 는 내용을 본다. 여기가 뚫리면 확장자만 바꿔 낸 파일이
+	 * 그대로 통과하므로, TC-ADMIN-013 이 막아 둔 것을 다른 문으로 되살리는 셈이 된다.
+	 */
+	@Test
+	void octet_stream_fallback_still_checks_pdf_magic() {
+		String token = createAdminUser("doc-octet-fakepdf@b.com");
+
+		var res = upload(token, "위장.pdf", "이건 PDF가 아님".getBytes(StandardCharsets.UTF_8),
+				"application/octet-stream");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
+	/**
+	 * TC-ADMIN-024 : 형식을 아는데 허용 목록에 없으면 확장자를 보지 않는다.
+	 *
+	 * <p>{@code image/png} 는 "모르는 형식" 이 아니라 "받지 않기로 한 형식" 이다. 확장자를
+	 * {@code .md} 로 바꿔 보내도 통과해서는 안 된다 - 폴백은 <b>모를 때만</b> 도는 길이다.
+	 */
+	@Test
+	void known_but_disallowed_type_does_not_fall_back_to_extension() {
+		String token = createAdminUser("doc-png-as-md@b.com");
+
+		var res = upload(token, "위장.md", new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }, "image/png");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
 	/** TC-ADMIN-015 : 목록은 최신순 */
 	@SuppressWarnings("unchecked")
 	@Test
