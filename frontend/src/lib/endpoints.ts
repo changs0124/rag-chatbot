@@ -41,6 +41,10 @@ export const deleteAttachment = (id: string) => api.del<void>(`/api/files/${id}`
 export const listDocuments = () => api.get<RagDocument[]>('/api/admin/documents')
 export const deleteDocument = (id: string) => api.del<void>(`/api/admin/documents/${id}`)
 export const listAdminUsers = () => api.get<AdminUser[]>('/api/admin/users')
+
+/** 계정 발급. 임시 비밀번호는 이 응답에만 실려 오고 다시 조회할 수 없다 */
+export const createAdminUser = (email: string, name: string) =>
+  api.post<{ temporaryPassword: string }>('/api/admin/users', { email, name })
 export const resetUserPassword = (id: string) =>
   api.post<{ temporaryPassword: string }>(`/api/admin/users/${id}/password-reset`)
 

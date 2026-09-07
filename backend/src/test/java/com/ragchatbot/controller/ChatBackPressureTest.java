@@ -34,7 +34,7 @@ class ChatBackPressureTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void rejected_by_backpressure_returns_429() {
-		String token = signup("bp-429@b.com");
+		String token = createUser("bp-429@b.com");
 		String convId = createConversation(token);
 
 		var res = rest.exchange("/api/chat", HttpMethod.POST,
@@ -45,7 +45,7 @@ class ChatBackPressureTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void rejected_request_leaves_no_orphan_user_message() {
-		String token = signup("bp-orphan@b.com");
+		String token = createUser("bp-orphan@b.com");
 		String convId = createConversation(token);
 
 		rest.exchange("/api/chat", HttpMethod.POST,

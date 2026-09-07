@@ -28,9 +28,6 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 	private static final String LOGIN = "/api/auth/login";
 	private static final String ME = "/api/auth/me";
 
-	record Signup(String email, String password, String name) {
-	}
-
 	record Login(String email, String password) {
 	}
 
@@ -41,33 +38,34 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getBody().get("status")).isEqualTo("ok");
 	}
 
+	/**
+	 * 가입 경로가 <b>존재하지 않는다</b>(FEAT-AUTH-001, 2026-09-07).
+	 *
+	 * <p>404 가 아니라 401 인 것이 중요하다 - 컨트롤러에서 지웠어도 SecurityConfig 의 permitAll 에
+	 * 남아 있으면 필터를 통과해 404 가 되므로, <b>401 이어야 두 곳 모두에서 사라진 것</b>이다.
+	 */
 	@Test
-	void signup_login_me_flow() {
-		var signup = rest.postForEntity(SIGNUP, new Signup("auth-a@b.com", "password123", "홍길동"), Map.class);
-		assertThat(signup.getStatusCode()).isEqualTo(HttpStatus.OK);
-		String token = (String) signup.getBody().get("token");
-		assertThat(token).isNotBlank();
+	void signup_endpoint_is_gone() {
+		var res = rest.postForEntity(SIGNUP,
+				Map.of("email", "auth-new@b.com", "password", "password123", "name", "홍길동"), Map.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	@Test
+	void issued_account_can_login_and_read_me() {
+		String token = createUser("auth-a@b.com");
 
 		var headers = new HttpHeaders();
 		headers.setBearerAuth(token);
 		var me = rest.exchange(ME, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
 		assertThat(me.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(me.getBody().get("email")).isEqualTo("auth-a@b.com");
-
-		var login = rest.postForEntity(LOGIN, new Login("auth-a@b.com", "password123"), Map.class);
-		assertThat(login.getStatusCode()).isEqualTo(HttpStatus.OK);
-	}
-
-	@Test
-	void duplicate_email_409() {
-		rest.postForEntity(SIGNUP, new Signup("auth-dup@b.com", "password123", "이름"), Map.class);
-		var res = rest.postForEntity(SIGNUP, new Signup("auth-dup@b.com", "password123", "이름2"), Map.class);
-		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 	}
 
 	@Test
 	void wrong_password_401() {
-		rest.postForEntity(SIGNUP, new Signup("auth-wp@b.com", "password123", "이름"), Map.class);
+		createUser("auth-wp@b.com");
 		var res = rest.postForEntity(LOGIN, new Login("auth-wp@b.com", "wrongpassword"), Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 	}
@@ -144,27 +142,26 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 
 	// --- 2026-07-28 보안 보강 : 이메일 정규화 · 로그인 상한 · 비밀번호 변경 시 토큰 무효화 ---
 
-	/** 대문자로 가입해도 저장은 소문자 - 같은 주소가 대소문자만 달라 별개 계정이 되는 것을 막음 */
+	/** 대문자로 발급해도 저장은 소문자 - 같은 주소가 대소문자만 달라 별개 계정이 되는 것을 막음 */
 	@Test
 	void email_is_normalized_to_lowercase() {
-		var res = rest.postForEntity(SIGNUP, new Signup("Auth-Case@B.com", "password123", "이름"), Map.class);
-		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		String temporary = issueAccount("Auth-Case@B.com");
 
 		Integer stored = jdbc.queryForObject("select count(*) from users where email = ?", Integer.class,
 				"auth-case@b.com");
 		assertThat(stored).isEqualTo(1);
 
 		// 소문자로도, 다시 대문자로도 같은 계정으로 로그인됨
-		assertThat(rest.postForEntity(LOGIN, new Login("auth-case@b.com", "password123"), Map.class)
+		assertThat(rest.postForEntity(LOGIN, new Login("auth-case@b.com", temporary), Map.class)
 				.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(rest.postForEntity(LOGIN, new Login("AUTH-CASE@b.com", "password123"), Map.class)
+		assertThat(rest.postForEntity(LOGIN, new Login("AUTH-CASE@b.com", temporary), Map.class)
 				.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
 	@Test
 	void duplicate_email_differing_only_in_case_409() {
-		rest.postForEntity(SIGNUP, new Signup("auth-dupcase@b.com", "password123", "이름"), Map.class);
-		var res = rest.postForEntity(SIGNUP, new Signup("Auth-DupCase@B.com", "password123", "이름2"), Map.class);
+		issueAccount("auth-dupcase@b.com");
+		var res = issueRaw("Auth-DupCase@B.com", "이름2");
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 	}
 
@@ -179,7 +176,7 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void login_attempts_are_rate_limited() {
-		rest.postForEntity(SIGNUP, new Signup("auth-rl@b.com", "password123", "이름"), Map.class);
+		String temporary = issueAccount("auth-rl@b.com");
 		int perMinute = 3;
 
 		boolean blocked = false;
@@ -193,16 +190,16 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 		assertThat(blocked).as("틀린 시도를 반복하면 상한에 걸려야 함").isTrue();
 
 		// 한도를 넘으면 비밀번호가 맞아도 통과시키지 않음
-		var over = rest.postForEntity(LOGIN, new Login("auth-rl@b.com", "password123"), Map.class);
+		var over = rest.postForEntity(LOGIN, new Login("auth-rl@b.com", temporary), Map.class);
 		assertThat(over.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
 	}
 
 	/** 성공한 로그인은 상한을 소모하지 않음 - 정상 사용자가 여러 번 로그인해도 잠기면 안 됨 */
 	@Test
 	void successful_logins_are_not_rate_limited() {
-		rest.postForEntity(SIGNUP, new Signup("auth-rl-ok@b.com", "password123", "이름"), Map.class);
+		String temporary = issueAccount("auth-rl-ok@b.com");
 		for (int i = 0; i < 6; i++) { // 하한(3)의 두 배
-			assertThat(rest.postForEntity(LOGIN, new Login("auth-rl-ok@b.com", "password123"), Map.class)
+			assertThat(rest.postForEntity(LOGIN, new Login("auth-rl-ok@b.com", temporary), Map.class)
 					.getStatusCode()).isEqualTo(HttpStatus.OK);
 		}
 	}
@@ -216,7 +213,7 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 	 */
 	@Test
 	void token_issued_before_password_change_is_rejected() {
-		String token = signup("auth-revoke@b.com");
+		String token = createUser("auth-revoke@b.com");
 		assertThat(meStatusWith(token)).isEqualTo(HttpStatus.OK);
 
 		jdbc.update("update users set password_changed_at = now() + interval '1 second' where email = ?",
@@ -227,13 +224,14 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void password_change_bumps_marker() {
-		String token = signup("auth-bump@b.com");
-		// 가입 시각과 확실히 갈리도록 기준선을 과거로 내려 둠(초 눈금 경계 의존 제거)
+		String temporary = issueAccount("auth-bump@b.com");
+		String token = login("auth-bump@b.com", temporary);
+		// 발급 시각과 확실히 갈리도록 기준선을 과거로 내려 둠(초 눈금 경계 의존 제거)
 		jdbc.update("update users set password_changed_at = now() - interval '1 hour' where email = ?",
 				"auth-bump@b.com");
 
 		var res = rest.exchange("/api/profile/password", HttpMethod.PATCH,
-				new HttpEntity<>(Map.of("currentPassword", "password123", "newPassword", "newpassword123"),
+				new HttpEntity<>(Map.of("currentPassword", temporary, "newPassword", "newpassword123"),
 						bearer(token)),
 				Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK); // 새 토큰을 함께 돌려줌
@@ -246,10 +244,10 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void password_stored_as_bcrypt_hash() {
-		rest.postForEntity(SIGNUP, new Signup("auth-hash@b.com", "password123", "이름"), Map.class);
+		String temporary = issueAccount("auth-hash@b.com");
 		String hash = jdbc.queryForObject("select password_hash from users where email = ?", String.class,
 				"auth-hash@b.com");
-		assertThat(hash).isNotEqualTo("password123");
+		assertThat(hash).isNotEqualTo(temporary);
 		assertThat(hash).startsWith("$2"); // BCrypt 접두
 	}
 }

@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { FormEvent } from 'react'
 import { Link, Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmModal from '../components/ConfirmModal'
+import TextInput from '../components/TextInput'
 import { ApiError } from '../lib/api'
 import {
+  createAdminUser,
   deleteDocument,
   listAdminUsers,
   listDocuments,
@@ -47,7 +50,15 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<RagDocument | null>(null)
-  const [issued, setIssued] = useState<{ name: string; password: string } | null>(null)
+  // kind 로 갈리는 것은 안내 문구뿐이다 — 발급은 "새 계정"이고 초기화는 "기존 세션이 끊긴다"
+  const [issued, setIssued] = useState<{
+    kind: 'created' | 'reset'
+    name: string
+    password: string
+  } | null>(null)
+  const [newEmail, setNewEmail] = useState('')
+  const [newName, setNewName] = useState('')
+  const [creating, setCreating] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
 
@@ -113,9 +124,26 @@ export default function AdminPage() {
     setError(null)
     try {
       const res = await resetUserPassword(target.id)
-      setIssued({ name: target.name, password: res.temporaryPassword })
+      setIssued({ kind: 'reset', name: target.name, password: res.temporaryPassword })
     } catch (e) {
       setError(e instanceof ApiError ? e.message : '초기화하지 못했습니다')
+    }
+  }
+
+  async function onCreate(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setCreating(true)
+    try {
+      const res = await createAdminUser(newEmail, newName)
+      setIssued({ kind: 'created', name: newName, password: res.temporaryPassword })
+      setNewEmail('')
+      setNewName('')
+      await refresh()
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : '계정을 만들지 못했습니다')
+    } finally {
+      setCreating(false)
     }
   }
 
@@ -203,6 +231,35 @@ export default function AdminPage() {
 
         <section className="mt-10">
           <h2 className="text-sm font-medium text-ink-muted">사용자 {users.length}명</h2>
+          {/* 스스로 가입하는 경로가 없으므로 계정은 여기서만 태어난다 */}
+          <form onSubmit={onCreate} className="mt-3 rounded-2xl bg-surface px-4 py-3 md:flex md:items-end md:gap-3">
+            <label className="block flex-1">
+              <span className="text-xs text-ink-muted">이메일</span>
+              <TextInput
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+                autoComplete="off"
+              />
+            </label>
+            <label className="mt-3 block flex-1 md:mt-0">
+              <span className="text-xs text-ink-muted">이름</span>
+              <TextInput
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                required
+                autoComplete="off"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={creating}
+              className="mt-3 h-11 shrink-0 rounded-full bg-accent px-5 text-sm font-medium text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 disabled:opacity-50 md:mt-0"
+            >
+              {creating ? '발급 중…' : '계정 추가'}
+            </button>
+          </form>
           <ul className="mt-3 space-y-2">
             {users.map((person) => (
               <li
@@ -249,15 +306,19 @@ export default function AdminPage() {
           <div className="absolute inset-0" onClick={() => setIssued(null)} aria-hidden="true" />
           <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
             <div className="rounded-[1.375rem] bg-raised p-6">
-              <h2 className="text-base font-semibold text-ink">임시 비밀번호가 발급되었습니다</h2>
+              <h2 className="text-base font-semibold text-ink">
+                {issued.kind === 'created' ? '계정이 발급되었습니다' : '임시 비밀번호가 발급되었습니다'}
+              </h2>
               <p className="mt-4 rounded-xl bg-surface px-4 py-3 text-center font-mono text-base text-ink">
                 {issued.password}
               </p>
-              {/* 두 문장 모두 필요하다 : 다시 못 본다는 사실과, 대상자가 즉시 로그아웃된다는 사실 */}
+              {/* 두 문장 모두 필요하다 : 다시 못 본다는 사실과, 이 발급이 상대에게 무엇을 뜻하는지 */}
               <p className="mt-4 text-sm leading-relaxed text-ink-muted">
                 이 값은 지금만 볼 수 있습니다. 닫으면 다시 확인할 수 없습니다.
                 <br />
-                {issued.name} 님의 기존 로그인은 모두 해제되었습니다.
+                {issued.kind === 'created'
+                  ? `${issued.name} 님에게 이메일과 함께 전달하세요.`
+                  : `${issued.name} 님의 기존 로그인은 모두 해제되었습니다.`}
               </p>
               <div className="mt-6 flex justify-end">
                 <button

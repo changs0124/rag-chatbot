@@ -24,8 +24,8 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	@Autowired
 	private UserRepository userRepository;
 
-	private String signupAdmin(String email) {
-		String token = signup(email);
+	private String createAdminUser(String email) {
+		String token = createUser(email);
 		userRepository.promoteAdmins(List.of(email));
 		return token;
 	}
@@ -40,12 +40,49 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 				new HttpEntity<>(bearer(token)), Map.class);
 	}
 
+	/**
+	 * 계정 발급은 관리자만 할 수 있다(FEAT-AUTH-001).
+	 *
+	 * <p>403 이 아니라 <b>404</b> 다 - 관리 기능의 존재 자체를 드러내지 않는 이 컨트롤러의 규칙(P-3)이
+	 * 새 엔드포인트에도 적용되는지를 본다. 여기만 403 이면 경로의 존재가 새어 규칙이 무너진다.
+	 */
+	@SuppressWarnings("rawtypes")
+	@Test
+	void plain_user_cannot_issue_accounts() {
+		String plainToken = createUser("issue-intruder@b.com");
+
+		ResponseEntity<Map> res = rest.exchange("/api/admin/users", HttpMethod.POST,
+				new HttpEntity<>(Map.of("email", "issue-victim@b.com", "name", "피해자"), bearer(plainToken)),
+				Map.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		Integer created = jdbc.queryForObject("select count(*) from users where email = ?", Integer.class,
+				"issue-victim@b.com");
+		assertThat(created).isZero();
+	}
+
+	/**
+	 * 발급된 계정은 <b>일반 사용자</b>다 - 관리자 명단에 없는 주소이므로.
+	 *
+	 * <p>발급하는 쪽이 관리자라는 이유로 받는 쪽까지 관리자가 되면, 계정 하나 만들 때마다 관리 권한이
+	 * 번지고 그 사실이 화면 어디에도 보이지 않는다.
+	 */
+	@Test
+	void issued_account_is_a_plain_user() {
+		createUser("issue-role@b.com");
+
+		String role = jdbc.queryForObject("select role from users where email = ?", String.class,
+				"issue-role@b.com");
+
+		assertThat(role).isEqualTo("user");
+	}
+
 	/** TC-ADMIN-030 : 임시 비밀번호가 1회 반환된다 */
 	@SuppressWarnings("unchecked")
 	@Test
 	void admin_gets_temporary_password_once() {
-		String adminToken = signupAdmin("reset-admin@b.com");
-		signup("reset-target@b.com");
+		String adminToken = createAdminUser("reset-admin@b.com");
+		createUser("reset-target@b.com");
 
 		var res = reset(adminToken, idOf("reset-target@b.com"));
 
@@ -57,8 +94,8 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	void temporary_password_works_for_login() {
-		String adminToken = signupAdmin("reset-admin2@b.com");
-		signup("reset-login@b.com");
+		String adminToken = createAdminUser("reset-admin2@b.com");
+		createUser("reset-login@b.com");
 		String temporary = (String) reset(adminToken, idOf("reset-login@b.com")).getBody()
 				.get("temporaryPassword");
 
@@ -77,8 +114,8 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("rawtypes")
 	@Test
 	void reset_invalidates_target_existing_tokens() {
-		String adminToken = signupAdmin("reset-admin3@b.com");
-		String targetToken = signup("reset-kick@b.com");
+		String adminToken = createAdminUser("reset-admin3@b.com");
+		String targetToken = createUser("reset-kick@b.com");
 		// 초기화 전에는 멀쩡히 쓰인다
 		assertThat(rest.exchange("/api/auth/me", HttpMethod.GET, new HttpEntity<>(bearer(targetToken)),
 				Map.class).getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -94,8 +131,8 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	void two_resets_produce_different_passwords() {
-		String adminToken = signupAdmin("reset-admin4@b.com");
-		signup("reset-twice@b.com");
+		String adminToken = createAdminUser("reset-admin4@b.com");
+		createUser("reset-twice@b.com");
 		UUID target = idOf("reset-twice@b.com");
 
 		String first = (String) reset(adminToken, target).getBody().get("temporaryPassword");
@@ -107,8 +144,8 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	/** TC-ADMIN-034 : 일반 사용자는 남의 비밀번호를 초기화할 수 없다 */
 	@Test
 	void plain_user_cannot_reset_others() {
-		signup("reset-victim@b.com");
-		String plainToken = signup("reset-intruder@b.com");
+		createUser("reset-victim@b.com");
+		String plainToken = createUser("reset-intruder@b.com");
 
 		var res = reset(plainToken, idOf("reset-victim@b.com"));
 
@@ -118,7 +155,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	/** 자기 자신은 대상이 아니다 - 마이페이지에 변경 기능이 이미 있고, 자기 세션을 스스로 끊을 이유가 없다 */
 	@Test
 	void admin_cannot_reset_self() {
-		String adminToken = signupAdmin("reset-self@b.com");
+		String adminToken = createAdminUser("reset-self@b.com");
 
 		var res = reset(adminToken, idOf("reset-self@b.com"));
 
@@ -128,7 +165,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	/** TC-ADMIN-006 : 일반 사용자의 사용자 목록 조회는 404 */
 	@Test
 	void plain_user_cannot_list_users() {
-		String plainToken = signup("list-plain@b.com");
+		String plainToken = createUser("list-plain@b.com");
 
 		// 오류 본문은 ApiError 객체라 List 로 못 받음 - 상태 코드만 보면 되므로 String 으로 받는다
 		var res = rest.exchange("/api/admin/users", HttpMethod.GET,
@@ -141,7 +178,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	void user_list_carries_role() {
-		String adminToken = signupAdmin("list-admin@b.com");
+		String adminToken = createAdminUser("list-admin@b.com");
 
 		ResponseEntity<List> res = rest.exchange("/api/admin/users", HttpMethod.GET,
 				new HttpEntity<>(bearer(adminToken)), List.class);

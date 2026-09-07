@@ -1,18 +1,12 @@
 package com.ragchatbot.service;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ragchatbot.config.AdminRoleSynchronizer;
-import com.ragchatbot.config.SignupPolicy;
 import com.ragchatbot.entity.User;
-import com.ragchatbot.exception.ApiExceptions.BadRequestException;
-import com.ragchatbot.exception.ApiExceptions.ConflictException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.exception.ApiExceptions.UnauthorizedException;
 import com.ragchatbot.repository.UserRepository;
@@ -20,10 +14,12 @@ import com.ragchatbot.security.JwtService;
 import com.ragchatbot.dto.AuthDtos.AuthResponse;
 import com.ragchatbot.dto.AuthDtos.LoginRequest;
 import com.ragchatbot.dto.AuthDtos.MeResponse;
-import com.ragchatbot.dto.AuthDtos.SignupRequest;
 
 /**
- * 회원가입/로그인. 비밀번호는 BCrypt 해시로만 저장(AC-4).
+ * 로그인. 비밀번호는 BCrypt 해시로만 저장(AC-4).
+ *
+ * <p><b>계정을 만드는 경로가 여기 없다</b>(2026-09-07). 발급은 관리자만 할 수 있고
+ * {@code AdminUserService.create()} 가 담당한다.
  *
  * <p>이메일은 <b>소문자로 정규화</b>해 저장·조회함(2026-07-28 결정). 그러지 않으면 같은 주소가
  * 대소문자만 달라 별개 계정이 되고, 사용자는 "가입했는데 로그인이 안 되는" 상태를 만남.
@@ -36,37 +32,13 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
 	private final RateLimiterService rateLimiter;
-	private final SignupPolicy signupPolicy;
-	private final List<String> adminEmails;
 
 	public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-			RateLimiterService rateLimiter, SignupPolicy signupPolicy,
-			@Value("${app.admin.emails:}") String adminEmails) {
+			RateLimiterService rateLimiter) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
 		this.rateLimiter = rateLimiter;
-		this.signupPolicy = signupPolicy;
-		// 기동 시 동기화(AdminRoleSynchronizer)는 **이미 가입한** 계정만 손댐. 명단에 있으나 아직
-		// 가입하지 않은 이메일은 여기서 가입 시점에 반영해야 재기동 없이 관리자가 됨(FEAT-ADMIN-001)
-		this.adminEmails = AdminRoleSynchronizer.parse(adminEmails);
-	}
-
-	public AuthResponse signup(SignupRequest req) {
-		String email = normalizeEmail(req.email());
-		// **중복 검사보다 먼저** 함(FEAT-AUTH-001). 순서가 뒤집히면 거절할 주소에 대해 "이미 가입된
-		// 이메일"을 돌려주게 되어 계정 존재 여부가 샘 - 로그인에서 계정 유무를 숨기는 것과 같은 결임
-		if (!signupPolicy.isAllowed(email)) {
-			throw new BadRequestException(signupPolicy.rejectionMessage());
-		}
-		userRepository.findByEmail(email).ifPresent(u -> {
-			throw new ConflictException("이미 가입된 이메일");
-		});
-		UUID id = UUID.randomUUID();
-		String role = adminEmails.contains(email) ? "admin" : "user";
-		User user = new User(id, email, passwordEncoder.encode(req.password()), req.name(), "system", role, null, null);
-		userRepository.insert(user);
-		return new AuthResponse(jwtService.issue(id, email), new MeResponse(id, email, req.name(), "system", role));
 	}
 
 	public AuthResponse login(LoginRequest req) {

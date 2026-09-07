@@ -1,19 +1,24 @@
 package com.ragchatbot.service;
 
-import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.ragchatbot.config.AdminRoleSynchronizer;
+import com.ragchatbot.config.EmailDomainPolicy;
 import com.ragchatbot.entity.User;
 import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.exception.ApiExceptions.ConflictException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.repository.UserRepository;
 import com.ragchatbot.dto.AdminDtos.AdminUserResponse;
+import com.ragchatbot.dto.AdminDtos.CreateUserRequest;
 
 /**
  * 관리자에 의한 사용자 관리(FEAT-ADMIN-003 · REQ-AUTH-006).
@@ -25,22 +30,43 @@ import com.ragchatbot.dto.AdminDtos.AdminUserResponse;
 @Service
 public class AdminUserService {
 
-	/**
-	 * 혼동하기 쉬운 글자를 뺀 문자 집합. 임시 비밀번호는 사람이 눈으로 읽어 옮기므로
-	 * {@code 0/O} · {@code 1/l/I} 가 섞이면 "안 된다"는 문의가 그만큼 늘어난다.
-	 */
-	private static final String ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-	private static final int SEGMENTS = 3;
-	private static final int SEGMENT_LENGTH = 4;
-
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
-	private final SecureRandom random = new SecureRandom();
+	private final TemporaryPasswordGenerator temporaryPasswords;
+	private final EmailDomainPolicy emailDomainPolicy;
+	private final List<String> adminEmails;
 
-	public AdminUserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+	public AdminUserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+			TemporaryPasswordGenerator temporaryPasswords, EmailDomainPolicy emailDomainPolicy,
+			@Value("${app.admin.emails:}") String adminEmails) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.temporaryPasswords = temporaryPasswords;
+		this.emailDomainPolicy = emailDomainPolicy;
+		// 명단에 있는 주소로 계정을 발급하면 곧바로 관리자여야 한다. 기동 동기화까지 기다리게 하면
+		// 발급 직후 그 사람은 관리 화면에 못 들어가고, 이유는 화면 어디에도 적히지 않는다
+		this.adminEmails = AdminRoleSynchronizer.parse(adminEmails);
+	}
+
+	/**
+	 * 계정 발급(FEAT-AUTH-001). 임시 비밀번호를 만들어 <b>응답에 한 번만</b> 싣는다.
+	 *
+	 * <p>도메인 검사를 <b>중복 검사보다 먼저</b> 한다. 순서가 뒤집히면 허용되지 않는 주소에 대해
+	 * "이미 있는 이메일"을 돌려주게 되어 계정 존재 여부가 샌다 - 로그인에서 계정 유무를 숨기는 것과 같은 결이다.
+	 */
+	public String create(CreateUserRequest req) {
+		String email = req.email().trim().toLowerCase(Locale.ROOT);
+		if (!emailDomainPolicy.isAllowed(email)) {
+			throw new BadRequestException(emailDomainPolicy.rejectionMessage());
+		}
+		userRepository.findByEmail(email).ifPresent(u -> {
+			throw new ConflictException("이미 있는 이메일");
+		});
+		String temporary = temporaryPasswords.generate();
+		String role = adminEmails.contains(email) ? "admin" : "user";
+		userRepository.insert(new User(UUID.randomUUID(), email, passwordEncoder.encode(temporary),
+				req.name(), "system", role, null, null));
+		return temporary;
 	}
 
 	public List<AdminUserResponse> list() {
@@ -69,25 +95,11 @@ public class AdminUserService {
 		User target = userRepository.findById(targetUserId)
 				.orElseThrow(() -> new NotFoundException("사용자 없음"));
 
-		String temporary = generate();
+		String temporary = temporaryPasswords.generate();
 		String hash = passwordEncoder.encode(temporary);
 		// 현재 초에 발급된 토큰까지 확실히 걸리도록 경계를 다음 초로 올림(위 설명 참고)
 		OffsetDateTime changedAt = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS).plusSeconds(1);
 		userRepository.updatePasswordHash(target.id(), hash, changedAt);
 		return temporary;
-	}
-
-	/** {@code Xk7m-Qp29-Vr4t} 꼴. 구분자를 넣는 이유는 사람이 옮겨 적을 때 자리를 잃지 않게 하려는 것 */
-	private String generate() {
-		StringBuilder sb = new StringBuilder();
-		for (int s = 0; s < SEGMENTS; s++) {
-			if (s > 0) {
-				sb.append('-');
-			}
-			for (int i = 0; i < SEGMENT_LENGTH; i++) {
-				sb.append(ALPHABET.charAt(random.nextInt(ALPHABET.length())));
-			}
-		}
-		return sb.toString();
 	}
 }

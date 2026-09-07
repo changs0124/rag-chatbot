@@ -28,7 +28,7 @@ class JwtRefreshFarFromExpiryTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("rawtypes")
 	@Test
 	void far_from_expiry_is_not_refreshed() {
-		String token = signup("slide-far@b.com");
+		String token = createUser("slide-far@b.com");
 		ResponseEntity<Map> res = rest.exchange("/api/auth/me", HttpMethod.GET,
 				new HttpEntity<>(bearer(token)), Map.class);
 

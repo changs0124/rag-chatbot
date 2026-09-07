@@ -30,7 +30,7 @@ class JwtRefreshDisabledTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("rawtypes")
 	@Test
 	void zero_threshold_disables_refresh() {
-		String token = signup("slide-off@b.com");
+		String token = createUser("slide-off@b.com");
 		ResponseEntity<Map> res = rest.exchange("/api/auth/me", HttpMethod.GET,
 				new HttpEntity<>(bearer(token)), Map.class);
 
