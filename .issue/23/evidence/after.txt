@@ -1,95 +1,71 @@
 # after — 변경 후 절 단위 전수 대조
 
 절차 규칙
-  1. 역방향 검사는 **이번 회차에 새로 쓴 명제에도** 돌린다. 직전 명제만 재확인하면 새 사본을 놓친다.
-  2. 줄을 건드리면 그 줄이 속한 **절 전체**가 검증 대상이다. 바꾼 어절도, 그 줄만도 아니다.
-  3. grep 으로 확인한 전칭은 **자사 코드 밖에서 나오는 상태를 못 본다**(프레임워크 필터 등).
-     확인할 수 없는 전칭은 다듬지 말고 없앤다.
-  4. '전수' 라벨은 실제 전수일 때만 쓴다. 예시를 붙이지 않는다.
+  1. 외연 열거('만/뿐 예외')를 쓰지 않는다. 내포 판별('거친/안 거친')로 쓴다.
+     1~3차가 전부 외연 열거에서 뚫렸다. 예외를 하나 더 붙이면 네 번째가 나온다.
+  2. 역방향 검사는 이번 회차에 새로 쓴 명제에도 돌리고, 발견한 사실을 다른 문장에 전파한다.
+  3. 줄을 건드리면 그 줄이 속한 절 전체가 검증 대상이다.
+  4. 뒷받침하는 명제가 없는 표는 싣지 않는다. '전수' 라벨에서 두 회차 연속 틀렸다.
 
 ================================================================
-문서> | 201 | 생성 성공 | 문서 업로드 한 곳뿐. 회원가입·대화 생성·첨부 업로드를 포함한
-문서>   나머지 생성 경로는 전부 **200** 이다 |
-검증> @ResponseStatus 전수 = 1건 · ResponseEntity.created 전수 = 0건
+문서> - **성공 상태는 컨트롤러가 정한다** — 문서 업로드가 @ResponseStatus(CREATED)(201), 삭제
+문서>   3곳이 ResponseEntity.noContent()(204), 파일 서빙이 ResponseEntity.ok()(200 + Content-Type).
+문서>   그 밖의 핸들러는 DTO 를 그대로 돌려주고 상태를 지정하지 않는다. 채팅만 SseEmitter 다.
+검증> 상태를 지정하는 자리 전수 — 세 종류를 각각 grep 한다
       backend/src/main/java/com/ragchatbot/controller/AdminController.java:54:	@ResponseStatus(HttpStatus.CREATED)
-검증> 엔드포인트 핸들러 전수 = 22개. 그중 상태를 지정하는 것은 위 1건과 noContent() 3건뿐
-
-================================================================
-문서> | `INTERNAL_ERROR` | 500 | ... | 3단계(Files 업로드) 실패 | ... `500` |
-검증> 502 · BAD_GATEWAY 전수 = 0건 (backend · frontend · docs)
-      92:		String traceId = UUID.randomUUID().toString().substring(0, 8);
-      93:		log.error("처리되지 않은 예외 [{}] {} {}", traceId, request.getMethod(), request.getRequestURI(), ex);
-      94:		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-      95:				.body(new ApiError("INTERNAL_ERROR", "처리 중 오류가 발생했습니다 (오류 번호: " + traceId + ")"));
-
-================================================================
-문서> | 5단계(DB 기록) 실패 | ... 파일과 스토어 연결이 모두 남고, 관리 화면에서 보이지 않는 채
-문서>   **검색에는 계속 잡힌다**. `OrphanCleanupScheduler` 는 로컬 첨부만 회수 ... |
-검증> insert 가 try/catch 밖 · deleteDocument 가 둘을 지움 = 실패 시 둘 다 잔류
-      115:		documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
-      411-		deleteQuietly("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId,
-      413-		deleteQuietly("/files/" + openaiFileId, "file", openaiFileId);
-검증> 관리 화면은 listAlive() = DB 행 기준 -> 행 없으면 비가시
-검증> 검색은 vector store 기준이고 rag_documents 를 보지 않음 -> 계속 잡힘
-검증> 스케줄러 1차·2차 패스 모두 attachments 행·로컬 저장소만 봄
-      37:			int removed = fileService.cleanupOrphans(cutoff);
-      47:			int removed = fileService.cleanupUnreferencedFiles(cutoff);
-
-================================================================
-문서> - **오류 상태 코드를 컨트롤러가 만들지 않는다.** ... **미인증 401 만 예외** — ...
-문서>   `ApiError` 가 아니라 Spring 기본 오류 본문이고 `message` 가 없다.
-검증> 진입점:
-      47-						(req, res, ex) -> res.sendError(401, "Unauthorized")))
-검증> ERROR 디스패치가 permitAll = 이 경로가 살아 있다는 근거:
-      40:						.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
-검증> 프론트가 message 없는 본문을 어떻게 처리하는가:
-      4:// 화면에는 그냥 "요청 실패"로만 보임. 원인을 콘솔에 남겨 둠(Vercel 환경변수 누락이 흔함)
-      27: * 없으면 사용자는 "요청 실패 (401)"만 보고 재로그인 경로를 찾지 못함.
-
-      ※ 이전 판본의 '핸들러 밖에서 상태를 만드는 곳은 이 한 곳뿐이다' 는 삭제했다.
-        grep sendError|setStatus 로는 프레임워크가 내는 상태를 볼 수 없다 — 실제로
-        CorsConfig 허용 목록에 걸린 요청을 Spring CorsFilter 가 403 으로 되돌린다.
-        확인할 수 없는 전칭이라 다듬지 않고 없앴다. api.md 의 403 행에 그 사실을 적었다.
-
-================================================================
-문서> - **오류 응답 본문은 `ApiError(code, message)` 로 통일한다 — 위 미인증 401 만 예외다.**
-검증> 역방향 검사 — 'ApiError' 를 docs 전체에 되던진 결과:
-      docs/01_specs/features.md:365:`ApiError{code, message}` 형태로 나가고 서버 로그에 남게 한다.
-      docs/02_architecture/backend.md:39:  내므로 `ApiError` 가 아니라 Spring 기본 오류 본문이고 `message` 가 없다. 프론트는 이 경우
-      docs/02_architecture/backend.md:46:- **오류 응답 본문은 `ApiError(code, message)` 로 통일한다 — 위 미인증 401 만 예외다.**
-      docs/02_architecture/frontend.md:51:- 실패는 `ApiError(status, message)` 로 통일하고, 서버가 준 `message` 를 그대로 사용자에게 보여준다.
-      docs/CONVENTIONS.md:39:  `authenticationEntryPoint` 가 직접 내며 `ApiError` 본문이 아니다. 컨트롤러에서 **오류** 상태 코드를
-      docs/CONVENTIONS.md:73:- 실패는 `ApiError(status, message)`로 통일. 서버 응답 본문의 `message`를 그대로 사용자에게 보여준다.
-      features.md 는 GlobalExceptionHandler 의 Exception 핸들러로 범위가 좁혀져 있어 사본이 아니다.
-      frontend.md · CONVENTIONS.md 의 ApiError(status, message) 는 프론트의 다른 타입이다
-      (frontend/src/lib/api.ts 의 class ApiError).
-
-================================================================
-문서> - 성공 상태는 컨트롤러가 정한다 — 삭제류는 noContent()(204), 문서 업로드만
-문서>   @ResponseStatus(CREATED)(201), 그 외는 200. (CONVENTIONS.md)
-검증> #17 이 CHANGELOG 에 'CONVENTIONS.md 는 표만 걷어내고 규칙은 남긴다' 고 기록했다.
-      직전 판본은 규칙을 지우고 포인터만 남겨 그 결정을 뒤집었다. 규칙을 복원하고
-      포인터를 병기해 양쪽을 만족시켰다.
       backend/src/main/java/com/ragchatbot/controller/AdminController.java:65:		return ResponseEntity.noContent().build();
       backend/src/main/java/com/ragchatbot/controller/ConversationController.java:59:		return ResponseEntity.noContent().build();
       backend/src/main/java/com/ragchatbot/controller/FileController.java:42:		return ResponseEntity.noContent().build();
+      backend/src/main/java/com/ragchatbot/controller/FileController.java:53:		return ResponseEntity.ok()
+      backend/src/main/java/com/ragchatbot/controller/ChatController.java:45:	public SseEmitter chat(@RequestBody ChatRequest req) {
+      ※ 3차 판본은 파일 서빙을 '나머지' 로 분류했는데 거짓이었다. ResponseEntity.ok() 는
+        status(HttpStatus.OK) 다. 1차 증거(before.txt)가 이미 '컨트롤러가 직접 정한다' 고
+        기록해 뒀는데 3차가 새 근거 없이 뒤집었다. ok()/status( grep 이 증거에 없었던 것이 원인이다.
 
 ================================================================
-## 반환 형태 분포 (전수 22개)
-        4 MeResponse
-        3 ResponseEntity<Void>
-        3 AuthResponse
-        2 ConversationResponse
-        1 TemporaryPasswordResponse
-        1 SseEmitter
-        1 ResponseEntity<Resource>
-        1 Map<String, String>
-        1 List<MessageResponse>
-        1 List<DocumentResponse>
-        1 List<ConversationResponse>
-        1 List<AdminUserResponse>
-        1 AttachmentResponse
+문서> - **오류 상태 코드를 컨트롤러가 만들지 않는다.** ... **서블릿 필터 단계에서 나가는 오류는
+문서>   이 경로를 거치지 않는다** — 미인증 401 · CORS 403.
+검증> 미인증 401:
+      47:						(req, res, ex) -> res.sendError(401, "Unauthorized")))
+검증> CORS 403 — 허용 목록이 출처·메서드·헤더 셋:
+      25:		config.setAllowedOrigins(allowedOrigins);
+      26:		config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
+      27:		config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+검증> message 가 없는 근거 — include-message 미설정(기본 never):
+            미설정 = 기본 never
+검증> ERROR 디스패치가 permitAll = 기본 오류 경로가 살아 있음:
+      40:						.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
+검증> 프론트 폴백:
+      4:// 화면에는 그냥 "요청 실패"로만 보임. 원인을 콘솔에 남겨 둠(Vercel 환경변수 누락이 흔함)
+      27: * 없으면 사용자는 "요청 실패 (401)"만 보고 재로그인 경로를 찾지 못함.
+      100:    let message = `요청 실패 (${res.status})`
 
+      ※ '미인증 401 만 예외' 를 쓰지 않는다. 1차 '단독으로' · 2차 '이 한 곳뿐' · 3차 '401 만'
+        이 전부 같은 이유로 뚫렸다 — grep 으로는 프레임워크가 내는 상태를 못 본다.
+        외연을 세는 대신 '핸들러를 거쳤는가' 로 판별하면 필터가 늘어도 문장이 거짓이 되지 않는다.
+
+================================================================
+문서> - **`GlobalExceptionHandler` 를 거친 오류 응답 본문은 `ApiError(code, message)` 다.**
+문서>   서버가 `message` 를 주면 프론트는 그대로 노출한다. 위 필터 단계 오류는 이 형태가 아니다.
+검증> 역방향 검사 — '만 예외' · '뿐 예외' 잔존:
+검증> 역방향 검사 — 무조건 'message 를 그대로' 잔존:
+      docs/01_specs/features.md:453:**화면:** 없음. SCR-AUTH-001 의 기존 오류 표시를 그대로 쓴다 — 서버가 준 `message` 를 그대로 보여주는
+      features.md 는 특정 기능(도메인 화이트리스트)의 오류 표시를 가리키고 그 오류는
+      GlobalExceptionHandler 를 거쳐 message 가 있다. 사본이 아니다.
+
+================================================================
+문서> | 201 | 생성 성공 | 문서 업로드 한 곳뿐. ... 나머지 생성 경로는 전부 200 |
+문서> | **403** | — | **애플리케이션은 쓰지 않는다.** CORS 설정(CorsConfig)에 걸린 요청만 Spring 이 낸다 |
+검증> @ResponseStatus 1건 · ResponseEntity.created/status(201) 0건
+검증> @PreAuthorize · hasRole · EnableMethodSecurity 0건 · csrf disable
+      36:				.csrf(csrf -> csrf.disable())
+
+================================================================
+문서> - 성공 상태는 컨트롤러가 정한다 — 삭제류 204, 문서 업로드만 201, 그 외는 200 (CONVENTIONS.md)
+검증> @DeleteMapping 3건 = noContent() 3건 · @ResponseStatus 1건
+      #17 이 'CONVENTIONS.md 는 표만 걷어내고 규칙은 남긴다' 고 기록한 결정을 지켰다.
+
+================================================================
 ## 잔존 확인
   502 = 0건 · '연결 해제를 시도' = 0건
 
