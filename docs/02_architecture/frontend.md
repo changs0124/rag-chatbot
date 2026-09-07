@@ -7,7 +7,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 | 경로 | 역할 |
 |------|------|
-| `frontend/src/pages/` | 라우트 단위 화면 — `ChatPage` · `LoginPage` · `MyPage` |
+| `frontend/src/pages/` | 라우트 단위 화면 — `LoginPage` · `ChatPage` · `MyPage` · `AdminPage` |
 | `frontend/src/components/` | 재사용 컴포넌트. 기능이 커지면 `components/chat/` 처럼 하위 폴더 |
 | `frontend/src/hooks/` | 도메인 훅 — 현재 `useChat.ts` 하나 |
 | `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) |
@@ -32,7 +32,9 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ## 상태관리
 
 **외부 상태 라이브러리를 쓰지 않는다.** 서버 캐시 라이브러리(react-query 등)도 없다.
-화면이 3개뿐이고 공유 상태가 인증·테마 둘이라, 라이브러리 도입이 이득보다 크지 않다고 봤다.
+화면 사이를 건너다니는 상태가 **Context 둘**(`AuthContext` · `ThemeContext`)뿐이고 나머지는 쓰는 쪽이
+들고 있어서, 라이브러리 도입이 이득보다 크지 않다고 봤다. 아래 표의 넷 중 뒤의 둘은 Context 가 아니다 —
+`useChat` 은 쓰는 훅이, 토큰은 모듈 변수가 보유한다.
 
 | 상태 | 보유자 | 비고 |
 |------|--------|------|
@@ -47,9 +49,12 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ## API 통신
 
 - API 호출은 `frontend/src/lib/api.ts` 의 `api.get/post/patch/del/postForm` 을 통한다.
-  **컴포넌트·훅이 `fetch` 를 직접 부르는 곳은 둘** — 채팅 스트림(아래)과 첨부 저장
-  (`ImageLightbox.download()` 이 blob 으로 받아야 해서).
-- 엔드포인트는 `frontend/src/lib/endpoints.ts` 에 한 줄 함수로 노출한다.
+  **래퍼 밖에서 `fetch` 를 직접 부르는 곳은 둘** — 채팅 스트림(아래, `endpoints.ts`)과 첨부 저장
+  (`ImageLightbox.download()` 이 blob 으로 받아야 해서). 앞의 것은 컴포넌트가 아니라 `lib/` 에 있다.
+- 엔드포인트 함수는 `frontend/src/lib/endpoints.ts` 에 둔다. **대부분은 `api.*` 를 한 줄로 감싼 것**이고,
+  래퍼로 안 되는 것만 함수로 편다 — 멀티파트 업로드 둘(`uploadFile` · `uploadDocument`)과 채팅 스트림이다.
+  **`AuthContext` 는 예외로 `/api/auth/me` 와 `/api/auth/login` 을 직접 부른다** — 세션 수명을 그 안에서
+  닫아 두려는 것이고, 그래서 `endpoints.ts` 에 인증 함수가 없다.
 - **응답이 도착한** 실패는 `ApiError(status, message)` 로 통일하고, 서버가 `message` 를 주면 그대로 보여준다 — 없으면 `요청 실패 (n)` 로 떨어진다. 네트워크 단계 실패(CORS 거절·오프라인·중단)는 `fetch` 또는 본문 읽기가 reject 되어 이 경로를 타지 않는다.
 - 비밀번호 변경 응답의 **새 토큰으로 반드시 교체**해야 한다. 서버가 변경 시각 이전 토큰을 전부 무효화하므로,
   교체하지 않으면 "변경했습니다"를 띄운 직후부터 모든 요청이 401 이 된다.
@@ -166,7 +171,8 @@ Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts
 1. Vercel 프로젝트 환경변수에 `VITE_API_BASE_URL` = 백엔드 공개 주소를 넣는다.
    빠뜨리면 번들이 `localhost` 를 호출해 전부 실패한다(빌드 결과물이 콘솔에 경고를 남긴다).
    Vite 는 이 값을 **빌드 시점에 치환**하므로, 값을 바꾸면 재배포해야 한다.
-2. 백엔드의 `ALLOWED_ORIGINS` 에 Vercel 도메인을 넣는다. 안 넣으면 브라우저가 모든 호출을 CORS 로 막는다.
+2. 백엔드의 `ALLOWED_ORIGINS` 에 Vercel 도메인을 넣는다(백엔드 설정 — `backend.md` 「배포」).
+   안 넣으면 브라우저가 모든 호출을 CORS 로 막는다.
 
 백엔드를 로컬에 두고 터널로 노출하는 데모 구성이면 `VITE_API_BASE_URL` 이 터널 주소가 된다.
 터널 주소가 바뀌면 환경변수만 고쳐서는 반영되지 않고 **재배포까지 해야 한다**(1번의 빌드 시점 치환 때문).

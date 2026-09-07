@@ -39,13 +39,17 @@ exception/    ApiExceptions + GlobalExceptionHandler
   매핑한다. **서블릿 필터 단계에서 나가는 오류는 이 경로를 거치지 않는다** — 미인증 401(`SecurityConfig` 의
   `authenticationEntryPoint` 가 `sendError`, Spring 기본 오류 본문에 `message` 없음) · CORS 403(Spring
   `CorsFilter` 가 평문). 어느 쪽도 `ApiError` 가 아니다.
-- **성공 상태는 컨트롤러가 정한다** — 문서 업로드가 `@ResponseStatus(CREATED)`(201), 삭제 3곳이
+- **성공 상태는 컨트롤러가 정한다** — `@ResponseStatus(CREATED)`(201) 가 둘(문서 업로드 · 계정 발급), 삭제 3곳이
   `ResponseEntity.noContent()`(204), 파일 서빙이 `ResponseEntity.ok()`(200 + Content-Type).
   그 밖의 핸들러는 반환값을 그대로 돌려주고 상태를 지정하지 않는다. 채팅만 `SseEmitter`(text/event-stream) 다.
 - **소유권 위반은 403 이 아니라 404 로 은닉한다.** 남의 리소스는 "없는 것"으로 보인다.
   검증은 조회 단계에서 `findByIdAndUser(...)` 형태로 막는다 — DB RLS 가 없으므로 애플리케이션 코드가 유일한 관문이다.
-- **`GlobalExceptionHandler` 를 거친 오류 응답 본문은 `ApiError(code, message)` 다.** 서버가 `message` 를
-  주면 프론트는 그대로 노출한다. 위 필터 단계 오류는 이 형태가 아니다.
+- **`GlobalExceptionHandler` 를 거친 오류 응답 본문은 `ApiError(code, message)` 다.** `message` 는
+  **사용자에게 그대로 보일 것을 전제로** 쓴다 — 무엇을 고쳐야 하는지를 적는 것이 목표다. 다만 지키지
+  못한 자리가 있다 : Vector Store 미설정 거절이 `OPENAI_VECTOR_STORE_ID` 라는 배포 변수명을 본문에
+  싣는다(`AdminDocumentService`). 관리자만 닿는 경로라 두고 있으나 규칙의 예외임을 밝혀 둔다.
+  화면이 실제로 그렇게 쓴다는 것은 프론트 쪽 계약이다(`frontend.md` 「API 통신」).
+  위 필터 단계 오류는 이 형태가 아니다.
 
 ### 예외 → 상태 매핑
 
@@ -70,8 +74,12 @@ exception/    ApiExceptions + GlobalExceptionHandler
   "오류가 났어요"를 로그의 한 줄과 이어 붙일 수 있는 유일한 수단이다.
 - **SSE 스트림 도중의 오류는 여기 오지 않는다.** 응답이 이미 시작돼 상태 코드를 바꿀 수 없고,
   `ChatService` 가 `event: error` 로 따로 처리한다.
-- 스프링이 더 구체적인 핸들러를 먼저 고르므로 400·404 가 500 으로 뭉개지지 않는다. 그 성질에
-  기대기만 하면 조용히 깨지므로 케이스로 잠가 두었다.
+- 스프링은 더 구체적인 핸들러를 먼저 고르므로, `@ExceptionHandler(Exception.class)` 를 두어도
+  전용 핸들러가 있는 예외는 그쪽으로 간다. **잠가 둔 것은 도메인 예외까지다**
+  (`GlobalExceptionFallbackTest` — 예상 못 한 예외의 `ApiError` 모양 · 상관 ID · 내부 메시지 비노출 ·
+  도메인 예외가 제 상태를 지킨다). **Spring 내장 MVC 예외**(깨진 JSON · 없는 URL · 미지원 메서드)를
+  잠근 케이스는 없다 — `GlobalExceptionHandler` 가 `ResponseEntityExceptionHandler` 를 상속하지 않아
+  그쪽이 어디로 떨어지는지는 **측정한 적이 없다.** `docs/04_tasks/backlog.md` 에 등재돼 있다.
 
 ## 인증
 
@@ -84,7 +92,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   변경 직후 발급분이 밀리초 차이로 거부되지 않는다.
 - **파일 서빙 토큰은 분리된 audience(`aud=file`)** 다. `<img src>` 가 `Authorization` 헤더를 못 실어 쿼리 토큰을 쓰는데,
   audience 를 나누지 않으면 짧은 수명의 파일 토큰이 인증 Bearer 로 통용된다. TTL 15분, `subject=fileId` 일치까지 확인한다.
-- permitAll 은 로그인·헬스·파일 서빙뿐이다. SSE 비동기 재디스패치(`ASYNC`/`ERROR`)도 통과시킨다 —
+- permitAll 은 로그인·헬스·파일 서빙, 그리고 SSE 비동기 재디스패치(`ASYNC`/`ERROR`)다 —
   인증은 최초 `REQUEST` 디스패치에서 이미 검사됐다.
 - **만료가 임박하면 응답 헤더 `X-Refresh-Token` 으로 새 토큰을 보낸다**(FEAT-OPS-003).
   임계는 `JWT_REFRESH_THRESHOLD_MINUTES`(기본 30분)이고 **0 이면 기능이 꺼져** 종전 고정 만료로 돌아간다.
@@ -104,8 +112,10 @@ exception/    ApiExceptions + GlobalExceptionHandler
   대안이었던 **DB 수동 UPDATE** 는 배포마다 DB 접속이 필요해 절차가 문서에만 존재하게 되므로 기각했다.
   대가는 **명단 변경에 재기동이 필요**하다는 것이다 — 사내 소규모에서 관리자 교체는 드물어 감수한다.
 - **권한 없음도 404 다.** 관리 기능의 존재 자체를 드러내지 않는다(`AdminAccessGuard`).
-- **계정을 스스로 만드는 경로가 없다**(2026-09-07). 발급은 `POST /api/admin/users` 뿐이고 관리자만
-  부를 수 있다. 임시 비밀번호를 응답에 한 번 싣고 저장하지 않는 것은 비밀번호 초기화와 같은 규칙이며,
+- **계정을 스스로 만드는 경로가 없다**(2026-09-07). 계정이 태어나는 자리는 둘이고
+  **둘 다 관리자 통제 아래** 있다 — 관리자가 부르는 `POST /api/admin/users` 와, `ADMIN_EMAILS` 를 보고
+  첫 관리자를 만드는 기동 러너(위 항목)다. `userRepository.insert` 를 부르는 곳도 그 둘뿐이다
+  (테스트는 옛 계정을 흉내내려고 `jdbc` 로 직접 넣는 곳이 있다). 임시 비밀번호를 응답에 한 번 싣고 저장하지 않는 것은 비밀번호 초기화와 같은 규칙이며,
   **같은 생성기**(`TemporaryPasswordGenerator`)를 쓴다 — 두 곳이 각자 만들면 한쪽만 규칙이 바뀌어도
   사용자가 받는 문자열의 성질이 갈리는데 아무도 눈치채지 못한다.
 - **계정은 허용 도메인으로만 만든다**(`ALLOWED_EMAIL_DOMAINS`, FEAT-AUTH-001). `live` 에서 명단이
@@ -248,7 +258,7 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 | `APP_MODE` | **기동 실패**(의도된 동작). `mock` 이면 키 없이 전 경로가 돈다 |
 | `JWT_SECRET` | 기동 실패 |
 | `DB_URL` · `DB_USERNAME` · `DB_PASSWORD` | 기동 실패. URL 은 `jdbc:postgresql://…` 형식이어야 함 — 관리형 DB 가 주는 `postgres://…` 를 그대로 넣으면 뜨지 않음 |
-| `ALLOWED_ORIGINS` | 기동은 되지만 **브라우저가 모든 API 호출을 CORS 로 차단**해 화면이 전부 실패 |
+| `ALLOWED_ORIGINS` | 기동은 되고 **`http://localhost:5173` 만 허용**된다(기본값). 배포 도메인은 안 들어가므로 브라우저가 CORS 로 막는다 |
 | `OPENAI_API_KEY` | `live` 에서만 필요. `live` 인데 비면 기동 실패(fail-fast) |
 | `OPENAI_VECTOR_STORE_ID` | 기동·응답은 되지만 file_search 없이 답해 **출처가 늘 0건**(전부 "자료 없음") |
 
