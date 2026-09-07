@@ -26,8 +26,10 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - **그 대가로 SQL 이 응답 스펙에 직결된다.** 해당 엔드포인트의 응답 필드를 바꾸려면 XML 도 함께 고쳐야 한다.
   같은 모양의 타입을 하나 더 두고 서비스에서 옮겨 담는 편이 나아 보일 수 있으나, 그 변환은 필드 복사일 뿐이라
   실수할 자리만 늘린다.
-- **등록·수정·삭제는 반드시 `entity` 를 경유한다.** 비즈니스 규칙이 엔티티 쪽에 있으므로 이 예외는
-  조회에만 적용된다.
+- **이 예외는 조회에만 적용된다.** 쓰기 경로는 `dto` 를 매핑하지 않는다. 등록은 `entity` 를 통째로 받고
+  (`insert(RagDocument)`), 수정·삭제는 식별자와 바뀔 값만 스칼라 파라미터로 받는다
+  (`updateStatus(id, status)` · `softDelete(id, deletedAt)`). `entity/` 의 record 는 값을 담기만 하고
+  규칙은 `service/` 에 있으므로, 수정·삭제까지 굳이 entity 를 거칠 이유가 없다.
 
 ## API 설계 원칙
 
