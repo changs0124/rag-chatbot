@@ -9,7 +9,7 @@ on:
 permissions:
   contents: read
 
-# 연속 푸시 시 이전 run 을 취소함 - 6잡 x N 이 계속 도는 것을 막음
+# 연속 푸시 시 이전 run 을 취소함 - 잡 전체가 밀린 커밋마다 겹쳐 도는 것을 막음
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -75,6 +75,14 @@ jobs:
         # 배포 산출물이 조용히 썩는 것을 막음 - pom·소스 구조가 바뀌어 Dockerfile 이 깨지면
         # 정작 배포하는 날이 아니라 여기서 먼저 드러남
         run: docker build -t rag-chatbot-backend:ci backend
+
+  contract:
+    name: contract (응답 계약 대조)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: DTO · resultMap · 프론트 타입의 필드 대조
+        run: bash scripts/check-response-contract.sh
 
   docs:
     name: docs (참조 실재)

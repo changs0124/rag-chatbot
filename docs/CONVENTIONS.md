@@ -101,6 +101,13 @@
 - `scripts/check-runtime-versions.sh`가 `.nvmrc`·`backend/pom.xml`의 런타임 버전과 CI 설정이 갈리지 않는지 대조한다.
   node 쪽은 `frontend/package.json`의 `engines.node` 까지 같이 본다 — **Vercel 은 `.nvmrc` 가 아니라 `engines.node` 로 빌드하므로**,
   이것을 빼면 `.nvmrc` 만 올리고 `engines.node` 를 빠뜨려도 CI 는 통과하고 배포만 조용히 다른 런타임을 쓴다(실제로 있었던 일이다).
+- `scripts/check-response-contract.sh` 가 `AdminDtos.DocumentResponse` · `summaryResult` 의 `<arg>` · 프론트 `RagDocument` ·
+  `AdminPage.test.tsx` 의 `doc()` 픽스처, **네 곳의 필드 이름**을 대조한다. record 와 `resultMap` 은 순서까지, 프론트 쪽은
+  이름 집합만 본다 — MyBatis 는 위치로 생성자를 찾지만 TS 의 필드 순서는 런타임 의미가 없다.
+  **픽스처를 따로 보는 이유** : `tsconfig.app.json` 이 `src/**/*.test.tsx` 를 exclude 하고 vitest 는 타입 검사를 하지 않아
+  픽스처가 어느 게이트도 거치지 않는다. `RagDocument` 에 필수 필드를 하나 더해도 빌드와 케이스 전량이 통과한다.
+  이름이 아니라 **값**이 제 컬럼에서 왔는지는 `AdminDocumentFlowTest` 가 본다. 이름만 보면 결선이 어긋나도 통과하고,
+  값만 보면 프론트가 따로 놀아도 통과한다.
 - 시크릿 스캔(gitleaks)·의존성 취약점 스캔(Trivy · `npm audit`)이 CI에 상시 물려 있다.
 
 ## Git 커밋 메시지

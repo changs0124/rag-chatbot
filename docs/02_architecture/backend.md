@@ -26,7 +26,8 @@ exception/    ApiExceptions + GlobalExceptionHandler
   `com.ragchatbot.dto.AdminDtos$DocumentResponse` 로 쓴다.
 - **그 대가로 SQL 이 응답 스펙에 직결된다.** 해당 엔드포인트의 응답 필드를 바꾸려면 XML 도 함께 고쳐야 한다.
   같은 모양의 타입을 하나 더 두고 서비스에서 옮겨 담는 편이 나아 보일 수 있으나, 그 변환은 필드 복사일 뿐이라
-  실수할 자리만 늘린다.
+  실수할 자리만 늘린다. 직결된 만큼 **이름과 값을 따로 고정한다** — `scripts/check-response-contract.sh` 가 필드 이름을,
+  `AdminDocumentFlowTest` 의 목록 한 행 단언이 값의 출처를 본다.
 - **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 6 · `<update>` 10 · `<delete>` 3.
   소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다. **`entity` 를 통째로 받는 것은 등록
   6건뿐이고**, **수정·삭제 13건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**

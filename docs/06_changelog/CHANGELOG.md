@@ -4,6 +4,35 @@
 
 ## [Unreleased]
 
+### Added
+- **응답 계약을 이름과 값, 두 축으로 고정(#25).** `#21` 이후 `AdminDtos.DocumentResponse` 는 위치 기반
+  `<constructor>` resultMap 으로 SQL 에 물려 있다. 착수 시점 이슈는 「`<constructor>` arg 순서를 바꾸면
+  테스트가 실패해야 한다」를 완료 조건으로 잡았는데, **먼저 실측해 보니 이미 실패했다.** MyBatis 는
+  `javaType` 시퀀스로 생성자를 찾으므로 타입이 다른 arg 끼리의 교환은 질의 시점에 터지고, 타입 시퀀스를
+  보존하는 교환은 String 셋(`filename` · `status` · `uploadedByName`) 사이뿐인데 3원소 순열은 항등이
+  아니면 최소 둘을 움직여 기존 두 단언에 걸린다.
+
+  **빠져 있던 것은 순서가 아니라 컬럼 결선이었다.** `byte_size` 를 `0` 으로, `status` 를 리터럴로,
+  `created_at` 을 조인한 `users` 쪽 값으로 바꿔도 그 파일의 케이스 13개가 전부 통과했다. 완료 조건을
+  「순서 교환」에서 「결선 교란」으로 바꿔 잡고, 셋을 **따로** 교란해 각각이 개별 단언에 걸리는 것을 확인했다.
+
+  - `AdminDocumentFlowTest` 에 목록 한 행의 여섯 필드를 출처와 대조하는 케이스 1건. `byteSize` 는 실제
+    올린 바이트 수와, `createdAt` 은 `rag_documents` 행의 값과 맞춘다. `createdAt` 은 두 시각을 재서
+    비교하는 것이 아니라 같은 컬럼을 두 경로로 읽어 맞추는 것이라 시계 해상도와 무관하다
+  - `scripts/check-response-contract.sh` 와 CI 잡 `contract`. record · `resultMap` · 프론트 `RagDocument` ·
+    `AdminPage.test.tsx` 의 `doc()` 픽스처, 네 곳의 필드 **이름**을 대조한다
+  - `BACKEND_MIN` 164 → 165
+
+  **픽스처를 따로 세는 이유도 실측이다.** `tsconfig.app.json` 이 테스트 파일을 exclude 하고 vitest 는
+  타입을 보지 않아, `RagDocument` 에 필수 필드를 하나 더해도 `npm run build` 와 케이스 74개가 전부
+  통과했다. 이슈가 지적한 "픽스처가 영원히 초록"은 그대로 사실이었다.
+
+  **기각한 대안** : (1) OpenAPI 스키마로 프론트 타입을 자동 생성 — 끊어진 자리를 잇자고 의존성과 생성물
+  커밋을 들이는 것은 비용이 맞지 않는다. (2) 백엔드 테스트가 실제 응답을 픽스처로 내보내고 프론트가 읽기 —
+  백엔드 테스트를 돌리지 않으면 픽스처가 낡고, **낡은 픽스처는 지금보다 나쁘다.** (3) tsconfig 의 exclude 를
+  걷어 테스트까지 타입 검사 — 기존 오류 3건을 먼저 고쳐야 해서 원인이 다른 변경이 섞인다.
+  `docs/04_tasks/backlog.md` 에 남겼다.
+
 ### Changed
 - **`RagDocumentSummary` 를 없애고 문서 목록 조회를 Response DTO 로 직접 매핑(#21).** 이 타입은 자기
   Javadoc 이 "목록 화면용 투영" 이라 적고 있었고 소프트 삭제도 식별자 생명주기도 없어 엔티티가 아니었다.
