@@ -21,20 +21,18 @@
 - **백엔드 패키지 이름을 계층형 표준 어휘로 통일(#19, 71파일).** `web/` → `controller/` ·
   `web/dto/` → `dto/` · `mapper/` → `repository/`(인터페이스 6개 클래스명 포함) · `domain/` → `entity/` ·
   `error/` → `exception/`. `mapper` 는 MyBatis·SI 관행 어휘인데 `dto` 와 섞여 있었고 `web`·`domain`·`error`
-  는 어느 세트에도 속하지 않았다. `service` 는 이미 표준 어휘와 같아 그대로 뒀고, 표준 계층 어휘 밖인
-  `config`·`security`·`storage`·`openai` 도 건드리지 않았다.
+  는 어느 세트에도 속하지 않았다. `service`·`config`·`security`·`storage`·`openai` 는 이름을 바꾸지 않았다.
 
   **MyBatis 는 패키지 경로를 문자열로 들고 있어 컴파일러가 못 잡는 자리가 다섯 곳**이라 전부 실물과
   1:1 로 대조했다 — XML 의 `namespace`(인터페이스 FQCN) · `resultMap type` · `parameterType`(엔티티·DTO
   FQCN), `application.yml` 의 `type-aliases-package` · `type-handlers-package`(패키지 경로).
-  어긋나면 컴파일은 통과하고 런타임에 `BindingException: Invalid bound statement` 로 터진다. `mapper-locations` 가 가리키는
+  `namespace` 가 어긋나면 컴파일은 통과하고 런타임에 `BindingException: Invalid bound statement` 로
+  터진다. `mapper-locations` 가 가리키는
   `resources/mapper/` **폴더명은 표준 구조상 유지**하고 파일명만 `*Repository.xml` 로 맞췄다.
 
   동작 변경은 없다. 트리 델타는 295 insertions / 295 deletions 이지만, 대칭은 순수 리네이밍의
-  필요조건일 뿐이라 그것만으로는 근거가 되지 않는다. 실제로 대조한 것은 **변경된 전 라인이 옛 이름 →
-  새 이름 치환과 그에 딸린 들여쓰기 조정뿐**이라는 사실이다 — 패키지 선언 · import · FQCN 문자열 ·
-  클래스명에 더해, 그 이름에서 파생된 필드·파라미터 식별자(`userMapper` → `userRepository`)와 문서의
-  경로·용어 표기까지 포함된다. 로직 라인은 한 줄도 없다.
+  필요조건일 뿐이라 그것만으로는 근거가 되지 않는다. 실제로 대조한 것은 **변경된 295 라인이 전부
+  옛 이름 → 새 이름 치환(그에 딸린 들여쓰기 조정 포함)**이라는 사실이다.
 - **`project-docs` 스캐폴딩을 도로 세움 — 같은 날 걷어낸 것을 되돌림.** 아래 항목에서 `FEEDBACK.md` 와
   빈 폴더 다섯을 제거했는데, 같은 날 되돌렸다. 왔다 갔다 한 자리이므로 판단이 어디서 갈렸는지 적어 둔다
   - **걷어낸 근거** : 비어 있는 폴더가 INDEX 에 링크로 보이면 있는 줄 알고 찾게 된다
