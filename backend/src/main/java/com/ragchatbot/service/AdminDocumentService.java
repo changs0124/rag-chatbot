@@ -51,6 +51,42 @@ public class AdminDocumentService {
 			"text/markdown", "md",
 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
 
+	/**
+	 * 형식을 <b>모른다</b>고 볼 content-type.
+	 *
+	 * <p>브라우저는 {@code File.type} 을 OS 의 MIME 레지스트리에서 채운다. 등록이 없으면 값이 비고
+	 * {@code application/octet-stream} 으로 전송된다 - Windows 의 {@code .md}, Office 가 없는 환경의
+	 * {@code .docx} 가 여기 해당한다. 이것은 "받지 않기로 한 형식" 이 아니라 "형식을 모름" 이다.
+	 */
+	private static boolean isUnknownType(String contentType) {
+		return contentType == null || contentType.isBlank()
+				|| "application/octet-stream".equalsIgnoreCase(contentType.trim());
+	}
+
+	/**
+	 * 확장자를 정한다. content-type 이 1차, <b>형식을 모를 때만</b> 파일명이 2차다.
+	 *
+	 * <p>폴백을 "모를 때" 로 좁히는 것이 핵심이다. {@code image/png} 처럼 형식을 아는데 목록에 없는
+	 * 것까지 확장자를 봐 주면 파일명만 바꿔 낸 파일이 통과해 <b>검사가 사실상 해제된다</b>.
+	 * 폴백으로 확장자를 얻어도 뒤의 매직바이트 검사는 그대로 돈다.
+	 */
+	private static String resolveExtension(MultipartFile file) {
+		String byType = ALLOWED.get(file.getContentType());
+		if (byType != null) {
+			return byType;
+		}
+		if (!isUnknownType(file.getContentType())) {
+			return null;
+		}
+		String name = file.getOriginalFilename();
+		int dot = name == null ? -1 : name.lastIndexOf('.');
+		if (dot < 0 || dot == name.length() - 1) {
+			return null;
+		}
+		String extension = name.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
+		return ALLOWED.containsValue(extension) ? extension : null;
+	}
+
 	private final RagDocumentRepository documentRepository;
 	private final OpenAiService openAiService;
 
@@ -89,10 +125,11 @@ public class AdminDocumentService {
 		if (file == null || file.isEmpty()) {
 			throw new BadRequestException("빈 파일");
 		}
-		String extension = ALLOWED.get(file.getContentType());
+		String extension = resolveExtension(file);
 		if (extension == null) {
-			throw new BadRequestException(
-					"지원하지 않는 문서 형식: " + file.getContentType() + " (허용: PDF · TXT · MD · DOCX)");
+			// 형식을 모를 때는 content-type 을 되뇌어 봐야 도움이 안 된다 - 판정 근거가 된 쪽을 보여준다
+			String shown = isUnknownType(file.getContentType()) ? file.getOriginalFilename() : file.getContentType();
+			throw new BadRequestException("지원하지 않는 문서 형식: " + shown + " (허용: PDF · TXT · MD · DOCX)");
 		}
 		byte[] bytes;
 		try {
