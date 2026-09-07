@@ -9,11 +9,11 @@ import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ragchatbot.domain.User;
-import com.ragchatbot.error.ApiExceptions.BadRequestException;
-import com.ragchatbot.error.ApiExceptions.NotFoundException;
-import com.ragchatbot.mapper.UserMapper;
-import com.ragchatbot.web.dto.AdminDtos.AdminUserResponse;
+import com.ragchatbot.entity.User;
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.exception.ApiExceptions.NotFoundException;
+import com.ragchatbot.repository.UserRepository;
+import com.ragchatbot.dto.AdminDtos.AdminUserResponse;
 
 /**
  * 관리자에 의한 사용자 관리(FEAT-ADMIN-003 · REQ-AUTH-006).
@@ -34,17 +34,17 @@ public class AdminUserService {
 	private static final int SEGMENTS = 3;
 	private static final int SEGMENT_LENGTH = 4;
 
-	private final UserMapper userMapper;
+	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final SecureRandom random = new SecureRandom();
 
-	public AdminUserService(UserMapper userMapper, PasswordEncoder passwordEncoder) {
-		this.userMapper = userMapper;
+	public AdminUserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 	}
 
 	public List<AdminUserResponse> list() {
-		return userMapper.listAll().stream()
+		return userRepository.listAll().stream()
 				.map(u -> new AdminUserResponse(u.id(), u.email(), u.name(), u.role(), u.createdAt()))
 				.toList();
 	}
@@ -66,14 +66,14 @@ public class AdminUserService {
 			// 마이페이지에 비밀번호 변경이 이미 있고, 관리자가 자기 세션을 스스로 끊을 이유가 없다
 			throw new BadRequestException("자기 자신은 초기화 대상이 아님 - 마이페이지에서 변경할 것");
 		}
-		User target = userMapper.findById(targetUserId)
+		User target = userRepository.findById(targetUserId)
 				.orElseThrow(() -> new NotFoundException("사용자 없음"));
 
 		String temporary = generate();
 		String hash = passwordEncoder.encode(temporary);
 		// 현재 초에 발급된 토큰까지 확실히 걸리도록 경계를 다음 초로 올림(위 설명 참고)
 		OffsetDateTime changedAt = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS).plusSeconds(1);
-		userMapper.updatePasswordHash(target.id(), hash, changedAt);
+		userRepository.updatePasswordHash(target.id(), hash, changedAt);
 		return temporary;
 	}
 

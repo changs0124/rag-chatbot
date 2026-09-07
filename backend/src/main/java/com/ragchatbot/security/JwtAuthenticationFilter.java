@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.ragchatbot.mapper.UserMapper;
+import com.ragchatbot.repository.UserRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -38,11 +38,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	public static final String REFRESH_HEADER = "X-Refresh-Token";
 
 	private final JwtService jwtService;
-	private final UserMapper userMapper;
+	private final UserRepository userRepository;
 
-	public JwtAuthenticationFilter(JwtService jwtService, UserMapper userMapper) {
+	public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
 		this.jwtService = jwtService;
-		this.userMapper = userMapper;
+		this.userRepository = userRepository;
 	}
 
 	@Override
@@ -73,14 +73,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	}
 
 	/**
-	 * JWT의 iat 는 초 단위로 내림되므로 변경 시각도 초로 잘라서 저장함(UserMapper.updatePasswordHash).
+	 * JWT의 iat 는 초 단위로 내림되므로 변경 시각도 초로 잘라서 저장함(UserRepository.updatePasswordHash).
 	 * 두 값의 눈금이 같아야 <b>변경 직후 재로그인한 토큰이 밀리초 차이로 거부되는</b> 일이 없음.
 	 *
 	 * <p>남는 틈은 <b>변경과 같은 초에 발급된 직전 토큰 1개</b>가 살아남는 것뿐임 - 수명이 1초 미만이고
 	 * 그 토큰의 주인은 방금 비밀번호를 바꾼 본인이라 실질 위험이 없음.
 	 */
 	private boolean issuedBeforePasswordChange(DecodedJWT jwt, UUID userId) {
-		OffsetDateTime changedAt = userMapper.findPasswordChangedAt(userId);
+		OffsetDateTime changedAt = userRepository.findPasswordChangedAt(userId);
 		if (changedAt == null) {
 			return true; // 없는 사용자의 토큰은 유효하지 않음
 		}

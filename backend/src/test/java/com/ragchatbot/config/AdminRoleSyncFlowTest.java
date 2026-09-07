@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
-import com.ragchatbot.mapper.UserMapper;
+import com.ragchatbot.repository.UserRepository;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
@@ -22,7 +22,7 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
 class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 
 	@Autowired
-	private UserMapper userMapper;
+	private UserRepository userRepository;
 
 	private String roleOf(String email) {
 		return jdbc.queryForObject("select role from users where email = ?", String.class, email);
@@ -34,7 +34,7 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 		signup("promote-me@b.com");
 		assertThat(roleOf("promote-me@b.com")).isEqualTo("user");
 
-		userMapper.promoteAdmins(List.of("promote-me@b.com"));
+		userRepository.promoteAdmins(List.of("promote-me@b.com"));
 
 		assertThat(roleOf("promote-me@b.com")).isEqualTo("admin");
 	}
@@ -48,10 +48,10 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void unlisted_account_is_demoted() {
 		signup("demote-me@b.com");
-		userMapper.promoteAdmins(List.of("demote-me@b.com"));
+		userRepository.promoteAdmins(List.of("demote-me@b.com"));
 		assertThat(roleOf("demote-me@b.com")).isEqualTo("admin");
 
-		userMapper.demoteAdminsNotIn(List.of("someone-else@b.com"));
+		userRepository.demoteAdminsNotIn(List.of("someone-else@b.com"));
 
 		assertThat(roleOf("demote-me@b.com")).isEqualTo("user");
 	}
@@ -61,7 +61,7 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 	void listed_account_matches_case_insensitively() {
 		signup("mixed-case@b.com");
 
-		userMapper.promoteAdmins(AdminRoleSynchronizer.parse("Mixed-Case@B.COM"));
+		userRepository.promoteAdmins(AdminRoleSynchronizer.parse("Mixed-Case@B.COM"));
 
 		assertThat(roleOf("mixed-case@b.com")).isEqualTo("admin");
 	}
@@ -70,10 +70,10 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void empty_list_demotes_everyone() {
 		signup("wipe-me@b.com");
-		userMapper.promoteAdmins(List.of("wipe-me@b.com"));
+		userRepository.promoteAdmins(List.of("wipe-me@b.com"));
 		assertThat(roleOf("wipe-me@b.com")).isEqualTo("admin");
 
-		userMapper.demoteAdminsNotIn(List.of());
+		userRepository.demoteAdminsNotIn(List.of());
 
 		assertThat(roleOf("wipe-me@b.com")).isEqualTo("user");
 	}

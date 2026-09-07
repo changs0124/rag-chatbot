@@ -7,16 +7,16 @@ Java 17 + Spring Boot 3.5.16 + MyBatis 3.0.5 + PostgreSQL(Flyway). 단일 인스
 ## 레이어
 
 ```
-web/          HTTP 경계만 (@RestController). 비즈니스 로직 없음
-  dto/        요청·응답 record. AuthDtos 처럼 한 파일에 묶음
+controller/   HTTP 경계만 (@RestController). 비즈니스 로직 없음
+dto/          요청·응답 record. AuthDtos 처럼 한 파일에 묶음
 service/      오케스트레이션 · 트랜잭션 경계
-mapper/       MyBatis 인터페이스. SQL 은 resources/mapper/*.xml
-domain/       DB 행에 대응하는 record
+repository/   MyBatis 인터페이스. SQL 은 resources/mapper/*.xml
+entity/       DB 행에 대응하는 record
 openai/       외부 LLM 호출 경계 (인터페이스 + Mock/Real)
 security/     JWT 발급·검증 · 파일 서명 토큰 · 현재 사용자
 storage/      파일 저장 추상화 (FileStorage + LocalFileStorage)
 config/       Security · CORS · Executor · 기동 가드
-error/        ApiExceptions + GlobalExceptionHandler
+exception/    ApiExceptions + GlobalExceptionHandler
 ```
 
 ## API 설계 원칙
