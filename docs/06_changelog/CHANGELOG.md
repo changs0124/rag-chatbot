@@ -4,6 +4,28 @@
 
 ## [Unreleased]
 
+### Fixed
+- **도커 이미지 빌드를 Maven Central 가용성에서 떼어냈다(#29).** build 스테이지 베이스를
+  `eclipse-temurin:17-jdk-alpine` → `maven:3.9.16-eclipse-temurin-17-alpine` 으로 바꾸고 `./mvnw` 를
+  `mvn` 으로 돌렸다. 종전에는 그 베이스에 `mvn` 이 없어 **빌드마다 Maven 배포판 zip 을 Central 에서
+  내려받았다.** 의존성 해석보다 앞선 단계라 레이어 캐시로도 덮이지 않았고, `#27` 진행 중 Central 이
+  403 을 돌려준 날 문서만 바뀐 PR 의 이미지 빌드가 두 커밋 연속 멎었다.
+
+  네트워크를 끊어 같은 상황을 재현했더니 CI 로그와 **같은 주소에서 같은 모양으로** 끊겼다
+  (`wget: Failed to fetch …/apache-maven-3.9.16-bin.zip`). 바꾼 뒤 같은 교란에서 `mvn -version` 이
+  그대로 뜬다 — `Maven home` 이 내려받는 자리에서 `/usr/share/maven` 으로 옮겨간 것이 변경의 전부다.
+
+  **이슈가 이 안에 달아 둔 「베이스 이미지가 커진다」는 비용은 실측에서 45바이트였다.** 멀티스테이지라
+  `maven:*` 은 build 스테이지에서만 쓰이고 최종 이미지는 `eclipse-temurin:17-jre-alpine` 그대로다.
+  `--no-cache` 빌드 시간은 196s → 209s(Maven 이미지를 처음 받는 비용), 캐시가 남으면 재빌드 2s.
+
+  **의존성 해석은 여전히 Central 을 탄다** — 없앤 것은 배포판이라는 별도의 한 홉이고, 그 홉이 이번에
+  실제로 터진 자리다. 남는 쪽은 재시도 두 번(15초 · 45초)으로 덮었다. 완전히 끊으려면 사내 미러나
+  프록시가 필요한데 단일 인스턴스 사내 도구에는 과하다.
+
+  Maven 버전은 wrapper 가 쓰던 3.9.16 과 **같게 고정**했고 `mvnw` 는 지우지 않았다 — 로컬과 CI 의
+  `./mvnw` 가 그대로 쓴다. 끊은 것은 도커 빌드의 의존뿐이다.
+
 ### Changed
 - **회원가입을 없애고 관리자가 계정을 발급한다(#24).** `POST /api/auth/signup` · `AuthService.signup` ·
   `AuthDtos.SignupRequest` · `SecurityConfig` 의 permitAll 항목을 전부 걷었다. 계정은
