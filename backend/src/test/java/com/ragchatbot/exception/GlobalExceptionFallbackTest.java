@@ -8,8 +8,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -104,5 +106,101 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(res.getBody().get("code")).isEqualTo("NOT_FOUND");
+	}
+
+	/** 본문을 문자열 그대로 보냄 - 깨진 JSON 은 객체로는 만들 수 없으므로 직렬화를 거치지 않음 */
+	@SuppressWarnings("rawtypes")
+	private org.springframework.http.ResponseEntity<Map> postRaw(String token, String path, String body) {
+		HttpHeaders headers = bearer(token);
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		return rest.exchange(path, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+	}
+
+	/**
+	 * TC-OPS-014 : 문법이 깨진 JSON 본문은 400 이다.
+	 *
+	 * <p>읽을 수 없는 본문은 <b>서버 잘못이 아니라 요청 잘못</b>이다. 500 으로 내리면 상관 ID 만 남고
+	 * 원인이 응답에서 사라져, 보내는 쪽은 무엇을 고쳐야 하는지 알 수 없다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void malformed_json_body_is_bad_request() {
+		String token = createUser("boom-json@b.com");
+		var res = postRaw(token, "/api/chat", "{\"conversationId\": BROKEN}");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(res.getBody()).containsKeys("code", "message");
+		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
+	}
+
+	/**
+	 * TC-OPS-015 : 인코딩이 어긋난 본문도 400 이다.
+	 *
+	 * <p>UTF-8 이 아닌 바이트가 섞이면 파서가 같은 예외를 던진다. 실제로 밟은 경로다 - 한글을
+	 * CP949 로 보내는 클라이언트가 있으면 이렇게 된다. 문법 오류와 원인이 같으므로 함께 잠근다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void invalid_encoding_body_is_bad_request() {
+		String token = createUser("boom-encoding@b.com");
+		HttpHeaders headers = bearer(token);
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		// 0xBF 는 UTF-8 에서 시작 바이트가 될 수 없음
+		byte[] body = new byte[] { '{', '"', 'm', '"', ':', '"', (byte) 0xBF, '"', '}' };
+		var res = rest.exchange("/api/chat", HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
+	}
+
+	/**
+	 * TC-OPS-016 : 본문이 아예 없어도 400 이다.
+	 *
+	 * <p>빈 본문은 파서가 읽을 것이 없다며 같은 예외를 던진다. 셋 다 "요청을 읽을 수 없음" 한 갈래라
+	 * 한 핸들러가 받는다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void empty_body_is_bad_request() {
+		String token = createUser("boom-empty@b.com");
+		var res = postRaw(token, "/api/chat", "");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
+	}
+
+	/**
+	 * TC-OPS-017 : 경로 변수의 타입이 어긋나도 400 이다.
+	 *
+	 * <p>UUID 자리에 UUID 가 아닌 값이 오면 스프링이 변환에 실패한다. 이것도 보낸 쪽 잘못이므로
+	 * 500 이 아니다. 없는 UUID(404)와 UUID 가 아닌 값(400)은 다른 사건이다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void path_variable_type_mismatch_is_bad_request() {
+		String token = createUser("boom-pathvar@b.com");
+		var res = get(token, "/api/conversations/not-a-uuid/messages");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
+	}
+
+	/**
+	 * TC-OPS-018 : 400 으로 내려도 내부 정보는 여전히 새지 않는다.
+	 *
+	 * <p>파서 예외 메시지에는 클래스 이름과 본문 조각이 들어 있다. 상태 코드를 고치면서
+	 * 그것을 그대로 실어 보내면 TC-OPS-012 로 막아 둔 노출이 다른 문으로 되살아난다.
+	 */
+	@Test
+	void bad_request_does_not_expose_internals() {
+		String token = createUser("boom-json-leak@b.com");
+		HttpHeaders headers = bearer(token);
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		var res = rest.exchange("/api/chat", HttpMethod.POST,
+				new HttpEntity<>("{\"conversationId\": BROKEN}", headers), String.class);
+
+		assertThat(res.getBody()).doesNotContain("HttpMessageNotReadableException");
+		assertThat(res.getBody()).doesNotContain("JsonParseException");
+		assertThat(res.getBody()).doesNotContain("com.ragchatbot");
 	}
 }
