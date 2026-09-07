@@ -26,15 +26,14 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - **그 대가로 SQL 이 응답 스펙에 직결된다.** 해당 엔드포인트의 응답 필드를 바꾸려면 XML 도 함께 고쳐야 한다.
   같은 모양의 타입을 하나 더 두고 서비스에서 옮겨 담는 편이 나아 보일 수 있으나, 그 변환은 필드 복사일 뿐이라
   실수할 자리만 늘린다.
-- **이 예외는 조회에만 적용된다.** 쓰기 경로(insert 6 · update 10 · delete 3)는 `dto` 를 매핑하지 않는다.
-  등록은 `entity` 를 통째로 받고(`insert(RagDocument)`), **수정·삭제는 `entity` 를 받지 않는다.**
-  대개는 식별자와 바뀔 값을 스칼라로 넘기지만(`updateStatus(id, status)` · `softDelete(id, deletedAt)`),
-  바뀔 값을 SQL 이 들고 대상 조건만 넘기는 것도 있다 — `touch(id, userId)` 는 `updated_at = now()` 이고
-  `demoteAdminsNotIn(emails)` 은 `List` 를 `<foreach>` 로 펼친다.
+- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 6 · `<update>` 10 · `<delete>` 3.
+  소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다. 등록은 `entity` 를 통째로 받고
+  (`insert(RagDocument)`), **수정·삭제 13건은 전부 `entity` 를 받지 않는다.** 10건은 식별자와 바뀔 값을
+  스칼라로 넘기고(`updateStatus(id, status)` · `softDelete(id, deletedAt)`), 3건은 바뀔 값을 SQL 이 들고
+  대상 조건만 넘긴다 — `touch` 는 `updated_at = now()`, `demoteAdminsNotIn` · `promoteAdmins` 는
+  `role` 값을 SQL 이 들고 이메일 `List` 를 `<foreach>` 로 펼친다.
 - **규칙의 자리는 `entity/` 가 아니다.** record 6개는 전부 메서드가 없는 값 그릇이라, 수정·삭제까지 굳이
-  entity 를 거칠 이유가 없다. 오케스트레이션·트랜잭션·권한은 `service/`, 입력 형식 검증은 `dto/` 의
-  Bean Validation, 기동 시 관리자 명단 동기화와 가입 도메인 정책은 `config/`(`AdminRoleSynchronizer` ·
-  `SignupPolicy`)에 있다.
+  entity 를 거칠 이유가 없다.
 
 ## API 설계 원칙
 
