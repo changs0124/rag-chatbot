@@ -6,14 +6,9 @@
 
 - [ ] OpenAI 실 연동 마무리 — `APP_MODE=live` 경로(`OpenAiRealService`)를 실 응답과 대조. 무자료 임계·완료 이벤트명이 실물과 맞는지 확인
 - [ ] OpenAI 공용 Vector Store 구축 후 `OPENAI_VECTOR_STORE_ID` 주입 — 없으면 답변은 되지만 출처가 늘 0건
-- [ ] **Spring Boot 3.5 는 OSS 지원이 끝났다 — 재검토 단계가 아니라 기한 경과다** (#48). 3.5 브랜치의 OSS 지원은 **2026-06-30 종료**됐고 `backend/pom.xml` 이 물고 있는 **`3.5.16` 이 마지막 무상 패치**다(2026-06-25 릴리스, EOL 5일 전). `3.5.17` 은 나오지 않고 앞으로도 나오지 않는다.
-  - **위험은 "언제 터지는지를 우리가 못 고른다"는 것이다.** 지금 `deps (백엔드 의존성 취약점)` 잡은 통과하고 있다. 하지만 3.5.x 에 새 CVE 가 공개되면 올릴 버전이 Maven Central 에 없어 **고칠 방법 없이 게이트가 막힌다.** 시점을 정하는 것은 외부다
-  - 권장 경로는 4.0 이 아니라 **4.1** — 4.0 은 2026-12, 4.1 은 2027-07 까지다. 4.0 으로 가면 몇 달 뒤 같은 일을 또 한다
-  - `java.version` 이 이미 17 이고 4.1 도 Java 17 기준이라 `javax` → `jakarta` 대공사는 없다. 실제 작업은 Jakarta EE 11 · Servlet 6.1 전환과 직접 버전을 박은 의존성(`mybatis-spring-boot-starter` · `java-jwt`) 호환 확인이다
-  - 근거 : <https://www.danvega.dev/blog/spring-boot-end-of-life>
-
 ## 보통
 
+- [ ] **Spring Boot 4.1 의 OSS 지원은 2027-07 까지다** — #48 로 4.1.1 에 올렸다. 3.5 때처럼 기한이 지난 뒤에 알아채지 않도록 그 전에 다시 판단한다. 근거 : <https://www.danvega.dev/blog/spring-boot-end-of-life>
 - [ ] 단일 인스턴스 전제 해소 — 레이트리밋·동시 스트림 카운터가 인메모리라 수평 확장 시 실효 한도가 인스턴스 수만큼 곱해짐
 - [ ] 대화 삭제 중 파일 삭제가 실패하면 그 파일이 영구 잔류함 — 고아 회수가 `attachments` 행 기준이라 cascade 삭제 후에는 찾지 못함 (`ConversationService.delete` 주석 참고)
 - [ ] RAG 문서 업로드 5단계(DB 기록) 실패 시 OpenAI 파일과 스토어 연결이 영구 잔류함 — 보상 처리가 없고 고아 회수는 로컬 첨부만 본다 (`AdminDocumentService.upload` 참고)
