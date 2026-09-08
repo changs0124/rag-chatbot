@@ -13,7 +13,7 @@
 | Database | PostgreSQL (Flyway 마이그레이션, `backend/src/main/resources/db/migration/`) |
 | 외부 연동 | OpenAI Chat(GPT-4o) + Vector Store — `APP_MODE=mock\|live`로 전환 |
 | 저장소 | 로컬 디스크(`FILE_STORAGE_ROOT`) — `FileStorage` 인터페이스로 S3 교체 가능 |
-| 테스트 | 백엔드 JUnit 5 + Testcontainers(실 PostgreSQL) · 프론트 Vitest + Testing Library |
+| 테스트 | 백엔드 JUnit 6 + Testcontainers(실 PostgreSQL) · 프론트 Vitest + Testing Library |
 | Lint | oxlint (프론트) |
 | CI | GitHub Actions — `.github/workflows/ci.yml` (backend · frontend · docker · docs · secrets · deps × 2) |
 
