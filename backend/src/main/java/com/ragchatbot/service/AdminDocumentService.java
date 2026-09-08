@@ -153,9 +153,24 @@ public class AdminDocumentService {
 		UploadedDocument uploaded = openAiService.uploadDocument(filename, bytes, file.getContentType());
 
 		UUID id = UUID.randomUUID();
-		documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
-				bytes.length, "in_progress", adminId, null, null));
+		try {
+			documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
+					bytes.length, "in_progress", adminId, null, null));
+		} catch (RuntimeException e) {
+			// 여기서 되돌리지 않으면 스토어에는 있는데 목록에는 없는 문서가 남는다 - 화면에 안 보여
+			// 지울 수 없고, 검색에는 잡혀 **삭제한 적 없는 문서가 계속 인용된다.** 고아 회수 스케줄러는
+			// 로컬 첨부만 보므로 기다려도 사라지지 않음(#72)
+			//
+			// deleteDocument 는 조용히 실패하므로(deleteQuietly) 되돌리기가 안 됐을 수 있다.
+			// 손으로 찾을 수 있게 file_id 를 남긴다 - OpenAiRealService 안쪽 보상과 같은 방식
+			log.warn("문서 DB 기록 실패 - OpenAI 리소스 회수 시도 file_id={} store={}",
+					uploaded.openaiFileId(), uploaded.vectorStoreId());
+			openAiService.deleteDocument(uploaded.vectorStoreId(), uploaded.openaiFileId());
+			throw e;
+		}
 
+		// 재조회는 try 밖이다. insert 가 성공한 뒤라 여기서 되돌리면 「행은 있는데 파일이 없는」
+		// 반대 방향의 불일치가 된다
 		return documentRepository.listAlive().stream()
 				.filter(d -> d.id().equals(id))
 				.findFirst()

@@ -10,7 +10,6 @@
 
 - [ ] **Spring Boot 4.1 의 OSS 지원은 2027-07 까지다** — #48 로 4.1.1 에 올렸다. 3.5 때처럼 기한이 지난 뒤에 알아채지 않도록 그 전에 다시 판단한다. 근거 : <https://www.danvega.dev/blog/spring-boot-end-of-life>
 - [ ] 단일 인스턴스 전제 해소 — 레이트리밋·동시 스트림 카운터가 인메모리라 수평 확장 시 실효 한도가 인스턴스 수만큼 곱해짐
-- [ ] RAG 문서 업로드 5단계(DB 기록) 실패 시 OpenAI 파일과 스토어 연결이 영구 잔류함 — 보상 처리가 없고 고아 회수는 로컬 첨부만 본다 (`AdminDocumentService.upload` 참고)
 - [ ] **`postgresql` 드라이버 버전 하한을 주장하는 것이 없다** — #48 에서 `<postgresql.version>` 수동 고정을 뺐다(4.1.1 BOM 관리분이 같은 값이라는 근거). **현재 해석값 42.7.13 이라 노출은 없다**(`dependency:list` 확인).
   - 없는 것 : `backend/pom.xml` 에 enforcer 규칙, `scripts/check-doc-versions.sh` 검사표의 PostgreSQL 항목
   - `ci.yml` 의 Trivy 는 pom 의 BOM 해석에 의존하고, `list-all-pkgs` 는 로그만 남길 뿐 해석 실패를 실패시키지 않는다
