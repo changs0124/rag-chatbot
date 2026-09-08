@@ -1,0 +1,8 @@
+$ ./mvnw -o test -Dtest=AdminDocumentUploadCompensationTest
+
+Test set: com.ragchatbot.service.AdminDocumentUploadCompensationTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+
+[PASSED] rolls_back_openai_side_when_db_insert_fails
+
+[PASSED] does_not_roll_back_when_only_the_read_back_fails

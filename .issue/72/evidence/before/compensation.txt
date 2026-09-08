@@ -1,0 +1,37 @@
+$ ./mvnw -o test -Dtest=AdminDocumentUploadCompensationTest
+
+Test set: com.ragchatbot.service.AdminDocumentUploadCompensationTest
+Tests run: 2, Failures: 1, Errors: 0, Skipped: 0
+
+[FAILED] rolls_back_openai_side_when_db_insert_fails
+  Wanted but not invoked:
+openAiService.deleteDocument(
+    "vs-shared",
+    "file-abc"
+);
+-> at com.ragchatbot.service.AdminDocumentUploadCompensationTest.rolls_back_openai_side_when_db_insert_fails(AdminDocumentUploadCompensationTest.java:68)
+
+However, there were exactly 2 interactions with this mock:
+openAiService.hasSharedVectorStore();
+-> at com.ragchatbot.service.AdminDocumentService.upload(AdminDocumentService.java:125)
+
+openAiService.uploadDocument(
+    "규정.pdf",
+    [(byte) 0x25, (byte) 0x50, (byte) 0x44, (byte) 0x46, (byte) 0x2D, (byte) 0x31, (byte) 0x2E, (byte) 0x34, (byte) 0x20, (byte) 0xEB, (byte) 0xB3, (byte) 0xB8, (byte) 0xEB, (byte) 0xAC, (byte) 0xB8],
+    "application/pdf"
+);
+-> at com.ragchatbot.service.AdminDocumentService.upload(AdminDocumentService.java:153)
+    Wanted but not invoked:
+    openAiService.deleteDocument(
+        "vs-shared",
+        "file-abc"
+    );
+    -> at com.ragchatbot.service.AdminDocumentUploadCompensationTest.rolls_back_openai_side_when_db_insert_fails(AdminDocumentUploadCompensationTest.java:68)
+    
+    However, there were exactly 2 interactions with this mock:
+    openAiService.hasSharedVectorStore();
+    -> at com.ragchatbot.service.AdminDocumentService.upload(AdminDocumentService.java:125)
+    
+    openAiService.uploadDocument(
+
+[PASSED] does_not_roll_back_when_only_the_read_back_fails
