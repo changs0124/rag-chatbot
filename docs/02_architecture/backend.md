@@ -1,6 +1,6 @@
 # Backend Architecture
 
-Java 17 + Spring Boot 3.5.16 + MyBatis 3.0.5 + PostgreSQL(Flyway). 단일 인스턴스 전제.
+Java 17 + Spring Boot 4.1.1 + MyBatis 4.1.0 + PostgreSQL(Flyway). 단일 인스턴스 전제.
 전체 시스템 그림과 운영 파라미터는 [overview](./overview.md), 엔드포인트 계약은 [api.md](../01_specs/api.md) 에 있다.
 여기서는 API 설계 원칙과 DB 스키마를 다룬다.
 

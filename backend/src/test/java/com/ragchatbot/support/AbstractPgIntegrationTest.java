@@ -6,7 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * (@Container 를 클래스마다 쓰면 한 클래스 종료 시 컨테이너가 멈춰 캐시된 컨텍스트가 죽음)
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+// Boot 4 부터 @SpringBootTest 가 TestRestTemplate 을 자동으로 넣어 주지 않음 - 명시해야 함(#48)
+@AutoConfigureTestRestTemplate
 @TestPropertySource(properties = {
 		// app.mode 는 기본값이 없어졌으므로 테스트도 명시해야 뜸(AC-18, AppModeGuard)
 		"app.mode=mock",
