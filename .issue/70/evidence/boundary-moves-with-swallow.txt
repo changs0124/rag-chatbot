@@ -1,0 +1,8 @@
+경계는 없어지지 않고 옮겨간다 — swallow 값을 바꿔 가며 잰 것 (#70)
+설정 : max-file-size=26MB · max-request-size=31MB · max-swallow-size=40MB
+
+  26MB+1KB → 413  code=PAYLOAD_TOO_LARGE
+  28MB     → 413  code=PAYLOAD_TOO_LARGE
+  31MB     → 413  code=PAYLOAD_TOO_LARGE
+  34MB     → 413  code=PAYLOAD_TOO_LARGE
+  45MB     → 응답 없음 — IOException
