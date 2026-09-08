@@ -73,7 +73,10 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
 	public ResponseEntity<ApiError> handleTooLarge(MaxUploadSizeExceededException ex) {
-		return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+		// 상수 이름만 바뀌었음(Spring 7 에서 PAYLOAD_TOO_LARGE deprecated). 둘 다 413 이다.
+		// **응답 code 문자열은 PAYLOAD_TOO_LARGE 그대로 둔다** - api.md 오류 코드 표의 계약이라
+		// 바꾸면 프론트와 문서가 함께 깨진다(#64)
+		return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
 				.body(new ApiError("PAYLOAD_TOO_LARGE", "업로드 용량 한도 초과"));
 	}
 
