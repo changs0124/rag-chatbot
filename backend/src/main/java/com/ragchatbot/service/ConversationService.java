@@ -103,9 +103,13 @@ public class ConversationService {
 	 * cascade 삭제는 단일 문장이라 그 자체로 원자적이므로 별도 트랜잭션이 필요 없음.
 	 *
 	 * <p><b>주의</b> - DB 가 먼저 지워지므로 그 뒤 파일 삭제가 실패하면 <b>대응하는 행이 이미 없어
-	 * 고아 회수({@code cleanupOrphans})가 찾지 못함</b>. {@code findOrphans} 는 {@code attachments} 행을
-	 * 기준으로 도는데 cascade 로 그 행이 사라졌기 때문임 - 즉 그 파일은 영구 잔류임(재리뷰 지적 3).
-	 * 지금은 경고 로그가 유일한 흔적이며, 실제 회수는 미결로 남아 있음({@code docs/04_tasks/backlog.md}).
+	 * 행 기준 회수({@link FileService#cleanupOrphans})가 찾지 못함</b>. {@code findOrphans} 는
+	 * {@code attachments} 행을 기준으로 도는데 cascade 로 그 행이 사라졌기 때문임(재리뷰 지적 3).
+	 *
+	 * <p><b>그 잔류는 저장소 스캔 패스가 지움</b> - {@link FileService#cleanupUnreferencedFiles} 가
+	 * 파일 쪽에서 돌며 <i>가리키는 행이 없는</i> 것을 회수하고, {@code OrphanCleanupScheduler} 가 매시
+	 * 정각 2차 패스로 부름. 즉 여기서 나는 경고는 <b>영구 손실이 아니라 회수 대기</b>임
+	 * ({@code FileFlowTest.unreferenced_old_file_is_removed_by_scan} 가 이 경로를 잠금).
 	 */
 	public void delete(UUID userId, UUID conversationId) {
 		Conversation conversation = requireOwned(conversationId, userId);
@@ -125,8 +129,10 @@ public class ConversationService {
 			try {
 				fileStorage.delete(path);
 			} catch (RuntimeException e) {
-				log.warn("대화 삭제 후 첨부 파일 정리 실패 - 행이 이미 없어 고아 회수 대상도 아님(영구 잔류). path={}",
-						path, e);
+				// "영구 잔류" 라고 적지 않음 - 저장소 스캔 패스(cleanupUnreferencedFiles)가 매시 정각에
+				// 회수함. 손실로 읽히면 운영자가 없는 사고를 쫓게 됨
+				log.warn("대화 삭제 후 첨부 파일 정리 실패 - 행이 없어 행 기준 회수는 못 보지만 "
+						+ "저장소 스캔 회수가 다음 주기에 지움. path={}", path, e);
 			}
 		}
 		try {
