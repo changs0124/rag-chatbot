@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.PathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +41,7 @@ public class LocalFileStorage implements FileStorage {
 
 	@Override
 	public Resource load(String storagePath) {
-		return new PathResource(resolve(storagePath));
+		return new FileSystemResource(resolve(storagePath));
 	}
 
 	@Override

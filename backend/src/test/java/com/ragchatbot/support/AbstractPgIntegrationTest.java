@@ -16,7 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * 통합 테스트 공통 베이스 - 실 PostgreSQL(Testcontainers) + 계정 발급 헬퍼. Docker 필요.
@@ -44,7 +44,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 		"app.file.orphan-cleanup-cron=-" })
 public abstract class AbstractPgIntegrationTest {
 
-	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
+	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:16-alpine");
 
 	static {
 		POSTGRES.start(); // Ryuk가 JVM 종료 시 정리. 재시작/중단 없음
