@@ -1,0 +1,23 @@
+$ ./mvnw -o test -Dtest=OpenAiRealBetaHeaderTest
+
+Test set: com.ragchatbot.openai.OpenAiRealBetaHeaderTest
+Tests run: 2, Failures: 1, Errors: 0, Skipped: 0
+
+[FAILED] vector_store_calls_carry_the_assistants_beta_header
+  vector store 호출에 OpenAI-Beta: assistants=v2 가 빠짐 (관측:
+      - POST /files  OpenAI-Beta=(없음)
+      - POST /vector_stores/shared-store/files  OpenAI-Beta=(없음)
+      - GET /vector_stores/shared-store/files/file-1  OpenAI-Beta=(없음)
+      - DELETE /vector_stores/shared-store/files/file-1  OpenAI-Beta=(없음)
+      - DELETE /files/file-1  OpenAI-Beta=(없음)
+      - DELETE /vector_stores/conversation-store  OpenAI-Beta=(없음)
+
+[PASSED] plain_file_calls_do_not_carry_the_header
+
+나간 요청 (로컬 서버가 받은 것)
+  POST /files  OpenAI-Beta=(없음)
+  POST /vector_stores/shared-store/files  OpenAI-Beta=(없음)
+  GET /vector_stores/shared-store/files/file-1  OpenAI-Beta=(없음)
+  DELETE /vector_stores/shared-store/files/file-1  OpenAI-Beta=(없음)
+  DELETE /files/file-1  OpenAI-Beta=(없음)
+  DELETE /vector_stores/conversation-store  OpenAI-Beta=(없음)
