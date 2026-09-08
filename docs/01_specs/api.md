@@ -76,7 +76,7 @@
 | `NOT_FOUND` | 404 | 리소스 없음 **또는 소유권·권한 위반 은닉** · **없는 URL** |
 | `METHOD_NOT_ALLOWED` | 405 | 라우트는 있으나 그 메서드를 받지 않음. 응답에 `Allow` 헤더가 함께 나간다 |
 | `CONFLICT` | 409 | 이메일 중복 |
-| `PAYLOAD_TOO_LARGE` | 413 | 멀티파트 하드 한도 초과 |
+| `PAYLOAD_TOO_LARGE` | 413 | 멀티파트 하드 한도 초과. **약 32MB 까지만 이 응답이 도달한다** — 그보다 크면 Tomcat 이 남은 본문을 다 삼키지 않고 연결을 끊어 클라이언트는 상태 코드 없이 I/O 오류를 받는다(`server.tomcat.max-swallow-size`, #70 실측). `max-request-size` 가 31MB 라 서버가 받아 줄 여지가 있는 구간은 전부 덮인다 |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` 을 그 라우트가 받지 않음. **본문을 읽을 수 없는 것(400)과 다르다** — 이쪽은 본문에 닿기 전 협상 단계에서 거절된다 |
 | `RATE_LIMIT` | 429 | 분당 상한 · 동시 스트림 상한 |
 | `INTERNAL_ERROR` | 500 | **예상하지 못한 예외**. 본문에 상관 ID가 실림(FEAT-OPS-002). 요청이 잘못된 경우는 여기로 오지 않는다 — 그쪽은 400 이다 |
