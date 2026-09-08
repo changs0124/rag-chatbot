@@ -163,6 +163,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 | C | 인용 annotation의 타입이 `file_citation` 이고 파일명 필드가 `filename` | 답변은 정상인데 출처가 늘 0건이라 **모든 답변에 「자료 없음」 배너**가 붙는다 |
 | D | 검색 결과 본문이 `file_search_call` 항목의 `results[].text` 에 실린다 | 출처 각주는 뜨는데 스니펫이 빈칸이다 |
 | E | `include: ["file_search_call.results"]` 로 결과 본문을 받을 수 있다 | D와 같은 증상 |
+| F | Vector Store 계열 호출에 `OpenAI-Beta: assistants=v2` 가 **필요하다** | 2-3 업로드가 500 으로 끝난다. 공식 SDK·API 레퍼런스가 이 헤더를 보내기에 우리도 보내지만(#37), 없으면 거절되는지는 확인한 적이 없다. 반대로 **불필요한데 보내서** 생기는 문제도 미확인이다 |
 
 가정 C는 특히 **오진하기 쉽다.** "자료 없음"은 정상 동작으로도 나오는 표시라, 스토어에 문서가 있는데도
 0건이면 검색이 안 된 것인지 인용 추출이 깨진 것인지 화면만 봐서는 구분되지 않는다. 2-4에서

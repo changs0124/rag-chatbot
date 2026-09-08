@@ -49,6 +49,23 @@ public class OpenAiRealService implements OpenAiService {
 
 	private static final Logger log = LoggerFactory.getLogger(OpenAiRealService.class);
 
+	/**
+	 * Vector Store 계열 호출에만 싣는 베타 헤더(#37).
+	 *
+	 * <p><b>왜 붙이는가</b> — 공식 {@code openai-python} 의 {@code resources/vector_stores/} 는
+	 * vector_stores 와 그 하위 files 의 <b>모든</b> 메서드(create · retrieve · update · list · delete ·
+	 * search)에서 이 헤더를 주입하고, 공식 API 레퍼런스의 curl 예시에도 들어 있다. 우리만 빼고 부르고 있었다.
+	 *
+	 * <p><b>필수인지는 확인하지 못했다</b> — 실키가 없어 헤더 없는 요청이 실제로 거절되는지 확정할 수 없다
+	 * (무인증 프로빙은 인증 검사가 먼저 걸려 401 로만 돌아온다). 그래서 이 변경은 "필수임을 확인해서" 가 아니라
+	 * <b>문서화된 계약과 어긋나 있어서</b> 넣은 것이다. 판별 명령은 이슈 #37 에 있다.
+	 *
+	 * <p><b>왜 기본 헤더가 아닌가</b> — 기본 헤더로 올리면 {@code /responses} 와 {@code /files} 에도 함께
+	 * 나간다. SDK 는 그 둘에 붙이지 않으며, 부작용 여부는 키가 없어 확인할 수 없다. 근거가 있는 범위에만
+	 * 붙인다. 이 경계는 {@code OpenAiRealBetaHeaderTest} 가 양방향으로 잠근다.
+	 */
+	private static final String OPENAI_BETA_ASSISTANTS_V2 = "assistants=v2";
+
 	private final RestClient client;
 	private final ObjectMapper mapper = new ObjectMapper();
 	private final FileStorage fileStorage;
@@ -401,6 +418,7 @@ public class OpenAiRealService implements OpenAiService {
 		try {
 			client.post()
 					.uri("/vector_stores/" + sharedVectorStoreId + "/files")
+					.header("OpenAI-Beta", OPENAI_BETA_ASSISTANTS_V2)
 					.contentType(MediaType.APPLICATION_JSON)
 					.body(Map.of("file_id", fileId))
 					.retrieve()
@@ -423,6 +441,7 @@ public class OpenAiRealService implements OpenAiService {
 		try {
 			JsonNode node = client.get()
 					.uri("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId)
+					.header("OpenAI-Beta", OPENAI_BETA_ASSISTANTS_V2)
 					.retrieve()
 					.body(JsonNode.class);
 			String status = node == null ? "" : node.path("status").asString("");
@@ -466,7 +485,12 @@ public class OpenAiRealService implements OpenAiService {
 		try {
 			// 상대 경로여야 빌더의 baseUrl 이 적용됨 - 절대 URL 을 박으면 app.openai.base-url 이
 			// 이 경로에서만 죽어, 스파이크·대체 엔드포인트로 돌려도 삭제만 실 API 로 나감
-			client.delete().uri(path).retrieve().toBodilessEntity();
+			var request = client.delete().uri(path);
+			// 이 메서드는 /files 삭제와 공유됨 - 베타 헤더는 vector store 쪽에만 붙임
+			if (path.startsWith("/vector_stores")) {
+				request = request.header("OpenAI-Beta", OPENAI_BETA_ASSISTANTS_V2);
+			}
+			request.retrieve().toBodilessEntity();
 		} catch (Exception e) {
 			// 정리 실패는 삭제 흐름을 막지 않음(고아 리소스는 별도 정리)
 			log.warn("openai {} 삭제 실패 {}: {}", kind, id, e.getMessage());
