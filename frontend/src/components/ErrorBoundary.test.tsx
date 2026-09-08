@@ -2,7 +2,9 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import ErrorBoundary from './ErrorBoundary'
 
-function Boom() {
+// 반환 타입을 never 로 명시함 - 추론에 맡기면 () => void 가 되어 JSX 컴포넌트로 쓸 수 없음(TS2786).
+// 이 함수는 실제로 절대 반환하지 않으므로 never 가 사실에 맞는 표기임
+function Boom(): never {
   throw new Error('boom')
 }
 

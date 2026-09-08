@@ -22,6 +22,8 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test"]
+  /* 테스트 파일을 제외하지 않는다(#59). vitest 는 esbuild 로 트랜스파일만 하고 타입을 보지 않으므로,
+     여기서 빼면 테스트 코드가 **어느 게이트도 거치지 않는다** - 실제로 오류 3건이 그렇게 살아 있었다.
+     npm run build 가 `tsc -b` 를 타므로 CI 의 frontend 잡이 이 설정으로 검사한다. */
+  "include": ["src"]
 }
