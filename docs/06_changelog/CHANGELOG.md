@@ -4,6 +4,25 @@
 
 ## [Unreleased]
 
+### Changed
+- **Boot 4 · Testcontainers 2 의 남은 deprecated API 를 정리했다(#64). deprecation 4건 → 0건.**
+  #63 이 `asText` 9건을 없앤 뒤 남아 있던 것들이다.
+
+  - `PathResource` → `FileSystemResource(Path)` (`LocalFileStorage:44`). **이것만 성격이 달랐다** —
+    `deprecated` 가 아니라 `deprecated and marked for removal` 이라, 다음 Spring 메이저에서 경고가
+    아니라 **컴파일 실패**가 된다
+  - `HttpStatus.PAYLOAD_TOO_LARGE` → `CONTENT_TOO_LARGE` (`GlobalExceptionHandler:76`). 둘 다 413 임을
+    실측 확인했다. **응답 `code` 문자열 `PAYLOAD_TOO_LARGE` 는 그대로 뒀다** — 상수 이름이 아니라
+    `api.md` 오류 코드 표의 계약이라 함께 바꾸면 프론트와 문서가 깨진다
+  - `org.testcontainers.containers.PostgreSQLContainer` → `org.testcontainers.postgresql.PostgreSQLContainer`
+    (`AbstractPgIntegrationTest:47`). Testcontainers 2 에서 **자기 타입 파라미터가 사라져** `<?>` 도 함께
+    걷었다. 이 클래스는 통합 테스트 18개의 뿌리라 여기가 깨지면 184건이 전부 죽는다 — 그대로 통과한다
+
+  **413 경로를 잠그는 테스트는 넣지 못했다.** 넣어 보니 Tomcat 이 한도 초과 시 연결을 끊어
+  클라이언트가 413 대신 I/O 오류를 받는다(`max-swallow-size` 미설정 → 기본 2MB). 즉 `api.md:79` 가
+  약속한 413 이 현실적인 초과량에서는 **관측되지 않는다.** 원인이 달라 이 변경에 섞지 않고
+  `backlog.md` 에 남겼다.
+
 ### Fixed
 - **Jackson 3 노드 접근에 기본값을 주도록 되돌렸다(#63).** #48 에서 Jackson 2 → 3 으로 갈며 import 만
   바꿨는데, **커밋 메시지의 "`ObjectMapper`·`JsonNode` API 는 그대로" 가 시그니처에 대해서만 참이고
