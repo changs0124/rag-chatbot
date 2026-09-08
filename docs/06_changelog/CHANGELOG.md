@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+### Fixed
+- **`INDEX.md` 의 JUnit 표기를 실제(6.0.3)와 맞췄다(#51).** #48 에서 Spring Boot 4.1 로 올리며 런타임
+  버전 문서를 갱신했는데, **같은 표의 Backend 행은 고치고 「테스트」 행을 놓쳤다.** 버전 문자열이 적힌
+  곳만 훑었고, 「테스트」 행에도 프레임워크 버전이 들어 있다는 것을 보지 못했다.
+
+  **게이트 넷이 전부 초록이었다** — `check-doc-refs.sh`(경로 실재만) · `check-runtime-versions.sh`
+  (`java.version`·`.nvmrc` 만) · `check-case-floor.sh` · `check-response-contract.sh`. 어느 것도 문서에
+  적힌 라이브러리 버전을 실제와 대조하지 않는다. 이 사각 자체는 #52 로 따로 다룬다.
+
+  **나머지 12곳은 전수 대조해 확인했다** — `INDEX.md` Frontend/Backend 행 · `backend.md` · `frontend.md`
+  · `overview.md` · `design-system.md` · `backlog.md` · `README.md` 가 전부 실제와 일치한다. 어긋난 것은
+  이 한 줄뿐이었다.
+
 ### Changed
 - **Spring Boot 3.5.16 → 4.1.1 로 올렸다(#48).** 3.5 의 OSS 지원이 2026-06-30 에 끝나 `3.5.16` 이 마지막
   무상 패치였다. 4.0 을 건너뛰고 **4.1** 로 간 것은 4.0 이 2026-12 에 끝나 몇 달 뒤 같은 일을 반복하기
