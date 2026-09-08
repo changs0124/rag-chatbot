@@ -12,9 +12,13 @@
 # - record ↔ resultMap : **순서까지** 같아야 한다. MyBatis 가 위치로 생성자를 찾는다
 # - record ↔ 프론트    : 이름 집합만 본다. TS 의 필드 순서는 런타임 의미가 없다
 #
-# 프론트를 **두 곳** 보는 이유 : `tsconfig.app.json` 이 `src/**/*.test.tsx` 를 exclude 하고 vitest 는
-# 타입 검사를 하지 않아, `AdminPage.test.tsx` 의 `doc()` 픽스처는 어느 게이트도 거치지 않는다.
-# `RagDocument` 에 필수 필드를 하나 더해도 `npm run build` 와 케이스 74개가 전부 통과했다(#25 실측).
+# 프론트를 **두 곳** 보는 이유 : 종전에는 `tsconfig.app.json` 이 테스트 파일을 exclude 하고 vitest 는 타입을
+# 보지 않아 `AdminPage.test.tsx` 의 `doc()` 픽스처가 **어느 게이트도 거치지 않았다** - `RagDocument` 에 필수
+# 필드를 하나 더해도 `npm run build` 와 케이스 74개가 전부 통과했다(#25 실측). #59 에서 exclude 를 걷어
+# 이제 tsc 가 픽스처를 본다.
+#
+# **그래도 이 대조는 남는다** - 타입 검사는 픽스처가 `RagDocument` 와 맞는지만 보고, 그 타입이 백엔드
+# record · resultMap 과 맞는지는 못 본다. 서로 다른 것을 잡는다.
 # 타입만 보면 픽스처가 따로 놀고, 픽스처만 보면 타입이 따로 논다.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"

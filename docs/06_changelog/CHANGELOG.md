@@ -5,6 +5,27 @@
 ## [Unreleased]
 
 ### Fixed
+- **프론트 테스트 파일을 타입 검사 대상에 넣었다(#59).** `tsconfig.app.json` 이 테스트를 exclude 하고
+  vitest 는 esbuild 로 트랜스파일만 해 타입을 보지 않아, **테스트 9개가 어느 게이트도 거치지 않았다.**
+  `npm run build` 도 `npm test` 도 통과했다.
+
+  exclude 를 걷으니 **오류 3건**이 드러났다(#25 실측과 같은 수).
+
+  - `ErrorBoundary.test.tsx` — `function Boom()` 의 추론 반환 타입이 `void` 라 JSX 컴포넌트로 쓸 수 없었다.
+    실제로는 항상 던지므로 `: never` 로 명시했다. 사실에 맞는 표기다
+  - `useChat.test.ts` 2곳 — **`onDone?.()` 를 인자 없이 부르고 있었다.** 실제 시그니처는
+    `(data: { finishReason, noSource }) => void` 이고 프로덕션은 `onDone?.(data)` 로 부른다
+    (`endpoints.ts:152`). **테스트가 실제 호출 형태와 다르게 통과해 온 것**이라 값이 가장 컸다.
+    서버가 그 상황에서 실제로 보낼 페이로드(`ChatService:205` 의 `finishReason=stop` + `noSource`)를 넘기도록
+    고쳤다 — 타입만 맞추려고 `as any` 를 쓰지 않았다
+
+  **CI 가 자동으로 검사한다** — `npm run build` 가 `tsc -b` 를 타므로 별도 스텝이 필요 없다. 되돌리면
+  빨간불이 되는 것을 재현으로 확인했다.
+
+  `check-response-contract.sh` 는 **지우지 않았다.** 타입 검사는 픽스처가 `RagDocument` 와 맞는지만 보고,
+  그 타입이 백엔드 record · resultMap 과 맞는지는 못 본다. 서로 다른 것을 잡는다 — 그 근거를 스크립트
+  머리 주석과 `CONVENTIONS.md` 에 적어 두었다.
+
 - **대화 삭제 시 "파일이 영구 잔류한다"는 서술을 사실과 맞췄다(#57). 이미 회수되고 있었다.**
   `FileService.cleanupUnreferencedFiles` 가 2026-07-28 에 추가돼 **파일 쪽에서 돌며 가리키는 행이 없는
   것**을 회수하고, `OrphanCleanupScheduler` 가 매시 정각 2차 패스로 부른다. cascade 로 행이 먼저 사라진
