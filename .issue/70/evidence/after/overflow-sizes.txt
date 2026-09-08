@@ -1,0 +1,9 @@
+멀티파트 한도 초과 시 클라이언트가 받는 것 (#70)
+설정 : max-file-size=26MB · max-request-size=31MB · max-swallow-size=32MB
+
+  25MB+1KB  코드 상한 초과 · 멀티파트 안                → 400  code=BAD_REQUEST
+  26MB+1KB  멀티파트 초과 (#64 실측 지점)              → 413  code=PAYLOAD_TOO_LARGE
+  28MB      멀티파트 초과 · request-size 안         → 413  code=PAYLOAD_TOO_LARGE
+  31MB      max-request-size 와 같음 (봉투 끝)     → 413  code=PAYLOAD_TOO_LARGE
+  34MB      max-request-size(31MB) 초과        → 응답 없음 — ResourceAccessException / 원인 java.io.IOException: 현재 연결은 사용자의 호스트 시스템의 소프트웨어의 의해 중단되었습니다
+  45MB      더 크게 초과                          → 응답 없음 — ResourceAccessException / 원인 java.io.IOException: 현재 연결은 사용자의 호스트 시스템의 소프트웨어의 의해 중단되었습니다
