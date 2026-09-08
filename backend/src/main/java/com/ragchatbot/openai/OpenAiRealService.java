@@ -239,9 +239,13 @@ public class OpenAiRealService implements OpenAiService {
 					continue;
 				}
 				JsonNode ev = mapper.readTree(payload);
-				String type = ev.path("type").asText();
+				// **기본값을 반드시 준다.** Jackson 3 의 인자 없는 접근자는 Object·Array 노드에서
+				// 예외를 던진다(Jackson 2 는 "" 를 돌려줬음). 여기서 던지면 모르는 모양의 이벤트 하나가
+				// 스트림 전체를 죽인다 - 예전에는 아래 if/else 사슬을 그냥 빠져나가 무해하게 무시됐다.
+				// 업스트림 스키마가 넓어져도 조용히 넘어가는 쪽이 맞다(#63)
+				String type = ev.path("type").asString("");
 				if ("response.output_text.delta".equals(type)) {
-					String delta = ev.path("delta").asText();
+					String delta = ev.path("delta").asString("");
 					if (!generatingSent) {
 						onStage.accept(Stage.GENERATING, List.of()); // 첫 토큰 직전이 생성 경계임
 						generatingSent = true;
@@ -299,18 +303,18 @@ public class OpenAiRealService implements OpenAiService {
 		Map<String, Boolean> citedFiles = new LinkedHashMap<>(); // 순서 유지 + 중복 제거
 
 		for (JsonNode item : response.path("output")) {
-			if ("file_search_call".equals(item.path("type").asText())) {
+			if ("file_search_call".equals(item.path("type").asString(""))) {
 				for (JsonNode r : item.path("results")) {
-					String name = r.path("filename").asText();
+					String name = r.path("filename").asString("");
 					if (!name.isEmpty()) {
-						snippetByFile.putIfAbsent(name, r.path("text").asText(""));
+						snippetByFile.putIfAbsent(name, r.path("text").asString(""));
 					}
 				}
 			}
 			for (JsonNode content : item.path("content")) {
 				for (JsonNode ann : content.path("annotations")) {
-					if ("file_citation".equals(ann.path("type").asText())) {
-						String name = ann.path("filename").asText();
+					if ("file_citation".equals(ann.path("type").asString(""))) {
+						String name = ann.path("filename").asString("");
 						if (!name.isEmpty()) {
 							citedFiles.putIfAbsent(name, Boolean.TRUE);
 						}
@@ -386,7 +390,10 @@ public class OpenAiRealService implements OpenAiService {
 				.retrieve()
 				.body(JsonNode.class);
 
-		String fileId = uploaded == null ? null : uploaded.path("id").asText(null);
+		// 기본값 null 이 이 가드의 전제다. Jackson 2 는 `"id": null` 에 **문자열 "null"** 을 돌려줘
+		// isBlank() 가 false 가 됐고, openai_file_id = "null" 인 행이 만들어져 검색에도 안 잡히고
+		// 삭제도 안 되는 문서가 남았다. Jackson 3 은 기본값을 그대로 줘 여기서 걸린다(#63 에서 확인)
+		String fileId = uploaded == null ? null : uploaded.path("id").asString(null);
 		if (fileId == null || fileId.isBlank()) {
 			throw new IllegalStateException("OpenAI 파일 업로드 응답에 id 가 없음");
 		}
@@ -418,7 +425,7 @@ public class OpenAiRealService implements OpenAiService {
 					.uri("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId)
 					.retrieve()
 					.body(JsonNode.class);
-			String status = node == null ? "" : node.path("status").asText("");
+			String status = node == null ? "" : node.path("status").asString("");
 			return switch (status) {
 				case "completed" -> "completed";
 				case "in_progress" -> "in_progress";
