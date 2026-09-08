@@ -173,6 +173,33 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 		assertThat((String) res.getBody().get("message")).contains("25MB");
 	}
 
+	/**
+	 * TC-ADMIN-035 : 멀티파트 하드 한도를 넘긴 요청은 <b>413 이 실제로 클라이언트에 도달한다</b>.
+	 *
+	 * <p>바로 위 TC-ADMIN-025 는 「413 이 <b>아니라</b> 400」을 잠근다. 이쪽은 그 반대편 —
+	 * 멀티파트 한도(26MB)까지 넘겼을 때 약속된 413 이 정말 오는지를 잠근다.
+	 *
+	 * <p><b>이 케이스가 I/O 오류로 깨지면 {@code server.tomcat.max-swallow-size} 가 지워졌거나
+	 * 낮아진 것이다.</b> 그 값이 없으면 Tomcat 기본 2MiB 라, 한도를 넘긴 시점에 남은 본문이 그보다
+	 * 많아 서버가 연결을 끊고 클라이언트는 상태 코드 자체를 못 받는다 — #64 가 이 테스트를 넣으려다
+	 * 부딪힌 벽이고, #70 이 설정으로 푼 자리다. 상태 코드가 아니라 <b>도달 여부</b>가 관심사다.
+	 *
+	 * <p>32MB 를 넘기면 여전히 끊긴다. 없앤 것이 아니라 봉투(31MB) 밖으로 옮긴 것이며,
+	 * 그 경계는 {@code api.md} 오류 코드 표에 적혀 있다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void multipart_hard_limit_actually_delivers_413() {
+		String token = createAdminUser("doc-hardlimit@b.com");
+		byte[] overMultipart = new byte[26 * 1024 * 1024 + 1024]; // 26MiB + 1KiB — 멀티파트 한도 초과
+
+		var res = upload(token, "한도초과.txt", overMultipart, "text/plain");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CONTENT_TOO_LARGE);
+		// 상수 이름은 Spring 7 에서 바뀌었지만 응답 code 는 api.md 계약이라 그대로다(#64)
+		assertThat(res.getBody().get("code")).isEqualTo("PAYLOAD_TOO_LARGE");
+	}
+
 	/** TC-ADMIN-013 : 확장자만 PDF인 파일은 400 (매직바이트 검사) */
 	@Test
 	void fake_pdf_is_rejected() {
