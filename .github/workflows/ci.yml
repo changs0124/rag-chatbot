@@ -95,6 +95,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: 문서 참조 실재 + 위키링크 검사
         run: bash scripts/check-doc-refs.sh
+      # 경로가 아니라 **섹션 이름**을 본다. 위 검사는 파일이 있으면 통과하므로 없는 섹션을 가리켜도
+      # 초록이었다(#28 에서 실제로 통과했다). grep 기반이라 이 잡의 JDK·Node 없는 환경에서도 돈다
+      - name: 문서 섹션 이름 대조
+        run: bash scripts/check-doc-sections.sh
 
   secrets:
     name: secrets (시크릿 스캔)
