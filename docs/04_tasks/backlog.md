@@ -11,7 +11,6 @@
 - [ ] **Spring Boot 4.1 의 OSS 지원은 2027-07 까지다** — #48 로 4.1.1 에 올렸다. 3.5 때처럼 기한이 지난 뒤에 알아채지 않도록 그 전에 다시 판단한다. 근거 : <https://www.danvega.dev/blog/spring-boot-end-of-life>
 - [ ] 단일 인스턴스 전제 해소 — 레이트리밋·동시 스트림 카운터가 인메모리라 수평 확장 시 실효 한도가 인스턴스 수만큼 곱해짐
 - [ ] RAG 문서 업로드 5단계(DB 기록) 실패 시 OpenAI 파일과 스토어 연결이 영구 잔류함 — 보상 처리가 없고 고아 회수는 로컬 첨부만 본다 (`AdminDocumentService.upload` 참고)
-- [ ] 프론트 테스트 파일이 타입 검사를 안 거침 — `tsconfig.app.json` 이 `src/**/*.test.ts(x)` 를 exclude 하고 vitest 는 타입을 보지 않는다. exclude 를 걷으면 기존 오류 3건(`ErrorBoundary.test.tsx` JSX 반환 타입 · `useChat.test.ts` 인자 수 2곳)을 먼저 고쳐야 한다. #25 에서 실측했고, 원인이 달라 그 PR 에 섞지 않았다
 - [ ] `check-doc-refs.sh` 가 섹션 이름을 검사하지 않음 — 파일 경로의 실재만 본다. #28 에서 `backend.md` 가 `frontend.md` 의 없는 섹션(「데이터·오류」)을 가리켰는데 게이트가 통과했다. 「…」 안의 이름을 대상 파일의 헤딩과 대조하면 잡히지만, 헤딩 표기가 문서마다 일정한지 먼저 확인해야 한다
   - **버전 값 쪽 사각은 #52 에서 닫았다**(`check-doc-versions.sh`). 원인이 다르다 — 그쪽은 *낡은 값*, 이쪽은 *깨진 참조*다. 섹션 검사는 여전히 없다
 - [ ] 첨부 저장소 S3 이전 검토 (`FileStorage` 구현 교체)

@@ -111,8 +111,10 @@
 - `scripts/check-response-contract.sh` 가 `AdminDtos.DocumentResponse` · `summaryResult` 의 `<arg>` · 프론트 `RagDocument` ·
   `AdminPage.test.tsx` 의 `doc()` 픽스처, **네 곳의 필드 이름**을 대조한다. record 와 `resultMap` 은 순서까지, 프론트 쪽은
   이름 집합만 본다 — MyBatis 는 위치로 생성자를 찾지만 TS 의 필드 순서는 런타임 의미가 없다.
-  **픽스처를 따로 보는 이유** : `tsconfig.app.json` 이 `src/**/*.test.tsx` 를 exclude 하고 vitest 는 타입 검사를 하지 않아
-  픽스처가 어느 게이트도 거치지 않는다. `RagDocument` 에 필수 필드를 하나 더해도 빌드와 케이스 전량이 통과한다.
+  **픽스처를 따로 보는 이유** : 종전에는 `tsconfig.app.json` 이 테스트 파일을 exclude 하고 vitest 는 타입을 보지 않아
+  픽스처가 **어느 게이트도 거치지 않았다.** #59 에서 exclude 를 걷어 이제 `tsc -b` 가 픽스처의 타입을 본다.
+  **그래도 이 게이트를 지우지 않는다** — 타입 검사는 `RagDocument` 와 픽스처가 서로 맞는지만 보고,
+  그 타입이 **백엔드 record · resultMap 과 맞는지**는 보지 못한다. 서로 다른 것을 잡는다.
   이름이 아니라 **값**이 제 컬럼에서 왔는지는 `AdminDocumentFlowTest` 가 본다. 이름만 보면 결선이 어긋나도 통과하고,
   값만 보면 프론트가 따로 놀아도 통과한다.
 - 시크릿 스캔(gitleaks)·의존성 취약점 스캔(Trivy · `npm audit`)이 CI에 상시 물려 있다.

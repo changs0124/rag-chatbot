@@ -178,7 +178,8 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
 
     act(() => {
       stream.handlers?.onToken?.('완성된 답변')
-      stream.handlers?.onDone?.()
+      // 서버가 실제로 보내는 done 페이로드와 같은 모양임(ChatService: finishReason=stop + noSource)
+      stream.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
     })
     expect(result.current.messages[1].status).toBe('complete')
 
@@ -198,7 +199,8 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', []))
 
-    act(() => void stream.handlers?.onDone?.())
+    // 토큰이 하나도 안 왔으니 인용도 없음 - 서버라면 noSource=true 로 보냈을 상황임
+    act(() => void stream.handlers?.onDone?.({ finishReason: 'stop', noSource: true }))
     expect(result.current.messages).toHaveLength(2)
 
     await act(async () => {
