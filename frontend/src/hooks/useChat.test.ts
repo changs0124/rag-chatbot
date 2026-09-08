@@ -178,7 +178,9 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
 
     act(() => {
       stream.handlers?.onToken?.('완성된 답변')
-      // 서버가 실제로 보내는 done 페이로드와 같은 모양임(ChatService: finishReason=stop + noSource)
+      // 서버가 보내는 done 페이로드 모양대로 부른다(ChatService: finishReason=stop + noSource).
+      // **useChat 의 onDone 은 인자를 받지 않으므로 이 값은 단언에 영향을 주지 않는다** - 계약을
+      // 재현하려고 넣는 것이다. noSource 가 나중에 실제 분기에 쓰이면 그 분기는 여기서 안 잡힌다
       stream.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
     })
     expect(result.current.messages[1].status).toBe('complete')
@@ -199,7 +201,9 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', []))
 
-    // 토큰이 하나도 안 왔으니 인용도 없음 - 서버라면 noSource=true 로 보냈을 상황임
+    // 토큰이 안 왔으니 서버라면 noSource=true 로 보냈을 상황이다. 다만 위 케이스와 마찬가지로
+    // **이 값이 이 테스트를 가르지는 않는다** - useChat 의 onDone 이 페이로드를 읽지 않는다.
+    // 검증하는 것은 "onDone 이 왔다는 사실" 하나다
     act(() => void stream.handlers?.onDone?.({ finishReason: 'stop', noSource: true }))
     expect(result.current.messages).toHaveLength(2)
 
