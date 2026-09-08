@@ -9,7 +9,7 @@
 | 영역 | 스택 |
 |------|------|
 | Frontend | React 19 · TypeScript 6 · Vite 8 · React Router 8 · Tailwind CSS 4 |
-| Backend | Java 17 · Spring Boot 3.5.16 · Spring Security · MyBatis 3.0.5 · Maven Wrapper |
+| Backend | Java 17 · Spring Boot 4.1.1 · Spring Security · MyBatis 4.1.0 · Maven Wrapper |
 | Database | PostgreSQL (Flyway 마이그레이션, `backend/src/main/resources/db/migration/`) |
 | 외부 연동 | OpenAI Chat(GPT-4o) + Vector Store — `APP_MODE=mock\|live`로 전환 |
 | 저장소 | 로컬 디스크(`FILE_STORAGE_ROOT`) — `FileStorage` 인터페이스로 S3 교체 가능 |

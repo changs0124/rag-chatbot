@@ -5,6 +5,36 @@
 ## [Unreleased]
 
 ### Changed
+- **Spring Boot 3.5.16 → 4.1.1 로 올렸다(#48).** 3.5 의 OSS 지원이 2026-06-30 에 끝나 `3.5.16` 이 마지막
+  무상 패치였다. 4.0 을 건너뛰고 **4.1** 로 간 것은 4.0 이 2026-12 에 끝나 몇 달 뒤 같은 일을 반복하기
+  때문이다. **동작은 바뀌지 않았다** — 184건 전부 그대로 통과하고 응답 계약도 6필드 4곳 일치다.
+
+  **`java.version` 이 17 그대로여서 `javax` → `jakarta` 대공사는 없었다.** 실제로 손댄 것은 Boot 4 의
+  **모듈 분해**를 따라가는 일이었다. Boot 3 에서 `spring-boot-autoconfigure` 한 덩어리에 있던 자동설정이
+  기능별 모듈로 쪼개져, **의존성에 없으면 조용히 자동설정만 사라진다.**
+
+  - **Flyway 가 이 함정을 정확히 밟았다.** `flyway-core` 는 그대로 있는데 마이그레이션을 돌려 줄
+    자동설정이 없어 빈 스키마로 떠서 `relation "users" does not exist` 로 **184건이 전부 죽었다.**
+    라이브러리가 있으니 컴파일도 통과했다 — `spring-boot-starter-flyway` 로 바꿔 해결했다.
+  - `@SpringBootTest` 가 `TestRestTemplate` 을 더 이상 자동 제공하지 않는다. `spring-boot-resttestclient`
+    모듈과 `@AutoConfigureTestRestTemplate` 을 명시했다(그 자동설정이 `RestTemplateBuilder` 를 참조해
+    `spring-boot-restclient` 도 테스트 스코프로 필요했다). **184건을 새 `RestTestClient` 로 갈아엎지 않았다** —
+    런타임 교체가 목적이지 테스트 재작성이 목적이 아니다.
+  - `spring-boot-starter-web` → `spring-boot-starter-webmvc`, `UserDetailsServiceAutoConfiguration` 이
+    `org.springframework.boot.security.autoconfigure` 로 이동
+  - Jackson 2 → 3 : `com.fasterxml.jackson.databind` → `tools.jackson.databind`. **`OpenAiRealService`
+    한 파일뿐이었고 `ObjectMapper`·`JsonNode` API 는 그대로였다**
+  - Testcontainers 1 → 2 : 아티팩트가 `postgresql` → `testcontainers-postgresql` 로 개명. `PostgreSQLContainer`
+    클래스 경로는 그대로였다
+  - MyBatis starter 3.0.5 → 4.1.0
+  - **`postgresql.version` 수동 고정을 뺐다.** CVE-2026-54291 때문에 `42.7.13` 을 박아 뒀는데 4.1.1 BOM
+    관리분이 정확히 같은 값이다. 남겨 두면 앞으로 BOM 이 더 올려도 낮은 값에 묶어 두게 되어 **원래
+    고정한 이유(보안)와 반대로 작동한다.**
+
+  **검증되지 않은 경로가 하나 있다.** Jackson 을 바꾼 `OpenAiRealService` 의 SSE 파싱은 `APP_MODE=live`
+  전용이라 mock 테스트가 밟지 않는다. 컴파일과 코드 대조로만 확인했고, 실 연동 검증은 실 OpenAI 키가
+  생긴 뒤 백로그 「높은 우선순위」의 실 연동 항목에서 함께 봐야 한다.
+
 - **Spring Boot 3.5 의 지원 종료 사실을 문서에 박았다(#47).** 세 곳이 똑같이 "OSS EOL 트랙 — 업그레이드
   재검토가 필요하다" 로 적혀 있었다(`backlog.md` · `requirements.md` · `overview.md`). **"재검토" 는
   아직 판단할 여지가 있다는 뜻인데 기한은 이미 지났다** — 3.5 의 OSS 지원은 2026-06-30 에 끝났고
