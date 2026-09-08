@@ -45,6 +45,7 @@ Vector Store 계열 호출에 `OpenAI-Beta: assistants=v2` 를 싣는다. 후보
   기본 헤더로 올리면 두 번째 테스트가 깨진다
 - `docs/01_specs/live-integration.md` — 3절 「실 응답과 대조해야 하는 가정」에 F 추가.
   미확정 상태를 표에 남겨 2-3 에서 업로드가 500 으로 끝날 때 여기부터 보게 했다
+- `docs/06_changelog/CHANGELOG.md` — `[Unreleased] > Fixed` 항목
 
 ## 검증
 
