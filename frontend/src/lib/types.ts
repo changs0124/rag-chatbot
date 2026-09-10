@@ -37,6 +37,9 @@ export interface ChatMessage {
   // 사용자가 끊어 **출처 판정 전에** 끝난 답변임(2026-07-28). status 는 complete 그대로이고,
   // 이 플래그가 무자료 배너를 억제함 - 없으면 중단된 답변마다 "자료 없음"이 거짓으로 붙음
   stopped?: boolean
+  // 서버가 스트림을 타임아웃으로 닫았음(#84). stopped 와 별개의 축이라 함께 참일 수 있음 -
+  // timedOut && stopped 는 닫히는 중에 잘린 답변, timedOut && !stopped 는 닫힌 뒤 전문이 도착한 것임
+  timedOut?: boolean
   createdAt: string
   citations: Citation[]
   // 재조회 응답에도 실림(2026-07-28) - URL 은 조회 시점에 새로 서명된 값임.

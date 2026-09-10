@@ -97,7 +97,8 @@ class ChatStreamAbortTest {
 		}
 	}
 
-	private record Saved(String content, String status, boolean stopped, Integer inputTokens, Integer outputTokens) {
+	private record Saved(String content, String status, boolean stopped, boolean timedOut, Integer inputTokens,
+			Integer outputTokens) {
 	}
 
 	/** 저장 호출을 기록만 하는 대역 */
@@ -110,8 +111,9 @@ class ChatStreamAbortTest {
 
 		@Override
 		public void saveAssistant(UUID conversationId, UUID userId, UUID assistantMsgId, String content, String status,
-				boolean stopped, List<OpenAiService.CitationData> citations, Integer inputTokens, Integer outputTokens) {
-			saves.add(new Saved(content, status, stopped, inputTokens, outputTokens));
+				boolean stopped, boolean timedOut, List<OpenAiService.CitationData> citations, Integer inputTokens,
+				Integer outputTokens) {
+			saves.add(new Saved(content, status, stopped, timedOut, inputTokens, outputTokens));
 		}
 	}
 

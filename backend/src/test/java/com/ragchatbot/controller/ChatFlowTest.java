@@ -79,6 +79,12 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		var assistant = list.stream().filter(m -> "assistant".equals(m.get("role"))).findFirst().orElseThrow();
 		assertThat((List<?>) assistant.get("citations")).isNotEmpty();
 		assertThat((String) assistant.get("content")).isNotBlank();
+		// stopped·timedOut 이 DB → resultMap → record → JSON 을 실제로 건너오는지(#84).
+		// 값이 아니라 **키의 존재**를 본다 - 이 경로에는 다른 그물이 하나도 없다.
+		// check-response-contract.sh 는 DocumentResponse 한 쌍만 보고, types.ts 에서 둘 다
+		// 옵셔널이라 tsc 도 못 잡는다. 키가 끊기면 undefined→falsy 가 되어 재조회한 중단 답변에
+		// 「자료 없음」 배너가 거짓으로 붙는다 - overview.md 「데이터 흐름」이 지키라고 적어 둔 불변식이다
+		assertThat(assistant).containsKeys("stopped", "timedOut");
 	}
 
 	@Test

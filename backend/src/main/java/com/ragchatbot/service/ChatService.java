@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -91,7 +92,7 @@ public class ChatService {
 		UUID userMsgId = UUID.randomUUID();
 		// 사용자 메시지에는 사용량이라는 개념이 없음 - null(FEAT-OPS-001)
 		messageRepository.insert(new Message(userMsgId, conversation.id(), "user", message, "complete", false,
-				null, null, null));
+				false, null, null, null));
 		for (UUID attId : attachmentIds) {
 			attachmentRepository.linkToMessage(attId, userMsgId, userId);
 		}
@@ -118,6 +119,12 @@ public class ChatService {
 	 *
 	 * <p>{@code status=error} 는 답변이 아니므로 제외함. 반대로 {@code stopped=true}(사용자가 중단)는
 	 * 사용자가 실제로 화면에서 본 내용이라 포함함.
+	 *
+	 * <p><b>단, 타임아웃으로 끊긴 것은 제외함</b>(#84). {@code timedOut && stopped} 는 서버가 스트림을
+	 * 닫아 문장이 잘린 경우인데, 사용자는 그것을 본 적도 받아들인 적도 없음 - 화면에는 그 시점까지의
+	 * 토큰만 떠 있고 「잘렸다」는 표시조차 없음. 포함하면 모델이 자기가 쓰다 만 문장을 대화의
+	 * 확정된 맥락으로 읽음. {@code timedOut && !stopped}(갈래 ②)는 전문이 저장됐으므로 포함하고,
+	 * 갈래 ③은 {@code error} 라 위 규칙에 이미 걸림.
 	 */
 	static List<Turn> buildHistory(List<Message> messages, Set<UUID> withAttachments, int tokenBudget) {
 		List<Turn> newestFirst = new ArrayList<>();
@@ -125,6 +132,10 @@ public class ChatService {
 		for (int i = messages.size() - 1; i >= 0; i--) {
 			Message m = messages.get(i);
 			if ("error".equals(m.status())) {
+				continue;
+			}
+			// 서버 타임아웃으로 잘린 문장 - 사용자가 보지도 받아들이지도 않았음(#84)
+			if (m.timedOut() && m.stopped()) {
 				continue;
 			}
 			String text = historyText(m, withAttachments.contains(m.id()));
@@ -168,6 +179,14 @@ public class ChatService {
 		// 첫 토큰 이후에는 단계를 보내지 않음(R-11 전송 규칙). 스트림 스레드 단독 사용이라 plain boolean으로 충분하지 않음 - 배열로 캡처
 		boolean[] firstTokenSeen = { false };
 		boolean saved = false;
+		// 타임아웃 사실을 저장에 남기기 위한 표시(#84). **컨테이너 스레드가 세우고 스트림 스레드가
+		// 읽으므로 AtomicBoolean 이어야 함** - 두 스레드 사이라 배열 캡처로는 가시성이 보장되지 않음.
+		//
+		// 이 리스너는 스트림을 끊지 못한다. emitter 는 이미 닫혀 있고(DefaultCallback.run 이 complete
+		// 를 먼저 세움) 워커의 블로킹 read 는 인터럽트로 깨지지 않는다 - 자원 반납 문제는 #76 소관임.
+		// 여기서 하는 일은 **무슨 일이 일어났는지 기록에 남기는 것** 하나뿐이다
+		AtomicBoolean timedOut = new AtomicBoolean(false);
+		emitter.onTimeout(() -> timedOut.set(true));
 		try {
 			sendQuietly(emitter, "meta",
 					Map.of("messageId", asstMsgId.toString(), "conversationId", prepared.conversationId().toString()));
@@ -192,8 +211,11 @@ public class ChatService {
 					}, onStage);
 
 			// 어시스턴트 메시지 + 출처를 하나의 트랜잭션으로 저장(P-6)
+			// timedOut 이 참일 수 있음 - 워커가 대기 중 emitter 가 닫혔고 업스트림이 뒤늦게 응답한
+			// 갈래 ②임. 텍스트는 전문이므로 stopped 는 false 지만, 화면은 끊긴 채라 그 사실을 남김
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, completion.fullText(),
-					"complete", false, completion.citations(), completion.inputTokens(), completion.outputTokens());
+					"complete", false, timedOut.get(), completion.citations(), completion.inputTokens(),
+					completion.outputTokens());
 			saved = true;
 
 			List<Map<String, Object>> citationPayload = new ArrayList<>();
@@ -210,13 +232,13 @@ public class ChatService {
 			// 부분 텍스트가 비면 저장하지 않음 - 빈 답변 버블을 남기면 화면(버블 제거)과 재조회가 어긋남.
 			// stopped=true 로 남겨야 무자료 배너가 붙지 않음 - 인용은 스트림 끝에 오므로 여기서는 늘 0건임
 			if (!saved) {
-				savePartial(prepared, userId, asstMsgId, buffer.toString(), "complete", true);
+				savePartial(prepared, userId, asstMsgId, buffer.toString(), "complete", true, timedOut.get());
 			}
 			completeQuietly(emitter);
 		} catch (Exception ex) {
 			// 진짜 오류 - 부분 텍스트를 error 상태로 저장(질문만 남고 답변 소실 방지)
 			if (!saved) {
-				savePartial(prepared, userId, asstMsgId, buffer.toString(), "error", false);
+				savePartial(prepared, userId, asstMsgId, buffer.toString(), "error", false, timedOut.get());
 			}
 			sendIgnoringFailure(emitter, "error", Map.of("code", "STREAM_ERROR", "message", "응답 생성 중 오류"));
 			emitter.completeWithError(ex);
@@ -225,14 +247,14 @@ public class ChatService {
 
 	/** 중단·오류 경로의 부분 저장. 중단인데 받은 것이 없으면 아무것도 남기지 않음 */
 	private void savePartial(PreparedChat prepared, UUID userId, UUID asstMsgId, String text, String status,
-			boolean stopped) {
+			boolean stopped, boolean timedOut) {
 		if (text.isEmpty() && "complete".equals(status)) {
 			return;
 		}
 		try {
 			// 중단·오류 경로는 완료 이벤트가 오기 전에 끝나 사용량을 알 수 없음 - 추정하지 않고 null
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, text, status, stopped,
-					List.of(), null, null);
+					timedOut, List.of(), null, null);
 		} catch (Exception ignored) {
 			// 저장 실패는 무시(이미 비정상 종료 경로)
 		}
