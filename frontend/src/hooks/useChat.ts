@@ -121,9 +121,23 @@ export function useChat() {
     setError(null)
   }, [abortActiveStream])
 
+  /**
+   * 삭제 실패를 화면에 드러낸다(#77).
+   *
+   * 종전에는 catch 가 없고 호출부가 `(id: string) => void` 로 받아 프라미스를 버렸다.
+   * 서버가 500 이면 **확인 모달은 닫히고 목록에는 대화가 그대로 남는데 아무 표시가 없었다** -
+   * 사용자는 「삭제를 눌렀는데 그대로다」만 보고 콘솔에는 unhandled rejection 만 남았다.
+   *
+   * 실패하면 목록도 건드리지 않는다. 지운 것처럼 보였다가 새로고침에 되살아나는 쪽이 더 나쁘다.
+   */
   const deleteConversation = useCallback(
     async (id: string) => {
-      await apiDelete(id)
+      try {
+        await apiDelete(id)
+      } catch (e) {
+        setError(e instanceof ApiError ? e.message : '대화를 삭제하지 못했습니다')
+        return
+      }
       setConversations((prev) => prev.filter((c) => c.id !== id))
       if (activeId === id) {
         // 지운 대화를 떠나는 것도 전환임 - 안 끊으면 사라진 대화에 대고 스트림이 계속 돎
@@ -136,11 +150,21 @@ export function useChat() {
     [activeId, abortActiveStream],
   )
 
+  /**
+   * 이름 변경 실패를 화면에 드러낸다(#77).
+   *
+   * 입력창은 `commitTitle` 이 먼저 닫으므로, 실패하면 헤더가 옛 제목으로 조용히 되돌아갔다 -
+   * 「제목이 저장되지 않는 화면」으로 읽힌다.
+   */
   const renameConversation = useCallback(async (id: string, title: string) => {
     const trimmed = title.trim()
     if (!trimmed) return
-    const updated = await apiRename(id, trimmed)
-    setConversations((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    try {
+      const updated = await apiRename(id, trimmed)
+      setConversations((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : '대화 이름을 바꾸지 못했습니다')
+    }
   }, [])
 
   const stop = useCallback(() => {
