@@ -89,7 +89,8 @@ public class ConversationService {
 		}
 
 		return messageRepository.listByConversation(conversationId).stream()
-				.map(m -> new MessageResponse(m.id(), m.role(), m.content(), m.status(), m.stopped(), m.createdAt(),
+				.map(m -> new MessageResponse(m.id(), m.role(), m.content(), m.status(), m.stopped(), m.timedOut(),
+						m.createdAt(),
 						citationsByMessage.getOrDefault(m.id(), List.of()),
 						attachmentsByMessage.getOrDefault(m.id(), List.of())))
 				.toList();
