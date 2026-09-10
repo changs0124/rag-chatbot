@@ -107,6 +107,12 @@ export async function streamChat(
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
+  // 종단 이벤트(done|error)를 실제로 받았는지. **받지 못한 채 끝나는 경로가 있다** -
+  // 서버 SSE 타임아웃은 emitter 를 닫을 뿐 done 도 error 도 싣지 못하고(닫힌 뒤의 send 는
+  // IllegalStateException 이라 그렇다), 프록시 idle timeout · 네트워크 절단도 같은 모양으로 온다.
+  // 그때 reader 는 예외 없이 done:true 를 주므로, 이 표시가 없으면 streamChat 이 **정상 반환**해
+  // 호출부의 catch 도 onDone 도 돌지 않는다 - 말풍선이 streaming 인 채 영구히 남는다
+  let terminated = false
 
   for (;;) {
     const { done, value } = await reader.read()
@@ -116,24 +122,33 @@ export async function streamChat(
     while ((sep = buffer.indexOf('\n\n')) >= 0) {
       const rawEvent = buffer.slice(0, sep)
       buffer = buffer.slice(sep + 2)
-      dispatchEvent(rawEvent, handlers)
+      if (dispatchEvent(rawEvent, handlers)) terminated = true
     }
+  }
+
+  if (!terminated) {
+    // 사용자가 중단한 경우는 여기 오지 않는다 - abort 는 reader.read() 를 거부시켜 위에서 던진다.
+    // 위쪽 !res.ok 경로와 같은 모양으로 처리한다(onError 를 부르고 던짐)
+    const message = '응답이 끝나기 전에 연결이 끊겼습니다. 다시 시도해 주세요.'
+    handlers.onError?.(message)
+    throw new Error(message)
   }
 }
 
-function dispatchEvent(raw: string, handlers: ChatStreamHandlers): void {
+/** 종단 이벤트(done|error)를 전달했으면 true. 스트림이 계약대로 끝났는지 판정하는 데 쓴다 */
+function dispatchEvent(raw: string, handlers: ChatStreamHandlers): boolean {
   let event = 'message'
   const dataLines: string[] = []
   for (const line of raw.split('\n')) {
     if (line.startsWith('event:')) event = line.slice(6).trim()
     else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim())
   }
-  if (dataLines.length === 0) return
+  if (dataLines.length === 0) return false
   let data: unknown
   try {
     data = JSON.parse(dataLines.join('\n'))
   } catch {
-    return
+    return false
   }
   switch (event) {
     case 'meta':
@@ -150,9 +165,10 @@ function dispatchEvent(raw: string, handlers: ChatStreamHandlers): void {
       break
     case 'done':
       handlers.onDone?.(data as { finishReason: string; noSource: boolean })
-      break
+      return true
     case 'error':
       handlers.onError?.((data as { message: string }).message)
-      break
+      return true
   }
+  return false
 }
