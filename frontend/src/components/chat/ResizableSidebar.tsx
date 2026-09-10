@@ -44,14 +44,31 @@ export default function ResizableSidebar({ children }: { children: ReactNode }) 
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
+    // **pointercancel 도 받는다**(#102). 브라우저가 제스처를 가로채거나 포인터가 사라지면
+    // pointerup 이 오지 않는데, 그러면 dragging 이 참으로 남아 버튼을 누르지 않았는데도 폭이 계속
+    // 따라오고 userSelect 도 'none' 인 채 남아 **앱 전체에서 텍스트 선택이 막힌다**
+    window.addEventListener('pointercancel', onUp)
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      // 드래그 도중 언마운트되면(로그아웃 등) 리스너만 떼는 것으로는 부족하다 -
+      // body 의 userSelect 는 이 컴포넌트 밖에 남는다
+      if (dragging.current) document.body.style.userSelect = ''
     }
   }, [])
 
-  function startDrag() {
+  /**
+   * 드래그 시작.
+   *
+   * **포인터를 잡는다**(`setPointerCapture`, #102). 잡지 않으면 창 밖에서 버튼을 뗐을 때
+   * `pointerup` 이 도달하지 않아 `dragging` 이 참으로 남는다 - 창으로 돌아오면 버튼을 누르지
+   * 않았는데도 폭이 계속 따라오고, `userSelect: none` 도 복원되지 않아 **앱 전체에서 텍스트
+   * 선택이 막힌다.** 캡처하면 그 창 자체가 없어진다 - 이후 포인터 이벤트가 이 요소로 온다.
+   */
+  function startDrag(e: React.PointerEvent<HTMLDivElement>) {
     dragging.current = true
+    e.currentTarget.setPointerCapture?.(e.pointerId)
     // 안 걸면 끄는 동안 화면 글자가 선택돼 파랗게 반전됨 - 고장난 것처럼 보인다
     document.body.style.userSelect = 'none'
   }
