@@ -19,28 +19,40 @@
   `:latest` 와 커밋 SHA 태그로 GHCR 에 민다. PR 은 기존대로 빌드만 한다 — 「배포 산출물이 조용히
   썩는 것을 막음」이라는 원래 의도는 그대로다. 패키지는 public 이라 서버에 `docker login` 이 없다.
 
-- **GitHub Actions 를 걷어내고 품질 게이트를 로컬로 옮겼다(#127).** 이 저장소는 비공개라 Actions
-  분이 유료 한도에 묶인다. 잡 8개짜리 워크플로가 PR·푸시마다 10~15분씩 먹었고, 한도가 소진되자
-  **CI 가 통째로 멎었다** — `The job was not started because recent account payments have failed
-  or your spending limit needs to be increased`. 잡이 step 하나도 못 밟고 4초 만에 전부 실패했다.
+- **CI 를 무료 한도 안으로 줄였다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶인다.
+  잡 8개짜리 워크플로가 PR·푸시마다 10~15분씩 먹었고, 한도가 소진되자 **CI 가 통째로 멎었다** —
+  `The job was not started because recent account payments have failed or your spending limit
+  needs to be increased`. 잡이 step 하나도 못 밟고 4초 만에 전부 실패했다.
 
-  GitHub Actions 워크플로 파일을 지우고 `scripts/check-all.sh` 를 넣었다. 지운 파일의 경로를
-  백틱으로 적지 않는 것은 `check-doc-refs.sh` 가 **실재하지 않는 참조로 잡기 때문**이다 —
-  이력에는 서술로 남긴다. **검사를 버린 것이 아니라
-  실행 위치만 옮겼다** — 호출하던 스크립트(`check-doc-refs` · `check-doc-sections` ·
-  `check-response-contract` · `check-runtime-versions` · `check-case-floor` · `check-doc-versions`)는
-  전부 그대로다. `docs` · `quick` · 전체 세 모드가 있고 종료 코드가 실패한 검사 수다.
+  셋을 바꿨다 :
 
-  **gitleaks · Trivy 는 없으면 건너뛰되 그 사실을 크게 찍는다.** 조용히 넘어가면 「통과」와
-  「검사 안 함」이 구분되지 않는다 — 종전 CI 가 Trivy 에 `list-all-pkgs` 를 켠 것과 같은 이유다.
+  1. **`secrets` · `deps` 2종을 주 1회 스케줄로 뺐다.** 이 셋은 우리 커밋이 아니라 **바깥**
+     (취약점 DB · 커밋 이력 전체)이 바뀔 때 결과가 달라진다 — 변경마다 돌려도 같은 답이 반복될
+     뿐이었다. 급하면 `workflow_dispatch` 로 즉시 돌린다. 변경마다 도는 잡은 8 → **5개**다.
+  2. **`.issue/**` 만 바뀐 푸시를 건너뛴다**(`paths-ignore`). 증거 미러 커밋은 코드가 한 줄도
+     바뀌지 않는데 잡을 다 돌리고 있었다. main 에 이미 88개가 쌓여 있어 일회성이 아니었다.
+     `pull_request` 에는 넣지 않았다 — 건너뛴 워크플로는 required checks 에서 pending 으로 남아
+     merge 를 막는다. `docs/06_changelog/**` 도 빼지 않았다 — `check-doc-refs.sh` 가 그 경로도
+     스캔해서, 건너뛰면 CHANGELOG 만 고친 커밋의 깨진 참조가 통과한다.
+  3. **`scripts/check-all.sh` 를 넣었다.** CI 와 같은 스크립트를 푸시 전에 로컬에서 돌린다.
+     `docs` · `quick` · 전체 세 모드, 종료 코드는 실패한 검사 수다. **CI 를 대체하지 않는다** —
+     실패할 걸 알면서 밀어 러너를 태우지 않는 것이 곧 비용 절약이다.
 
-  **감수하는 약점** : 게이트가 강제되지 않는다. 돌리지 않고 밀면 그대로 들어간다.
+  **로컬로 옮겨 보고서야 드러난 것들이 있다.** 원격 CI 는 매번 빈 러너라 가려져 있었다 :
+  `npm ci` 가 없으면 새 워크트리에서 프론트 4건이 한꺼번에 죽는다 · `npm test` 에 json 리포터가
+  없으면 `check-case-floor.sh` 가 이전 실행의 수를 읽는다 · `target/` 이 남아 있으면 지운 테스트
+  클래스의 surefire XML 이 계속 계수된다(2026-07-28 에 하한을 6건 부풀린 전례가 있고 그때는
+  원격 CI 가 잡아냈다). `check-all.sh` 는 셋 다 막는다.
 
-- **배포를 레지스트리 없이 한다(#127).** 처음에는 CI 가 GHCR 에 미는 안으로 갔으나, Actions 를
-  걷어내면서 함께 접었다 — GHCR 도 비공개 패키지 기준 저장 500MB · 전송 1GB/월 한도가 있어
-  같은 함정을 하나 더 들이는 셈이었다. `scripts/deploy.sh` 가 로컬에서 빌드해
+- **배포를 레지스트리 없이 한다(#127).** `scripts/deploy.sh` 가 로컬에서 빌드해
   `docker save` → `scp` → `docker load` 로 서버에 넣고, 기동과 헬스체크(최대 90초)까지 한다.
-  압축 후 90MB 남짓이고 GCP 인바운드 전송은 무료다. 한도도 토큰도 없다.
+  압축 후 90MB 남짓이고 GCP 인바운드 전송은 무료다.
+
+  **GHCR 을 쓰지 않는 이유** : 비공개 패키지는 저장 500MB · 전송 1GB/월 한도가 걸리는데 이미지가
+  320MB(압축 98MB)라, 커밋 SHA 태그를 몇 개만 쌓아도 저장 한도를 넘긴다. Actions 분이 같은
+  성격의 한도로 이미 한 번 사고를 냈으므로 함정을 하나 더 들이지 않았다.
+  **CI 의 `docker` 잡은 종전대로 빌드만 하고 버린다** — 배포 산출물이 조용히 썩는 것을 막는
+  검증이고, 배포본을 만드는 것은 `deploy.sh` 뿐이다.
 
   **감수하는 약점** : 레지스트리에 이미지 이력이 남지 않아 **되돌리려면 그 커밋을 다시 빌드해야
   한다.** 배포가 잦지 않은 단일 서버 전제에서 감수한다. 저장소를 공개로 바꾸거나 유료 한도를 열면

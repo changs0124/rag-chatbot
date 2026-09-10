@@ -15,7 +15,7 @@
 | 저장소 | 로컬 디스크(`FILE_STORAGE_ROOT`) — `FileStorage` 인터페이스로 S3 교체 가능 |
 | 테스트 | 백엔드 JUnit 6 + Testcontainers(실 PostgreSQL) · 프론트 Vitest + Testing Library |
 | Lint | oxlint (프론트) |
-| 품질 게이트 | **로컬 실행** — `bash scripts/check-all.sh` (문서 · 계약 · 런타임 버전 · 백엔드 verify · 프론트 lint/test/build · 이미지 빌드 · 시크릿 · 의존성). GitHub Actions 는 쓰지 않는다(#127) |
+| CI | GitHub Actions — 변경마다 5잡(backend · frontend · docker · contract · docs), **secrets · deps 2종은 주 1회 스케줄**(#127). 푸시 전 로컬 예행은 `bash scripts/check-all.sh` |
 
 ## 실행
 
@@ -91,6 +91,6 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 3. `docs/FEEDBACK.md`에 대기 중인 수정 요청이 있으면 먼저 확인
 4. 작업 후 "리뷰해줘"로 코드 리뷰 & 변경사항 기록
 
-문서에 없는 파일 경로를 적으면 `scripts/check-doc-refs.sh`가 실패한다(`bash scripts/check-all.sh docs` 로 돈다).
+문서에 없는 파일 경로를 적으면 CI의 `scripts/check-doc-refs.sh`가 실패한다. 푸시 전에 `bash scripts/check-all.sh docs` 로 미리 확인할 수 있다.
 
 루트 `CLAUDE.md`의 행동 지침(가정 금지 · 단순함 우선 · 외과적 변경 · 목표 기반 실행)이 위 규칙보다 우선한다.

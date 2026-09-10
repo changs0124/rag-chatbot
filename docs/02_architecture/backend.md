@@ -394,11 +394,14 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 `docker save` → `scp` → `docker load` 로 서버에 넣는다. 압축 후 90MB 남짓이고 GCP 인바운드
 전송은 무료다.
 
-**왜 GHCR 이 아닌가** — 처음에는 CI 가 GHCR 에 미는 안으로 갔으나, 이 저장소는 비공개라
-GitHub Actions 분이 유료 한도에 묶이고 **실제로 그 한도가 소진되어 CI 가 통째로 멎었다**
-(`The job was not started because ... spending limit needs to be increased`). GHCR 도 비공개
-패키지 기준 저장 500MB · 전송 1GB/월 한도가 있어 같은 함정을 하나 더 들이는 셈이었다.
-직접 전송은 한도도 토큰도 없다.
+**왜 GHCR 이 아닌가** — 처음에는 CI 가 GHCR 에 미는 안으로 갔으나 접었다. 이 저장소는 비공개라
+GHCR 도 **저장 500MB · 전송 1GB/월** 한도가 걸리는데, 이미지가 320MB(압축 98MB)라 커밋 SHA 태그를
+몇 개만 쌓아도 저장 한도를 넘긴다. 실제로 같은 성격의 한도(Actions 분)가 소진되어 CI 가 통째로
+멎은 적이 있어(`The job was not started because ... spending limit needs to be increased`),
+같은 함정을 하나 더 들이지 않기로 했다. 직접 전송은 한도도 토큰도 없다.
+
+**CI 는 이미지를 만들지 않는다.** `docker` 잡은 종전대로 **빌드만 하고 버린다** — 배포 산출물이
+조용히 썩는 것을 막는 검증이다. 배포본을 만드는 것은 `scripts/deploy.sh` 뿐이다.
 
 **감수하는 약점** : 레지스트리에 이미지 이력이 남지 않아 **이전 버전으로 되돌리려면 그 커밋을
 다시 빌드해야 한다.** 배포가 잦지 않은 단일 서버 전제에서 감수한다. 저장소를 공개로 바꾸거나
@@ -414,7 +417,8 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build d
 Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip 을 Maven Central 에서 내려받는데,
 의존성 해석보다 앞선 단계라 레이어 캐시로도 덮이지 않고 Central 이 거절하면 이미지 빌드가 통째로 멎는다.
 버전은 wrapper 가 쓰던 3.9.16 과 같게 고정했고, `mvnw` 자체는 로컬·CI 용으로 그대로 남는다.
-**이 근거가 지켜 주는 자리는 이제 개발 PC 다** — 서버가 빌드하지 않으므로 빌드가 멎는 곳은 로컬뿐이다.
+**이 근거가 지켜 주는 자리는 CI 와 개발 PC 다** — 서버는 빌드하지 않는다. CI 의 `docker` 잡이
+이미지가 여전히 빌드되는지만 보고, 실제 배포본은 `scripts/deploy.sh` 가 로컬에서 만든다.
 
 **메모리 상한을 셋 다 걸어 두었다(#127).** 실측은 `app` 164MiB / 420m · `db` 36MiB / 160m 이고
 시스템 전체가 573Mi / 953Mi 였다(`APP_MODE=mock` · 요청 0건 · cloudflared 제외 · 기동 직후).

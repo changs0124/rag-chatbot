@@ -86,7 +86,7 @@
 - 테스트는 **소스 옆에** 둔다(`useChat.test.ts`, `LoginPage.test.tsx`). 별도 `__tests__` 폴더를 만들지 않는다.
 - Vitest + Testing Library. 실행 `npm test`.
 
-## 테스트·품질 게이트
+## 테스트·CI 게이트
 
 - 백엔드 통합 테스트는 Testcontainers로 **실 PostgreSQL**을 띄운다(`AbstractPgIntegrationTest`). H2 대체 금지.
 - **실행 시각·시계 해상도에 따라 결과가 갈리는 검사를 두지 않는다.** 게이트가 되지 못하고, 어느 날 갑자기
@@ -97,22 +97,22 @@
     (시계 해상도가 거친 OS 에서는 우연히 통과하고 높은 OS 에서는 늘 실패한다).
 - `scripts/case-floors.env`의 케이스 수 하한(래칫)은 **테스트를 늘린 PR 에서 그 시점 실측값으로 함께 올린다.**
   올리지 않으면 새로 넣은 케이스가 래칫의 보호를 못 받는다. 내릴 때는 무엇이 줄었는지 `docs/06_changelog/CHANGELOG.md` 에 남긴다.
-- `scripts/check-doc-refs.sh`가 `docs/`·`README.md`의 참조 실재를 검사한다. **없는 파일 경로를 문서에 적으면 게이트가 실패한다.**
+- `scripts/check-doc-refs.sh`가 `docs/`·`README.md`의 참조 실재를 검사한다. **없는 파일 경로를 문서에 적으면 CI가 실패한다.**
 - `scripts/check-doc-sections.sh` 가 **섹션 이름**을 본다(#60). 위 검사는 파일이 있으면 통과하므로 없는 섹션을
   가리켜도 초록이었다 — #28 에서 실제로 그렇게 통과했다. **파일 참조가 바로 앞에 붙은** 「섹션」만 검사하고,
   헤딩의 번호 접두(`## 2. API 목록`)와 접미(`## 배포 (Vercel)`)를 견딘다.
   **못 잡는 것** : 같은 문서 안 참조(대상 파일이 없다) · 별명으로 부르는 것("백로그 「…」") ·
   섹션이 아닌 강조(「자료 없음」은 UI 배너 이름) · `docs/06_changelog/**`.
-- `scripts/check-runtime-versions.sh`가 `.nvmrc`·`backend/pom.xml`·`frontend/package.json` 의 런타임 버전이 서로 갈리지 않는지 대조한다.
+- `scripts/check-runtime-versions.sh`가 `.nvmrc`·`backend/pom.xml`의 런타임 버전과 CI 설정이 갈리지 않는지 대조한다.
   node 쪽은 `frontend/package.json`의 `engines.node` 까지 같이 본다 — **Vercel 은 `.nvmrc` 가 아니라 `engines.node` 로 빌드하므로**,
-  이것을 빼면 `.nvmrc` 만 올리고 `engines.node` 를 빠뜨려도 게이트는 통과하고 배포만 조용히 다른 런타임을 쓴다(실제로 있었던 일이다).
+  이것을 빼면 `.nvmrc` 만 올리고 `engines.node` 를 빠뜨려도 CI 는 통과하고 배포만 조용히 다른 런타임을 쓴다(실제로 있었던 일이다).
 - `scripts/check-doc-versions.sh` 가 **문서가 주장하는 버전**(`INDEX.md` 기술 스택 표 · `backend.md` 머리줄 ·
   `overview.md` 등)을 `pom.xml` · `frontend/package.json` · Spring Boot BOM 의 실제 값과 대조한다.
   문서 값이 실제의 **접두**면 통과한다 — 문서는 메이저만 적기도 하기 때문이다(`React 19` ↔ `19.2.7`).
-  **`./mvnw verify` 뒤에 돈다** : JUnit 은 `pom.xml` 에 없고 Boot BOM 이 관리해서 m2 가 채워진 뒤에만
-  읽을 수 있다. `check-all.sh` 가 그 순서를 지킨다 — 문서 검사만 먼저 도는 `docs` 모드에는 넣지 않았다.
+  **`backend` 잡에서 돈다** : JUnit 은 `pom.xml` 에 없고 Boot BOM 이 관리해서 `./mvnw verify` 로 m2 가
+  채워진 뒤에만 읽을 수 있다. checkout 과 bash 뿐인 `docs` 잡에 붙였으면 정작 잡아야 할 것을 못 잡았다.
   **못 잡는 것** : 스크립트 안의 표에 없는 라이브러리, 이름 없이 숫자만 적힌 서술, `docs/06_changelog/**`(이력이라
-  당시 값이 맞아 일부러 제외), 그리고 **버전이 아닌 목록형 서술**(게이트 목록 자체가 그렇다).
+  당시 값이 맞아 일부러 제외), 그리고 **버전이 아닌 목록형 서술**(CI 잡 목록·이 게이트 목록 자체가 그렇다).
 - `scripts/check-response-contract.sh` 가 `AdminDtos.DocumentResponse` · `summaryResult` 의 `<arg>` · 프론트 `RagDocument` ·
   `AdminPage.test.tsx` 의 `doc()` 픽스처, **네 곳의 필드 이름**을 대조한다. record 와 `resultMap` 은 순서까지, 프론트 쪽은
   이름 집합만 본다 — MyBatis 는 위치로 생성자를 찾지만 TS 의 필드 순서는 런타임 의미가 없다.
@@ -122,12 +122,18 @@
   그 타입이 **백엔드 record · resultMap 과 맞는지**는 보지 못한다. 서로 다른 것을 잡는다.
   이름이 아니라 **값**이 제 컬럼에서 왔는지는 `AdminDocumentFlowTest` 가 본다. 이름만 보면 결선이 어긋나도 통과하고,
   값만 보면 프론트가 따로 놀아도 통과한다.
-- 시크릿 스캔(gitleaks)·의존성 취약점 스캔(Trivy · `npm audit`)은 `check-all.sh` 가 돈다.
-  **gitleaks·Trivy 는 없으면 건너뛰고 그 사실을 크게 찍는다** — 조용히 넘어가면 「통과」와 「검사 안 함」이
-  구분되지 않는다. 커밋을 밀기 전에 최소 한 번은 설치해서 돌릴 것.
-- **GitHub Actions 는 쓰지 않는다(#127).** 비공개 저장소라 Actions 분이 유료 한도에 묶이는데,
-  잡 8개짜리 워크플로가 한도를 소진해 CI 가 통째로 멎었다. 검사를 버린 것이 아니라 실행 위치만
-  옮겼다 — 스크립트는 전부 그대로이고 `bash scripts/check-all.sh` 하나로 돈다.
+- 시크릿 스캔(gitleaks)·의존성 취약점 스캔(Trivy · `npm audit`)은 **주 1회 스케줄로 돈다**(#127).
+  종전에는 PR·푸시마다 돌렸으나, 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이고
+  **한도가 소진돼 CI 가 통째로 멎은 적이 있다.** 이 셋은 우리 커밋이 아니라 **바깥**(취약점 DB ·
+  커밋 이력 전체)이 바뀔 때 결과가 달라져, 변경마다 돌려도 같은 답이 반복될 뿐이었다.
+  급하면 Actions 탭에서 `workflow_dispatch` 로 즉시 돌린다.
+- **`.issue/**` 만 바뀐 푸시는 CI 를 건너뛴다**(`paths-ignore`). 증거 미러 커밋은 코드가 한 줄도
+  바뀌지 않는다. `pull_request` 에는 넣지 않았다 — 건너뛴 워크플로는 required checks 에서
+  pending 으로 남아 merge 를 막는다.
+- **푸시 전 예행은 `bash scripts/check-all.sh`** 다. CI 와 같은 스크립트를 로컬에서 돌린다.
+  `docs`(문서만) · `quick`(무거운 빌드 제외) · 전체 세 모드가 있고 종료 코드가 실패한 검사 수다.
+  gitleaks·Trivy 가 없으면 건너뛰되 **그 사실을 크게 찍는다** — 조용히 넘어가면 「통과」와
+  「검사 안 함」이 구분되지 않는다.
 
 ## Git 커밋 메시지
 
