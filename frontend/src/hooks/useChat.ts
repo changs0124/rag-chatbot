@@ -25,6 +25,17 @@ export function useChat() {
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  /**
+   * 대화 컨텍스트 세대. **대화를 바꾸는 모든 진입점에서 올린다.**
+   *
+   * `await` 뒤에 상태를 반영할 때 세대가 그대로인지 확인하지 않으면, 느린 응답이 그사이 바뀐
+   * 대화 위에 얹힌다 - 새 대화 생성 왕복 중 기존 대화를 고르면 그 대화의 이력 위에 새 턴이
+   * 쌓이고, 대화를 빠르게 두 번 고르면 응답이 역순으로 도착해 사이드바와 본문이 갈린다.
+   * 어느 쪽이든 새로고침하면 화면이 사라지므로 사용자는 무엇이 저장됐는지 알 수 없다.
+   */
+  const generation = useRef(0)
+  /** 새 대화 생성 왕복 중인지. streaming 이 아직 false 인 구간을 메운다 */
+  const creatingRef = useRef(false)
   // 실제 도달한 단계를 순서대로 담아 최소 표시 시간만큼 유지함(단계를 만들지 않고 읽을 시간만 줌)
   const stageQueue = useRef<string[]>([])
   const stageTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -72,11 +83,17 @@ export function useChat() {
   const selectConversation = useCallback(
     async (id: string) => {
       abortActiveStream()
+      const mine = ++generation.current
       setActiveId(id)
       setError(null)
       try {
-        setMessages(await getMessages(id))
+        const loaded = await getMessages(id)
+        // 그사이 다른 대화로 옮겼으면 버린다. 이 검사가 없으면 A→B 를 빠르게 눌렀을 때
+        // 늦게 도착한 A 의 이력이 B 화면을 덮어써, 사이드바는 B 인데 본문은 A 가 된다
+        if (generation.current !== mine) return
+        setMessages(loaded)
       } catch {
+        if (generation.current !== mine) return
         setMessages([])
       }
     },
@@ -85,6 +102,7 @@ export function useChat() {
 
   const newConversation = useCallback(() => {
     abortActiveStream()
+    generation.current++
     setActiveId(null)
     setMessages([])
     setError(null)
@@ -97,6 +115,7 @@ export function useChat() {
       if (activeId === id) {
         // 지운 대화를 떠나는 것도 전환임 - 안 끊으면 사라진 대화에 대고 스트림이 계속 돎
         abortActiveStream()
+        generation.current++
         setActiveId(null)
         setMessages([])
       }
@@ -118,20 +137,32 @@ export function useChat() {
   const send = useCallback(
     // 첨부는 입력창이 **고르는 즉시** 올려 두므로 여기서는 이미 올라간 것만 받음(업로드 책임이 컴포저에 있음)
     async (text: string, attachments: Attachment[]) => {
-      if (streaming) return
+      if (streaming || creatingRef.current) return
       setError(null)
 
       let convId = activeId
       const isNew = !convId
+      const mine = generation.current
       if (!convId) {
+        // **생성 왕복 중 두 번째 전송을 막는다.** streaming 은 스트림이 열려야 참이 되므로 이 구간에서는
+        // 아직 false 다. 막지 않으면 대화가 둘 만들어지고, 두 번째 컨트롤러가 abortRef 를 덮어쓴 뒤
+        // 첫 번째의 finally 가 그것을 null 로 지워 정지 버튼이 무력화된다
+        creatingRef.current = true
         try {
           const conv = await createConversation(text.slice(0, 30) || '새 대화')
+          // 생성을 기다리는 동안 사용자가 다른 대화를 골랐으면 이 턴을 버린다. 그냥 진행하면 방금
+          // 고른 대화의 이력 위에 이 메시지가 얹히고, 사이드바는 새 대화를 가리키는데 본문은 남의
+          // 것이 된다. 만들어진 대화는 목록에는 남긴다 - 서버에 실재하기 때문이다
           setConversations((prev) => [conv, ...prev])
+          if (generation.current !== mine) return
           setActiveId(conv.id)
           convId = conv.id
         } catch (e) {
+          if (generation.current !== mine) return
           setError(e instanceof ApiError ? e.message : '대화를 만들 수 없습니다')
           return
+        } finally {
+          creatingRef.current = false
         }
       }
 
