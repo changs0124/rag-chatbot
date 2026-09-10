@@ -117,10 +117,26 @@ export default function Composer({
     startUpload(retried)
   }
 
-  // 언마운트에서 남은 미리보기 URL 회수 - 안 하면 탭이 살아 있는 동안 원본이 메모리에 붙잡힘
+  /**
+   * 언마운트 정리 - 미리보기 URL 회수 + **진행 중인 업로드 중단과 고아 회수**(#94).
+   *
+   * URL 만 회수하던 동안에는 업로드가 계속 진행돼 파일이 서버에 남았고, 어떤 메시지에도 연결되지
+   * 않아 회수 크론을 기다리는 고아가 됐다. removeDraft 는 이 경우를 정확히 처리하는데
+   * **언마운트 경로만 빠져 있었다.**
+   *
+   * 순서가 중요하다 - draftsRef 를 마지막에 비워야, abort 보다 먼저 서버가 받아 버린 업로드가
+   * 뒤늦게 resolve 했을 때 startUpload 의 `some(...)` 가 거짓이 되어 **기존 회수 경로를 그대로 탄다.**
+   * 먼저 비우면 URL 회수 대상도 함께 사라진다.
+   */
   useEffect(
     () => () => {
-      draftsRef.current.forEach((d) => URL.revokeObjectURL(d.previewUrl))
+      draftsRef.current.forEach((d) => {
+        URL.revokeObjectURL(d.previewUrl)
+        d.controller.abort()
+        // 이미 올라간 것은 지금 지운다 - abort 는 서버가 이미 받은 것을 되돌리지 않는다
+        if (d.attachment) deleteAttachment(d.attachment.id).catch(() => {})
+      })
+      draftsRef.current = []
     },
     [],
   )

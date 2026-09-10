@@ -12,7 +12,7 @@ vi.mock('../lib/endpoints', () => ({
   streamChat: vi.fn().mockResolvedValue(undefined),
 }))
 
-const { createConversation, getMessages } = await import('../lib/endpoints')
+const { createConversation, getMessages, streamChat } = await import('../lib/endpoints')
 
 /** 손으로 resolve 할 수 있는 프라미스 - 「응답이 도착하는 순간」을 테스트가 정함 */
 function deferred<T>() {
@@ -142,6 +142,33 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
     })
 
     expect(vi.mocked(createConversation)).toHaveBeenCalledTimes(1)
+  })
+
+  /**
+   * #94 - 언마운트에서 진행 중인 스트림을 끊는다.
+   *
+   * 끊지 않으면 로그아웃해도 SSE 연결이 그대로 살아 서버가 답변을 끝까지 생성하고, 리더 루프가
+   * 언마운트된 훅의 setMessages 를 계속 호출한다. **로그인 화면에 도달한 뒤에도 이전 사용자의
+   * 요청이 진행 중**이고, 드나들기를 반복하면 연결이 누적된다.
+   */
+  it('언마운트하면 진행 중인 스트림을 끊음', async () => {
+    vi.mocked(createConversation).mockResolvedValue(conv('c1'))
+    let signal: AbortSignal | undefined
+    vi.mocked(streamChat).mockImplementation((_b, _h, s) => {
+      signal = s
+      return new Promise<void>(() => {}) // 끝나지 않는 스트림
+    })
+
+    const { result, unmount } = renderHook(() => useChat())
+    await act(async () => {
+      void result.current.send('질문', [])
+    })
+    expect(signal).toBeDefined()
+    expect(signal!.aborted).toBe(false)
+
+    unmount()
+
+    expect(signal!.aborted).toBe(true)
   })
 
   /** 반대편 - 아무도 전환하지 않으면 종전대로 새 대화가 활성화된다 */
