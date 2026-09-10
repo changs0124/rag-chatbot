@@ -66,6 +66,15 @@ app:
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-4o}
     vector-store-id: ${OPENAI_VECTOR_STORE_ID:}
+    # 스트리밍(/responses) 읽기 타임아웃. **app.chat.sse-timeout-ms 보다 작아야 하며, 크거나 같으면
+    # 기동에 실패함**(#76·#92) - emitter 가 죽은 뒤에도 워커가 읽기에 붙어 있으면 그동안 스레드와
+    # 동시 스트림 권한이 함께 잡혀, 화면에 아무 스트림도 없는데 429 를 받게 됨.
+    # 종전에는 하드코딩 10분이라 SSE 타임아웃과 정확히 같았고 결말이 밀리초 경합이었음
+    stream-read-timeout-ms: ${OPENAI_STREAM_READ_TIMEOUT_MS:540000}
+    # 그 밖의 호출(문서 업로드·상태 조회·삭제) 읽기 타임아웃. 스트리밍이 아니므로 짧다 -
+    # 종전에는 클라이언트가 하나뿐이라 10분이 여기에도 걸려, in_progress 3건이면 관리자 목록
+    # 요청 하나가 최대 30분 톰캣 스레드를 잡았음
+    request-timeout-ms: ${OPENAI_REQUEST_TIMEOUT_MS:30000}
   cors:
     # 프론트 출처(개발: Vite 5173). 배포 시 실제 도메인으로 교체
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}

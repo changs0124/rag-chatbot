@@ -20,13 +20,18 @@ import com.ragchatbot.openai.OpenAiService.Stage;
  */
 class OpenAiRealUsageTest {
 
+	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
+	private static final long STREAM_READ_MS = 540_000;
+	private static final long REQUEST_MS = 30_000;
+	private static final long SSE_MS = 600_000;
+
 	private static InputStream sse(String body) {
 		return new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
 	}
 
 	private static OpenAiRealService service() {
 		// 생성자는 키만 비지 않으면 뜸. consumeStream 은 네트워크를 타지 않는 순수 파서라 이대로 충분함
-		return new OpenAiRealService("test-key", "gpt-4o", "", "https://example.invalid/v1", null);
+		return new OpenAiRealService("test-key", "gpt-4o", "", "https://example.invalid/v1", STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 	}
 
 	private static ChatCompletion consume(String body) {

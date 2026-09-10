@@ -5,6 +5,30 @@
 ## [Unreleased]
 
 ### Fixed
+- **업스트림 읽기 타임아웃을 스트리밍용/일반용으로 나누고 SSE 타임아웃보다 짧게 강제한다(#76·#92).**
+  `RestClient` 인스턴스가 하나뿐이라 `setReadTimeout(10분)` 이 `/responses` 스트림뿐 아니라
+  `documentStatus` · `uploadDocument` · `deleteDocument` · `deleteResources` **전부**에 걸렸다.
+  그 값의 주석은 「스트리밍이라 넉넉히」라며 **스트리밍으로만 정당화**하고 있었다.
+
+  `in_progress` 문서 3건 + OpenAI 무응답이면 `GET /api/admin/documents` 하나가 `documentStatus` 를
+  순차로 3번 불러 **최대 30분** 톰캣 스레드를 잡았고, 첨부 5개 대화 삭제는 **최대 50분**이었다.
+  `ConversationService` 의 try/catch 는 예외만 삼키지 지연은 못 막는다.
+
+  그리고 스트리밍 쪽 10분은 `app.chat.sse-timeout-ms` 기본값과 **정확히 같은 값**이었다. 워커의
+  블로킹 read 는 인터럽트로 깨지지 않으므로(`Future.cancel(true)` 로도 안 된다) emitter 가 죽어도
+  읽기가 끝나야 스레드와 동시 스트림 권한이 풀리는데, 두 값이 같으니 **그 창이 밀리초 경합으로
+  열렸다** — 사용자는 화면에 아무 스트림도 없는데 「이미 응답을 받는 중」 429 를 받았고,
+  `max-concurrent-per-user` 가 1 이라 그것이 곧 전면 차단이었다.
+
+  이제 `app.openai.stream-read-timeout-ms`(기본 9분)가 `app.chat.sse-timeout-ms`(기본 10분) 이상이면
+  **기동에 실패한다.** 값이 아니라 **부등식**을 잠갔다 — 10분을 기다릴 수도 없고 그럴 필요도 없다.
+  기본값끼리도 성립하는지는 컨텍스트를 띄워 `@Value` 기본값이 실제로 꽂히게 두고 확인한다.
+
+  **풀 크기 결합도 함께 잠갔다.** `ChatExecutorConfig` 주석이 「상한이 풀보다 크면 초과분이 큐에
+  쌓여 응답 한 바이트 없이 SSE 타임아웃까지 기다린다(2026-07-28 CI 에서 600초 행으로 실제 관측)」를
+  계약으로 선언하는데, **그것을 지키는 것이 「같은 프로퍼티 문자열을 쓴다」는 사실뿐**이었다.
+
+  케이스 6건이 늘어 `BACKEND_MIN` 을 215 → **221** 로 올렸다. 두 가드 모두 변이로 확인했다.
 - **컨테이너 로그를 회전시킨다(#103).** `docker-compose.yml` 에 logging 설정이 없어 Docker 기본
   `json-file` 이었고, **기본값에는 회전이 없다.** 이 앱은 첫 관리자의 임시 비밀번호를 기동 로그에
   한 번 찍으므로(`AdminRoleSynchronizer`, 의도된 선택) 그 값이
