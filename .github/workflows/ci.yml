@@ -17,14 +17,26 @@ on:
   # 상시 검사에서 뺀 잡(secrets · deps)을 주 1회 몰아서 돈다. 아래 각 잡의 주석 참고
   schedule:
     - cron: '0 18 * * 0'   # 매주 월요일 03:00 KST (UTC 일요일 18:00)
+  # **수동 실행은 7잡 전부를 돈다** - 스케줄 잡만 고르지 않는다. 오래 CI 를 못 돌린 뒤
+  # (한도 소진 등) 한 번에 전부 확인하는 것이 이 버튼의 주 용도이기 때문이다.
+  # 비용은 사람이 누를 때만 드므로 통제된다.
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# 연속 푸시 시 이전 run 을 취소함 - 잡 전체가 밀린 커밋마다 겹쳐 도는 것을 막음
+# 연속 푸시 시 이전 run 을 취소함 - 잡 전체가 밀린 커밋마다 겹쳐 도는 것을 막음.
+#
+# **그룹 키에 event_name 을 넣는다(#129).** 넣지 않으면 `github.ref` 가 세 경우 모두
+# `refs/heads/main` 이라 **push · schedule · workflow_dispatch 가 한 그룹에 묶인다.**
+# `cancel-in-progress: true` 와 만나면 이렇게 된다 :
+#   - 주간 보안 스캔(gitleaks 전체 이력 · Trivy)이 도는 중에 main 푸시가 하나 들어오면
+#     **스캔이 조용히 취소되고 다음 주까지 재시도가 없다.** 아무도 알아채지 못한다
+#   - 반대로 cron 이 뜨면 진행 중이던 푸시 CI 가 죽는다. 이쪽도 재실행해 주는 사람이 없다
+#   - "급하면 workflow_dispatch 로 즉시" 라는 탈출구가 바로 이 충돌에 제일 잘 걸린다
+# 이벤트별로 레인을 나누면 연속 푸시 취소라는 원래 의도는 그대로 두면서 이 사고만 없앤다.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -129,7 +141,8 @@ jobs:
     # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
     # 이 잡들은 우리 커밋이 아니라 **바깥(취약점 DB · 커밋 이력 전체)이 바뀔 때** 결과가
     # 달라진다. PR 마다 돌려도 같은 답이 반복될 뿐이라 비용만 든다.
-    # 급하면 Actions 탭에서 workflow_dispatch 로 즉시 돌릴 수 있다.
+    # 급하면 Actions 탭에서 workflow_dispatch 로 즉시 돌릴 수 있다 - 그때는 코드 잡까지
+    # 함께 돈다(위 트리거 주석 참고).
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -152,7 +165,8 @@ jobs:
     # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
     # 이 잡들은 우리 커밋이 아니라 **바깥(취약점 DB · 커밋 이력 전체)이 바뀔 때** 결과가
     # 달라진다. PR 마다 돌려도 같은 답이 반복될 뿐이라 비용만 든다.
-    # 급하면 Actions 탭에서 workflow_dispatch 로 즉시 돌릴 수 있다.
+    # 급하면 Actions 탭에서 workflow_dispatch 로 즉시 돌릴 수 있다 - 그때는 코드 잡까지
+    # 함께 돈다(위 트리거 주석 참고).
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -174,7 +188,8 @@ jobs:
     # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
     # 이 잡들은 우리 커밋이 아니라 **바깥(취약점 DB · 커밋 이력 전체)이 바뀔 때** 결과가
     # 달라진다. PR 마다 돌려도 같은 답이 반복될 뿐이라 비용만 든다.
-    # 급하면 Actions 탭에서 workflow_dispatch 로 즉시 돌릴 수 있다.
+    # 급하면 Actions 탭에서 workflow_dispatch 로 즉시 돌릴 수 있다 - 그때는 코드 잡까지
+    # 함께 돈다(위 트리거 주석 참고).
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     defaults:
