@@ -47,6 +47,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    logging:
+      # **회전을 켠다.** Docker 기본 json-file 은 회전이 없어 로그가 무한히 쌓인다 -
+      # 이 앱은 첫 관리자의 임시 비밀번호를 기동 로그에 한 번 찍으므로(AdminRoleSynchronizer),
+      # 회전이 없으면 그 값이 /var/lib/docker/containers/<id>/<id>-json.log 에 **평문으로 영구
+      # 잔류**한다. 서버에 셸이 닿는 사람이면 grep 한 번으로 관리자 계정을 얻는다.
+      # 부수적으로 uploads·pgdata 와 같은 디스크를 쓰므로 로그가 차면 DB 가 먼저 멎는다
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/api/health || exit 1"]
       interval: 30s
