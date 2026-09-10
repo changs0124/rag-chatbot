@@ -66,6 +66,9 @@ public class OpenAiRealService implements OpenAiService {
 	 */
 	private static final String OPENAI_BETA_ASSISTANTS_V2 = "assistants=v2";
 
+	/** 스트리밍({@code /responses}) 전용. 읽기 타임아웃이 길다 */
+	private final RestClient streamClient;
+	/** 그 밖의 모든 호출(문서 업로드·상태·삭제). 읽기 타임아웃이 짧다 */
 	private final RestClient client;
 	private final ObjectMapper mapper = new ObjectMapper();
 	private final FileStorage fileStorage;
@@ -102,20 +105,41 @@ public class OpenAiRealService implements OpenAiService {
 			@Value("${app.openai.model:gpt-4o}") String model,
 			@Value("${app.openai.vector-store-id:}") String vectorStoreId,
 			@Value("${app.openai.base-url:https://api.openai.com/v1}") String baseUrl,
+			@Value("${app.openai.stream-read-timeout-ms:540000}") long streamReadTimeoutMs,
+			@Value("${app.openai.request-timeout-ms:30000}") long requestTimeoutMs,
+			@Value("${app.chat.sse-timeout-ms:600000}") long sseTimeoutMs,
 			FileStorage fileStorage) {
 		// live 모드인데 키가 비면 부팅 즉시 실패(per-request 401 대신 fail-fast). 이 빈은 app.mode=live에서만 로드됨
 		if (apiKey == null || apiKey.isBlank()) {
 			throw new IllegalStateException(
 					"APP_MODE=live 인데 OPENAI_API_KEY 가 비어 있음. 실 연동 키를 env로 주입할 것");
 		}
+		// **워커가 emitter 보다 오래 살면 안 됨**(#76·#92). 부등식이 깨지면 emitter 가 타임아웃으로
+		// 죽은 뒤에도 워커가 읽기에 붙어 있어, 그동안 스레드와 동시 스트림 권한이 함께 잡힌다 -
+		// 화면에는 아무 스트림도 없는데 "이미 응답을 받는 중" 429 를 받는다. 종전에는 두 값이
+		// 정확히 같아(둘 다 10분) 결말이 밀리초 경합이었다
+		if (streamReadTimeoutMs >= sseTimeoutMs) {
+			throw new IllegalStateException(
+					"app.openai.stream-read-timeout-ms(" + streamReadTimeoutMs + ") 는 "
+							+ "app.chat.sse-timeout-ms(" + sseTimeoutMs + ") 보다 작아야 함 - "
+							+ "크면 SSE 스트림이 끝난 뒤에도 워커가 자원을 붙잡는다");
+		}
 		this.model = model;
 		this.sharedVectorStoreId = vectorStoreId;
 		this.fileStorage = fileStorage;
-		// 스트리밍이라 read timeout은 넉넉히. connect는 짧게 잡아 장애 시 빨리 실패시킴
+		// **클라이언트를 둘로 나눈다**(#92). 종전에는 하나뿐이라 스트리밍용 10분이 문서 상태 조회 ·
+		// 업로드 · 삭제에도 그대로 걸렸다 - in_progress 3건이면 관리자 목록 요청 하나가 최대 30분,
+		// 첨부 5개 대화 삭제가 최대 50분 톰캣 스레드를 잡았다. 그 값은 스트리밍으로만 정당화된다
+		this.streamClient = restClient(baseUrl, apiKey, Duration.ofMillis(streamReadTimeoutMs));
+		this.client = restClient(baseUrl, apiKey, Duration.ofMillis(requestTimeoutMs));
+	}
+
+	/** connect 는 짧게 잡아 장애 시 빨리 실패시킴. read 만 용도별로 다르다 */
+	private static RestClient restClient(String baseUrl, String apiKey, Duration readTimeout) {
 		SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
 		factory.setConnectTimeout(Duration.ofSeconds(5));
-		factory.setReadTimeout(Duration.ofMinutes(10));
-		this.client = RestClient.builder()
+		factory.setReadTimeout(readTimeout);
+		return RestClient.builder()
 				.requestFactory(factory)
 				// 기본값이 실 엔드포인트임. 설정으로 뺀 이유는 **증분 수신을 실 코드 경로로 잴 수 있게**
 				// 하려는 것임(M3 스파이크) - 캔드 InputStream 으로는 RestClient 가 응답을 통째로
@@ -162,7 +186,7 @@ public class OpenAiRealService implements OpenAiService {
 			body.put("instructions", RAG_INSTRUCTIONS);
 		}
 
-		return client.post()
+		return streamClient.post()
 				// 상대 경로여야 빌더의 baseUrl 이 적용됨. 종전에는 절대 URI 라 baseUrl 이 죽은 설정이었음
 				.uri("/responses")
 				.contentType(MediaType.APPLICATION_JSON)

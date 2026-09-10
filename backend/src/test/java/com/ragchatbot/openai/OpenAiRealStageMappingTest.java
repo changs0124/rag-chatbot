@@ -21,6 +21,11 @@ import com.ragchatbot.openai.OpenAiService.Stage;
  */
 class OpenAiRealStageMappingTest {
 
+	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
+	private static final long STREAM_READ_MS = 540_000;
+	private static final long REQUEST_MS = 30_000;
+	private static final long SSE_MS = 600_000;
+
 	/** 공용 Store가 없어 file_search 도구를 안 붙인 응답 - 검색 이벤트가 아예 오지 않음 */
 	private static final String SSE_WITHOUT_SEARCH = """
 			data:{"type":"response.created"}
@@ -45,7 +50,7 @@ class OpenAiRealStageMappingTest {
 
 	private OpenAiRealService service() {
 		// api-key는 blank가 아니어야 빈이 생성됨(fail-fast 가드). 이 테스트는 네트워크를 타지 않음
-		return new OpenAiRealService("test-key", "gpt-4o", "", "http://localhost:1", null);
+		return new OpenAiRealService("test-key", "gpt-4o", "", "http://localhost:1", STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 	}
 
 	private List<Stage> stagesOf(String sse, List<String> tokensOut, ChatCompletion[] resultOut) {
