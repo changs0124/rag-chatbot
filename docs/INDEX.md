@@ -15,7 +15,7 @@
 | 저장소 | 로컬 디스크(`FILE_STORAGE_ROOT`) — `FileStorage` 인터페이스로 S3 교체 가능 |
 | 테스트 | 백엔드 JUnit 6 + Testcontainers(실 PostgreSQL) · 프론트 Vitest + Testing Library |
 | Lint | oxlint (프론트) |
-| CI | GitHub Actions — 변경마다 5잡(backend · frontend · docker · contract · docs), **secrets · deps 2종은 주 1회 스케줄**(#127). 푸시 전 로컬 예행은 `bash scripts/check-all.sh` |
+| CI | GitHub Actions — 변경마다 4잡(backend · frontend · docker · static), **secrets · deps 2종은 주 1회 스케줄**(#127 · #129). 푸시 전 로컬 예행은 `bash scripts/check-all.sh` |
 
 ## 실행
 

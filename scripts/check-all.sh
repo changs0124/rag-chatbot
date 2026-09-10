@@ -15,12 +15,27 @@
 #   bash scripts/check-all.sh quick    # 무거운 빌드 빼고 (docs + contract + 런타임 버전)
 #
 # 종료 코드는 **실패한 검사 수**다. 0 이면 전부 통과.
-set -uo pipefail
+# **`-e` 를 켠다(#129).** 없으면 저장소 밖에서 실행할 때 `git rev-parse` 가 실패해 `cd ""` 가 되고,
+# 그대로 **현재 디렉터리 기준으로** 검사가 돈다 - `rm -f vitest-report.json` 과 `cd frontend` 가
+# 엉뚱한 곳을 건드린다. 검사 실패는 `run()` 이 잡아 삼키므로 -e 가 흐름을 끊지 않는다.
+#
+# `pipefail` 은 이 셸의 파이프라인에만 걸린다. **`bash -c '... | ...'` 자식은 상속하지 않으므로**,
+# 앞으로 파이프를 쓰는 검사를 추가하면 그 안에서 `set -o pipefail` 을 직접 켜야 한다.
+set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 MODE="${1:-all}"
 fail=0
 declare -a FAILED=()
+declare -a SKIPPED=()
+
+# **건너뛴 검사를 따로 센다(#129).** 종전에는 노란 줄만 찍고 요약은 `fail` 만 봐서,
+# docker/gitleaks/trivy 가 셋 다 없어도 **"전부 통과" + exit 0** 이 나왔다.
+# 한 건도 돌리지 않고 초록불이 뜬다 - 이 스크립트가 스스로 경고하던 바로 그 혼동이다.
+skip() {
+	printf '""N""' "$1" "$2"
+	SKIPPED+=("$1 - $2")
+}
 
 run() {
 	local name="$1"; shift
@@ -34,26 +49,54 @@ run() {
 	fi
 }
 
-# --- 문서 계열 : JDK·Node 없이 돈다 (종전 docs 잡) ---------------------------
+# 요약 출력 - 조기 종료(docs/quick)와 전체 실행이 **같은 형식**을 쓰도록 함수로 뺐다(#129).
+# 종전에는 조기 종료가 "실패 N건" 만 찍어 건너뜀이 보고되지 않았다.
+summary() {
+	printf '\n────────────────────────────\n'
+	if [ "$fail" -eq 0 ]; then
+		if [ "${#SKIPPED[@]}" -eq 0 ]; then
+			printf '\033[32m전부 통과\033[0m\n'
+		else
+			# **"전부 통과"라고 쓰지 않는다.** 돌린 것만 통과했을 뿐이다
+			printf '\033[32m돌린 검사는 전부 통과\033[0m\n'
+		fi
+	else
+		printf '\033[31m실패 %d건:\033[0m\n' "$fail"
+		for f in "${FAILED[@]}"; do printf '  - %s\n' "$f"; done
+	fi
+
+	if [ "${#SKIPPED[@]}" -ne 0 ]; then
+		printf '\033[33m\n건너뜀 %d건 - 이 검사들은 돌지 않았다:\033[0m\n' "${#SKIPPED[@]}"
+		for k in "${SKIPPED[@]}"; do printf '\033[33m  - %s\033[0m\n' "$k"; done
+		printf '\033[33m도구를 설치하고 다시 돌리기 전까지 이 항목은 "통과"가 아니라 "모름"이다.\033[0m\n'
+	fi
+
+	# 종료 코드는 **실패한 검사 수**다. 건너뜀은 코드에 반영하지 않는다 - gitleaks/trivy 가
+	# Windows 개발기에 기본으로 없어, 건너뜀을 실패로 만들면 매번 빨간불이라 곧 무시하게 된다.
+	# 대신 위 요약에서 "통과"와 "모름"을 말로 구분한다.
+	exit "$fail"
+}
+
+# --- 문서 계열 : JDK·Node 없이 돈다 (CI 의 static 잡) ------------------------
 run "문서 참조 실재"        bash scripts/check-doc-refs.sh
 run "문서 섹션 이름 대조"    bash scripts/check-doc-sections.sh
 
 if [ "$MODE" = "docs" ]; then
-	printf '\n실패 %d건\n' "$fail"
+	summary
 	exit "$fail"
 fi
 
-# --- 계약·버전 : 가벼움 (종전 contract 잡) -----------------------------------
+# --- 계약·버전 : 가벼움 (계약은 CI 의 static 잡, 런타임 버전은 각 코드 잡) ----
 run "응답 계약 대조"         bash scripts/check-response-contract.sh
 run "런타임 버전 대조(java)" bash scripts/check-runtime-versions.sh java
 run "런타임 버전 대조(node)" bash scripts/check-runtime-versions.sh node
 
 if [ "$MODE" = "quick" ]; then
-	printf '\n실패 %d건\n' "$fail"
+	summary
 	exit "$fail"
 fi
 
-# --- 백엔드 (종전 backend 잡) -------------------------------------------------
+# --- 백엔드 (CI 의 backend 잡) -------------------------------------------------
 # `check-doc-versions.sh` 는 .m2 가 채워진 뒤에만 실제 값을 읽으므로 verify 뒤에 둔다.
 #
 # **`clean` 을 붙인다.** 원격 CI 는 매번 빈 러너라 필요 없었지만, 로컬은 `target/` 이 남아
@@ -64,7 +107,7 @@ run "백엔드 clean verify"    bash -c 'cd backend && ./mvnw -B clean verify'
 run "백엔드 케이스 수 하한"   bash scripts/check-case-floor.sh backend
 run "문서 버전 주장 대조"     bash scripts/check-doc-versions.sh
 
-# --- 프론트 (종전 frontend 잡) ------------------------------------------------
+# --- 프론트 (CI 의 frontend 잡) ------------------------------------------------
 # **의존성부터 깐다.** 종전 CI 는 매번 빈 러너에서 시작해 `npm ci` 가 첫 단계였다. 로컬로 옮기면서
 # 이걸 빠뜨리면 새 워크트리(node_modules 가 없다)에서 lint·test·build 가 전부 "명령 없음"으로
 # 죽는다 — 실제로 그렇게 4건이 한꺼번에 실패했다. `npm ci` 는 lock 파일과 정확히 일치시키므로
@@ -79,41 +122,39 @@ run "프론트 test"            bash -c 'cd frontend && rm -f vitest-report.json
 run "프론트 build"           bash -c 'cd frontend && npm run build'
 run "프론트 케이스 수 하한"   bash scripts/check-case-floor.sh frontend
 
-# --- 이미지 (종전 docker 잡) --------------------------------------------------
+# --- 이미지 (CI 의 docker 잡) --------------------------------------------------
 # 배포 산출물이 조용히 썩는 것을 막는다 - pom·소스 구조가 바뀌어 Dockerfile 이 깨지면
 # 정작 배포하는 날이 아니라 여기서 먼저 드러난다. 종전 CI 의 의도를 그대로 가져왔다
 if command -v docker >/dev/null 2>&1; then
-	run "백엔드 이미지 빌드"  docker build -t rag-chatbot-backend:check backend
+	# **`deploy.sh` 와 같은 태그로 빌드한다(#129).** 종전에는 여기가 `:check`, deploy 가 `:latest`
+	# 라 **같은 Dockerfile 을 320MB 씩 두 번** 빌드했고, `:latest` 가 로컬에 아예 없어
+	# `deploy.sh --skip-build` 가 즉시 실패했다. 태그를 맞추면 **게이트를 통과한 바로 그 이미지가
+	# 배포된다** - `check-all.sh` 뒤에 `deploy.sh --skip-build` 를 부르면 재빌드 없이 그대로 나간다
+	run "백엔드 이미지 빌드"  docker build -t rag-chatbot-backend:latest backend
 else
-	printf '\n\033[33m▶ 백엔드 이미지 빌드 — 건너뜀 (docker 없음)\033[0m\n'
+	skip "백엔드 이미지 빌드" "docker 없음"
 fi
 
-# --- 시크릿 스캔 (종전 secrets 잡) --------------------------------------------
+# --- 시크릿 스캔 (CI 의 secrets 잡 · 주 1회) --------------------------------------------
 # 도구가 없으면 **건너뛴 사실을 크게 남긴다.** 조용히 넘어가면 "통과"와 "검사 안 함"이
 # 구분되지 않는다 - 종전 CI 가 trivy 에 list-all-pkgs 를 켠 것과 같은 이유다.
 # 설치 : https://github.com/gitleaks/gitleaks/releases (CI 가 쓰던 버전은 8.30.1)
 if command -v gitleaks >/dev/null 2>&1; then
 	run "시크릿 스캔(전체 이력)" gitleaks git . --no-banner --redact
 else
-	printf '\n\033[33m▶ 시크릿 스캔 — 건너뜀 (gitleaks 없음). 커밋 전 최소 한 번은 돌릴 것\033[0m\n'
+	skip "시크릿 스캔" "gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것"
 fi
 
-# --- 의존성 취약점 (종전 deps 잡) ---------------------------------------------
+# --- 의존성 취약점 (CI 의 deps 잡 · 주 1회) ---------------------------------------------
 run "프론트 의존성 audit"    bash -c 'cd frontend && npm audit --audit-level=high'
 if command -v trivy >/dev/null 2>&1; then
 	# `--list-all-pkgs` 는 종전 CI 가 켜 두던 것이다 - 해석한 패키지를 출력에 남겨야
 	# 「취약점 0건」과 「패키지를 한 건도 해석하지 못함」이 구분된다
 	run "백엔드 의존성 스캔"  trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --list-all-pkgs backend
 else
-	printf '\n\033[33m▶ 백엔드 의존성 스캔 — 건너뜀 (trivy 없음)\033[0m\n'
+	skip "백엔드 의존성 스캔" "trivy 없음"
 fi
 
 # --- 요약 --------------------------------------------------------------------
-printf '\n────────────────────────────\n'
-if [ "$fail" -eq 0 ]; then
-	printf '\033[32m전부 통과\033[0m\n'
-else
-	printf '\033[31m실패 %d건:\033[0m\n' "$fail"
-	for f in "${FAILED[@]}"; do printf '  - %s\n' "$f"; done
-fi
-exit "$fail"
+
+summary

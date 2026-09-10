@@ -19,7 +19,10 @@ cd "$(git rev-parse --show-toplevel)"
 HOST="${DEPLOY_HOST:-free-vm}"
 ZONE="${DEPLOY_ZONE:-us-west1-b}"
 PROJECT="${DEPLOY_PROJECT:-free-vm-haeya-260910}"
-REMOTE_DIR="${DEPLOY_DIR:-/home/User/deploy}"
+# **홈 상대 경로로 둔다(#129).** `/home/User/deploy` 는 Windows 사용자명 `User` 에 우연히
+# 맞았던 값이다. gcloud 가 OS Login 을 쓰면 원격 사용자가 `haeya0124_gmail_com` 이 되어
+# 경로가 통째로 어긋난다. 상대 경로면 어느 계정으로 붙든 그 홈 아래를 가리킨다
+REMOTE_DIR="${DEPLOY_DIR:-deploy}"
 IMAGE="rag-chatbot-backend:latest"
 TARBALL="backend-image.tar.gz"
 
@@ -33,6 +36,18 @@ for a in "$@"; do
 	esac
 done
 
+# 320MB 빌드와 90MB 전송을 **다 끝낸 뒤** command not found 로 죽는 것을 막는다(#129).
+# 늦고 비싼 실패를 앞으로 당긴다
+preflight() {
+	local missing=0
+	for c in docker gcloud gzip; do
+		command -v "$c" >/dev/null 2>&1 || { echo "필요한 명령이 없다: $c" >&2; missing=1; }
+	done
+	[ "$missing" -eq 0 ] || exit 2
+	# scp 는 대상 디렉터리를 만들어 주지 않는다. 없으면 전송 단계에서 실패한다
+	ssh_run "mkdir -p '$REMOTE_DIR'"
+}
+
 say() { printf '\n\033[1m▶ %s\033[0m\n' "$1"; }
 ssh_run() { gcloud compute ssh "$HOST" --zone="$ZONE" --project="$PROJECT" --quiet --command="$1"; }
 
@@ -45,6 +60,11 @@ if [ "$DRY" = 1 ]; then
 EOF
 	exit 0
 fi
+
+# 0. 프리플라이트 ------------------------------------------------------------
+# 필요한 명령과 원격 디렉터리를 **빌드 전에** 확인한다
+say "사전 확인"
+preflight
 
 # 1. 빌드 --------------------------------------------------------------------
 # 서버가 아니라 여기서 빈다. compose 본체에 build 키가 없는 것과 짝을 이룬다
@@ -68,30 +88,63 @@ gcloud compute scp "$TMP/$TARBALL" "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project
 gcloud compute scp docker-compose.yml "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
 
 # 4. 로드 + 기동 --------------------------------------------------------------
-# 이전 이미지는 태그를 잃고 dangling 으로 남는다. 30GB 디스크가 차면 DB 가 먼저 멎으므로
-# prune 으로 정리한다 - 컨테이너가 쓰는 이미지는 지워지지 않는다
+# **실행 중인 컨테이너가 방금 넣은 이미지를 쓰는지 확인한다(#129).** `docker compose up -d` 는
+# 이미지 ID 가 같으면 컨테이너를 재생성하지 않는다. 그러면 로드도 no-op, up 도 no-op 인데
+# 뒤의 헬스체크는 **옛 컨테이너가 돌려주는 200** 을 보고 즉시 성공으로 판정한다 -
+# 새 코드가 한 줄도 안 올라갔는데 "배포 완료"가 찍힌다. 헬스체크가 "8080 에서 누가 200 을
+# 주는가"만 보기 때문이다. 이미지 ID 를 대조해 그 구멍을 막는다.
+#
+# 옛 이미지 정리(prune)는 여기서 하지 않는다 - 헬스체크를 통과한 뒤로 미룬다(6단계 주석 참고).
+#
+# **load 전에 `:previous` 태그로 롤백 지점을 만든다.** 새 이미지가 latest 를 가져가면 이전
+# 것은 태그를 잃고 dangling 이 된다. 헬스체크 실패 시 되돌릴 유일한 자산인데 이름이 없으면
+# 사람이 찾아 쓰기 어렵다 - 레지스트리를 안 쓰기로 한 설계의 대가다.
+#
+# **원격 명령 문자열 안에는 `#` 주석을 쓰지 않는다(#129).** gcloud 가 Windows 에서 개행을
+# 어떻게 넘기는지 이 환경에서 측정하지 못했는데, 만약 한 줄로 합쳐지면 `#` 뒤가 전부 주석이
+# 되어 **배포가 아무것도 하지 않고 성공을 반환한다.** 각 줄을 `;` 로 끝내 개행이 사라져도
+# 같은 뜻이 되게 하고, 설명은 전부 이 바깥에 둔다.
 say "서버에서 로드 후 재기동"
-ssh_run "set -e
-cd '$REMOTE_DIR'
-sudo docker load -i '$TARBALL'
-rm -f '$TARBALL'
-sudo docker compose up -d
-sudo docker image prune -f
-echo '--- 상태 ---'
-sudo docker compose ps
-echo '--- 메모리 ---'
-sudo docker stats --no-stream --format 'table {{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}'
+ssh_run "set -e;
+cd '$REMOTE_DIR';
+if sudo docker image inspect '$IMAGE' >/dev/null 2>&1; then sudo docker tag '$IMAGE' 'rag-chatbot-backend:previous'; fi;
+sudo docker load -i '$TARBALL';
+rm -f '$TARBALL';
+want=\$(sudo docker image inspect -f '{{.Id}}' '$IMAGE');
+sudo docker compose up -d;
+got=\$(sudo docker inspect -f '{{.Image}}' \$(sudo docker compose ps -q app));
+if [ \"\$want\" != \"\$got\" ]; then echo '경고: app 이 방금 넣은 이미지로 갈리지 않았다 - force-recreate 한다'; sudo docker compose up -d --force-recreate app; fi;
+echo '--- 상태 ---';
+sudo docker compose ps;
+echo '--- 메모리 ---';
+sudo docker stats --no-stream --format 'table {{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}';
 free -h | head -2"
 
 # 5. 헬스체크 ----------------------------------------------------------------
 # JVM + Flyway 기동에 시간이 걸린다. compose healthcheck 의 start_period 와 같은 90초를 준다
 say "헬스체크 (최대 90초)"
-ssh_run "for i in \$(seq 1 18); do
-  code=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/health || true)
-  if [ \"\$code\" = '200' ]; then echo \"OK (\${i}0초 이내)\"; exit 0; fi
-  sleep 5
-done
-echo '헬스체크 실패 - 로그를 확인할 것: sudo docker compose logs app | tail -50'
+ssh_run "cd '$REMOTE_DIR';
+for i in \$(seq 1 18); do code=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/health || true); if [ \"\$code\" = '200' ]; then echo \"OK (\$(( (i - 1) * 5 ))초 경과)\"; exit 0; fi; sleep 5; done;
+echo '=== 헬스체크 실패 ===';
+sudo docker compose ps;
+echo '';
+echo '!! 아래 로그에는 첫 관리자 임시 비밀번호가 섞여 있을 수 있다(#103).';
+echo '!! 최초 부트스트랩 직후라면 특히 그렇다. 붙여넣기 전에 확인할 것.';
+sudo docker compose logs --tail=60 app;
+echo '--- 종료 코드 137 이면 OOM 이다 ---';
+free -h | head -2;
+echo '';
+echo '되돌리려면 (이전 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :';
+echo \"  cd $REMOTE_DIR && sudo docker tag rag-chatbot-backend:previous $IMAGE && sudo docker compose up -d\";
 exit 1"
+
+# **헬스체크가 통과한 뒤에야 옛 이미지를 버린다(#129).**
+# 종전에는 `up -d` 직후에 prune 을 돌렸다. 그 시점의 이전 이미지는 latest 태그를 새 것에
+# 뺏겨 dangling 이고 컨테이너도 이미 갈아탄 뒤라 **즉시 삭제**됐다. 레지스트리를 쓰지 않는
+# 설계라 서버의 그 이미지가 **유일한 롤백 자산**인데, 검증 전에 버린 셈이다 -
+# 새 이미지가 Flyway 오류로 못 뜨면 되돌릴 것이 아무것도 남지 않았다.
+say "옛 이미지 정리"
+ssh_run "sudo docker rmi rag-chatbot-backend:previous 2>/dev/null || true;
+sudo docker image prune -f"
 
 say "배포 완료"
