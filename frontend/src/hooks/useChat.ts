@@ -58,7 +58,20 @@ export function useChat() {
     setStage(null)
   }, [])
 
-  useEffect(() => () => clearStages(), [clearStages])
+  /**
+   * 언마운트 정리 - 단계 타이머와 **진행 중인 스트림**을 함께 끊는다(#94).
+   *
+   * abort 가 없던 동안에는 로그아웃해도 SSE 연결이 그대로 살아, 서버가 답변을 끝까지 생성하고
+   * 리더 루프가 언마운트된 훅의 setMessages 를 계속 호출했다. **로그인 화면에 도달한 뒤에도
+   * 이전 사용자의 요청이 진행 중**이었고, 화면을 드나들기를 반복하면 연결이 누적됐다.
+   */
+  useEffect(
+    () => () => {
+      abortRef.current?.abort()
+      clearStages()
+    },
+    [clearStages],
+  )
 
   const refreshConversations = useCallback(() => {
     listConversations().then(setConversations).catch(() => {})

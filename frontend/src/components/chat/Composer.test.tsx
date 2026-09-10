@@ -242,4 +242,53 @@ describe('Composer', () => {
     fireEvent.paste(textarea, { clipboardData: { files: [] } })
     expect(uploadFile).toHaveBeenCalledTimes(1)
   })
+
+  /**
+   * #94 - 언마운트에서 진행 중인 업로드를 끊는다.
+   *
+   * 끊지 않으면 화면을 떠난 뒤에도 파일이 서버에 올라가고, 어떤 메시지에도 연결되지 않아
+   * 회수 크론을 기다리는 고아가 된다.
+   */
+  it('언마운트하면 진행 중인 업로드를 끊음', () => {
+    vi.mocked(uploadFile).mockReturnValue(deferred<Attachment>().promise)
+    const { unmount } = render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    pick(image())
+    const signal = vi.mocked(uploadFile).mock.calls[0][1] as AbortSignal
+    expect(signal.aborted).toBe(false)
+
+    unmount()
+
+    expect(signal.aborted).toBe(true)
+  })
+
+  /**
+   * abort 보다 먼저 서버가 받아 버린 업로드는 <b>뒤늦게 성공</b>한다.
+   *
+   * abort 는 요청을 끊을 뿐 서버가 이미 받은 것을 되돌리지 않는다. 그때 기존 회수 경로가
+   * 그대로 돌아야 한다 - `startUpload` 의 `some(...)` 가 거짓이 되도록 언마운트가 draftsRef 를
+   * 비우기 때문이다. 비우지 않으면 언마운트된 컴포넌트에 setDrafts 를 시도하고 파일은 남는다.
+   */
+  it('언마운트 뒤 뒤늦게 성공한 업로드는 서버에서도 지움', async () => {
+    const d = deferred<Attachment>()
+    vi.mocked(uploadFile).mockReturnValue(d.promise)
+    const { unmount } = render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    pick(image())
+
+    unmount()
+    d.resolve(attachment('a1'))
+
+    await waitFor(() => expect(deleteAttachment).toHaveBeenCalledWith('a1'))
+  })
+
+  /** 이미 올라간 첨부를 둔 채 떠나면 그 자리에서 지운다 - 뒤늦은 성공을 기다릴 것이 없다 */
+  it('업로드가 끝난 첨부를 둔 채 언마운트하면 서버에서 지움', async () => {
+    vi.mocked(uploadFile).mockResolvedValue(attachment('a2'))
+    const { unmount } = render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    pick(image())
+    await waitFor(() => expect(screen.getByAltText('photo_0001.png')).toBeInTheDocument())
+
+    unmount()
+
+    await waitFor(() => expect(deleteAttachment).toHaveBeenCalledWith('a2'))
+  })
 })
