@@ -244,6 +244,37 @@ describe('Composer', () => {
   })
 
   /**
+   * #101 - 업로드 실패 사유가 **텍스트로** 보인다.
+   *
+   * 종전에는 카드의 `title` 속성뿐이라 **터치 기기에서는 툴팁이 뜨지 않았다.** 모바일 사용자는
+   * 작은 경고 아이콘만 보고 전송 버튼이 왜 회색인지 알 방법이 없었다.
+   * `features.md` FEAT-CHAT-001 이 「서버가 준 메시지를 보여준다」를 이미 요구하고 있었다.
+   */
+  it('업로드가 실패하면 사유가 화면 텍스트로 보임', async () => {
+    const d = deferred<Attachment>()
+    vi.mocked(uploadFile).mockReturnValue(d.promise)
+    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    pick(image())
+
+    d.reject(new ApiError(400, '이미지 크기는 10MB 를 넘을 수 없습니다'))
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent('이미지 크기는 10MB 를 넘을 수 없습니다'),
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('보낼 수 없습니다')
+  })
+
+  /** 반대편 - 실패가 없으면 그 줄이 뜨지 않는다 */
+  it('실패가 없으면 오류 줄이 뜨지 않음', async () => {
+    vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
+    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    pick(image())
+
+    await waitFor(() => expect(screen.getByAltText('photo_0001.png')).toBeInTheDocument())
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  /**
    * #94 - 언마운트에서 진행 중인 업로드를 끊는다.
    *
    * 끊지 않으면 화면을 떠난 뒤에도 파일이 서버에 올라가고, 어떤 메시지에도 연결되지 않아
