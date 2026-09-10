@@ -540,6 +540,24 @@
   낮은 버전을 관리하면 조용히 내려갈 수 있다.
 
 ### Changed
+- **대화 삭제의 OpenAI 정리 주석이 실행된 적 없는 경로를 설명하고 있었다(#124).** 주석 세 곳만 고쳤고
+  **동작은 한 줄도 바뀌지 않았다.**
+
+  `ConversationService.delete` 는 첨부를 모아 `deleteResources` 를 부르고, 인터페이스·구현·호출부의
+  주석이 「대화 삭제 시 OpenAI 파일/Vector Store 를 정리한다」고 적었다. **그 인자는 항상 `(null, [])`
+  이다** — `conversations.vector_store_id` 와 `attachments.openai_file_id` 에 값을 넣는 자리가 각각
+  삽입 한 곳뿐이고 거기서 `null` 로만 쓰이며, 이후 갱신하는 UPDATE 문이 없다
+  (`AttachmentRepository` 의 유일한 UPDATE 인 `linkToMessage` 는 `message_id` 만 건드린다).
+
+  `erd.md` 는 두 컬럼을 이미 「비어 있다 · 미사용」으로 적고 있었다 — **어긋난 곳은 코드 주석뿐이었다.**
+
+  **컬럼도 죽은 분기도 지우지 않았다.** 루트 `CLAUDE.md` 가 「사전 존재 죽은 코드는 언급만」이고,
+  컬럼을 실제로 걷으려면 마이그레이션과 문서 넷이 따라온다. 고치는 이유는 따로 있다 — 다음 사람이
+  「지우면 정리된다」고 읽고 그 위에 얹으면 **검증한 적 없는 코드가 그날 처음 돈다.** 공용 스토어
+  보호 분기가 실제로 도는 것을 본 사람이 아직 없다.
+
+  #105 「1. 대화별 Vector Store 경로 전체가 죽어 있다」에서 **값싸게 고칠 것으로 남겨 둔 유일한 항목**이며,
+  이로써 그 항목은 닫혔다.
 - **Boot 4 · Testcontainers 2 의 남은 deprecated API 를 정리했다(#64). deprecation 4건 → 0건.**
   #63 이 `asText` 9건을 없앤 뒤 남아 있던 것들이다.
 
