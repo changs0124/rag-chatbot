@@ -4,6 +4,81 @@
 
 ## [Unreleased]
 
+### Changed
+- **백엔드 이미지를 CI 가 GHCR 로 올리고 서버는 pull 만 한다(#127).** 배포 대상이 GCP `e2-micro`
+  (메모리 953Mi)로 정해졌는데, `docker-compose.yml` 의 `app.build: ./backend` 는 서버에서 Maven
+  멀티스테이지 빌드를 돌린다 — **build 스테이지의 JVM 하나로 물리 메모리를 넘긴다.** 스왑으로
+  버텨도 `pd-standard` 30GB 의 쓰기 성능(약 45 IOPS)에서 스래싱이 걸려 사실상 끝나지 않는다.
+
+  **본체에서 `build` 키를 없앴다.** 절차로 "서버에서 빌드하지 말자" 고 정하면, 이미지를 못 찾은
+  `docker compose up` 이 조용히 빌드로 빠지는 경로가 그대로 남는다. `APP_MODE` 를 명시 옵트인으로
+  뒤집은 것과 같은 판단이다 — 사고 경로를 구조에서 없앤다. 로컬 빌드는 새로 만든
+  `docker-compose.build.yml` 을 겹쳐서 한다.
+
+  `ci.yml` 의 `docker` 잡은 이미 같은 이미지를 빌드하고 **버리고 있었다.** main 푸시에서만
+  `:latest` 와 커밋 SHA 태그로 GHCR 에 민다. PR 은 기존대로 빌드만 한다 — 「배포 산출물이 조용히
+  썩는 것을 막음」이라는 원래 의도는 그대로다. 패키지는 public 이라 서버에 `docker login` 이 없다.
+
+- **CI 를 무료 한도 안으로 줄였다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶인다.
+  잡 8개짜리 워크플로가 PR·푸시마다 10~15분씩 먹었고, 한도가 소진되자 **CI 가 통째로 멎었다** —
+  `The job was not started because recent account payments have failed or your spending limit
+  needs to be increased`. 잡이 step 하나도 못 밟고 4초 만에 전부 실패했다.
+
+  셋을 바꿨다 :
+
+  1. **`secrets` · `deps` 2종을 주 1회 스케줄로 뺐다.** 이 셋은 우리 커밋이 아니라 **바깥**
+     (취약점 DB · 커밋 이력 전체)이 바뀔 때 결과가 달라진다 — 변경마다 돌려도 같은 답이 반복될
+     뿐이었다. 급하면 `workflow_dispatch` 로 즉시 돌린다. 변경마다 도는 잡은 8 → **5개**다.
+  2. **`.issue/**` 만 바뀐 푸시를 건너뛴다**(`paths-ignore`). 증거 미러 커밋은 코드가 한 줄도
+     바뀌지 않는데 잡을 다 돌리고 있었다. main 에 이미 88개가 쌓여 있어 일회성이 아니었다.
+     `pull_request` 에는 넣지 않았다 — 건너뛴 워크플로는 required checks 에서 pending 으로 남아
+     merge 를 막는다. `docs/06_changelog/**` 도 빼지 않았다 — `check-doc-refs.sh` 가 그 경로도
+     스캔해서, 건너뛰면 CHANGELOG 만 고친 커밋의 깨진 참조가 통과한다.
+  3. **`scripts/check-all.sh` 를 넣었다.** CI 와 같은 스크립트를 푸시 전에 로컬에서 돌린다.
+     `docs` · `quick` · 전체 세 모드, 종료 코드는 실패한 검사 수다. **CI 를 대체하지 않는다** —
+     실패할 걸 알면서 밀어 러너를 태우지 않는 것이 곧 비용 절약이다.
+
+  **로컬로 옮겨 보고서야 드러난 것들이 있다.** 원격 CI 는 매번 빈 러너라 가려져 있었다 :
+  `npm ci` 가 없으면 새 워크트리에서 프론트 4건이 한꺼번에 죽는다 · `npm test` 에 json 리포터가
+  없으면 `check-case-floor.sh` 가 이전 실행의 수를 읽는다 · `target/` 이 남아 있으면 지운 테스트
+  클래스의 surefire XML 이 계속 계수된다(2026-07-28 에 하한을 6건 부풀린 전례가 있고 그때는
+  원격 CI 가 잡아냈다). `check-all.sh` 는 셋 다 막는다.
+
+- **배포를 레지스트리 없이 한다(#127).** `scripts/deploy.sh` 가 로컬에서 빌드해
+  `docker save` → `scp` → `docker load` 로 서버에 넣고, 기동과 헬스체크(최대 90초)까지 한다.
+  압축 후 90MB 남짓이고 GCP 인바운드 전송은 무료다.
+
+  **GHCR 을 쓰지 않는 이유** : 비공개 패키지는 저장 500MB · 전송 1GB/월 한도가 걸리는데 이미지가
+  320MB(압축 98MB)라, 커밋 SHA 태그를 몇 개만 쌓아도 저장 한도를 넘긴다. Actions 분이 같은
+  성격의 한도로 이미 한 번 사고를 냈으므로 함정을 하나 더 들이지 않았다.
+  **CI 의 `docker` 잡은 종전대로 빌드만 하고 버린다** — 배포 산출물이 조용히 썩는 것을 막는
+  검증이고, 배포본을 만드는 것은 `deploy.sh` 뿐이다.
+
+  **감수하는 약점** : 레지스트리에 이미지 이력이 남지 않아 **되돌리려면 그 커밋을 다시 빌드해야
+  한다.** 배포가 잦지 않은 단일 서버 전제에서 감수한다. 저장소를 공개로 바꾸거나 유료 한도를 열면
+  GHCR 로 되돌아갈 수 있고, 그때 바뀌는 것은 `image:` 한 줄과 배포 절차 문단뿐이다.
+
+- **compose 에 메모리 상한과 저사양 튜닝을 걸었다(#127).** 기본 설정으로는 세 컨테이너 합계가
+  물리 메모리에 육박한다. 상한이 없으면 커널 OOM killer 가 **누구를 죽일지 고르는데**, `db` 가
+  걸리면 `pgdata` 가 위험하다 — 상한은 `app` 이 먼저 죽게 만들어 DB 를 지키는 장치이기도 하다.
+
+  `app` 420m · `db` 160m · `cloudflared` 64m. `app` 은 `MaxRAMPercentage=65` · `UseSerialGC` ·
+  `Xss512k`, `db` 는 `shared_buffers=48MB` · `max_connections=20` 으로 묶었다. Hikari 풀은
+  `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5` — `application.yml` 에 hikari 설정이 없어
+  기본값이 10 이었고, **소스를 고치지 않고** 환경변수로만 줄였다.
+
+  **`memswap_limit` 은 일부러 비웠다.** 미지정이면 Docker 가 `mem_limit` 만큼 스왑을 더 허용해
+  (합계 2배) 서버에 잡아 둔 스왑 2GB 가 기동 피크를 받는다. 지정하면 그 완충이 사라진다.
+
+  **실기기 실측(e2-micro, 2026-09-10)** — `app` 164MiB/420m · `db` 36MiB/160m, 시스템 전체
+  573Mi/953Mi, 스왑 30MiB, `GET /api/health` 200. `APP_MODE=mock` · 요청 0건 · cloudflared 제외
+  조건이라 **하한에 가까운 값**이다. 추정치(app ~300MB · db ~100MB)보다 낮게 나왔지만 상한은
+  그대로 둔다 — 트래픽과 첨부 처리가 힙을 밀어올리고 cloudflared 가 30~50MB 를 더 쓴다.
+
+  보존한 것 — 터널만 외부 노출 · `127.0.0.1:8080` 루프백 바인딩 · 로그 회전(#103 과 직결) ·
+  `pgdata`·`uploads` 볼륨 · `db` healthcheck 선행 · `start_period: 90s`. 앞의 넷은 실기기에서
+  `docker inspect` · `docker volume ls` · `compose ps` 로 확인했다.
+
 ### Fixed
 - **스트리밍 중에도 위로 스크롤할 수 있다(#100).** 자동 스크롤 effect 가 `[messages, stage]` 에 걸려
   있고 `patch` 가 토큰마다 새 배열을 만들어 **토큰 하나당 한 번** 돌았다. 「사용자가 위로 올렸는지」
