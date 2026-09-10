@@ -30,7 +30,7 @@ vi.mock('../lib/api', async (importOriginal) => {
   }
 })
 
-const { updatePassword } = await import('../lib/endpoints')
+const { updatePassword, updateTheme } = await import('../lib/endpoints')
 
 /** 두 칸을 채우고 변경 버튼을 누름(버튼은 두 값이 다 차야 활성화됨) */
 function submitPasswordChange() {
@@ -110,5 +110,40 @@ describe('MyPage 비밀번호 변경', () => {
     renderMyPage()
 
     expect(await screen.findByText(/문서 관리/)).toBeInTheDocument()
+  })
+
+  /**
+   * #78 - 테마 변경이 실패하면 화면을 되돌린다.
+   *
+   * 낙관적으로 먼저 적용하는 것은 의도다(왕복을 기다리면 클릭이 굼떠 보인다). 문제는 실패해도
+   * 되돌리지 않아 **화면은 새 테마인데 서버는 옛 값**이었다는 것이다. `ThemeContext` 가
+   * localStorage 에도 이미 저장해 둔 상태라, 다시 로그인해 서버 값이 적용될 때까지
+   * **어느 쪽이 진짜인지 알 수 없었다.**
+   *
+   * 적용 결과는 `document.documentElement.dataset.theme` 에 드러나므로 그것으로 잰다.
+   */
+  it('테마 변경이 실패하면 이전 테마로 되돌아감', async () => {
+    vi.mocked(updateTheme).mockRejectedValue(new Error('network'))
+    renderMyPage()
+    await screen.findByRole('button', { name: '다크' })
+    const before = document.documentElement.dataset.theme
+
+    fireEvent.click(screen.getByRole('button', { name: '다크' }))
+
+    await waitFor(() => expect(screen.getByText(/오류|실패/)).toBeInTheDocument())
+    expect(document.documentElement.dataset.theme).toBe(before)
+  })
+
+  /** 반대편 - 성공하면 새 테마가 그대로 남는다 */
+  it('테마 변경이 성공하면 적용된 채로 남음', async () => {
+    vi.mocked(updateTheme).mockResolvedValue({
+      id: 'u1', email: 'a@b.com', name: '사용자', theme: 'dark', role: 'user',
+    })
+    renderMyPage()
+    await screen.findByRole('button', { name: '다크' })
+
+    fireEvent.click(screen.getByRole('button', { name: '다크' }))
+
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'))
   })
 })
