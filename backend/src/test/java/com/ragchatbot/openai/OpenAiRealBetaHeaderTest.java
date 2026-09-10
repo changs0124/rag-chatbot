@@ -26,6 +26,11 @@ import com.sun.net.httpserver.HttpServer;
  */
 class OpenAiRealBetaHeaderTest {
 
+	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
+	private static final long STREAM_READ_MS = 540_000;
+	private static final long REQUEST_MS = 30_000;
+	private static final long SSE_MS = 600_000;
+
 	/** 관측한 요청 한 건. beta 가 null 이면 헤더가 없었다는 뜻 */
 	private record Seen(String method, String path, String beta) {
 		@Override
@@ -79,7 +84,7 @@ class OpenAiRealBetaHeaderTest {
 	}
 
 	private OpenAiRealService service() {
-		return new OpenAiRealService("test-key", "gpt-4o", "shared-store", baseUrl, null);
+		return new OpenAiRealService("test-key", "gpt-4o", "shared-store", baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 	}
 
 	/** vector store 를 건드리는 네 경로를 모두 태움 */

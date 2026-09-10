@@ -187,6 +187,9 @@ public class ChatService {
 		// 여기서 하는 일은 **무슨 일이 일어났는지 기록에 남기는 것** 하나뿐이다
 		AtomicBoolean timedOut = new AtomicBoolean(false);
 		emitter.onTimeout(() -> timedOut.set(true));
+		// **catch 에서도 봐야 함**(#97). 스트림이 완주한 뒤 저장이 실패하면 인용과 사용량이 이미
+		// 손에 있는데, 여기 없으면 재시도가 그것을 버리고 빈 값으로 덮어쓴다
+		ChatCompletion completion = null;
 		try {
 			sendQuietly(emitter, "meta",
 					Map.of("messageId", asstMsgId.toString(), "conversationId", prepared.conversationId().toString()));
@@ -201,7 +204,7 @@ public class ChatService {
 			};
 			onStage.accept(Stage.ANALYZING, List.of());
 
-			ChatCompletion completion = openAiService.streamChat(
+			completion = openAiService.streamChat(
 					new ChatInput(prepared.message(), prepared.refs(), prepared.vectorStoreId(), prepared.history()),
 					token -> {
 						firstTokenSeen[0] = true;
@@ -232,29 +235,48 @@ public class ChatService {
 			// 부분 텍스트가 비면 저장하지 않음 - 빈 답변 버블을 남기면 화면(버블 제거)과 재조회가 어긋남.
 			// stopped=true 로 남겨야 무자료 배너가 붙지 않음 - 인용은 스트림 끝에 오므로 여기서는 늘 0건임
 			if (!saved) {
-				savePartial(prepared, userId, asstMsgId, buffer.toString(), "complete", true, timedOut.get());
+				savePartial(prepared, userId, asstMsgId, buffer.toString(), "complete", true, timedOut.get(), null);
 			}
 			completeQuietly(emitter);
 		} catch (Exception ex) {
-			// 진짜 오류 - 부분 텍스트를 error 상태로 저장(질문만 남고 답변 소실 방지)
+			// 진짜 오류 - 부분 텍스트를 error 상태로 저장(질문만 남고 답변 소실 방지).
+			//
+			// **completion 이 있으면 그것을 그대로 넘긴다**(#97). 스트림이 완주한 뒤 저장이 실패한
+			// 경로가 여기로 오는데(saveAssistant 가 던짐), 그 시점에는 인용과 사용량을 **이미 알고
+			// 있다.** 종전에는 빈 값으로 덮어써 재조회 시 본문에는 각주 [1][2] 가 남았는데 출처
+			// 목록만 비어 있었고, 사용량 합계도 조용히 낮아졌다 - 「모르면 null」(FEAT-OPS-001)의
+			// 취지와 반대로 **알고 있는 값을 버린 것**이다. 중단 경로는 정말로 모르므로 null 이 맞다.
+			//
+			// status 는 error 로 둔다. 저장이 실제로 한 번 실패했고, 화면에도 error 이벤트가 나가므로
+			// complete 로 두면 화면(오류)과 재조회(정상)가 갈린다 - 이 저장소가 반복해 고쳐 온 모양이다
 			if (!saved) {
-				savePartial(prepared, userId, asstMsgId, buffer.toString(), "error", false, timedOut.get());
+				savePartial(prepared, userId, asstMsgId, buffer.toString(), "error", false, timedOut.get(),
+						completion);
 			}
 			sendIgnoringFailure(emitter, "error", Map.of("code", "STREAM_ERROR", "message", "응답 생성 중 오류"));
 			emitter.completeWithError(ex);
 		}
 	}
 
-	/** 중단·오류 경로의 부분 저장. 중단인데 받은 것이 없으면 아무것도 남기지 않음 */
+	/**
+	 * 중단·오류 경로의 부분 저장. 중단인데 받은 것이 없으면 아무것도 남기지 않음.
+	 *
+	 * @param completion 스트림이 완주해 <b>손에 쥔 것이 있으면</b> 그것, 아니면 null. null 이면 인용 0건 ·
+	 *                   사용량 null 로 저장함 - 중단·업스트림 오류 경로는 완료 이벤트가 오기 전에 끝나
+	 *                   <b>정말로 모르기</b> 때문임. 알면서 버리는 것과 몰라서 비우는 것을 여기서 가름
+	 */
 	private void savePartial(PreparedChat prepared, UUID userId, UUID asstMsgId, String text, String status,
-			boolean stopped, boolean timedOut) {
+			boolean stopped, boolean timedOut, ChatCompletion completion) {
 		if (text.isEmpty() && "complete".equals(status)) {
 			return;
 		}
 		try {
-			// 중단·오류 경로는 완료 이벤트가 오기 전에 끝나 사용량을 알 수 없음 - 추정하지 않고 null
+			// 모르면 null - 추정하지 않음(FEAT-OPS-001). 아는 경우에만 completion 이 넘어옴
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, text, status, stopped,
-					timedOut, List.of(), null, null);
+					timedOut,
+					completion == null ? List.of() : completion.citations(),
+					completion == null ? null : completion.inputTokens(),
+					completion == null ? null : completion.outputTokens());
 		} catch (Exception ignored) {
 			// 저장 실패는 무시(이미 비정상 종료 경로)
 		}

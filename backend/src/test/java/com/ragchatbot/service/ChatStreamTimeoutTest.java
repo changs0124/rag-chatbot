@@ -149,15 +149,26 @@ class ChatStreamTimeoutTest {
 
 	private static final class RecordingPersistence extends ChatPersistenceService {
 		private final List<Saved> saves = new ArrayList<>();
+		/** 첫 저장을 던지게 함 - 스트림 완주 뒤 저장 실패 경로를 만드는 데 씀(#97) */
+		private int failFirst;
 
 		RecordingPersistence() {
 			super(null, null, null);
+		}
+
+		RecordingPersistence failingFirstSave() {
+			this.failFirst = 1;
+			return this;
 		}
 
 		@Override
 		public void saveAssistant(UUID conversationId, UUID userId, UUID assistantMsgId, String content, String status,
 				boolean stopped, boolean timedOut, List<OpenAiService.CitationData> citations, Integer inputTokens,
 				Integer outputTokens) {
+			if (failFirst > 0) {
+				failFirst--;
+				throw new IllegalStateException("DB 커넥션 끊김");
+			}
 			saves.add(new Saved(content, status, stopped, timedOut, citations, inputTokens, outputTokens));
 		}
 	}
@@ -244,6 +255,54 @@ class ChatStreamTimeoutTest {
 		assertThat(saved.status()).isEqualTo("error");
 		assertThat(saved.stopped()).isFalse();
 		assertThat(saved.timedOut()).isTrue(); // ← 진짜 오류와 구분하는 유일한 축
+	}
+
+	/**
+	 * 스트림이 완주한 뒤 저장이 실패하면 <b>손에 쥔 인용과 사용량을 재시도가 그대로 싣는다</b>(#97).
+	 *
+	 * <p>첫 저장이 던지면 {@code @Transactional} 이라 롤백되고 같은 id 로 재시도가 돈다. 종전에는 그
+	 * 재시도가 {@code List.of(), null, null} 을 고정으로 넘겨 <b>알고 있는 값을 버렸다</b> - 재조회하면
+	 * 본문에는 각주 [1][2] 가 남았는데 출처 목록만 비어 있었고 사용량 합계도 조용히 낮아졌다.
+	 * 「모르면 null」(FEAT-OPS-001)의 취지와 정반대다.
+	 */
+	@Test
+	void save_failure_after_full_stream_keeps_citations_and_usage() {
+		var persistence = new RecordingPersistence().failingFirstSave();
+		var emitter = new TimeoutableEmitter();
+		var service = chatService(
+				new HookedOpenAi(List.of("완전한", "답변"), Integer.MAX_VALUE, () -> {
+				}, null), persistence);
+
+		service.stream(UUID.randomUUID(), prepared(), emitter);
+
+		assertThat(persistence.saves).hasSize(1); // 첫 시도는 던졌으므로 기록이 없다
+		Saved saved = persistence.saves.get(0);
+		assertThat(saved.status()).isEqualTo("error"); // 저장이 실제로 실패했고 화면에도 오류가 나갔다
+		assertThat(saved.content()).isEqualTo("완전한답변");
+		assertThat(saved.citations()).hasSize(1);
+		assertThat(saved.inputTokens()).isEqualTo(100);
+		assertThat(saved.outputTokens()).isEqualTo(20);
+	}
+
+	/**
+	 * 반대편 — <b>중단 경로는 정말로 모르므로</b> 비운다.
+	 *
+	 * <p>이 케이스가 없으면 「무조건 completion 을 싣는 구현」이 위 케이스를 통과한다. 중단은 인용이
+	 * 도착하기 전에 끝나므로 지어내면 거짓이 된다.
+	 */
+	@Test
+	void aborted_stream_still_saves_empty_citations_and_null_usage() {
+		var persistence = new RecordingPersistence();
+		var emitter = new TimeoutableEmitter();
+		var service = chatService(
+				new HookedOpenAi(List.of("부분", "답변"), 1, emitter::fireTimeout, null), persistence);
+
+		service.stream(UUID.randomUUID(), prepared(), emitter);
+
+		Saved saved = persistence.saves.get(0);
+		assertThat(saved.citations()).isEmpty();
+		assertThat(saved.inputTokens()).isNull();
+		assertThat(saved.outputTokens()).isNull();
 	}
 
 	/**
