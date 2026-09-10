@@ -190,6 +190,7 @@ export default function Composer({
   }
 
   const pending = drafts.some((d) => d.status !== 'done')
+  const failed = drafts.filter((d) => d.status === 'error')
 
   function doSend() {
     if (streaming || pending) return
@@ -225,6 +226,19 @@ export default function Composer({
               />
             ))}
           </div>
+        )}
+
+        {/*
+          실패 사유를 **텍스트로** 내보낸다(#101). 카드의 `title` 속성만으로는 터치 기기에서
+          툴팁이 뜨지 않아, 모바일 사용자는 작은 경고 아이콘만 보고 전송 버튼이 왜 회색인지
+          알 방법이 없었다. `features.md` FEAT-CHAT-001 이 「서버가 준 메시지를 보여준다」를
+          이미 요구하고 있었는데 구현이 `title` 에 그친 것이다.
+        */}
+        {failed.length > 0 && (
+          <p role="alert" className="mb-2 px-1 text-[13px] text-danger">
+            첨부 {failed.length}건이 실패해 보낼 수 없습니다 — {failed[0].message ?? '업로드 실패'}
+            {failed.length > 1 && ` 외 ${failed.length - 1}건`}
+          </p>
         )}
 
         <div className="flex items-end gap-2 rounded-3xl border border-line bg-raised px-2 py-1.5 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--c-accent-soft)]">
@@ -307,6 +321,14 @@ export default function Composer({
               className="grid h-10 w-10 place-items-center rounded-full bg-accent text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97] disabled:scale-100 disabled:opacity-35"
               // 올라가지 않은(또는 실패한) 첨부를 둔 채 보내면 그 이미지가 빠진 줄 모르고 보내게 됨
               disabled={pending || (!text.trim() && drafts.length === 0)}
+              // 비활성 버튼은 이유를 말하지 않으면 고장으로 읽힌다(#101)
+              title={
+                failed.length > 0
+                  ? '실패한 첨부를 재시도하거나 지워야 보낼 수 있습니다'
+                  : pending
+                    ? '업로드가 끝나면 보낼 수 있습니다'
+                    : undefined
+              }
             >
               <IconArrowUp />
             </button>
