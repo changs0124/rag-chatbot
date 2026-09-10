@@ -5,6 +5,21 @@
 ## [Unreleased]
 
 ### Fixed
+- **`live-integration.md` 의 코드 참조를 줄번호에서 심볼로 바꿨다(#79).** 네 곳 중 **세 곳이 낡아
+  엉뚱한 코드를 가리키고 있었다** — `AdminDocumentService.java:85-88` 은 이제 확장자 파싱이고,
+  `OpenAiRealService.java:338-340` 은 인용 annotation 순회다. `JwtService.java:31-33` 은 이번 리뷰의
+  #81 수정이 그 아래 줄을 밀어내며 방금 낡았다.
+
+  이 문서는 「막히면 서버 로그부터 본다」를 전제로 **원인 추적 지도를 자처한다**(3-1절).
+  그 지도가 가리키는 줄이 전혀 다른 코드면, **키를 처음 꽂는 날 가장 헤매기 쉬운 순간**에 헛다리를
+  짚게 된다.
+
+  **줄번호를 고치지 않고 심볼 참조로 바꿨다.** `check-doc-refs.sh` 는 백틱 경로의 **파일 실재만** 보고
+  `:85-88` 은 패턴에서 잘려 나가 아무도 안 본다 — 숫자를 맞춰 봐야 다음 커밋에 또 낡는다.
+  `JwtSecretPolicy.require` · `AdminDocumentService.upload` 처럼 이름으로 가리키면 그 표류 자체가 없어진다.
+
+  `application.yml:10` 만은 실제로 맞았지만 같은 이유로 `spring.datasource.url` 로 바꿨다.
+  `CHANGELOG.md` 의 줄번호 2건은 **그 시점의 기록**이라 그대로 둔다.
 - **첨부 업로드와 비밀번호 변경에 사용자별 분당 상한을 걸었다(#95).** `RateLimiterService` 를 부르는
   곳이 채팅과 로그인뿐이라, 계정 하나를 가진 내부자가 **앱과 DB 를 함께 멎게 할 수 있었다.**
 
