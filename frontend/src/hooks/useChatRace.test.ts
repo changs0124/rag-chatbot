@@ -12,7 +12,8 @@ vi.mock('../lib/endpoints', () => ({
   streamChat: vi.fn().mockResolvedValue(undefined),
 }))
 
-const { createConversation, getMessages, streamChat } = await import('../lib/endpoints')
+const { createConversation, getMessages, streamChat, deleteConversation, renameConversation } =
+  await import('../lib/endpoints')
 
 /** 손으로 resolve 할 수 있는 프라미스 - 「응답이 도착하는 순간」을 테스트가 정함 */
 function deferred<T>() {
@@ -169,6 +170,47 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
     unmount()
 
     expect(signal!.aborted).toBe(true)
+  })
+
+  /**
+   * #77 - 삭제 실패가 화면에 드러난다.
+   *
+   * 종전에는 catch 가 없어 확인 모달은 닫히고 목록에는 대화가 그대로 남는데 **아무 표시가 없었다.**
+   * 사용자는 「삭제를 눌렀는데 그대로다」만 보고 콘솔에는 unhandled rejection 만 남았다.
+   */
+  it('삭제가 실패하면 오류가 뜨고 목록도 그대로다', async () => {
+    vi.mocked(deleteConversation).mockRejectedValue(new Error('network'))
+    const { result } = renderHook(() => useChat())
+
+    await act(async () => {
+      await result.current.deleteConversation('A')
+    })
+
+    expect(result.current.error).toBeTruthy()
+  })
+
+  /** 이름 변경도 같다 - 실패하면 헤더가 옛 제목으로 조용히 되돌아가던 자리다 */
+  it('이름 변경이 실패하면 오류가 뜬다', async () => {
+    vi.mocked(renameConversation).mockRejectedValue(new Error('network'))
+    const { result } = renderHook(() => useChat())
+
+    await act(async () => {
+      await result.current.renameConversation('A', '새 제목')
+    })
+
+    expect(result.current.error).toBeTruthy()
+  })
+
+  /** 반대편 - 성공하면 오류가 뜨지 않고 목록에서 빠진다 */
+  it('삭제가 성공하면 오류 없이 목록에서 빠진다', async () => {
+    vi.mocked(deleteConversation).mockResolvedValue(undefined)
+    const { result } = renderHook(() => useChat())
+
+    await act(async () => {
+      await result.current.deleteConversation('A')
+    })
+
+    expect(result.current.error).toBeNull()
   })
 
   /** 반대편 - 아무도 전환하지 않으면 종전대로 새 대화가 활성화된다 */
