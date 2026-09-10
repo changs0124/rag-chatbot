@@ -21,11 +21,18 @@ class ChatHistoryTest {
 	private static final int BUDGET = 6000;
 
 	private static Message msg(String role, String content) {
-		return new Message(UUID.randomUUID(), UUID.randomUUID(), role, content, "complete", false, null, null, null);
+		return new Message(UUID.randomUUID(), UUID.randomUUID(), role, content, "complete", false, false,
+				null, null, null);
 	}
 
 	private static Message msg(String role, String content, String status, boolean stopped) {
-		return new Message(UUID.randomUUID(), UUID.randomUUID(), role, content, status, stopped, null, null, null);
+		return new Message(UUID.randomUUID(), UUID.randomUUID(), role, content, status, stopped, false,
+				null, null, null);
+	}
+
+	private static Message msg(String role, String content, String status, boolean stopped, boolean timedOut) {
+		return new Message(UUID.randomUUID(), UUID.randomUUID(), role, content, status, stopped, timedOut,
+				null, null, null);
 	}
 
 	@Test
@@ -54,6 +61,40 @@ class ChatHistoryTest {
 		List<Turn> history = ChatService.buildHistory(messages, Set.of(), BUDGET);
 
 		assertThat(history).extracting(Turn::content).containsExactly("질문", "다시 질문");
+	}
+
+	/**
+	 * 타임아웃으로 잘린 답변은 맥락이 아님(#84).
+	 *
+	 * <p>{@code stopped=true} 라 앞 케이스와 저장 모양이 거의 같지만 <b>성질이 다르다</b> - 사용자가
+	 * 읽고 멈춘 것이 아니라 서버가 스트림을 닫아 문장이 잘린 것이다. 화면에는 「잘렸다」는 표시조차
+	 * 없다. 넣으면 모델이 자기가 쓰다 만 문장을 대화의 확정된 맥락으로 읽는다.
+	 */
+	@Test
+	void drops_timed_out_and_stopped_messages() {
+		List<Message> messages = List.of(
+				msg("user", "질문"),
+				msg("assistant", "쓰다 만 문장", "complete", true, true),
+				msg("user", "다시 질문"));
+
+		List<Turn> history = ChatService.buildHistory(messages, Set.of(), BUDGET);
+
+		assertThat(history).extracting(Turn::content).containsExactly("질문", "다시 질문");
+	}
+
+	/**
+	 * 타임아웃이었어도 <b>전문이 저장된 것</b>은 맥락에 남는다(#84 갈래 ②).
+	 *
+	 * <p>앞 케이스와 짝이다 - 둘 중 하나만 있으면 「timedOut 이면 무조건 버린다」는 구현이 통과한다.
+	 * 이 갈래는 업스트림이 뒤늦게 정상 응답해 답변이 온전하므로 버릴 이유가 없다.
+	 */
+	@Test
+	void keeps_timed_out_messages_that_were_saved_whole() {
+		List<Message> messages = List.of(msg("assistant", "온전한 답변", "complete", false, true));
+
+		List<Turn> history = ChatService.buildHistory(messages, Set.of(), BUDGET);
+
+		assertThat(history).extracting(Turn::content).containsExactly("온전한 답변");
 	}
 
 	/** 중단은 실패가 아님 - 사용자가 화면에서 실제로 본 내용이므로 맥락에 남아야 함 */
