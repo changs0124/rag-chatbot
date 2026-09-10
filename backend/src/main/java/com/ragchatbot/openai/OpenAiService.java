@@ -92,7 +92,14 @@ public interface OpenAiService {
 	 */
 	UploadedDocument uploadDocument(String filename, byte[] content, String contentType);
 
-	/** 인덱싱 상태 조회 - in_progress | completed | failed 중 하나를 돌려줌 */
+	/**
+	 * 인덱싱 상태 조회 - {@code in_progress} | {@code completed} | {@code failed} 중 하나를 돌려줌.
+	 *
+	 * <p><b>모르면 null</b>(#91). 조회 자체가 실패한 것(순단 · 429 · 502)은 <b>「인덱싱 실패」와 다르다.</b>
+	 * 둘을 같은 값으로 뭉개면 호출자가 「모름」을 확정된 실패로 영속화하고, 그 행은 재조회 대상에서
+	 * 빠져 <b>다시는 묻지 않는다</b> - 색인이 정상 완료돼 답변에 인용되는 문서가 화면에는 영구히
+	 * 「실패」로 남는다. 토큰 사용량이 모르면 null 인 것과 같은 규약이다(FEAT-OPS-001).
+	 */
 	String documentStatus(String vectorStoreId, String openaiFileId);
 
 	/** Vector Store 연결 해제 + 파일 삭제. 실패해도 예외를 던지지 않음(호출자는 삭제를 계속 진행함) */
