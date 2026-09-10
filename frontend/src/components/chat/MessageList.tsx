@@ -2,7 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import { API_BASE } from '../../lib/api'
 import type { ChatMessage } from '../../lib/types'
 import Citations from './Citations'
+import { nextStick } from './scroll'
 import ImageLightbox from './ImageLightbox'
+
+/** 스크롤을 실제로 하는 조상. MessageList 는 컨테이너를 소유하지 않는다(ChatPage 가 가진다) */
+function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null
+  while (node) {
+    const overflowY = getComputedStyle(node).overflowY
+    if (overflowY === 'auto' || overflowY === 'scroll') return node
+    node = node.parentElement
+  }
+  return null
+}
 
 export default function MessageList({
   messages,
@@ -11,8 +23,68 @@ export default function MessageList({
   messages: ChatMessage[]
   stage?: string | null
 }) {
+  const rootRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
+  /** 바닥을 따라갈지. 사용자가 위로 올리면 거짓이 되고, 새 질문을 보내면 다시 참이 된다 */
+  const stick = useRef(true)
+  const lastUserMessageId = useRef<string | null>(null)
+
+  /**
+   * 사용자가 어디를 보고 있는지 따라간다. 컨테이너가 없으면(테스트 환경 등) 종전대로 늘 따라간다.
+   *
+   * **`hasMessages` 에 의존하는 이유** - 메시지가 0건이면 아래에서 빈 화면을 그리며 조기 반환하므로
+   * `rootRef` 가 붙지 않는다. 의존성을 `[]` 로 두면 그 시점에 한 번 돌고 끝나 **리스너가 영영
+   * 등록되지 않는다.** 실기기에서 실제로 그렇게 죽어 있었다(jsdom 은 이 경로를 재현하지 못한다).
+   */
+  const hasMessages = messages.length > 0
   useEffect(() => {
+    const scroller = findScrollParent(rootRef.current)
+    if (!scroller) return
+    let previousTop = scroller.scrollTop
+    const onScroll = () => {
+      stick.current = nextStick({
+        previousTop,
+        scrollTop: scroller.scrollTop,
+        scrollHeight: scroller.scrollHeight,
+        clientHeight: scroller.clientHeight,
+        stick: stick.current,
+      })
+      previousTop = scroller.scrollTop
+    }
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    return () => scroller.removeEventListener('scroll', onScroll)
+  }, [hasMessages])
+
+  /**
+   * **내가 보낸 질문은 위치와 무관하게 바닥으로 간다.** 위를 읽던 중에 보냈어도 방금 보낸 것은 봐야 한다.
+   *
+   * **마지막 메시지가 아니라 「마지막 사용자 메시지」를 본다** - 전송 시 사용자 메시지와 답변 버블이
+   * 함께 추가돼 배열의 끝은 늘 assistant 다. 끝만 보면 새 질문을 영영 못 알아챈다
+   * (실기기에서 실제로 그렇게 동작하지 않았다).
+   */
+  let lastUserMessageIdInList: string | null = null
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'user') {
+      lastUserMessageIdInList = messages[i].id
+      break
+    }
+  }
+  useEffect(() => {
+    if (lastUserMessageIdInList && lastUserMessageIdInList !== lastUserMessageId.current) {
+      lastUserMessageId.current = lastUserMessageIdInList
+      stick.current = true
+    }
+  }, [lastUserMessageIdInList])
+
+  /**
+   * 답변이 흐르는 동안 따라 내려간다 — **사용자가 위로 올렸으면 멈춘다**(#100).
+   *
+   * `patch` 가 토큰마다 새 배열을 만들어 이 effect 가 **토큰 하나당 한 번** 돈다. 판정이 없던 동안에는
+   * 긴 답변이 생성되는 내내 앞선 메시지를 다시 읽을 수 없었다 — 위로 올려도 다음 토큰이 도착하는
+   * 즉시 맨 아래로 되돌아갔다.
+   */
+  useEffect(() => {
+    if (!stick.current) return
     endRef.current?.scrollIntoView?.({ behavior: 'smooth' })
   }, [messages, stage])
 
@@ -36,7 +108,7 @@ export default function MessageList({
     last.role === 'assistant' && (!!stage || (last.status === 'streaming' && !last.content))
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
+    <div ref={rootRef} className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
       <div
         className="flex flex-col gap-6"
         role="log"
