@@ -78,10 +78,23 @@ public class ChatService {
 			throw new BadRequestException("메시지 또는 첨부가 필요함"); // AC-21 : 첨부 있으면 허용
 		}
 
+		// **같은 id 를 두 번 넣으면 이미지가 두 번 인코딩돼 나간다**(#99). 중복은 조용히 접는다 -
+		// 사용자가 의도한 것이 아니고, 거절하면 화면이 고칠 수 없는 오류를 보게 된다
+		List<UUID> distinctIds = attachmentIds.stream().distinct().toList();
 		List<AttachmentRef> refs = new ArrayList<>();
-		for (UUID attId : attachmentIds) {
+		for (UUID attId : distinctIds) {
 			Attachment att = attachmentRepository.findByIdAndUser(attId, userId)
 					.orElseThrow(() -> new NotFoundException("첨부 없음"));
+			// **이미 다른 메시지에 붙은 첨부는 여기서 거절한다**(#99). 종전에는 소유권만 보고 통과시켜
+			// refs 에 담았는데, linkToMessage 의 SQL 에는 `message_id is null` 조건이 있어 0행을 갱신했다.
+			// 그 결과 이미지가 base64 로 모델에 다시 전송돼 **비용은 나가고 저장은 안 됐다** -
+			// 새로고침하면 그 메시지에 이미지가 없고, historyText 의 자리표시자도 안 붙어 이후 턴에서
+			// 「그 사진」의 지시 대상이 모델 입력에서 사라졌다.
+			//
+			// **모델 호출 전에 걸러야 한다** - 뒤에서 잡으면 비용이 이미 나간 뒤다
+			if (att.messageId() != null) {
+				throw new BadRequestException("이미 보낸 첨부는 다시 사용할 수 없음");
+			}
 			refs.add(new AttachmentRef(att.fileType(), att.storagePath(), att.openaiFileId()));
 		}
 
@@ -93,7 +106,7 @@ public class ChatService {
 		// 사용자 메시지에는 사용량이라는 개념이 없음 - null(FEAT-OPS-001)
 		messageRepository.insert(new Message(userMsgId, conversation.id(), "user", message, "complete", false,
 				false, null, null, null));
-		for (UUID attId : attachmentIds) {
+		for (UUID attId : distinctIds) {
 			attachmentRepository.linkToMessage(attId, userMsgId, userId);
 		}
 		return new PreparedChat(conversation.id(), message, refs, conversation.vectorStoreId(), history);
