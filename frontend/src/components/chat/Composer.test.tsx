@@ -244,6 +244,46 @@ describe('Composer', () => {
   })
 
   /**
+   * #80 - **네트워크 실패**(비 `ApiError`)에서 일반 문구로 떨어진다.
+   *
+   * `api.md` 오류 코드 표가 이 상황을 명시한다 — 약 32MB 를 넘기면 Tomcat 이 연결을 끊어
+   * **상태 코드 없이 I/O 오류**가 온다(#70 에서 실측). 즉 「HTTP 오류가 아닌 실패」는 계약에 적힌
+   * **정상 시나리오**인데 그것을 밟는 테스트가 없었다 — 잠겨 있던 것은 `ApiError` 쪽뿐이었다.
+   *
+   * `.catch` 가 `e.message` 를 무방비로 읽도록 바뀌면 `ApiError` 케이스는 계속 통과하고
+   * **네트워크 실패에서만 조용히 깨진다.**
+   */
+  it('네트워크 실패는 일반 문구로 떨어지고 서버 메시지와 구분됨', async () => {
+    vi.mocked(uploadFile).mockRejectedValueOnce(new Error('Failed to fetch'))
+    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+
+    pick(image())
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('업로드 실패')
+    // 원본 예외 문구가 그대로 새 나가지 않는다 - 사용자에게 줄 말이 아니다
+    expect(alert).not.toHaveTextContent('Failed to fetch')
+    expect(screen.getByText('재시도')).toBeInTheDocument()
+    expect(screen.getByLabelText('보내기')).toBeDisabled()
+  })
+
+  /**
+   * 짝이 되는 케이스 — `ApiError` 는 **서버가 준 메시지**를 그대로 보여준다.
+   *
+   * 둘이 같은 문구면 위 케이스를 잠글 값어치가 준다. 구분되는지까지 단언한다.
+   */
+  it('ApiError 는 서버 메시지를 보여줘 일반 실패와 구분됨', async () => {
+    vi.mocked(uploadFile).mockRejectedValueOnce(new ApiError(413, '파일이 너무 큽니다'))
+    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+
+    pick(image())
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('파일이 너무 큽니다')
+    expect(alert).not.toHaveTextContent('업로드 실패')
+  })
+
+  /**
    * #101 - 업로드 실패 사유가 **텍스트로** 보인다.
    *
    * 종전에는 카드의 `title` 속성뿐이라 **터치 기기에서는 툴팁이 뜨지 않았다.** 모바일 사용자는
