@@ -10,6 +10,12 @@ import java.util.UUID;
  * {@code complete} 로 두되(중단은 실패가 아님), 출처 판정이 끝나지 않았다는 사실을 여기에 남김 -
  * 무자료 배너가 "출처 0건"만 보고 붙으면 중단된 답변에 거짓으로 붙기 때문임.
  *
+ * <p>{@code timedOut} 은 <b>서버가 스트림을 타임아웃으로 닫았음</b>을 뜻함(#84). {@code stopped} 와
+ * 별개의 축인 이유는 타임아웃이 세 갈래로 갈리기 때문임 - 토큰이 흐르는 중이면 {@code stopped=true}
+ * 로, 워커가 대기 중이었고 업스트림이 뒤늦게 응답하면 <b>전문이 그대로</b> {@code stopped=false} 로,
+ * 끝내 무응답이면 {@code status=error} 로 저장됨. 이 플래그가 없으면 앞의 둘이 각각 「사용자 중단」과
+ * 「정상 완료」를, 마지막이 「진짜 오류」를 사칭함.
+ *
  * <p>{@code inputTokens}·{@code outputTokens} 는 <b>null 이 될 수 있음</b>(FEAT-OPS-001). 사용자 메시지 ·
  * 목업 응답 · 중단으로 usage 가 오기 전에 끝난 턴 · V4 이전 행에는 값이 없음. 0 이 아니라 null 이어야
  * "모르는 것"과 "정말 0"이 합계에서 섞이지 않음. 그래서 primitive 가 아니라 {@link Integer} 임.
@@ -21,6 +27,7 @@ public record Message(
 		String content,
 		String status,
 		boolean stopped,
+		boolean timedOut,
 		Integer inputTokens,
 		Integer outputTokens,
 		OffsetDateTime createdAt) {
