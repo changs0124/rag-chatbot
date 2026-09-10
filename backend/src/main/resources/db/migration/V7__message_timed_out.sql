@@ -1,0 +1,31 @@
+-- 2026-09-10 서버 타임아웃 표시 (#84)
+-- P-4 : 스키마의 소유자는 마이그레이션 SQL
+--
+-- SSE emitter 가 타임아웃으로 닫히면 그 사실이 저장에 아무 흔적도 남지 않았고, 같은 타임아웃이
+-- 마지막 토큰의 타이밍에 따라 **세 가지 다른 모양**으로 갈렸음. 둘은 다른 사건을 사칭했음 :
+--   ① 타임아웃 시점에 토큰이 흐르는 중  → complete + stopped=true
+--      ChatService.sendQuietly 가 emitter.send() 의 모든 예외를 ClientGoneException 으로 승격하는데,
+--      닫힌 emitter 의 send 는 IllegalStateException 을 던지므로 중단 분기로 합류함.
+--      **사용자가 정지 버튼을 누른 것과 바이트 단위로 구분되지 않았음**
+--   ② 워커가 대기 중 타임아웃 → 업스트림이 뒤늦게 응답 → complete + stopped=false + 전문·인용·사용량
+--      send 호출 자체가 없어 예외가 안 나고 정상 저장 경로가 그대로 돌아감. 화면은 끊긴 채인데
+--      새로고침하면 완전한 답변이 나타났음
+--   ③ 업스트림 끝내 무응답 → 읽기 타임아웃 → error + stopped=false (진짜 오류를 사칭)
+--
+-- app.chat.sse-timeout-ms 기본값(10분)과 OpenAiRealService 의 읽기 타임아웃(10분)이 **같은 값**이라
+-- 세 갈래 사이가 밀리초 경합이었음. 가정이 아니라 상시 열려 있던 구조임.
+--
+-- **status 와 stopped 를 건드리지 않고 축을 하나 더 둠.** status 에 값을 추가하면 V1__init.sql:32 의
+-- check (status in ('complete','error')) 를 깨야 하고, 전부 error 로 통일하는 것은 2026-07-28 결정
+-- (서버 error / 프론트 complete 를 프론트 쪽으로 통일)의 재발임. V3 가 같은 문제를 같은 방법으로 풀었음.
+-- 이 컬럼이 붙으면 여섯 갈래가 유일하게 갈림 :
+--   정상          complete / false / false
+--   사용자 중단    complete / true  / false
+--   ①            complete / true  / true
+--   ②            complete / false / true
+--   ③            error    / false / true
+--   진짜 오류      error    / false / false
+--
+-- **소급 보정(backfill)을 하지 않음.** 이 컬럼 이전에 저장된 행에는 타임아웃 여부가 어디에도 남아
+-- 있지 않아 복원이 불가능함. 추정으로 채우면 그 순간부터 저장이 거짓이 됨(V3·V4 와 같은 판단).
+alter table messages add column if not exists timed_out boolean not null default false;

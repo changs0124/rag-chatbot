@@ -102,12 +102,21 @@ public class AdminDocumentService {
 	/**
 	 * 목록. {@code in_progress} 인 행만 OpenAI 에 현재 상태를 다시 묻는다 -
 	 * 완료·실패는 더 바뀌지 않으므로 전 행을 매번 조회하지 않는다.
+	 *
+	 * <p><b>조회 실패는 굳히지 않는다</b>(#91). {@code documentStatus} 가 null 을 주면 「모른다」는
+	 * 뜻이므로 {@code in_progress} 를 그대로 둬 <b>다음 조회에서 다시 묻게</b> 한다. 종전에는 조회
+	 * 실패가 {@code failed} 로 저장됐는데, 그 순간 그 행이 {@link RagDocumentRepository#findInProgressIds}
+	 * 의 조건에서 빠져 <b>영구히 재조회되지 않았다</b> - 색인이 정상 완료돼 검색에 잡히고 답변에
+	 * 인용되는 문서가 관리 화면에는 영원히 「실패」로 뜨고, 되돌릴 경로가 없었다.
+	 *
+	 * <p>OpenAI 가 <b>실패를 명시한 것</b>은 종전대로 굳힌다 - 그것까지 유예하면 진짜 실패한 색인이
+	 * 매 조회마다 다시 물어지며 영원히 {@code in_progress} 로 남는다.
 	 */
 	public List<DocumentResponse> list() {
 		for (UUID id : documentRepository.findInProgressIds()) {
 			documentRepository.findAliveById(id).ifPresent(doc -> {
 				String current = openAiService.documentStatus(doc.vectorStoreId(), doc.openaiFileId());
-				if (!current.equals(doc.status())) {
+				if (current != null && !current.equals(doc.status())) {
 					documentRepository.updateStatus(doc.id(), current);
 				}
 			});
