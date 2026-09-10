@@ -407,7 +407,10 @@ Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip
 버전은 wrapper 가 쓰던 3.9.16 과 같게 고정했고, `mvnw` 자체는 로컬·CI 용으로 그대로 남는다.
 **이 근거가 지켜 주는 자리는 이제 CI 다** — 서버가 빌드하지 않으므로 빌드가 멎는 곳은 CI 뿐이다.
 
-**메모리 상한을 셋 다 걸어 두었다(#127).** `app` 420m · `db` 160m · `cloudflared` 64m 이고,
+**메모리 상한을 셋 다 걸어 두었다(#127).** 실측은 `app` 164MiB / 420m · `db` 36MiB / 160m 이고
+시스템 전체가 573Mi / 953Mi 였다(`APP_MODE=mock` · 요청 0건 · cloudflared 제외 · 기동 직후).
+**스왑은 30MiB 밖에 쓰지 않았다** — 기동 피크가 물리 메모리 안에서 끝났다는 뜻이다.
+상한은 여기에 여유를 얹은 값이다. `app` 420m · `db` 160m · `cloudflared` 64m 이고,
 `app` 은 `MaxRAMPercentage=65` · `UseSerialGC` 로, `db` 는 `shared_buffers=48MB` ·
 `max_connections=20` 으로 묶었다. Hikari 풀은 `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5` 로
 줄였다 — `application.yml` 에 hikari 설정이 없어 기본값이 10 이다. `memswap_limit` 은 일부러

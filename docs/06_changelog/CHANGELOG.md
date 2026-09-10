@@ -31,8 +31,14 @@
   **`memswap_limit` 은 일부러 비웠다.** 미지정이면 Docker 가 `mem_limit` 만큼 스왑을 더 허용해
   (합계 2배) 서버에 잡아 둔 스왑 2GB 가 기동 피크를 받는다. 지정하면 그 완충이 사라진다.
 
+  **실기기 실측(e2-micro, 2026-09-10)** — `app` 164MiB/420m · `db` 36MiB/160m, 시스템 전체
+  573Mi/953Mi, 스왑 30MiB, `GET /api/health` 200. `APP_MODE=mock` · 요청 0건 · cloudflared 제외
+  조건이라 **하한에 가까운 값**이다. 추정치(app ~300MB · db ~100MB)보다 낮게 나왔지만 상한은
+  그대로 둔다 — 트래픽과 첨부 처리가 힙을 밀어올리고 cloudflared 가 30~50MB 를 더 쓴다.
+
   보존한 것 — 터널만 외부 노출 · `127.0.0.1:8080` 루프백 바인딩 · 로그 회전(#103 과 직결) ·
-  `pgdata`·`uploads` 볼륨 · `db` healthcheck 선행 · `start_period: 90s`.
+  `pgdata`·`uploads` 볼륨 · `db` healthcheck 선행 · `start_period: 90s`. 앞의 넷은 실기기에서
+  `docker inspect` · `docker volume ls` · `compose ps` 로 확인했다.
 
 ### Fixed
 - **스트리밍 중에도 위로 스크롤할 수 있다(#100).** 자동 스크롤 effect 가 `[messages, stage]` 에 걸려
