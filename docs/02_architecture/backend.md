@@ -294,6 +294,12 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 설정값은 `backend/src/main/resources/application.yml` 에 `${ENV:기본값}` 으로 두고, 위험한 값
 (`app.mode` · `app.jwt.secret`)은 **일부러 기본값을 비워** 기동에 실패하게 한다.
 
+**외부 호출과 DB 를 함께 건드리는 흐름은 「던질 수 있는 쪽」을 앞에 둔다**(#72 · #98).
+실패하면 아무것도 바뀌지 않아야 하기 때문이다. 업로드에서 던질 수 있는 것은 OpenAI 단계라 그쪽이
+앞이고(그 뒤 DB 기록이 실패하면 OpenAI 쪽을 되돌린다), 삭제에서 던질 수 있는 것은 DB 뿐이라
+`softDelete` 가 앞이다 — `deleteDocument` 는 `deleteQuietly` 기반이라 **절대 던지지 않는다.**
+두 경로의 순서가 달라 보이는 이유가 이것이다.
+
 `app.jwt.secret` 은 비어 있는지만이 아니라 **길이도 본다** — 32바이트 미만이면 `JwtSecretPolicy` 가
 기동을 막는다. 하한을 한 곳에 둔 이유는 이 키를 `JwtService`(aud=auth)와
 `FileAccessTokenService`(aud=file) 둘이 공유하기 때문이다. 각자 들고 있으면 한쪽만 올렸을 때
