@@ -1,0 +1,17 @@
+# 로컬에서 이미지를 직접 빌드해 띄울 때 겹치는 override(#127).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app
+#
+# **왜 본체가 아니라 여기 있나** - 배포 서버가 1GB 급(GCP e2-micro)이라 거기서 이미지를 빌드하면
+# build 스테이지의 Maven JVM 하나로 물리 메모리를 넘긴다. 스왑으로 버텨도 표준 영구 디스크의
+# 쓰기 성능에서 스래싱이 걸려 사실상 끝나지 않는다. 본체에 build 를 남겨 두면 `docker compose up`
+# 이 이미지를 못 찾았을 때 **서버에서 조용히 빌드로 빠지는 경로**가 남는다 - 그 경로를 없앴다.
+#
+# 서버는 이 파일을 쓰지 않는다. 절차는 docs/02_architecture/backend.md 「배포」 참고.
+#
+# 태그를 본체와 같은 이름으로 둔다 - 로컬 빌드가 GHCR 이미지 자리를 그대로 덮으므로
+# 나머지 설정(mem_limit · 환경변수 · 볼륨)이 배포와 동일하게 적용된다.
+
+services:
+  app:
+    build: ./backend

@@ -4,6 +4,36 @@
 
 ## [Unreleased]
 
+### Changed
+- **백엔드 이미지를 CI 가 GHCR 로 올리고 서버는 pull 만 한다(#127).** 배포 대상이 GCP `e2-micro`
+  (메모리 953Mi)로 정해졌는데, `docker-compose.yml` 의 `app.build: ./backend` 는 서버에서 Maven
+  멀티스테이지 빌드를 돌린다 — **build 스테이지의 JVM 하나로 물리 메모리를 넘긴다.** 스왑으로
+  버텨도 `pd-standard` 30GB 의 쓰기 성능(약 45 IOPS)에서 스래싱이 걸려 사실상 끝나지 않는다.
+
+  **본체에서 `build` 키를 없앴다.** 절차로 "서버에서 빌드하지 말자" 고 정하면, 이미지를 못 찾은
+  `docker compose up` 이 조용히 빌드로 빠지는 경로가 그대로 남는다. `APP_MODE` 를 명시 옵트인으로
+  뒤집은 것과 같은 판단이다 — 사고 경로를 구조에서 없앤다. 로컬 빌드는 새로 만든
+  `docker-compose.build.yml` 을 겹쳐서 한다.
+
+  `ci.yml` 의 `docker` 잡은 이미 같은 이미지를 빌드하고 **버리고 있었다.** main 푸시에서만
+  `:latest` 와 커밋 SHA 태그로 GHCR 에 민다. PR 은 기존대로 빌드만 한다 — 「배포 산출물이 조용히
+  썩는 것을 막음」이라는 원래 의도는 그대로다. 패키지는 public 이라 서버에 `docker login` 이 없다.
+
+- **compose 에 메모리 상한과 저사양 튜닝을 걸었다(#127).** 기본 설정으로는 세 컨테이너 합계가
+  물리 메모리에 육박한다. 상한이 없으면 커널 OOM killer 가 **누구를 죽일지 고르는데**, `db` 가
+  걸리면 `pgdata` 가 위험하다 — 상한은 `app` 이 먼저 죽게 만들어 DB 를 지키는 장치이기도 하다.
+
+  `app` 420m · `db` 160m · `cloudflared` 64m. `app` 은 `MaxRAMPercentage=65` · `UseSerialGC` ·
+  `Xss512k`, `db` 는 `shared_buffers=48MB` · `max_connections=20` 으로 묶었다. Hikari 풀은
+  `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5` — `application.yml` 에 hikari 설정이 없어
+  기본값이 10 이었고, **소스를 고치지 않고** 환경변수로만 줄였다.
+
+  **`memswap_limit` 은 일부러 비웠다.** 미지정이면 Docker 가 `mem_limit` 만큼 스왑을 더 허용해
+  (합계 2배) 서버에 잡아 둔 스왑 2GB 가 기동 피크를 받는다. 지정하면 그 완충이 사라진다.
+
+  보존한 것 — 터널만 외부 노출 · `127.0.0.1:8080` 루프백 바인딩 · 로그 회전(#103 과 직결) ·
+  `pgdata`·`uploads` 볼륨 · `db` healthcheck 선행 · `start_period: 90s`.
+
 ### Fixed
 - **스트리밍 중에도 위로 스크롤할 수 있다(#100).** 자동 스크롤 effect 가 `[messages, stage]` 에 걸려
   있고 `patch` 가 토큰마다 새 배열을 만들어 **토큰 하나당 한 번** 돌았다. 「사용자가 위로 올렸는지」

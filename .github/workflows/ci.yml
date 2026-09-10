@@ -71,14 +71,42 @@ jobs:
         run: bash ../scripts/check-case-floor.sh frontend
 
   docker:
-    name: docker (백엔드 이미지 빌드)
+    name: docker (백엔드 이미지 빌드 · main 은 GHCR 푸시)
     runs-on: ubuntu-latest
+    # 최상단은 contents: read 다. 패키지 쓰기가 필요한 것은 이 잡뿐이라 여기서만 넓힘
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/rag-chatbot-backend
     steps:
       - uses: actions/checkout@v4
-      - name: 이미지 빌드(푸시 없음)
+      - name: 이미지 빌드
         # 배포 산출물이 조용히 썩는 것을 막음 - pom·소스 구조가 바뀌어 Dockerfile 이 깨지면
-        # 정작 배포하는 날이 아니라 여기서 먼저 드러남
+        # 정작 배포하는 날이 아니라 여기서 먼저 드러남. **PR 은 여기까지만 돈다**
         run: docker build -t rag-chatbot-backend:ci backend
+
+      # --- 아래는 main 푸시에서만 -------------------------------------------
+      # 배포 서버가 1GB 급이라 거기서 빌드할 수 없다(#127). 이 잡의 산출물이 곧 배포본이다.
+      #
+      # docker/login-action 대신 `docker login` 을 직접 부른다 - 이 저장소는 서드파티 액션을
+      # 커밋 SHA 로 고정하는데(trivy-action), 로그인 한 줄 때문에 고정·갱신할 의존을 하나 더
+      # 늘릴 이유가 없다. GITHUB_TOKEN 은 run 단계에 env 로 넘겨 명령줄에 남지 않게 한다
+      - name: GHCR 로그인
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
+
+      - name: 태그 부여 · 푸시
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # latest 는 배포용, SHA 태그는 되돌릴 자리다 - latest 만 두면 어제 것으로 내리지 못한다
+        run: |
+          set -euo pipefail
+          docker tag rag-chatbot-backend:ci "$IMAGE:latest"
+          docker tag rag-chatbot-backend:ci "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:${{ github.sha }}"
 
   contract:
     name: contract (응답 계약 대조)

@@ -339,6 +339,7 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 | Koyeb | 2026-02 Mistral AI 인수 후 무료 티어 신규 가입 차단 |
 | Railway | 상시 무료 없음. 이 구성 기준 월 $17~20 |
 | Cloud Run | 무료 한도가 미국 리전 한정 · JVM 콜드스타트 · 영속 볼륨 없음 |
+| **GCE e2-micro** | **채택(2026-09-10).** 아래 참고 — 탈락이 아니라 현재 배포 대상이다 |
 
 **Oracle Cloud Always Free 는 시도했다가 접었다.** 스펙(2 OCPU/12GB ARM · 블록 스토리지 200GB)이
 요구를 전부 만족해 1순위였고 계정 · VCN · 서브넷까지 만들었으나, **오사카 리전에서 A1 인스턴스가
@@ -347,9 +348,27 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 재시도 자동화까지 갔지만 확보하지 못했다 — **무료 A1 확보는 재고 운의 문제라 일정에 넣을 수 없다**는
 것이 결론이다.
 
+**GCE e2-micro 로 갔다(2026-09-10).** 오라클 A1 을 기다릴 수 없어 남은 상시 무료 VM 은 사실상
+이것뿐이었다. 무료 조건이 좁아 **셋 다 맞아야** 한다 — 머신 유형 `e2-micro`, 리전 `us-west1` ·
+`us-central1` · `us-east1` 중 하나, 부팅 디스크 **`pd-standard` 30GB**. 콘솔 기본값인 균형 있는
+영구 디스크(`pd-balanced`)를 그대로 두면 무료 티어를 벗어난다.
+
+대가는 **메모리 953Mi** 다(스왑 2GB 를 따로 잡았다). 이 한 줄이 배포 방식을 바꿨다 :
+
+| 제약 | 결과 |
+|------|------|
+| 이미지 빌드가 물리 메모리를 넘긴다 | **서버에서 빌드하지 않는다.** CI 가 GHCR 에 올리고 서버는 pull 만 한다(#127) |
+| 세 컨테이너 합계가 물리 메모리에 육박한다 | compose 에 `mem_limit` · JVM · PostgreSQL 튜닝을 걸었다(#127) |
+| 아웃바운드 무료 한도 1GB/월 | 첨부 이미지를 GPT-4o 로 넘기는 트래픽이 여기 잡힌다. 초과분은 GB 당 과금이라 파산할 금액은 아니지만 **"완전 무료"는 깨진다** |
+| `pd-standard` 30GB 는 쓰기 약 45 IOPS | Postgres WAL 이 병목이 될 수 있다. 느리다고 느껴지면 원인은 대개 여기다 |
+
+**외부 IP 는 뗄 수 없다.** 터널이 인바운드를 대신하므로 공인 IP 가 필요 없어 보이지만, OpenAI API
+호출과 cloudflared 연결이 **아웃바운드로 인터넷을 타야** 한다. 외부 IP 를 떼면 Cloud NAT 가 필요한데
+그쪽이 훨씬 비싸다.
+
 **전환 조건** : 월 $10~15 를 쓸 수 있게 되면 Fly.io 로 옮긴다 — 볼륨 · Postgres · TLS 가 플랫폼에
 딸려 오고 도쿄 리전이 있어 이 구성에서 가장 싸다. 첨부를 S3 호환(R2 등)으로 빼면 무료 PaaS
-선택지도 되살아난다.
+선택지도 되살아난다. 컨테이너 구성이라 이전 비용은 거의 없다.
 
 **인바운드 포트를 열지 않는다.** cloudflared 가 바깥으로 연결을 걸어 터널을 유지하므로 공인 IP ·
 포트포워딩 · 방화벽 인그레스 규칙이 전부 필요 없다 — 사무실·캠퍼스 망처럼 **라우터 권한이 없는
@@ -363,13 +382,36 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD` · `TUNNEL_TOKEN`
 4. Cloudflare 대시보드에서 터널을 만들고 공개 호스트명을 **`http://app:8080`** 에 매핑한다.
    `localhost` 가 아니다 - cloudflared 는 별도 컨테이너라 compose 네트워크 이름으로 찾아간다
-5. `docker compose up -d --build`
+5. `docker compose pull && docker compose up -d`
 6. 백엔드 `ALLOWED_ORIGINS` 에 **Vercel 도메인**을, 프론트 `VITE_API_BASE_URL` 에 **터널 도메인**을 넣는다
+
+**서버는 이미지를 빌드하지 않는다(#127).** `docker-compose.yml` 의 `app` 에 `build` 가 없고
+`image: ghcr.io/changs0124/rag-chatbot-backend:latest` 만 있다. 배포 서버가 1GB 급이라 build 스테이지의
+Maven JVM 하나로 물리 메모리를 넘기기 때문이다. **절차로 막지 않고 키를 없앴다** — 본체에 `build` 를
+남겨 두면 이미지를 못 찾았을 때 `up` 이 조용히 빌드로 빠지는 경로가 남는다.
+
+이미지는 CI 가 올린다 — `.github/workflows/ci.yml` 의 `docker` 잡이 main 푸시마다 `:latest` 와
+커밋 SHA 태그를 함께 민다. 되돌릴 때는 `:latest` 대신 SHA 태그를 쓴다. 패키지는 public 이라
+서버에서 `docker login` 이 필요 없다. **PR 에서는 빌드만 하고 푸시하지 않는다** — 배포 산출물이
+조용히 썩는 것을 막는 기존 검증은 그대로다.
+
+로컬에서 직접 빌드해 띄우려면 override 를 겹친다 :
+
+```
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app
+```
 
 **이미지 빌드는 `mvnw` 를 쓰지 않는다.** build 스테이지가 `maven:3.9.16-eclipse-temurin-17-alpine` 이라
 Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip 을 Maven Central 에서 내려받는데,
 의존성 해석보다 앞선 단계라 레이어 캐시로도 덮이지 않고 Central 이 거절하면 이미지 빌드가 통째로 멎는다.
 버전은 wrapper 가 쓰던 3.9.16 과 같게 고정했고, `mvnw` 자체는 로컬·CI 용으로 그대로 남는다.
+**이 근거가 지켜 주는 자리는 이제 CI 다** — 서버가 빌드하지 않으므로 빌드가 멎는 곳은 CI 뿐이다.
+
+**메모리 상한을 셋 다 걸어 두었다(#127).** `app` 420m · `db` 160m · `cloudflared` 64m 이고,
+`app` 은 `MaxRAMPercentage=65` · `UseSerialGC` 로, `db` 는 `shared_buffers=48MB` ·
+`max_connections=20` 으로 묶었다. Hikari 풀은 `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5` 로
+줄였다 — `application.yml` 에 hikari 설정이 없어 기본값이 10 이다. `memswap_limit` 은 일부러
+비워 두었다. 미지정이면 Docker 가 `mem_limit` 만큼 스왑을 더 허용해(합계 2배) 기동 피크를 받아 준다.
 **의존성 해석은 여전히 Central 을 타므로** 그쪽은 재시도 두 번으로 덮는다 — 없앤 것은 배포판이라는 한 홉이다.
 멀티스테이지라 최종 이미지는 `eclipse-temurin:17-jre-alpine` 그대로이며, 실측 크기 차이는 45바이트였다.
 
@@ -386,7 +428,8 @@ https 페이지가 http 를 부르면 브라우저가 mixed content 로 막는�
 
 1. 백엔드를 평소대로 띄운다(`./mvnw spring-boot:run`, `:8080`).
    **이 경로는 `backend/.env` 를 읽지 않는다** — dotenv 로더가 없어 환경변수를 셸에 직접 넣어야 한다.
-   `.env` 를 그대로 쓰려면 `docker compose up -d --build db app` 으로 띄운다
+   `.env` 를 그대로 쓰려면 `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app`
+   으로 띄운다 — 본체에는 `build` 가 없어 override 를 겹쳐야 로컬 빌드가 성립한다(#127)
 2. 터널을 연다 — `ngrok http 8080` 또는 `cloudflared tunnel --url http://localhost:8080`
 3. 백엔드 `ALLOWED_ORIGINS` 에 **Vercel 도메인**을 넣는다. 터널 주소가 아니다 —
    이 값은 백엔드의 공개 주소가 아니라 **요청을 보내는 화면의 출처**다
