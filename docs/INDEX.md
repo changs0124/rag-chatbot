@@ -37,7 +37,7 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 
 | 준비물 | 상태 |
 |--------|------|
-| 프론트 배포 | `frontend/vercel.json` (SPA 리라이트 포함). Vercel 환경변수 `VITE_API_BASE_URL` 만 넣으면 됨 |
+| 프론트 배포 | `frontend/vercel.json` (SPA 리라이트 포함). 환경변수 `VITE_API_BASE_URL` 외에 **저장소 연결과 Root Directory 지정이 남아 있다** — 절차 정본은 [frontend](./02_architecture/frontend.md) 「배포 (Vercel)」 |
 | 백엔드 배포 | `docker-compose.yml` (앱 · Postgres · cloudflared). 인바운드 포트를 열지 않는 터널 방식 |
 | 환경변수 | `backend/.env.example`(앱) · `.env.example`(compose) · `frontend/.env.example` 에 전량 + 빠뜨렸을 때의 증상까지 기재 |
 | DB 스키마 | 기동 시 Flyway 자동 적용 |
