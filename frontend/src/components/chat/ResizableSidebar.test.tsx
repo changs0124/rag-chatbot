@@ -79,4 +79,43 @@ describe('ResizableSidebar', () => {
     expect(panel()).toHaveStyle({ width: `${SIDEBAR_DEFAULT_WIDTH - 16}px` })
     expect(handle).toHaveAttribute('aria-valuenow', String(SIDEBAR_DEFAULT_WIDTH - 16))
   })
+
+  /**
+   * #102 - 드래그 도중 언마운트되면 `userSelect` 를 되돌린다.
+   *
+   * 리스너만 떼는 것으로는 부족하다. `document.body.style.userSelect` 는 **이 컴포넌트 밖에 남아**,
+   * 로그아웃 뒤 로그인 화면에서도 텍스트 선택이 막힌 채가 된다.
+   */
+  it('드래그 중 언마운트되면 텍스트 선택 잠금을 푼다', () => {
+    const { unmount } = render(subject)
+    fireEvent.pointerDown(screen.getByRole('separator'), { pointerId: 1, clientX: 300 })
+    expect(document.body.style.userSelect).toBe('none')
+
+    unmount()
+
+    expect(document.body.style.userSelect).toBe('')
+  })
+
+  /**
+   * #102 - `pointercancel` 도 드래그를 끝낸다.
+   *
+   * 브라우저가 제스처를 가로채거나 포인터가 사라지면 `pointerup` 이 오지 않는다. 그때 `dragging` 이
+   * 참으로 남으면 **버튼을 누르지 않았는데도 폭이 계속 따라온다.**
+   *
+   * (「창 밖에서 뗐다」는 상태는 jsdom 에 없어 직접 못 잰다. `setPointerCapture` 가 그 창을 없애는데,
+   * 그 효과는 실제 브라우저에서만 관측된다.)
+   */
+  it('pointercancel 이 오면 드래그가 끝난다', () => {
+    render(subject)
+    const handle = screen.getByRole('separator')
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: SIDEBAR_DEFAULT_WIDTH })
+    fireEvent.pointerMove(window, { pointerId: 1, clientX: 400 })
+    expect(panel()).toHaveStyle({ width: '400px' })
+
+    fireEvent.pointerCancel(window, { pointerId: 1 })
+    fireEvent.pointerMove(window, { pointerId: 1, clientX: 320 })
+
+    expect(panel()).toHaveStyle({ width: '400px' }) // 더 이상 따라오지 않는다
+    expect(document.body.style.userSelect).toBe('')
+  })
 })
