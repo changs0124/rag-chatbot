@@ -5,6 +5,26 @@
 ## [Unreleased]
 
 ### Fixed
+- **JWT 서명 시크릿의 최소 길이를 기동 시 강제한다(#81).** `backend/.env.example` 은 「32바이트 이상」을
+  안내해 왔지만 그것을 확인하는 코드가 없어 **네 글자짜리 시크릿으로도 정상 기동했고 경고도 없었다.**
+  안내만 있고 강제가 없으면 배포자가 안내를 지키지 않은 순간을 아무도 모른다.
+
+  **하한을 `JwtSecretPolicy` 한 곳에 뒀다.** 같은 시크릿을 `JwtService`(aud=auth)와
+  `FileAccessTokenService`(aud=file) 둘이 서명에 쓴다. 각자 들고 있으면 한쪽만 올렸을 때 조용히
+  갈리는데, **두 토큰이 같은 키로 서명되므로 약한 쪽이 곧 전체의 실효 강도**다.
+  `/api/files/**` 는 permitAll 이라 파일 토큰의 서명이 그 경로의 유일한 경계라는 점이 특히 그렇다.
+  32바이트인 이유는 HS256 의 HMAC 블록이 256비트이기 때문이다 — 그보다 짧으면 키 공간이 해시
+  출력보다 작아 토큰 하나로 오프라인 복원이 가능해진다.
+
+  **새 패턴이 아니다.** `AppModeGuard`(`app.mode` 미설정) · `EmailDomainPolicy`(live 인데 도메인 명단이
+  빔) · `OpenAiRealService`(live 인데 키가 빔)가 이미 같은 형태의 fail-fast 를 쓴다. 빠져 있던 자리를 메웠다.
+  기존의 빈 값 검사는 없애지 않고 같은 자리로 옮겼다 — 두 검사가 다른 파일에 흩어지면 한쪽을 고칠 때
+  다른 쪽을 놓친다.
+
+  테스트는 판정과 바인딩을 나눴다. `JwtSecretPolicyTest` 가 경계값(31/32바이트)과 UTF-8 바이트 기준을,
+  `JwtSecretLengthContextTest` 가 `ApplicationContextRunner` 로 프로퍼티가 실제로 꽂히는지를 본다.
+  후자가 없으면 `@Value` 키를 바꿔도 초록이 된다. 케이스 10건이 늘어 `BACKEND_MIN` 을 189 → **199** 로 올렸다.
+  통합 테스트가 쓰는 시크릿은 42바이트라 영향이 없다.
 - **문서 업로드 DB 기록이 실패하면 OpenAI 쪽을 되돌린다(#72).** `AdminDocumentService.upload` 는
   OpenAI 에 올린 **뒤** DB 에 기록하는데 그 사이에 보상이 없었다. `insert` 가 실패하면 스토어에는
   파일이 남고 목록에는 행이 없다 — **화면에 안 보여 지울 수 없고, 검색에는 잡혀 삭제한 적 없는
