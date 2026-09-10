@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ragchatbot.security.CurrentUser;
+import com.ragchatbot.service.RateLimiterService;
 import com.ragchatbot.service.ProfileService;
 import com.ragchatbot.dto.AuthDtos.AuthResponse;
 import com.ragchatbot.dto.AuthDtos.MeResponse;
@@ -21,9 +22,11 @@ import jakarta.validation.Valid;
 public class ProfileController {
 
 	private final ProfileService profileService;
+	private final RateLimiterService rateLimiter;
 
-	public ProfileController(ProfileService profileService) {
+	public ProfileController(ProfileService profileService, RateLimiterService rateLimiter) {
 		this.profileService = profileService;
+		this.rateLimiter = rateLimiter;
 	}
 
 	@GetMapping
@@ -39,6 +42,8 @@ public class ProfileController {
 	/** 변경 이전 토큰은 전부 무효가 되므로 새 토큰을 함께 돌려줌(클라이언트가 교체해야 세션이 이어짐) */
 	@PatchMapping("/password")
 	public AuthResponse updatePassword(@Valid @RequestBody UpdatePasswordRequest req) {
+		// 초과 시 429(#95). BCrypt 를 두 번 도는 경로라 검증 전에 막는다
+		rateLimiter.checkPasswordChange(CurrentUser.id());
 		return profileService.updatePassword(CurrentUser.id(), req.currentPassword(), req.newPassword());
 	}
 

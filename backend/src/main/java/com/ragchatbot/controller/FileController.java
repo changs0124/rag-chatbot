@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ragchatbot.security.CurrentUser;
+import com.ragchatbot.service.RateLimiterService;
 import com.ragchatbot.service.FileService;
 import com.ragchatbot.service.FileService.ServedFile;
 import com.ragchatbot.dto.FileDtos.AttachmentResponse;
@@ -24,14 +25,19 @@ import com.ragchatbot.dto.FileDtos.AttachmentResponse;
 public class FileController {
 
 	private final FileService fileService;
+	private final RateLimiterService rateLimiter;
 
-	public FileController(FileService fileService) {
+	public FileController(FileService fileService, RateLimiterService rateLimiter) {
 		this.fileService = fileService;
+		this.rateLimiter = rateLimiter;
 	}
 
 	/** 업로드(인증 필요). message_id=null 상태로 저장(채팅 전송 시 연결) */
 	@PostMapping
 	public AttachmentResponse upload(@RequestParam("file") MultipartFile file) {
+		// 초과 시 429(#95). 검사가 먼저여야 함 - upload 가 파일 전체를 힙에 올리므로,
+		// 뒤에서 거절하면 거절할 요청의 메모리를 이미 다 쓴 뒤가 된다
+		rateLimiter.checkUpload(CurrentUser.id());
 		return fileService.upload(CurrentUser.id(), file);
 	}
 
