@@ -19,7 +19,15 @@
 
 ## 낮음
 
-- [ ] 배포·런칭 절차 문서화 (`docs/01_specs/`)
+- [x] 배포 절차 문서화 — **정본은 [backend](../02_architecture/backend.md) 「배포」다**(#127 · #129).
+  호스트 선정 근거 · 절차 · 환경변수 · `scripts/deploy.sh` 옵션 · 메모리 상한 · 방화벽 규칙이 그쪽에 있다.
+  `docs/01_specs/` 로 옮기지 않는다 — 배포는 명세가 아니라 아키텍처 결정이고, 같은 사실을 두 곳에 적지 않는다
+- [ ] **런칭** — 절차는 위에서 끝났으나 **실제로 수행된 적이 없다.** 남은 것 :
+  - `TUNNEL_TOKEN`(Cloudflare 터널 생성) · `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` 확보
+  - `bash scripts/deploy.sh` 로 실배포 — **이 스크립트는 통짜로 실행된 적이 없다.** `--dry-run` 을 먼저 볼 것
+  - Vercel 프로젝트에 `VITE_API_BASE_URL`(터널 도메인) 설정 후 **재배포**.
+    현재 프로덕션 번들에 `http://localhost:8080` 이 박혀 있다(배포된 `/assets/index-*.js` 에서 확인)
+  - 백엔드 `ALLOWED_ORIGINS` 에 Vercel 도메인 — 빠뜨리면 CORS 로 전 API 차단
 
 ---
 
