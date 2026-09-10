@@ -94,6 +94,13 @@ app:
     chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}
     # 계정별 분당 로그인 시도 상한(대입 지연). 키는 정규화된 이메일 - IP 기준이 아님
     login-per-minute: ${RATELIMIT_LOGIN_PER_MINUTE:10}
+    # 사용자별 분당 첨부 업로드 상한(#95). 채팅보다 높은 이유는 한 메시지에 이미지를 여러 장 붙이는
+    # 것이 정상 사용이기 때문. 업로드는 파일 전체를 힙에 올리므로 병렬도를 유계로 두지 않으면
+    # 26MB × 스레드 수로 OOM 이 나고, uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎음
+    upload-per-minute: ${RATELIMIT_UPLOAD_PER_MINUTE:30}
+    # 사용자별 분당 비밀번호 변경 상한(#95). 매 호출이 BCrypt 를 두 번 돌아 CPU 를 먹음.
+    # 정상 사용은 가끔 한 번이라 낮아도 막히지 않음
+    password-change-per-minute: ${RATELIMIT_PASSWORD_CHANGE_PER_MINUTE:5}
     # 카운터 키 총량 상한(2026-07-28 결정). 넘으면 가장 오래 안 쓴 키부터 축출해 메모리를 유계로 둠.
     # 축출은 곧 카운터 리셋이라는 약화가 따름 - 사유는 docs/02_architecture/overview.md 「알려진 제약」
     max-keys: ${RATELIMIT_MAX_KEYS:10000}
