@@ -451,10 +451,12 @@ public class OpenAiRealService implements OpenAiService {
 				default -> "failed";
 			};
 		} catch (Exception e) {
-			// 조회 자체가 실패한 것은 "인덱싱 실패"와 다르지만, 화면에 줄 수 있는 답은 둘뿐임.
-			// 상태를 모르는 동안 completed 로 두는 것보다 failed 가 안전한 쪽임
+			// 조회 자체가 실패한 것은 "인덱싱 실패"와 **다르다**(#91). 종전에는 failed 를 돌려줬는데,
+			// 호출자가 그것을 DB 에 굳히면 그 행이 재조회 대상에서 빠져 다시는 묻지 않게 됨 -
+			// 「모르는 동안 failed 가 안전하다」는 판단은 **표시**에 대해서만 맞고, 영속화하는 순간
+			// 「모름」이 「확정된 실패」가 됨. 모르면 null 을 돌려주고 판단은 호출자에게 맡김
 			log.warn("openai 문서 상태 조회 실패 {}: {}", openaiFileId, e.getMessage());
-			return "failed";
+			return null;
 		}
 	}
 

@@ -35,14 +35,19 @@ public class ChatPersistenceService {
 	/**
 	 * stopped=true 는 사용자가 스트림을 끊어 <b>출처 판정 전에</b> 끝났음을 뜻함(무자료 배너 억제용).
 	 *
+	 * <p>timedOut=true 는 <b>서버가 스트림을 타임아웃으로 닫았음</b>을 뜻함(#84). stopped 와 별개의
+	 * 축이라 함께 참일 수 있고, 정상 저장 경로에서도 참일 수 있음 - 타임아웃 뒤 업스트림이 뒤늦게
+	 * 응답해 전문이 저장되는 갈래가 있기 때문임.
+	 *
 	 * <p>토큰 사용량은 모르면 null 로 넘어옴(FEAT-OPS-001) - 중단·오류 경로는 완료 이벤트를 받지
 	 * 못해 값이 없음. 여기서 0 으로 바꾸지 않음.
 	 */
 	@Transactional
 	public void saveAssistant(UUID conversationId, UUID userId, UUID assistantMsgId, String content, String status,
-			boolean stopped, List<CitationData> citations, Integer inputTokens, Integer outputTokens) {
+			boolean stopped, boolean timedOut, List<CitationData> citations, Integer inputTokens,
+			Integer outputTokens) {
 		messageRepository.insert(new Message(assistantMsgId, conversationId, "assistant", content, status, stopped,
-				inputTokens, outputTokens, null));
+				timedOut, inputTokens, outputTokens, null));
 		for (CitationData c : citations) {
 			citationRepository.insert(new Citation(UUID.randomUUID(), assistantMsgId, c.seq(), c.sourceName(),
 					c.snippet(), c.uri(), null));

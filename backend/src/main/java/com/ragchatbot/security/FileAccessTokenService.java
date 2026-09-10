@@ -27,9 +27,7 @@ public class FileAccessTokenService {
 	public FileAccessTokenService(
 			@Value("${app.jwt.secret:}") String secret,
 			@Value("${app.file.access-token-ttl-minutes:15}") long ttlMinutes) {
-		if (secret == null || secret.isBlank()) {
-			throw new IllegalStateException("app.jwt.secret 미설정 - 파일 토큰 서명 불가");
-		}
+		JwtSecretPolicy.require(secret, "파일 토큰 서명 불가");
 		this.algorithm = Algorithm.HMAC256(secret);
 		this.verifier = JWT.require(algorithm).withAudience("file").build();
 		this.ttlMinutes = ttlMinutes;
