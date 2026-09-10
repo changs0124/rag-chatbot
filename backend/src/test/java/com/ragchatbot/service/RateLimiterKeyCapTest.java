@@ -15,7 +15,7 @@ import com.ragchatbot.exception.ApiExceptions.RateLimitException;
 class RateLimiterKeyCapTest {
 
 	private static RateLimiterService limiter(int maxKeys) {
-		return new RateLimiterService(20, 10, maxKeys);
+		return new RateLimiterService(20, 10, 30, 5, maxKeys);
 	}
 
 	@Test
