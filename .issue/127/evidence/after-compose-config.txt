@@ -1,0 +1,105 @@
+# after — docker compose config (본체만, 서버가 쓰는 구성)
+생성: 2026-09-10T05:25:17Z  커밋: c9418b4
+
+name: "127"
+services:
+  app:
+    depends_on:
+      db:
+        condition: service_healthy
+        required: true
+    environment:
+      ALLOWED_ORIGINS: http://localhost:5173
+      APP_MODE: mock
+      DB_PASSWORD: dummy
+      DB_URL: jdbc:postgresql://db:5432/ragchatbot
+      DB_USERNAME: postgres
+      FILE_STORAGE_ROOT: /data/uploads
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=65 -XX:+UseSerialGC -Xss512k
+      JWT_SECRET: dummy-secret-for-compose-config-validation-only-32b
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O - http://localhost:8080/api/health || exit 1
+      timeout: 5s
+      interval: 30s
+      retries: 3
+      start_period: 1m30s
+    image: ghcr.io/changs0124/rag-chatbot-backend:latest
+    logging:
+      driver: json-file
+      options:
+        max-file: "3"
+        max-size: 10m
+    mem_limit: "440401920"
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 8080
+        published: "8080"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: uploads
+        target: /data/uploads
+        volume: {}
+  cloudflared:
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+    depends_on:
+      app:
+        condition: service_started
+        required: true
+    environment:
+      TUNNEL_TOKEN: dummy
+    image: cloudflare/cloudflared:latest
+    mem_limit: "67108864"
+    networks:
+      default: null
+    restart: unless-stopped
+  db:
+    command:
+      - postgres
+      - -c
+      - shared_buffers=48MB
+      - -c
+      - max_connections=20
+      - -c
+      - work_mem=2MB
+      - -c
+      - maintenance_work_mem=32MB
+    environment:
+      POSTGRES_DB: ragchatbot
+      POSTGRES_PASSWORD: dummy
+      POSTGRES_USER: postgres
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U postgres -d ragchatbot
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    image: postgres:16-alpine
+    mem_limit: "167772160"
+    networks:
+      default: null
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: pgdata
+        target: /var/lib/postgresql/data
+        volume: {}
+networks:
+  default:
+    name: 127_default
+volumes:
+  pgdata:
+    name: 127_pgdata
+  uploads:
+    name: 127_uploads
