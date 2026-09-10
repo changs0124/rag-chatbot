@@ -261,4 +261,54 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		}
 		assertThat(saw429).as("%d회 중 최소 1회는 429여야 함", attempts).isTrue();
 	}
+	/**
+	 * 이미 다른 메시지에 붙은 첨부는 <b>모델 호출 전에</b> 거절한다 (#99).
+	 *
+	 * <p>종전에는 {@code prepare} 가 소유권만 보고 통과시켜 {@code refs} 에 담았는데,
+	 * {@code linkToMessage} 의 SQL 에는 {@code message_id is null} 조건이 있어 0행을 갱신했다.
+	 * 그 결과 이미지가 base64 로 모델에 <b>다시 전송돼 비용은 나가고 저장은 안 됐다</b> —
+	 * 새로고침하면 그 메시지에 이미지가 없고, {@code historyText} 의 자리표시자도 안 붙어
+	 * 이후 턴에서 「그 사진」의 지시 대상이 모델 입력에서 사라졌다.
+	 *
+	 * <p>정상 UI 로는 재사용 경로가 없다(전송 후 카드를 비운다). API 를 직접 부르거나 id 를 들고 있는
+	 * 클라이언트가 그렇게 할 수 있다.
+	 */
+	@Test
+	void reusing_a_linked_attachment_is_rejected_before_the_model_call() {
+		String token = createUser("chat-relink@b.com");
+		String convId = createConversation(token);
+		String attId = uploadImage(token);
+
+		var first = chat(token, Map.of("conversationId", convId, "message", "이거 뭐야",
+				"attachmentIds", List.of(attId)));
+		assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		var second = chat(token, Map.of("conversationId", convId, "message", "다시",
+				"attachmentIds", List.of(attId)));
+
+		// 스트림이 열리기 전에 동기 응답으로 거절된다 - 열린 뒤에는 상태 코드를 바꿀 수 없고
+		// 무엇보다 그 시점엔 이미 이미지가 모델로 나간 뒤다
+		assertThat(second.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
+	/**
+	 * 같은 요청에 같은 id 를 두 번 넣어도 이미지는 한 번만 나간다 (#99).
+	 *
+	 * <p>중복 제거가 없던 동안에는 {@code refs} 에 두 번 들어가 <b>같은 이미지가 두 번 인코딩</b>됐다.
+	 * 거절하지 않고 조용히 접는 이유는 사용자가 의도한 것이 아니고, 거절하면 화면이 고칠 수 없는
+	 * 오류를 보게 되기 때문이다.
+	 */
+	@Test
+	void duplicate_attachment_ids_in_one_request_are_collapsed() {
+		String token = createUser("chat-dup@b.com");
+		String convId = createConversation(token);
+		String attId = uploadImage(token);
+
+		var res = chat(token, Map.of("conversationId", convId, "message", "이거 뭐야",
+				"attachmentIds", List.of(attId, attId)));
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(mock.lastAttachmentCount()).isEqualTo(1);
+	}
+
 }
