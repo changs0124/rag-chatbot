@@ -23,6 +23,11 @@ import com.sun.net.httpserver.HttpServer;
  */
 class OpenAiRealDeleteResourcesTest {
 
+	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
+	private static final long STREAM_READ_MS = 540_000;
+	private static final long REQUEST_MS = 30_000;
+	private static final long SSE_MS = 600_000;
+
 	private HttpServer server;
 	private final List<String> received = new CopyOnWriteArrayList<>();
 	private String baseUrl;
@@ -46,7 +51,7 @@ class OpenAiRealDeleteResourcesTest {
 
 	@Test
 	void deletes_files_and_conversation_store_through_configured_base_url() {
-		var service = new OpenAiRealService("test-key", "gpt-4o", "shared-store", baseUrl, null);
+		var service = new OpenAiRealService("test-key", "gpt-4o", "shared-store", baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 
 		service.deleteResources("conversation-store", List.of("file-1", "file-2"));
 
@@ -62,7 +67,7 @@ class OpenAiRealDeleteResourcesTest {
 	/** 공용 Store 는 다른 대화도 함께 쓰므로 절대 지우지 않음 */
 	@Test
 	void never_deletes_the_shared_vector_store() {
-		var service = new OpenAiRealService("test-key", "gpt-4o", "shared-store", baseUrl, null);
+		var service = new OpenAiRealService("test-key", "gpt-4o", "shared-store", baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 
 		service.deleteResources("shared-store", List.of());
 
