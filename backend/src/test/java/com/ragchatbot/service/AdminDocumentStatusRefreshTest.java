@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.Optional;
@@ -93,6 +94,39 @@ class AdminDocumentStatusRefreshTest {
 		new AdminDocumentService(repo, openAi).list();
 
 		verify(repo).updateStatus(DOC_ID, "completed");
+	}
+
+	/**
+	 * 삭제는 <b>DB 를 먼저</b> 건드린다 (#98).
+	 *
+	 * <p>DB 가 던지면 OpenAI 쪽은 손대지 않아야 한다 — 순서가 반대였을 때는 「스토어에서는 빠졌는데
+	 * 행은 살아 있는」 상태가 남아, 목록에는 보이는데 검색에는 안 잡혔다. 관리자는 아직 색인돼
+	 * 있다고 읽는다.
+	 */
+	@Test
+	void delete_does_not_touch_openai_when_db_fails() {
+		RagDocumentRepository repo = mock(RagDocumentRepository.class);
+		when(repo.findAliveById(DOC_ID)).thenReturn(Optional.of(inProgress()));
+		when(repo.softDelete(any(), any())).thenThrow(new IllegalStateException("DB 커넥션 끊김"));
+		OpenAiService openAi = mock(OpenAiService.class);
+
+		assertThatThrownBy(() -> new AdminDocumentService(repo, openAi).delete(DOC_ID))
+				.isInstanceOf(IllegalStateException.class);
+
+		verify(openAi, never()).deleteDocument(anyString(), anyString());
+	}
+
+	/** 반대편 - DB 가 성공하면 OpenAI 쪽도 정리한다 */
+	@Test
+	void delete_removes_from_openai_after_db_succeeds() {
+		RagDocumentRepository repo = mock(RagDocumentRepository.class);
+		when(repo.findAliveById(DOC_ID)).thenReturn(Optional.of(inProgress()));
+		when(repo.softDelete(any(), any())).thenReturn(1);
+		OpenAiService openAi = mock(OpenAiService.class);
+
+		new AdminDocumentService(repo, openAi).delete(DOC_ID);
+
+		verify(openAi).deleteDocument(STORE_ID, FILE_ID);
 	}
 
 	/** 값이 그대로면 쓰지 않는다 - 종전 동작을 잃지 않았는지 */

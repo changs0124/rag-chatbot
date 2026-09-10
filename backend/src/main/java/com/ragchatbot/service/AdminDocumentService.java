@@ -197,13 +197,25 @@ public class AdminDocumentService {
 		RagDocument doc = documentRepository.findAliveById(documentId)
 				.orElseThrow(() -> new NotFoundException("문서 없음"));
 
-		openAiService.deleteDocument(doc.vectorStoreId(), doc.openaiFileId());
-
+		// **DB 를 먼저 지운다**(#98). 업로드와 반대로 보일 수 있으나 같은 원칙이다 -
+		// **던질 수 있는 쪽을 앞에 둬, 실패하면 아무것도 바뀌지 않게 한다.**
+		//
+		// 업로드에서 던질 수 있는 것은 OpenAI 단계이므로 그쪽이 앞이고, 삭제에서 던질 수 있는 것은
+		// DB 쪽뿐이다 - deleteDocument 는 deleteQuietly 기반이라 **절대 던지지 않는다.**
+		//
+		// 순서가 반대였을 때는 softDelete 가 던지면 「스토어에서는 빠졌는데 행은 살아 있는」 상태가
+		// 남았다. 목록에는 보이는데 검색에는 안 잡히니, 관리자는 아직 색인돼 있다고 읽는다.
+		// 지금은 그 경우 예외가 먼저 올라와 **아무것도 바뀌지 않고** 관리자가 다시 시도할 수 있다.
 		int deleted = documentRepository.softDelete(documentId, OffsetDateTime.now());
 		if (deleted == 0) {
 			// 조회와 삭제 사이에 누가 먼저 지웠음. 결과는 같으므로 오류로 올리지 않음
 			log.warn("rag 문서 {} 가 이미 삭제돼 있었음", documentId);
 		}
+
+		// 이쪽이 조용히 실패하면 스토어에 파일이 남아 **삭제한 적 없는 문서가 계속 인용된다.**
+		// 그 창은 순서를 어떻게 두든 남는다(deleteQuietly 가 실패를 보고하지 않기 때문). 대신
+		// 경고 로그에 file_id 가 남아 손으로 찾을 수 있다 - #72 가 업로드 쪽에 세운 것과 같은 방식이다
+		openAiService.deleteDocument(doc.vectorStoreId(), doc.openaiFileId());
 	}
 
 	private static boolean startsWith(byte[] data, byte[] prefix) {
