@@ -266,6 +266,12 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 설정값은 `backend/src/main/resources/application.yml` 에 `${ENV:기본값}` 으로 두고, 위험한 값
 (`app.mode` · `app.jwt.secret`)은 **일부러 기본값을 비워** 기동에 실패하게 한다.
 
+`app.jwt.secret` 은 비어 있는지만이 아니라 **길이도 본다** — 32바이트 미만이면 `JwtSecretPolicy` 가
+기동을 막는다. 하한을 한 곳에 둔 이유는 이 키를 `JwtService`(aud=auth)와
+`FileAccessTokenService`(aud=file) 둘이 공유하기 때문이다. 각자 들고 있으면 한쪽만 올렸을 때
+조용히 갈리는데, **두 토큰이 같은 키로 서명되므로 약한 쪽이 곧 전체의 실효 강도**다.
+`/api/files/**` 는 permitAll 이라 파일 토큰의 서명이 그 경로의 유일한 경계라는 점이 특히 그렇다.
+
 ## 배포
 
 두 갈래가 있다. **상시 공개**는 자체 호스팅 서버에 컨테이너를 올리고, **데모**는 로컬 인스턴스를 터널로 노출한다.
@@ -276,7 +282,7 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 | 항목 | 빠뜨리면 |
 |------|----------|
 | `APP_MODE` | **기동 실패**(의도된 동작). `mock` 이면 키 없이 전 경로가 돈다 |
-| `JWT_SECRET` | 기동 실패 |
+| `JWT_SECRET` | 기동 실패. **32바이트 미만이어도 기동 실패** — 이 키가 인증 토큰과 파일 접근 토큰을 함께 서명하므로 짧으면 둘이 같이 열린다 |
 | `DB_URL` · `DB_USERNAME` · `DB_PASSWORD` | 기동 실패. URL 은 `jdbc:postgresql://…` 형식이어야 함 — 관리형 DB 가 주는 `postgres://…` 를 그대로 넣으면 뜨지 않음 |
 | `ALLOWED_ORIGINS` | 기동은 되고 **`http://localhost:5173` 만 허용**된다(기본값). 배포 도메인은 안 들어가므로 브라우저가 CORS 로 막는다 |
 | `OPENAI_API_KEY` | `live` 에서만 필요. `live` 인데 비면 기동 실패(fail-fast) |

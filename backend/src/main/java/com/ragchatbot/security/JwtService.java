@@ -28,9 +28,7 @@ public class JwtService {
 			@Value("${app.jwt.secret:}") String secret,
 			@Value("${app.jwt.expiration-minutes:120}") long expirationMinutes,
 			@Value("${app.jwt.refresh-threshold-minutes:30}") long refreshThresholdMinutes) {
-		if (secret == null || secret.isBlank()) {
-			throw new IllegalStateException("app.jwt.secret 미설정 - JWT 서명 불가 (env JWT_SECRET 주입 필요)");
-		}
+		JwtSecretPolicy.require(secret, "JWT 서명 불가");
 		this.algorithm = Algorithm.HMAC256(secret);
 		// audience "auth" 강제 - 파일 서명 토큰(aud="file")이 인증 Bearer로 통용되지 않게 분리
 		this.verifier = JWT.require(algorithm).withAudience("auth").build();
