@@ -30,6 +30,21 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
   -H "Authorization: Bearer $OPENAI_API_KEY"
 ```
 
+**이 한 줄이 #37 도 함께 판정한다 — 결과를 그 이슈에 적는다.** 위 요청에는 `OpenAI-Beta` 헤더가
+없으므로, 돌아오는 코드가 그 헤더의 필수 여부를 그대로 말해 준다. **키가 없으면 판별되지 않는다** —
+무인증으로는 인증 검사가 먼저 걸려 헤더 유무와 무관하게 401 만 돌아온다.
+
+| 코드 | 키 | `OpenAI-Beta: assistants=v2` | 할 일 |
+|------|-----|------------------------------|-------|
+| `200` | 정상 | **없어도 통한다.** 우리 구현은 공식 SDK 와 맞추는 차원으로 남는다 | 결과를 #37 에 적고 닫는다 |
+| `400` | 정상 | **필수다.** vector store 호출 3곳에 이미 붙어 있으므로 구현이 옳았다는 확인이다 | 결과를 #37 에 적고 닫는다 |
+| `401` | 잘못됐거나 미설정 | 판별 불가 | 키부터 고친다 |
+| `403` | 정상, 권한 부족 | 판별 불가 | 프로젝트 권한을 먼저 본다 |
+
+**어느 쪽이든 코드는 바뀌지 않을 가능성이 높다.** 부착 범위는 `OpenAiRealBetaHeaderTest` 가
+로컬 `HttpServer` 로 받아 잠그고 있고(`/responses` 와 `/files` 에는 붙지 않는 것까지),
+양방향 미확인이라는 사실은 아래 3절 위험 목록 F 에 적혀 있다.
+
 **함께 볼 문서** — 배포 절차는 [`docs/02_architecture/backend.md`](../02_architecture/backend.md) 「배포」,
 관리자 업로드 기능 명세는 [`docs/01_specs/features.md`](./features.md) FEAT-ADMIN-002,
 환경변수 전량과 빠뜨렸을 때의 증상은 `backend/.env.example` 에 있다.
@@ -163,7 +178,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 | C | 인용 annotation의 타입이 `file_citation` 이고 파일명 필드가 `filename` | 답변은 정상인데 출처가 늘 0건이라 **모든 답변에 「자료 없음」 배너**가 붙는다 |
 | D | 검색 결과 본문이 `file_search_call` 항목의 `results[].text` 에 실린다 | 출처 각주는 뜨는데 스니펫이 빈칸이다 |
 | E | `include: ["file_search_call.results"]` 로 결과 본문을 받을 수 있다 | D와 같은 증상 |
-| F | Vector Store 계열 호출에 `OpenAI-Beta: assistants=v2` 가 **필요하다** | 2-3 업로드가 500 으로 끝난다. 공식 SDK·API 레퍼런스가 이 헤더를 보내기에 우리도 보내지만(#37), 없으면 거절되는지는 확인한 적이 없다. 반대로 **불필요한데 보내서** 생기는 문제도 미확인이다 |
+| F | Vector Store 계열 호출에 `OpenAI-Beta: assistants=v2` 가 **필요하다** | 2-3 업로드가 500 으로 끝난다. 공식 SDK·API 레퍼런스가 이 헤더를 보내기에 우리도 보내지만(#37), 없으면 거절되는지는 확인한 적이 없다. 반대로 **불필요한데 보내서** 생기는 문제도 미확인이다. **판정은 이 문서 맨 위의 스토어 목록 curl 하나로 끝난다** — 그 표를 보고 결과를 #37 에 적는다 |
 
 가정 C는 특히 **오진하기 쉽다.** "자료 없음"은 정상 동작으로도 나오는 표시라, 스토어에 문서가 있는데도
 0건이면 검색이 안 된 것인지 인용 추출이 깨진 것인지 화면만 봐서는 구분되지 않는다. 2-4에서
