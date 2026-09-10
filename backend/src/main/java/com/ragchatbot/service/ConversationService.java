@@ -137,7 +137,10 @@ public class ConversationService {
 			}
 		}
 		try {
-			// OpenAI 파일/Vector Store 정리(AC-12). 목업은 호출 기록만
+			// OpenAI 파일/Vector Store 정리(AC-12). 목업은 호출 기록만.
+			// **현재 이 호출은 항상 (null, []) 이라 아무 일도 하지 않는다**(#124) - 두 값에 값이
+			// 들어가는 자리가 없기 때문이다. 바로 위 openaiFileId != null 분기도 같은 이유로
+			// 도달 불가다. 근거는 OpenAiService.deleteResources 의 설명에 있다
 			openAiService.deleteResources(conversation.vectorStoreId(), openaiFileIds);
 		} catch (RuntimeException e) {
 			log.warn("대화 삭제 후 OpenAI 리소스 정리 실패. conversationId={}", conversationId, e);
