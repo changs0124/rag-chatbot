@@ -57,13 +57,22 @@ export default function MyPage() {
     }
   }
 
+  /**
+   * 테마는 낙관적으로 먼저 적용한다 - 왕복을 기다리면 클릭이 굼떠 보인다.
+   *
+   * **실패하면 되돌린다**(#78). 종전에는 되돌리지 않아 화면은 새 테마인데 서버는 옛 값이었고,
+   * `ThemeContext` 가 localStorage 에도 이미 저장해 둔 상태였다. 다시 로그인하면 `applyUser` 가
+   * 서버 값을 적용해 되돌아가므로, **어느 쪽이 진짜인지 알 수 없는** 상태가 그때까지 이어졌다.
+   */
   async function chooseTheme(next: Theme) {
+    const previous = theme
     setTheme(next)
     try {
       const me = await updateTheme(next)
       setUser(me)
       flash('테마를 변경했습니다')
     } catch (e) {
+      setTheme(previous)
       fail(e)
     }
   }
