@@ -135,7 +135,8 @@ erDiagram
 | role | text | N | - | `user` \| `assistant` |
 | content | text | Y | NULL | 답변 본문 |
 | status | text | N | `'complete'` | `complete` \| `error`. **`streaming` 은 DB에 없다**(프론트 로컬 상태) |
-| stopped | boolean | N | `false` | 사용자가 끊어 **출처 판정 전에** 끝났음 |
+| stopped | boolean | N | `false` | **출처 판정 전에** 끝났음. 사용자가 끊은 경우와 서버 타임아웃이 스트림 도중 떨어진 경우 둘 다 참이다(V7 이후) |
+| timed_out | boolean | N | `false` | 서버가 SSE 스트림을 타임아웃으로 닫았음(V7). `stopped` 와 **별개의 축** |
 | input_tokens | integer | Y | NULL | 입력 토큰 수(V4). 모르면 null |
 | output_tokens | integer | Y | NULL | 출력 토큰 수(V4). 모르면 null |
 | created_at | timestamptz | N | `now()` | |
@@ -146,6 +147,24 @@ erDiagram
 **`stopped` 를 따로 둔 이유** : 중단은 실패가 아니라 `status='complete'` 로 저장하기로 했는데, 그러면
 무자료 배너(assistant + complete + 출처 0건)가 **출처를 판정하기도 전에 끊긴 답변**에까지 붙었다.
 인용은 스트림 끝에 오므로 중단 시점에는 항상 0건이라 100% 오표시였다.
+
+**`timed_out` 을 또 따로 둔 이유** : 서버 타임아웃 하나가 마지막 토큰의 타이밍에 따라 **세 가지 모양**으로
+갈렸고, 그 셋이 각각 다른 사건과 구분되지 않았다. `status` 에 값을 추가하면 `check (status in
+('complete','error'))` 를 깨야 하고, 전부 `error` 로 통일하는 것은 2026-07-28 결정의 재발이다.
+축을 하나 더 두면 여섯 갈래가 유일하게 갈린다 :
+
+| 무슨 일이 있었나 | status | stopped | timed_out |
+|---|---|---|---|
+| 정상 완료 | `complete` | false | false |
+| 사용자가 정지 | `complete` | true | false |
+| 타임아웃이 **토큰 도중**에 떨어짐 | `complete` | true | **true** |
+| 타임아웃 뒤 업스트림이 **뒤늦게 완료**(전문 저장) | `complete` | false | **true** |
+| 타임아웃 뒤 업스트림 **무응답** | `error` | false | **true** |
+| 진짜 오류 | `error` | false | false |
+
+세 번째 줄이 없으면 사용자가 누르지도 않은 정지가 기록에 남고, 네 번째 줄이 없으면 화면이 끊긴 채인
+답변이 「정상 완료」로만 보인다. 이력을 만들 때 **세 번째 줄만 제외**한다 — 사용자가 보지도 받아들이지도
+않은 문장이기 때문이며, 네 번째 줄은 전문이라 그대로 쓴다.
 
 ### citations (출처)
 
@@ -256,10 +275,11 @@ erDiagram
 | V4 | `messages.input_tokens` · `output_tokens` — FEAT-OPS-001 |
 | V5 | `users.role` — FEAT-ADMIN-001 |
 | V6 | `rag_documents` 신설 — FEAT-ADMIN-002 |
+| V7 | `messages.timed_out` — 서버 타임아웃 표시(#84) |
 
 **기존 마이그레이션을 수정하지 않는다.** 새 변경은 항상 새 파일로 추가한다.
 
-**소급 보정(backfill)을 하지 않는 것도 결정이다.** V3 이전의 중단 답변, V4 이전의 토큰 값은
+**소급 보정(backfill)을 하지 않는 것도 결정이다.** V3 이전의 중단 답변, V4 이전의 토큰 값, V7 이전의 타임아웃 여부는
 식별할 방법이 없어 비운 채 둔다. 개발 단계 데이터라 감수한다.
 
 ## 6. 사용량 조회 SQL
