@@ -19,6 +19,18 @@
   `:latest` 와 커밋 SHA 태그로 GHCR 에 민다. PR 은 기존대로 빌드만 한다 — 「배포 산출물이 조용히
   썩는 것을 막음」이라는 원래 의도는 그대로다. 패키지는 public 이라 서버에 `docker login` 이 없다.
 
+- **증거 미러 커밋에 CI 를 돌리지 않는다(#127).** `ci.yml` 의 `push` 에 `paths-ignore: ['.issue/**']`
+  를 넣었다. `issue-start`·`issue-end` 가 증거를 기본 브랜치에 바로 올리는데, 경로 필터가 없어
+  **코드가 한 줄도 안 바뀐 커밋이 잡 8개를 다 돌렸다.** 이 저장소는 비공개라 Actions 분이 유료
+  한도에 묶이고, 실제로 이 낭비가 한도를 밀어내 CI 가 통째로 멎었다(`The job was not started
+  because recent account payments have failed or your spending limit needs to be increased`).
+  main 에 이미 `.issue/**` 파일이 88개 쌓여 있어 일회성 문제가 아니었다.
+
+  **`pull_request` 에는 넣지 않았다.** PR 은 코드와 증거가 같이 들어와 어차피 걸리지 않는데,
+  `paths-ignore` 로 건너뛴 워크플로는 required checks 를 걸었을 때 pending 으로 남아 merge 를
+  영영 막는다. `docs/06_changelog/**` 도 일부러 뺐다 — `check-doc-refs.sh` 가 `docs` 전체를
+  스캔해서, 건너뛰면 CHANGELOG 만 고친 커밋의 깨진 참조가 그대로 통과한다.
+
 - **compose 에 메모리 상한과 저사양 튜닝을 걸었다(#127).** 기본 설정으로는 세 컨테이너 합계가
   물리 메모리에 육박한다. 상한이 없으면 커널 OOM killer 가 **누구를 죽일지 고르는데**, `db` 가
   걸리면 `pgdata` 가 위험하다 — 상한은 `app` 이 먼저 죽게 만들어 DB 를 지키는 장치이기도 하다.
