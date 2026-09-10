@@ -44,12 +44,17 @@ public class ChatController {
 	@PostMapping
 	public SseEmitter chat(@RequestBody ChatRequest req) {
 		UUID userId = CurrentUser.id();
-		rateLimiter.checkChat(userId); // AC-10 : 초과 시 429
 		// back-pressure : 동시 스트림 상한. **prepare 앞이어야 함** - prepare 가 사용자 메시지를
 		// 저장하므로 뒤에서 거절하면 답변 없는 메시지가 대화에 남음(2026-07-28 결정)
 		concurrency.acquire(userId);
 		boolean handedOff = false;
 		try {
+			// **동시성 검사 뒤에 둔다**(#96). 레이트리밋은 비용 통제가 목적인데, 동시성 상한에 걸려
+			// 되돌아간 요청은 모델을 부르지 않아 비용이 0 이다. 순서가 반대였을 때는 스트림이 도는
+			// 중에 전송을 연타하면 전부 "이미 응답 중" 429 를 받으면서 분당 카운터만 올라, 스트림이
+			// 끝난 뒤에도 그 분이 끝날 때까지 막혔다 - 유량 제어가 스스로를 무력화했다.
+			// 여기서 던져도 아래 finally 가 자리를 반납하므로 추가 장치가 필요 없다
+			rateLimiter.checkChat(userId); // AC-10 : 초과 시 429
 			PreparedChat prepared = chatService.prepare(userId, req); // 400/404 동기 반환
 			SseEmitter emitter = new SseEmitter(sseTimeoutMs); // P-5 : 타임아웃이 스트림 수명 단독 결정
 			chatExecutor.execute(() -> {
