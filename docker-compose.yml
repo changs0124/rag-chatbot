@@ -7,10 +7,33 @@
 # 환경변수는 두 곳으로 나뉜다 :
 #   backend/.env - 앱 변수(정본은 backend/.env.example)
 #   .env         - compose 전용 변수(DB 비밀번호 · 터널 토큰). 정본은 .env.example
+#
+# **여기에 build 가 없는 것은 의도다(#127).** 배포 서버가 1GB 급이라 이미지 빌드가 물리 메모리를
+# 넘긴다 - build 스테이지의 Maven JVM 하나로 넘긴다. 이미지는 로컬에서 빌드해
+# `scripts/deploy.sh` 가 서버로 옮긴다(docker save → scp → docker load).
+# 로컬에서 빌드해 띄우려면 override 를 겹친다 :
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app
+# 절차로 "서버에서 빌드하지 말자" 고 정하는 대신 **키를 없애 구조적으로 막았다** -
+# APP_MODE 를 명시 옵트인으로 뒤집은 것과 같은 판단이다.
+#
+# **mem_limit 을 셋 다 건다(#127).** 상한이 없으면 커널 OOM killer 가 누구를 죽일지 고르는데,
+# db 가 걸리면 pgdata 가 위험하다. 상한은 app 이 먼저 죽게 만들어 DB 를 지키는 장치이기도 하다.
+# memswap_limit 은 **일부러 비운다** - 미지정이면 Docker 가 mem_limit 만큼 스왑을 더 허용하므로
+# (합계 2배) 서버에 잡아 둔 스왑 2GB 가 기동 피크를 받는다. 지정하면 그 완충이 사라진다.
 
 services:
   db:
     image: postgres:16-alpine
+    # 기본값은 이 사양에 과하다 - shared_buffers 128MB 를 그대로 두면 app 의 JVM 과 물리 메모리를
+    # 두고 다툰다. 동시 접속이 한 자리인 개인 규모라 max_connections 도 100 이 필요 없다
+    # (커넥션 하나가 수 MB 다). app 쪽 Hikari 풀을 5 로 묶어 두었으므로 20 이면 여유가 있다
+    command: >
+      postgres
+      -c shared_buffers=48MB
+      -c max_connections=20
+      -c work_mem=2MB
+      -c maintenance_work_mem=32MB
+    mem_limit: 160m
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-ragchatbot}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -26,7 +49,10 @@ services:
     restart: unless-stopped
 
   app:
-    build: ./backend
+    # 로컬에서 빌드해 `scripts/deploy.sh` 가 서버로 넣어 둔 이미지다 - 레지스트리를 거치지 않는다.
+    # 서버에 이 태그가 없으면 기동에 실패한다. **그게 의도다** - 빌드로 조용히 빠지지 않는다
+    image: rag-chatbot-backend:latest
+    mem_limit: 420m
     env_file:
       - backend/.env
     environment:
@@ -37,6 +63,15 @@ services:
       DB_USERNAME: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       FILE_STORAGE_ROOT: /data/uploads
+      # **SerialGC 를 명시한다.** 공유 vCPU 한 자리 사양에서 G1 의 GC 스레드는 CPU 와 메모리를
+      # 함께 낭비한다. 컨테이너 상한이 작아 JVM 이 알아서 고르기도 하지만, 상한을 올리는 날
+      # 조용히 G1 으로 되돌아가는 것을 막으려고 박아 둔다.
+      # MaxRAMPercentage 는 mem_limit(420m) 기준이다 - 힙 밖(메타스페이스 · 스레드 스택 · 코드
+      # 캐시)이 나머지를 쓰므로 100 에 가깝게 두면 힙이 아니라 컨테이너가 먼저 죽는다
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65 -XX:+UseSerialGC -Xss512k"
+      # application.yml 에 hikari 설정이 없어 기본값이 10 이다. 커넥션당 수 MB 라
+      # 이 사양에서는 그냥 낭비다 - **소스를 고치지 않고** 환경변수로만 줄인다
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
     volumes:
       # 첨부는 로컬 디스크에 쌓인다. 이 볼륨을 떼면 업로드된 이미지가 사라진다
       - uploads:/data/uploads
@@ -71,6 +106,7 @@ services:
     # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ http://app:8080 매핑은 Cloudflare 대시보드에 있다.
     # 터널 설정을 저장소에 두지 않는 대신, 토큰만 있으면 어느 서버에서든 같은 주소로 붙는다
     command: tunnel --no-autoupdate run
+    mem_limit: 64m
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN 을 .env 에 넣을 것}
     depends_on:

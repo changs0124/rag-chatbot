@@ -3,8 +3,21 @@ name: CI
 on:
   push:
     branches: [main]
+    # 증거 미러 커밋은 `.issue/**` 만 건드린다(issue-start · issue-end 가 기본 브랜치에 바로 올린다).
+    # 코드가 한 줄도 안 바뀐 커밋에 잡을 다 돌릴 이유가 없다.
+    #
+    # **pull_request 에는 넣지 않는다.** PR 은 코드와 증거가 같이 들어와 어차피 걸리지 않고,
+    # paths-ignore 로 건너뛴 워크플로는 required checks 를 걸었을 때 pending 으로 남아 merge 를
+    # 영영 막는다. `docs/06_changelog/**` 도 빼지 않는다 - `check-doc-refs.sh` 가 그 경로도
+    # 스캔해서, 건너뛰면 CHANGELOG 만 고친 커밋의 깨진 참조가 그대로 통과한다.
+    paths-ignore:
+      - '.issue/**'
   pull_request:
     branches: [main]
+  # 상시 검사에서 뺀 잡(secrets · deps)을 주 1회 몰아서 돈다. 아래 각 잡의 주석 참고
+  schedule:
+    - cron: '0 18 * * 0'   # 매주 월요일 03:00 KST (UTC 일요일 18:00)
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,6 +35,8 @@ env:
 jobs:
   backend:
     name: backend (test + build + 케이스 수 하한)
+    # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +60,8 @@ jobs:
 
   frontend:
     name: frontend (lint + test + build + 케이스 수 하한)
+    # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -72,6 +89,8 @@ jobs:
 
   docker:
     name: docker (백엔드 이미지 빌드)
+    # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -82,6 +101,8 @@ jobs:
 
   contract:
     name: contract (응답 계약 대조)
+    # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,6 +111,8 @@ jobs:
 
   docs:
     name: docs (참조 실재)
+    # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -102,6 +125,11 @@ jobs:
 
   secrets:
     name: secrets (시크릿 스캔)
+    # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
+    # 이 잡들은 우리 커밋이 아니라 **바깥(취약점 DB · 커밋 이력 전체)이 바뀔 때** 결과가
+    # 달라진다. PR 마다 돌려도 같은 답이 반복될 뿐이라 비용만 든다.
+    # 급하면 Actions 탭에서 workflow_dispatch 로 즉시 돌릴 수 있다.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -120,6 +148,11 @@ jobs:
 
   deps-backend:
     name: deps (백엔드 의존성 취약점)
+    # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
+    # 이 잡들은 우리 커밋이 아니라 **바깥(취약점 DB · 커밋 이력 전체)이 바뀔 때** 결과가
+    # 달라진다. PR 마다 돌려도 같은 답이 반복될 뿐이라 비용만 든다.
+    # 급하면 Actions 탭에서 workflow_dispatch 로 즉시 돌릴 수 있다.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -137,6 +170,11 @@ jobs:
 
   deps-frontend:
     name: deps (프론트 의존성 취약점)
+    # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
+    # 이 잡들은 우리 커밋이 아니라 **바깥(취약점 DB · 커밋 이력 전체)이 바뀔 때** 결과가
+    # 달라진다. PR 마다 돌려도 같은 답이 반복될 뿐이라 비용만 든다.
+    # 급하면 Actions 탭에서 workflow_dispatch 로 즉시 돌릴 수 있다.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     defaults:
       run:
