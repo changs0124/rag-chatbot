@@ -11,16 +11,37 @@ export default function CameraCapture({
   const videoRef = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState<string | null>(null)
 
+  /**
+   * 카메라를 열고, 떠날 때 트랙을 멈춘다.
+   *
+   * **cancelled 표시가 필요하다**(#75). 정리 함수가 `.then` 보다 먼저 돌면 `stream` 이 아직 null 이라
+   * 아무것도 멈추지 않고, 그 뒤 resolve 된 실사용 스트림은 **아무도 정지시키지 않는다** —
+   * 카메라 표시등이 탭을 닫을 때까지 켜져 있다. 권한 다이얼로그가 떠 있거나 초기화 중(모바일에서
+   * 1~2초)에 취소하면 그 창에 들어간다. React 19 StrictMode 는 개발 모드에서 effect 를
+   * mount→cleanup→mount 로 두 번 돌리므로 **개발 환경에서는 열 때마다 매번** 샜다.
+   */
   useEffect(() => {
     let stream: MediaStream | null = null
+    let cancelled = false
     navigator.mediaDevices
       .getUserMedia({ video: { facingMode: 'environment' } })
       .then((s) => {
+        // 이미 떠난 뒤라면 그 자리에서 멈춘다 - 정리 함수는 이 스트림을 본 적이 없다
+        if (cancelled) {
+          s.getTracks().forEach((t) => t.stop())
+          return
+        }
         stream = s
         if (videoRef.current) videoRef.current.srcObject = s
       })
-      .catch(() => setError('카메라에 접근할 수 없습니다 (HTTPS·권한을 확인하세요)'))
-    return () => stream?.getTracks().forEach((t) => t.stop())
+      .catch(() => {
+        if (cancelled) return
+        setError('카메라에 접근할 수 없습니다 (HTTPS·권한을 확인하세요)')
+      })
+    return () => {
+      cancelled = true
+      stream?.getTracks().forEach((t) => t.stop())
+    }
   }, [])
 
   function capture() {
