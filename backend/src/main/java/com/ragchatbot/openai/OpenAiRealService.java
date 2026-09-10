@@ -387,6 +387,10 @@ public class OpenAiRealService implements OpenAiService {
 	/**
 	 * 대화 삭제 시 OpenAI 리소스 정리(AC-12). 공용 Store는 절대 삭제하지 않음.
 	 * 대화별 업로드 파일(openaiFileId)만 삭제하고, 대화 전용 스토어(공용과 다른 경우)만 삭제함.
+	 *
+	 * <p><b>단, 아래 두 분기는 실행된 적이 없다</b>(#124). 호출자가 항상 {@code (null, [])} 를 넘긴다 -
+	 * 근거는 {@link OpenAiService#deleteResources} 의 설명에 있다. <b>여기 적힌 규칙은 「지금 이렇게
+	 * 동작한다」가 아니라 「대화별 스토어를 쓰게 되면 이렇게 동작해야 한다」로 읽을 것.</b>
 	 */
 	@Override
 	public void deleteResources(String vectorStoreId, List<String> openaiFileIds) {
