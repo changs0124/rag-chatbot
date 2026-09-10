@@ -59,4 +59,56 @@ describe('chat SSE 수신 계약', () => {
     ).resolves.toBeUndefined()
     expect(seen).toEqual(['본문'])
   })
+
+  /**
+   * #85 - 종단 이벤트 없이 스트림이 끝나는 경로.
+   *
+   * 서버 SSE 타임아웃은 emitter 를 닫을 뿐 done 도 error 도 싣지 못한다(닫힌 뒤의 send 는
+   * IllegalStateException 이다). 프록시 idle timeout · 모바일 네트워크 전환도 같은 모양으로 온다 -
+   * 이 프로젝트는 Cloudflare Tunnel 뒤로 배포되므로 프록시가 한 겹 더 낀다.
+   */
+  it('done 없이 끊기면 오류로 귀결됨 - 영구 streaming 을 막음', async () => {
+    stubFetch(
+      'event:meta\ndata:{"messageId":"m1","conversationId":"c1"}\n\n' +
+        'event:token\ndata:{"delta":"중간까지"}\n\n',
+    )
+
+    const seen: string[] = []
+    await expect(
+      streamChat(REQUEST, {
+        onToken: (d) => seen.push(`token:${d}`),
+        onDone: () => seen.push('done'),
+        onError: (m) => seen.push(`error:${m}`),
+      }),
+    ).rejects.toThrow()
+
+    // 받은 토큰은 그대로 두고 마지막에 오류가 붙어야 한다. 이것이 없으면 호출부의 catch 가
+    // 돌지 않아 말풍선이 streaming 인 채 영원히 남는다(오류 배너도 정지 버튼도 없이)
+    expect(seen[0]).toBe('token:중간까지')
+    expect(seen[1]).toMatch(/^error:/)
+    expect(seen).toHaveLength(2)
+  })
+
+  /** 토큰 하나 없이 끊긴 경우도 같다 - 화면에 「…」만 남아 있던 자리다 */
+  it('토큰 하나 없이 끊겨도 오류로 귀결됨', async () => {
+    stubFetch('event:meta\ndata:{"messageId":"m1","conversationId":"c1"}\n\n')
+
+    const seen: string[] = []
+    await expect(streamChat(REQUEST, { onError: (m) => seen.push(m) })).rejects.toThrow()
+    expect(seen).toHaveLength(1)
+  })
+
+  /** 반대편 - error 이벤트로 끝난 것은 계약대로의 종단이므로 두 번 알리지 않는다 */
+  it('error 이벤트로 끝나면 그것만 전달함', async () => {
+    stubFetch(
+      'event:meta\ndata:{"messageId":"m1","conversationId":"c1"}\n\n' +
+        'event:error\ndata:{"code":"STREAM_ERROR","message":"응답 생성 중 오류"}\n\n',
+    )
+
+    const seen: string[] = []
+    await expect(
+      streamChat(REQUEST, { onError: (m) => seen.push(m) }),
+    ).resolves.toBeUndefined()
+    expect(seen).toEqual(['응답 생성 중 오류'])
+  })
 })
