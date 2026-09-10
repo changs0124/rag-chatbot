@@ -1,0 +1,35 @@
+# after — GCP e2-micro 실측
+일시: 2026-09-10T05:34:49Z
+인스턴스: free-vm / us-west1-b / e2-micro (953Mi + 스왑 2GB, pd-standard 30GB)
+구성: APP_MODE=mock, db+app 2컨테이너 (cloudflared 는 TUNNEL_TOKEN 부재로 제외)
+이미지: 로컬 빌드분을 docker save/load 로 반입 후 GHCR 태그로 재태그
+
+=== docker compose ps ===
+NAME           IMAGE                                           COMMAND                  SERVICE   CREATED         STATUS                   PORTS
+deploy-app-1   ghcr.io/changs0124/rag-chatbot-backend:latest   "java -jar /app/app.…"   app       4 minutes ago   Up 4 minutes (healthy)   127.0.0.1:8080->8080/tcp
+deploy-db-1    postgres:16-alpine                              "docker-entrypoint.s…"   db        4 minutes ago   Up 4 minutes (healthy)   5432/tcp
+
+=== docker stats ===
+NAME           MEM USAGE / LIMIT   MEM %     CPU %
+deploy-app-1   164.2MiB / 420MiB   39.09%    0.25%
+deploy-db-1    36.26MiB / 160MiB   22.66%    0.01%
+
+=== free -h ===
+               total        used        free      shared  buff/cache   available
+Mem:           953Mi       580Mi        66Mi        11Mi       440Mi       372Mi
+Swap:          2.0Gi        30Mi       2.0Gi
+
+=== GET /api/health ===
+HTTP 200
+
+=== LogConfig (로그 회전 보존) ===
+{"Type":"json-file","Config":{"max-file":"3","max-size":"10m"}}
+
+=== volumes (영속 보존) ===
+DRIVER    VOLUME NAME
+local     deploy_pgdata
+local     deploy_uploads
+
+=== JVM 옵션 적용 확인 ===
+-XX:MaxRAMPercentage=65 -XX:+UseSerialGC -Xss512k
+5
