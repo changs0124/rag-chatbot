@@ -4,7 +4,7 @@
 |------|------|
 | 프로젝트 | rag-chatbot |
 | 문서 버전 | v1.1 |
-| 최종 수정일 | 2026-09-08 |
+| 최종 수정일 | 2026-09-10 |
 | 작성자 | changs0124 |
 | 상태 | `초안` |
 
@@ -47,8 +47,8 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 
 | 준비물 | 환경변수 | 없으면 생기는 일 |
 |--------|----------|------------------|
-| **PostgreSQL** | `DB_URL` · `DB_USERNAME` · `DB_PASSWORD` | **기동 실패.** `application.yml:10` 의 `${DB_URL:}` 이 비면 DataSource 가 드라이버를 정하지 못한다. URL 은 `jdbc:postgresql://…` 형식이어야 하며, 관리형 DB 가 주는 `postgres://user:pass@host/db` 를 그대로 넣으면 뜨지 않는다. **compose 로 띄우면 이 셋은 compose 가 덮어쓰므로 신경 쓰지 않아도 된다** |
-| **JWT 서명 시크릿** | `JWT_SECRET` | **기동 실패**(`JwtService.java:31-33`). 32바이트 이상 임의 문자열 — `openssl rand -base64 48` |
+| **PostgreSQL** | `DB_URL` · `DB_USERNAME` · `DB_PASSWORD` | **기동 실패.** `application.yml` 의 `spring.datasource.url`(`${DB_URL:}`)이 비면 DataSource 가 드라이버를 정하지 못한다. URL 은 `jdbc:postgresql://…` 형식이어야 하며, 관리형 DB 가 주는 `postgres://user:pass@host/db` 를 그대로 넣으면 뜨지 않는다. **compose 로 띄우면 이 셋은 compose 가 덮어쓰므로 신경 쓰지 않아도 된다** |
+| **JWT 서명 시크릿** | `JWT_SECRET` | **기동 실패**(`JwtSecretPolicy.require`). **32바이트 미만도 기동 실패**다. 32바이트 이상 임의 문자열 — `openssl rand -base64 48` |
 | OpenAI API 키 | `OPENAI_API_KEY` | `APP_MODE=live` 기동 즉시 실패(fail-fast). per-request 401로 흐르지 않는다 |
 | 공용 Vector Store ID | `OPENAI_VECTOR_STORE_ID` | 기동·응답은 되지만 `file_search` 툴을 아예 붙이지 않아 **출처가 항상 0건**이 된다 |
 | 모델 이름 | `OPENAI_MODEL` | 미지정 시 `gpt-4o`. 비전 입력을 쓰므로 **이미지 지원 모델이어야 한다** |
@@ -94,7 +94,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 실패했을 때 어느 단계가 원인인지 분리되지 않는다.
 
 > **순서를 지켜야 하는 이유** — 문서를 넣는 유일한 경로가 제품 화면인데(5절), 그 경로는
-> `OPENAI_VECTOR_STORE_ID` 가 이미 주입돼 **기동한 뒤에만** 열린다(`AdminDocumentService.java:85-88`).
+> `OPENAI_VECTOR_STORE_ID` 가 이미 주입돼 **기동한 뒤에만** 열린다(`AdminDocumentService.upload` 의 첫 가드).
 > 그래서 스토어를 만드는 것과 문서를 넣는 것이 붙어 있지 않고, 사이에 기동이 들어간다.
 > 대시보드에서 문서까지 올려 두면 순서는 짧아지지만 관리 화면에서 보이지도 지워지지도 않는 상태가 된다.
 
@@ -116,7 +116,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 - 확인 : 계정이 새로 만들어졌다면 로그에 `관리자 계정 발급 : … 임시 비밀번호 XXXX-XXXX-XXXX` 가
   **한 번만** 찍힌다. 재발급 경로가 없으므로 그 자리에서 옮겨 적는다.
 
-**`vs_` ID 가 틀려도 기동은 성공한다.** 형식·실재를 검사하는 코드가 없어(`OpenAiRealService.java:338-340`
+**`vs_` ID 가 틀려도 기동은 성공한다.** 형식·실재를 검사하는 코드가 없어(`OpenAiRealService.hasSharedVectorStore`
 는 공백 여부만 본다) 오타는 2-3 이나 2-4 에서야 드러난다. 증상과 대처는 3-1 에 있다.
 
 ### 2-3. 관리자로 로그인해 문서 1건만 올린다
