@@ -357,7 +357,7 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 
 | 제약 | 결과 |
 |------|------|
-| 이미지 빌드가 물리 메모리를 넘긴다 | **서버에서 빌드하지 않는다.** CI 가 GHCR 에 올리고 서버는 pull 만 한다(#127) |
+| 이미지 빌드가 물리 메모리를 넘긴다 | **서버에서 빌드하지 않는다.** 로컬에서 빌드해 `scripts/deploy.sh` 가 서버로 옮긴다(#127) |
 | 세 컨테이너 합계가 물리 메모리에 육박한다 | compose 에 `mem_limit` · JVM · PostgreSQL 튜닝을 걸었다(#127) |
 | 아웃바운드 무료 한도 1GB/월 | 첨부 이미지를 GPT-4o 로 넘기는 트래픽이 여기 잡힌다. 초과분은 GB 당 과금이라 파산할 금액은 아니지만 **"완전 무료"는 깨진다** |
 | `pd-standard` 30GB 는 쓰기 약 45 IOPS | Postgres WAL 이 병목이 될 수 있다. 느리다고 느껴지면 원인은 대개 여기다 |
@@ -382,18 +382,27 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD` · `TUNNEL_TOKEN`
 4. Cloudflare 대시보드에서 터널을 만들고 공개 호스트명을 **`http://app:8080`** 에 매핑한다.
    `localhost` 가 아니다 - cloudflared 는 별도 컨테이너라 compose 네트워크 이름으로 찾아간다
-5. `docker compose pull && docker compose up -d`
+5. 개발 PC 에서 `bash scripts/deploy.sh` — 빌드 · 전송 · 기동 · 헬스체크까지 한 번에 한다
 6. 백엔드 `ALLOWED_ORIGINS` 에 **Vercel 도메인**을, 프론트 `VITE_API_BASE_URL` 에 **터널 도메인**을 넣는다
 
 **서버는 이미지를 빌드하지 않는다(#127).** `docker-compose.yml` 의 `app` 에 `build` 가 없고
-`image: ghcr.io/changs0124/rag-chatbot-backend:latest` 만 있다. 배포 서버가 1GB 급이라 build 스테이지의
-Maven JVM 하나로 물리 메모리를 넘기기 때문이다. **절차로 막지 않고 키를 없앴다** — 본체에 `build` 를
-남겨 두면 이미지를 못 찾았을 때 `up` 이 조용히 빌드로 빠지는 경로가 남는다.
+`image: rag-chatbot-backend:latest` 만 있다. 배포 서버가 1GB 급이라 build 스테이지의 Maven JVM
+하나로 물리 메모리를 넘기기 때문이다. **절차로 막지 않고 키를 없앴다** — 본체에 `build` 를 남겨
+두면 이미지를 못 찾았을 때 `up` 이 조용히 빌드로 빠지는 경로가 남는다.
 
-이미지는 CI 가 올린다 — `.github/workflows/ci.yml` 의 `docker` 잡이 main 푸시마다 `:latest` 와
-커밋 SHA 태그를 함께 민다. 되돌릴 때는 `:latest` 대신 SHA 태그를 쓴다. 패키지는 public 이라
-서버에서 `docker login` 이 필요 없다. **PR 에서는 빌드만 하고 푸시하지 않는다** — 배포 산출물이
-조용히 썩는 것을 막는 기존 검증은 그대로다.
+**이미지는 레지스트리를 거치지 않는다.** `scripts/deploy.sh` 가 로컬에서 빌드해
+`docker save` → `scp` → `docker load` 로 서버에 넣는다. 압축 후 90MB 남짓이고 GCP 인바운드
+전송은 무료다.
+
+**왜 GHCR 이 아닌가** — 처음에는 CI 가 GHCR 에 미는 안으로 갔으나, 이 저장소는 비공개라
+GitHub Actions 분이 유료 한도에 묶이고 **실제로 그 한도가 소진되어 CI 가 통째로 멎었다**
+(`The job was not started because ... spending limit needs to be increased`). GHCR 도 비공개
+패키지 기준 저장 500MB · 전송 1GB/월 한도가 있어 같은 함정을 하나 더 들이는 셈이었다.
+직접 전송은 한도도 토큰도 없다.
+
+**감수하는 약점** : 레지스트리에 이미지 이력이 남지 않아 **이전 버전으로 되돌리려면 그 커밋을
+다시 빌드해야 한다.** 배포가 잦지 않은 단일 서버 전제에서 감수한다. 저장소를 공개로 바꾸거나
+유료 한도를 열면 GHCR 안으로 되돌아갈 수 있고, 그때 바뀌는 것은 `image:` 한 줄과 이 문단뿐이다.
 
 로컬에서 직접 빌드해 띄우려면 override 를 겹친다 :
 
@@ -405,7 +414,7 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build d
 Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip 을 Maven Central 에서 내려받는데,
 의존성 해석보다 앞선 단계라 레이어 캐시로도 덮이지 않고 Central 이 거절하면 이미지 빌드가 통째로 멎는다.
 버전은 wrapper 가 쓰던 3.9.16 과 같게 고정했고, `mvnw` 자체는 로컬·CI 용으로 그대로 남는다.
-**이 근거가 지켜 주는 자리는 이제 CI 다** — 서버가 빌드하지 않으므로 빌드가 멎는 곳은 CI 뿐이다.
+**이 근거가 지켜 주는 자리는 이제 개발 PC 다** — 서버가 빌드하지 않으므로 빌드가 멎는 곳은 로컬뿐이다.
 
 **메모리 상한을 셋 다 걸어 두었다(#127).** 실측은 `app` 164MiB / 420m · `db` 36MiB / 160m 이고
 시스템 전체가 573Mi / 953Mi 였다(`APP_MODE=mock` · 요청 0건 · cloudflared 제외 · 기동 직후).

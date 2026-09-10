@@ -19,17 +19,32 @@
   `:latest` 와 커밋 SHA 태그로 GHCR 에 민다. PR 은 기존대로 빌드만 한다 — 「배포 산출물이 조용히
   썩는 것을 막음」이라는 원래 의도는 그대로다. 패키지는 public 이라 서버에 `docker login` 이 없다.
 
-- **증거 미러 커밋에 CI 를 돌리지 않는다(#127).** `ci.yml` 의 `push` 에 `paths-ignore: ['.issue/**']`
-  를 넣었다. `issue-start`·`issue-end` 가 증거를 기본 브랜치에 바로 올리는데, 경로 필터가 없어
-  **코드가 한 줄도 안 바뀐 커밋이 잡 8개를 다 돌렸다.** 이 저장소는 비공개라 Actions 분이 유료
-  한도에 묶이고, 실제로 이 낭비가 한도를 밀어내 CI 가 통째로 멎었다(`The job was not started
-  because recent account payments have failed or your spending limit needs to be increased`).
-  main 에 이미 `.issue/**` 파일이 88개 쌓여 있어 일회성 문제가 아니었다.
+- **GitHub Actions 를 걷어내고 품질 게이트를 로컬로 옮겼다(#127).** 이 저장소는 비공개라 Actions
+  분이 유료 한도에 묶인다. 잡 8개짜리 워크플로가 PR·푸시마다 10~15분씩 먹었고, 한도가 소진되자
+  **CI 가 통째로 멎었다** — `The job was not started because recent account payments have failed
+  or your spending limit needs to be increased`. 잡이 step 하나도 못 밟고 4초 만에 전부 실패했다.
 
-  **`pull_request` 에는 넣지 않았다.** PR 은 코드와 증거가 같이 들어와 어차피 걸리지 않는데,
-  `paths-ignore` 로 건너뛴 워크플로는 required checks 를 걸었을 때 pending 으로 남아 merge 를
-  영영 막는다. `docs/06_changelog/**` 도 일부러 뺐다 — `check-doc-refs.sh` 가 `docs` 전체를
-  스캔해서, 건너뛰면 CHANGELOG 만 고친 커밋의 깨진 참조가 그대로 통과한다.
+  GitHub Actions 워크플로 파일을 지우고 `scripts/check-all.sh` 를 넣었다. 지운 파일의 경로를
+  백틱으로 적지 않는 것은 `check-doc-refs.sh` 가 **실재하지 않는 참조로 잡기 때문**이다 —
+  이력에는 서술로 남긴다. **검사를 버린 것이 아니라
+  실행 위치만 옮겼다** — 호출하던 스크립트(`check-doc-refs` · `check-doc-sections` ·
+  `check-response-contract` · `check-runtime-versions` · `check-case-floor` · `check-doc-versions`)는
+  전부 그대로다. `docs` · `quick` · 전체 세 모드가 있고 종료 코드가 실패한 검사 수다.
+
+  **gitleaks · Trivy 는 없으면 건너뛰되 그 사실을 크게 찍는다.** 조용히 넘어가면 「통과」와
+  「검사 안 함」이 구분되지 않는다 — 종전 CI 가 Trivy 에 `list-all-pkgs` 를 켠 것과 같은 이유다.
+
+  **감수하는 약점** : 게이트가 강제되지 않는다. 돌리지 않고 밀면 그대로 들어간다.
+
+- **배포를 레지스트리 없이 한다(#127).** 처음에는 CI 가 GHCR 에 미는 안으로 갔으나, Actions 를
+  걷어내면서 함께 접었다 — GHCR 도 비공개 패키지 기준 저장 500MB · 전송 1GB/월 한도가 있어
+  같은 함정을 하나 더 들이는 셈이었다. `scripts/deploy.sh` 가 로컬에서 빌드해
+  `docker save` → `scp` → `docker load` 로 서버에 넣고, 기동과 헬스체크(최대 90초)까지 한다.
+  압축 후 90MB 남짓이고 GCP 인바운드 전송은 무료다. 한도도 토큰도 없다.
+
+  **감수하는 약점** : 레지스트리에 이미지 이력이 남지 않아 **되돌리려면 그 커밋을 다시 빌드해야
+  한다.** 배포가 잦지 않은 단일 서버 전제에서 감수한다. 저장소를 공개로 바꾸거나 유료 한도를 열면
+  GHCR 로 되돌아갈 수 있고, 그때 바뀌는 것은 `image:` 한 줄과 배포 절차 문단뿐이다.
 
 - **compose 에 메모리 상한과 저사양 튜닝을 걸었다(#127).** 기본 설정으로는 세 컨테이너 합계가
   물리 메모리에 육박한다. 상한이 없으면 커널 OOM killer 가 **누구를 죽일지 고르는데**, `db` 가

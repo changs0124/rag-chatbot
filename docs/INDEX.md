@@ -15,7 +15,7 @@
 | 저장소 | 로컬 디스크(`FILE_STORAGE_ROOT`) — `FileStorage` 인터페이스로 S3 교체 가능 |
 | 테스트 | 백엔드 JUnit 6 + Testcontainers(실 PostgreSQL) · 프론트 Vitest + Testing Library |
 | Lint | oxlint (프론트) |
-| CI | GitHub Actions — `.github/workflows/ci.yml` (backend · frontend · docker · contract · docs · secrets · deps × 2) |
+| 품질 게이트 | **로컬 실행** — `bash scripts/check-all.sh` (문서 · 계약 · 런타임 버전 · 백엔드 verify · 프론트 lint/test/build · 이미지 빌드 · 시크릿 · 의존성). GitHub Actions 는 쓰지 않는다(#127) |
 
 ## 실행
 
@@ -29,7 +29,7 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 
 `APP_MODE`는 기본값이 없다. 미설정이면 `AppModeGuard`가 기동을 막는다 — 목업이 우연히 켜지는 경로를 없애기 위한 의도적 설계다.
 
-**`./mvnw` 로 띄울 때 `backend/.env` 는 읽히지 않는다.** dotenv 로더가 없어서 셸에 직접 넣어야 한다(`export $(grep -v '^#' backend/.env | xargs)`). `.env` 를 그대로 읽는 것은 `docker compose` 뿐이며, DB까지 함께 뜨므로 그쪽이 더 간단하다 — `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app`. **override 를 겹치는 이유**는 본체에 `build` 가 없기 때문이다 — 배포 서버가 1GB 급이라 서버에서 빌드할 수 없어 이미지를 CI 가 GHCR 로 올린다(#127). 절차는 [backend](./02_architecture/backend.md) 「배포」.
+**`./mvnw` 로 띄울 때 `backend/.env` 는 읽히지 않는다.** dotenv 로더가 없어서 셸에 직접 넣어야 한다(`export $(grep -v '^#' backend/.env | xargs)`). `.env` 를 그대로 읽는 것은 `docker compose` 뿐이며, DB까지 함께 뜨므로 그쪽이 더 간단하다 — `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app`. **override 를 겹치는 이유**는 본체에 `build` 가 없기 때문이다 — 배포 서버가 1GB 급이라 서버에서 빌드할 수 없어 이미지를 로컬에서 빌드해 `scripts/deploy.sh` 가 서버로 옮긴다(#127). 절차는 [backend](./02_architecture/backend.md) 「배포」.
 
 ## 배포 준비 상태
 
@@ -38,7 +38,7 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 | 준비물 | 상태 |
 |--------|------|
 | 프론트 배포 | `frontend/vercel.json` (SPA 리라이트 포함). 환경변수 `VITE_API_BASE_URL` 외에 **저장소 연결과 Root Directory 지정이 남아 있다** — 절차 정본은 [frontend](./02_architecture/frontend.md) 「배포 (Vercel)」 |
-| 백엔드 배포 | `docker-compose.yml` (앱 · Postgres · cloudflared). 인바운드 포트를 열지 않는 터널 방식. **서버는 빌드하지 않는다** — CI 가 GHCR(`ghcr.io/changs0124/rag-chatbot-backend`, public)에 올리고 서버는 `docker compose pull` 만 한다. 대상은 GCE e2-micro 라 compose 에 메모리 상한이 걸려 있다 |
+| 백엔드 배포 | `docker-compose.yml` (앱 · Postgres · cloudflared). 인바운드 포트를 열지 않는 터널 방식. **서버는 빌드하지 않는다** — `bash scripts/deploy.sh` 가 로컬에서 빌드해 `docker save`/`load` 로 서버에 넣는다(레지스트리 없음). 대상은 GCE e2-micro 라 compose 에 메모리 상한이 걸려 있다 |
 | 환경변수 | `backend/.env.example`(앱) · `.env.example`(compose) · `frontend/.env.example` 에 전량 + 빠뜨렸을 때의 증상까지 기재 |
 | DB 스키마 | 기동 시 Flyway 자동 적용 |
 | OpenAI 키 없이 | `APP_MODE=mock` 으로 전 경로가 목업으로 동작 |
@@ -91,6 +91,6 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 3. `docs/FEEDBACK.md`에 대기 중인 수정 요청이 있으면 먼저 확인
 4. 작업 후 "리뷰해줘"로 코드 리뷰 & 변경사항 기록
 
-문서에 없는 파일 경로를 적으면 CI의 `scripts/check-doc-refs.sh`가 실패한다.
+문서에 없는 파일 경로를 적으면 `scripts/check-doc-refs.sh`가 실패한다(`bash scripts/check-all.sh docs` 로 돈다).
 
 루트 `CLAUDE.md`의 행동 지침(가정 금지 · 단순함 우선 · 외과적 변경 · 목표 기반 실행)이 위 규칙보다 우선한다.

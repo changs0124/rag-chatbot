@@ -9,8 +9,9 @@
 #
 # 서버는 이 파일을 쓰지 않는다. 절차는 docs/02_architecture/backend.md 「배포」 참고.
 #
-# 태그를 본체와 같은 이름으로 둔다 - 로컬 빌드가 GHCR 이미지 자리를 그대로 덮으므로
-# 나머지 설정(mem_limit · 환경변수 · 볼륨)이 배포와 동일하게 적용된다.
+# 태그를 본체와 같은 이름(`rag-chatbot-backend:latest`)으로 둔다 - 로컬 빌드가 그 자리를 그대로
+# 덮으므로 나머지 설정(mem_limit · 환경변수 · 볼륨)이 배포와 동일하게 적용된다.
+# `scripts/deploy.sh` 가 서버로 보내는 것도 같은 태그다.
 
 services:
   app:
