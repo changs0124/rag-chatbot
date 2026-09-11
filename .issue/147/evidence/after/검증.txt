@@ -1,0 +1,41 @@
+변경 후 — 완료 기준 검증
+
+① README.md 「배포 준비 상태」
+   키·Vector Store·서버만 준비하면 도는 상태로 맞춰 둠.
+   프론트는 Vercel, 백엔드는 자체 호스팅 + Cloudflare Tunnel 임.
+   
+   > **데모는 아직 백엔드가 연결되지 않았음** — https://rag-chatbot-jade-pi.vercel.app
+   > 화면은 뜨지만 **로그인부터 실패함.** Vercel 에 `VITE_API_BASE_URL` 을 아직 넣지 않아
+   > 번들이 `http://localhost:8080` 을 부르기 때문임. UI 와 화면 전환만 볼 수 있음.
+   > 런칭 때 그 값을 넣고 재배포하면 풀림(절차는 `docs/04_tasks/backlog.md` 의 런칭 항목).
+   
+   **준비물 표는 `docs/INDEX.md` 「배포 준비 상태」가 정본**이고, 계층별 절차는
+
+② docs/02_architecture/frontend.md 「배포 (Vercel)」
+   **UI 미리보기(백엔드 미연결)** : https://rag-chatbot-jade-pi.vercel.app (Vercel 프로젝트명 `rag-chatbot`)
+   
+   「배포 완료」가 아니다. Vercel 에 `VITE_API_BASE_URL` 을 아직 넣지 않아 **번들에 `http://localhost:8080`
+   이 박혀 있고**(2026-09-11 실측, 3곳), 화면은 뜨지만 로그인부터 실패한다. 저장소가 공개라 이 주소를
+   따라오는 사람이 있으므로 상태를 명시한다. 런칭 때 그 값을 넣고 **재배포**하면 풀린다 —
+   빌드 시점에 박히는 값이라 설정만 바꾸고 재배포하지 않으면 그대로다.
+   
+
+③ Vercel 스코프명(별건)
+   잔존: 0건
+
+④ backlog 중복 서술을 만들지 않았나
+   backlog.md 변경: 0건 (0 이어야 한다 — 정본은 그쪽)
+
+⑤ 게이트
+     ✓ 셸 구문 검사
+     ✓ 셸 정적 분석
+     ✓ 문서 참조 실재
+     ✓ 문서 섹션 이름 대조
+   전부 통과
+
+⑥ 커밋 분리 (원인별)
+   69adac3 docs(frontend): Vercel 스코프명을 뺀다 (#147)
+   115465d docs: 공개된 데모 주소가 백엔드 미연결 상태임을 밝힌다 (#147)
+
+⑦ 코드 변경 없음
+   backend/ · frontend/src 변경: 0건
