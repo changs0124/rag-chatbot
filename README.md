@@ -42,7 +42,13 @@
 ## 배포 준비 상태
 
 키·Vector Store·서버만 준비하면 도는 상태로 맞춰 둠.
-프론트는 Vercel(https://rag-chatbot-jade-pi.vercel.app), 백엔드는 자체 호스팅 + Cloudflare Tunnel 임.
+프론트는 Vercel, 백엔드는 자체 호스팅 + Cloudflare Tunnel 임.
+
+> **데모는 아직 백엔드가 연결되지 않았음** — https://rag-chatbot-jade-pi.vercel.app
+> 화면은 뜨지만 **로그인부터 실패함.** Vercel 에 `VITE_API_BASE_URL` 을 아직 넣지 않아
+> 번들이 `http://localhost:8080` 을 부르기 때문임. UI 와 화면 전환만 볼 수 있음.
+> 런칭 때 그 값을 넣고 재배포하면 풀림(절차는 `docs/04_tasks/backlog.md` 의 런칭 항목).
+
 **준비물 표는 `docs/INDEX.md` 「배포 준비 상태」가 정본**이고, 계층별 절차는
 `docs/02_architecture/backend.md` · `docs/02_architecture/frontend.md` 에 있음.
 
