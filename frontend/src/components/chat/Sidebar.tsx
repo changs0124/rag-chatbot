@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import type { Conversation } from '../../lib/types'
 import { IconClose, IconPlus } from '../icons'
+import Logo from '../Logo'
 import ConfirmModal from '../ConfirmModal'
 
 /**
@@ -48,6 +49,11 @@ export default function Sidebar({
 
   return (
     <aside className="flex h-full w-full flex-col bg-surface">
+      {/* 락업은 h-7 에서 121px 이고 사이드바 최소 폭이 200px(패딩 빼고 168px)이라 늘 들어간다 -
+          좁아질 때 마크로 줄이는 분기는 두지 않았다 */}
+      <div className="px-4 pt-4 pb-1">
+        <Logo className="h-7 w-auto text-ink" />
+      </div>
       <div className="p-3">
         <button
           onClick={onNew}
