@@ -1,0 +1,193 @@
+From 9ec75b5847400fe83e75aeb8842594479634efb2 Mon Sep 17 00:00:00 2001
+From: changs0124 <haeya0124@gmail.com>
+Date: Fri, 11 Sep 2026 11:02:01 +0900
+Subject: [PATCH] =?UTF-8?q?feat(ci):=20=EC=85=B8=20=EC=8A=A4=ED=81=AC?=
+ =?UTF-8?q?=EB=A6=BD=ED=8A=B8=20=EA=B5=AC=EB=AC=B8=20=EA=B2=80=EC=82=AC=20?=
+ =?UTF-8?q?=EA=B2=8C=EC=9D=B4=ED=8A=B8=EB=A5=BC=20=EC=B6=94=EA=B0=80?=
+ =?UTF-8?q?=ED=95=9C=EB=8B=A4=20(#136)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+이 저장소의 품질 게이트는 scripts/check-*.sh 가 만든다. 그런데 정작 그
+스크립트들을 보는 게이트가 하나도 없었다 - **게이트를 만드는 코드가 아무
+게이트도 받지 않는 상태**였다. #133 에서 deploy.sh 를 고치는 동안 드러났고,
+#138 의 버그가 살아남은 것도 같은 공백 때문이다.
+
+deploy.sh 는 특히 위험하다 - backlog.md 기준 통짜로 실행된 적이 없어 구문
+오류가 실제 배포를 시도하는 순간에야 드러난다.
+
+**목록을 손으로 관리하지 않는다.** git ls-files 로 산출하므로 새 스크립트가
+저절로 포함된다. 상수로 개수를 박으면 스크립트를 하나 더할 때마다 같이 고쳐야
+하고, 안 고치면 새 파일만 조용히 빠진다 - 게이트가 막으려던 상황이 게이트
+안에서 재현된다. 대신 **검사한 개수를 출력**해 대상이 0이 되어도 "통과"로
+보이지 않게 했다.
+
+**case-floors.env 를 포함한다.** .sh 가 아니지만 check-case-floor.sh 가 `.`
+으로 읽으므로, 여기 구문 오류가 나면 그 게이트가 통째로 깨진다.
+
+**제일 앞에 둔다.** 뒤따르는 검사들이 전부 셸이라, 하나가 깨지면 그 검사만
+죽고 나머지는 통과해 **부분적인 초록불**이 나온다. 앞에 두면 "검사가 깨졌다"와
+"검사가 잡아냈다"가 구분된다. static 잡 이름도 함께 갱신했다.
+
+검증 : 대상 9개(셸 8 + case-floors.env)가 git ls-files 결과와 일치. 일부러
+구문을 깨뜨리면 파일명·줄번호와 함께 exit 1 로 실패하고, 되돌리면 통과한다.
+check-all.sh docs 통과.
+
+**shellcheck 도입은 범위 밖이지만 비용을 측정해 뒀다** - 기존 8개에 v0.10.0
+을 돌리면 경고 12건이고 11건이 info 다. 유일한 error 는 SC1087 인데 동작은
+정상이다. 판단은 별건으로 남긴다.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014F19ufeBKaCPWxpLWYWfQp
+---
+ .github/workflows/ci.yml       |  7 +++++-
+ docs/06_changelog/CHANGELOG.md | 21 +++++++++++++++++
+ docs/CONVENTIONS.md            |  8 +++++++
+ scripts/check-all.sh           |  6 ++++-
+ scripts/check-shell-syntax.sh  | 42 ++++++++++++++++++++++++++++++++++
+ 5 files changed, 82 insertions(+), 2 deletions(-)
+ create mode 100644 scripts/check-shell-syntax.sh
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index ecbc4f4..a923285 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -123,12 +123,17 @@ jobs:
+   #
+   # **스텝은 합치지 않고 셋 다 남긴다.** 어느 검사가 깨졌는지는 스텝 이름으로 드러나야 한다.
+   static:
+-    name: static (계약 · 문서 참조 · 섹션 이름)
++    name: static (셸 구문 · 계약 · 문서 참조 · 섹션 이름)
+     # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
+     if: github.event_name != 'schedule'
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@v4
++      # **제일 먼저 본다(#136).** 아래 검사들이 전부 셸 스크립트라, 그중 하나에 구문 오류가
++      # 있으면 그 검사만 죽고 나머지는 통과해 **부분적인 초록불**이 나온다. 종전에는 셸을
++      # 보는 게이트가 아예 없어 `deploy.sh` 를 고쳐도 어떤 잡도 그 파일을 읽지 않았다
++      - name: 셸 구문 검사
++        run: bash scripts/check-shell-syntax.sh
+       - name: DTO · resultMap · 프론트 타입의 필드 대조
+         run: bash scripts/check-response-contract.sh
+       - name: 문서 참조 실재 + 위키링크 검사
+diff --git a/docs/06_changelog/CHANGELOG.md b/docs/06_changelog/CHANGELOG.md
+index 8c8ad3e..2d40121 100644
+--- a/docs/06_changelog/CHANGELOG.md
++++ b/docs/06_changelog/CHANGELOG.md
+@@ -4,6 +4,27 @@
+ 
+ ## [Unreleased]
+ 
++### Added
++- **셸 구문 검사 게이트를 추가했다(#136).** `scripts/check-shell-syntax.sh` 가 추적되는 셸
++  전부(`git ls-files '*.sh'` + `case-floors.env`, 현재 9개)에 `bash -n` 을 돌린다.
++  `check-all.sh` 와 CI `static` 잡 양쪽에서 **제일 먼저** 돈다.
++
++  **왜 필요했나** : 이 저장소의 품질 게이트는 `scripts/check-*.sh` 가 만든다. 그런데 정작
++  그 스크립트들을 보는 게이트가 하나도 없었다 — **게이트를 만드는 코드가 아무 게이트도 받지
++  않는 상태**였다. `#133` 에서 `deploy.sh` 를 고치는 동안 드러났고, `#138` 의 버그가 살아남은
++  것도 같은 공백 때문이다. `deploy.sh` 는 특히 위험하다 — 통짜로 실행된 적이 없어 구문 오류가
++  실제 배포를 시도하는 순간에야 드러난다.
++
++  **목록을 손으로 관리하지 않는다.** 상수로 개수를 박으면 새 스크립트를 더할 때마다 같이
++  고쳐야 하고, 안 고치면 새 파일만 조용히 빠진다 — 게이트가 막으려던 상황이 게이트 안에서
++  재현된다. 스크립트가 **검사한 개수를 출력**해 대상이 0이 되어도 "통과"로 보이지 않게 했다.
++
++  **shellcheck 는 이번 범위가 아니다.** 다만 도입 비용을 측정해 뒀다 — 기존 8개에 v0.10.0 을
++  돌리면 경고 **12건**이고, 그중 11건이 `info`(따옴표·`ls` 사용 등)다. 유일한 `error` 는
++  `check-doc-versions.sh` 의 SC1087 인데, 정규식 문자 클래스가 붙은 `$name` 을 배열 첨자로
++  오독한 것이라 **동작은 정상**이다(중괄호로 표기만 명확히 하면 사라진다).
++  도입 판단은 별건으로 남긴다.
++
+ ### Changed
+ - **시크릿·의존성 스캔을 변경마다 다시 돌린다(#135).** `secrets`(gitleaks) · `deps-backend`(Trivy) ·
+   `deps-frontend`(npm audit) 세 잡이 주 1회만 돌고 있었다. 근거는 **"이 저장소는 비공개라 Actions
+diff --git a/docs/CONVENTIONS.md b/docs/CONVENTIONS.md
+index 940efaf..40b1ac1 100644
+--- a/docs/CONVENTIONS.md
++++ b/docs/CONVENTIONS.md
+@@ -97,6 +97,14 @@
+     (시계 해상도가 거친 OS 에서는 우연히 통과하고 높은 OS 에서는 늘 실패한다).
+ - `scripts/case-floors.env`의 케이스 수 하한(래칫)은 **테스트를 늘린 PR 에서 그 시점 실측값으로 함께 올린다.**
+   올리지 않으면 새로 넣은 케이스가 래칫의 보호를 못 받는다. 내릴 때는 무엇이 줄었는지 `docs/06_changelog/CHANGELOG.md` 에 남긴다.
++- `scripts/check-shell-syntax.sh` 가 **추적되는 셸 전부**(`git ls-files '*.sh'` + `case-floors.env`)에
++  `bash -n` 을 돌린다(#136). 종전에는 셸을 보는 게이트가 아예 없어, 게이트를 만드는 `check-*.sh`
++  들이 정작 아무 게이트도 받지 않았다. **목록은 손으로 관리하지 않는다** — 새 스크립트가 저절로
++  포함되고, 스크립트가 **검사한 개수를 출력해** 대상이 0이 되어도 "통과"로 보이지 않는다.
++  `check-all.sh` 와 CI `static` 잡 **양쪽에서 제일 먼저** 돈다 — 아래 검사들이 전부 셸이라,
++  하나가 깨지면 그 검사만 죽고 나머지는 통과해 부분적인 초록불이 나오기 때문이다.
++  **못 잡는 것** : 의미 오류. `#138` 의 버그(`printf` 가 인자를 버리던 것)는 `bash -n` 을
++  통과했고 `shellcheck` 만 SC2183 으로 잡았다. shellcheck 도입은 별건이다.
+ - `scripts/check-doc-refs.sh`가 `docs/`·`README.md`의 참조 실재를 검사한다. **없는 파일 경로를 문서에 적으면 CI가 실패한다.**
+ - `scripts/check-doc-sections.sh` 가 **섹션 이름**을 본다(#60). 위 검사는 파일이 있으면 통과하므로 없는 섹션을
+   가리켜도 초록이었다 — #28 에서 실제로 그렇게 통과했다. **파일 참조가 바로 앞에 붙은** 「섹션」만 검사하고,
+diff --git a/scripts/check-all.sh b/scripts/check-all.sh
+index 5a69329..9be3254 100644
+--- a/scripts/check-all.sh
++++ b/scripts/check-all.sh
+@@ -82,7 +82,11 @@ summary() {
+ 	exit "$fail"
+ }
+ 
+-# --- 문서 계열 : JDK·Node 없이 돈다 (CI 의 static 잡) ------------------------
++# --- 문서·셸 계열 : JDK·Node 없이 돈다 (CI 의 static 잡) ---------------------
++# **셸 구문을 제일 먼저 본다(#136).** 아래 검사들이 전부 셸 스크립트라, 그중 하나에 구문
++# 오류가 있으면 그 검사만 죽고 나머지는 통과해 **부분적인 초록불**이 나온다. 앞에 두면
++# "검사가 깨졌다"와 "검사가 잡아냈다"가 구분된다. 이 스크립트 자신도 검사 대상이다
++run "셸 구문 검사"          bash scripts/check-shell-syntax.sh
+ run "문서 참조 실재"        bash scripts/check-doc-refs.sh
+ run "문서 섹션 이름 대조"    bash scripts/check-doc-sections.sh
+ 
+diff --git a/scripts/check-shell-syntax.sh b/scripts/check-shell-syntax.sh
+new file mode 100644
+index 0000000..feb00c0
+--- /dev/null
++++ b/scripts/check-shell-syntax.sh
+@@ -0,0 +1,42 @@
++#!/usr/bin/env bash
++# 추적되는 셸 스크립트의 **구문**을 검사한다(#136). `bash -n` 은 파싱만 하고 실행하지 않는다.
++#
++# **왜 필요한가** : 이 저장소의 품질 게이트는 `scripts/check-*.sh` 가 만든다. 그런데 정작
++# 그 스크립트들을 보는 게이트가 하나도 없었다 - 게이트를 만드는 코드가 아무 게이트도 받지
++# 않는 상태였다. `scripts/deploy.sh` 는 특히 위험하다(`docs/04_tasks/backlog.md` 기준
++# **통짜로 실행된 적이 없다**). 구문 오류가 있어도 실제 배포를 시도하는 순간에야 드러난다.
++#
++# **목록을 손으로 관리하지 않는다.** `git ls-files` 로 산출하므로 새 스크립트가 저절로
++# 포함된다. 상수로 개수를 박아 두면 스크립트를 하나 더할 때마다 같이 고쳐야 하고,
++# 안 고치면 **새 파일만 조용히 빠진다** - 게이트가 막으려던 상황이 게이트 안에서 재현된다.
++#
++# **`bash -n` 이 잡지 못하는 것** : 구문이 맞으면 통과한다. 의미 오류는 `shellcheck` 의
++# 몫이다 - 실제로 #138 의 버그(`printf '""N""' "$1" "$2"` 가 인자를 버리던 것)는 `bash -n`
++# 을 통과했고 shellcheck 만 SC2183 으로 잡았다. shellcheck 도입 여부는 별건이다.
++set -euo pipefail
++cd "$(git rev-parse --show-toplevel)"
++
++# `.sh` 확장자가 아닌 셸 조각도 넣는다. `case-floors.env` 는 `check-case-floor.sh` 가
++# `.` 으로 읽으므로, 여기 구문 오류가 나면 그 게이트가 통째로 깨진다.
++mapfile -t files < <(git ls-files '*.sh' 'scripts/case-floors.env')
++
++[ "${#files[@]}" -gt 0 ] || { echo "검사 대상 셸 파일을 찾지 못함" >&2; exit 1; }
++
++fail=0
++for f in "${files[@]}"; do
++	if ! err="$(bash -n "$f" 2>&1)"; then
++		printf '구문 오류 : %s\n%s\n' "$f" "$err" >&2
++		fail=$((fail + 1))
++	fi
++done
++
++# **몇 개를 봤는지 반드시 출력한다.** 대상이 0개가 되어도 "통과"로 보이는 것을 막는다 -
++# 이 검사가 존재하는 이유가 "조용히 빠지는 것"을 막는 것이기 때문이다.
++echo "셸 구문 검사 ${#files[@]}개"
++
++if [ "$fail" -ne 0 ]; then
++	echo "구문 오류 ${fail}건" >&2
++	exit 1
++fi
++
++echo "셸 구문 검사 통과"
+-- 
+2.54.0.windows.1
+
