@@ -1,0 +1,25 @@
+변경 후 — 완료 기준 검증
+
+① Actions 분 한도를 근거로 드는 곳
+$ grep -rn "비공개" ci.yml check-all.sh CONVENTIONS.md INDEX.md current-sprint.md
+결과: 0건
+
+② YAML 파싱 — 잡 구성과 조건
+  backend        if: github.event_name != 'schedule'
+  frontend       if: github.event_name != 'schedule'
+  docker         if: github.event_name != 'schedule'
+  static         if: github.event_name != 'schedule'
+  secrets        조건 없음 = 모든 이벤트에서 실행
+  deps-backend   조건 없음
+  deps-frontend  조건 없음
+
+  → 코드 4잡은 불변, 보안 3잡만 상시화. 7잡 그대로.
+
+③ schedule 트리거 유지
+20:  schedule:
+21:    - cron: '0 18 * * 0'   # 매주 월요일 03:00 KST (UTC 일요일 18:00)
+
+④ 문서 게이트
+
+────────────────────────────
+전부 통과
