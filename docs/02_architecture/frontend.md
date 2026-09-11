@@ -188,7 +188,7 @@ Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts
 
 ## 배포 (Vercel)
 
-**UI 미리보기(백엔드 미연결)** : https://rag-chatbot-jade-pi.vercel.app (프로젝트 `rag-chatbot`, 스코프 `changs0124s-projects`)
+**UI 미리보기(백엔드 미연결)** : https://rag-chatbot-jade-pi.vercel.app (Vercel 프로젝트명 `rag-chatbot`)
 
 「배포 완료」가 아니다. Vercel 에 `VITE_API_BASE_URL` 을 아직 넣지 않아 **번들에 `http://localhost:8080`
 이 박혀 있고**(2026-09-11 실측, 3곳), 화면은 뜨지만 로그인부터 실패한다. 저장소가 공개라 이 주소를
