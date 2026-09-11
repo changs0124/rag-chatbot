@@ -12,7 +12,7 @@
 #
 # **`bash -n` 이 잡지 못하는 것** : 구문이 맞으면 통과한다. 의미 오류는 `shellcheck` 의
 # 몫이다 - 실제로 #138 의 버그(`printf '""N""' "$1" "$2"` 가 인자를 버리던 것)는 `bash -n`
-# 을 통과했고 shellcheck 만 SC2183 으로 잡았다. shellcheck 도입 여부는 별건이다.
+# 을 통과했고 shellcheck 만 SC2182 으로 잡았다. shellcheck 도입 여부는 별건이다.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
