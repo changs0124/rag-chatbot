@@ -158,8 +158,15 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   `[data-theme="dark"]` 에 CSS 변수로 두고 `@theme inline` 이 그 변수를 가리킨다. 그래서 `bg-surface` 한 번이면
   두 테마가 다 된다. `bg-white dark:bg-zinc-950` 처럼 짝으로 적으면 한쪽만 고쳐져 테마가 갈린다.
   - 면 : `canvas`(바탕) · `surface`(가라앉음) · `raised`(카드·입력창) · `line`(구분선)
-  - 글 : `ink` · `ink-muted`, 강조 : `accent` · `accent-ink` · `accent-soft`, 경고 : `danger`
-  - `dark:` 는 색이 아닌 것(반투명 겹침 세기 등)에만 남긴다
+  - 글 : `ink` · `ink-muted`
+  - 강조 : `accent` · `accent-ink` · `accent-soft`
+  - 주의 : `highlight` · `highlight-ink` — **배경 전용**이다. 로고 오렌지라 글자로 쓰면 어떤 밝은 배경에서도 AA 에 못 미친다
+  - 경고 : `danger` · `danger-ink` · `danger-soft`
+  - **14종이고 값의 정본은 [design-system.md](./design-system.md) 「색 — 토큰으로만 쓴다」다.** 여기에는 이름만 둔다
+  - `dark:` 는 색이 아닌 것(반투명 겹침 세기 등)에만 남긴다 — 현재 사용 0건이지만 variant 선언은 남겨 둔다.
+    Tailwind 4 에는 `data-theme` 에 묶인 내장 dark 가 없어, 지우면 앞으로 `dark:` 를 써도 조용히 아무 일도 일어나지 않는다
+  - **예외** : 회사 CI 색(`components/Logo.tsx` · `public/favicon.svg`)은 토큰이 아니다.
+    로고는 테마를 타면 안 되기 때문이다 — 아래 「색 리터럴이 허용되는 자리」 참고
 - **모션은 이징 하나로 통일한다** — `--ease-out-quint`(`cubic-bezier(0.16,1,0.3,1)`). `linear` · `ease-in-out` 을 쓰지 않고,
   값이 매 프레임 바뀌는 동작(사이드바 폭 드래그)에는 트랜지션을 걸지 않는다 — 손보다 늦게 따라와 고무줄처럼 보인다.
   `prefers-reduced-motion: reduce` 는 전역 CSS 가 받아 트랜지션을 1ms 로 줄인다.

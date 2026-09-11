@@ -1,0 +1,21 @@
+<!--
+  파비콘 정본. 회사 CI(`디인사이트 CI.ai`)의 D 마크만 뽑아 사방 12% 여백을 둔 것이다.
+  public/ 의 png · ico 4종은 전부 이 파일에서 파생시킨다 - 절차는
+  docs/02_architecture/design-system.md 「파비콘 · 앱 아이콘」에 있다.
+
+  **이 파일은 화면이 불러 가지 않는다.** index.html 이 가리키는 것은 png · ico 이고,
+  여기 있는 이유는 래스터를 재생성할 수 있게 벡터를 남겨 두기 위해서다.
+
+  그라데이션 좌표 주의 : gradientUnits="userSpaceOnUse" 는 **참조하는 요소(rect)의 좌표계**에서
+  해석된다. rect 가 translate 안에 있으므로 x1/x2 도 translate 안 좌표여야 한다 -
+  밖 좌표를 넣으면 접힘면 음영이 그만큼 밀려 화면 안 로고와 달라진다(#151 에서 실제로 겪었다).
+
+  경로 좌표를 손으로 고치지 말 것. 벡터 원본에서 뽑은 값이며, 고칠 일이 생기면 원본에서 다시 뽑는다.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 91.308 91.308" width="512" height="512">
+<defs><linearGradient id="f" x1="18.779" y1="0" x2="35" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0070B5"/><stop offset="0.25" stop-color="#0B88C7"/><stop offset="0.5" stop-color="#0D9FD7"/><stop offset="0.75" stop-color="#23B1E4"/><stop offset="1" stop-color="#43BAE8"/></linearGradient></defs>
+<g transform="translate(10.957,10.957)">
+<path fill="#41BAE9" d="M69.394 34.699 L69.394 34.695 C69.393 15.534 53.86 0.001 34.7 0 L0 0 L0 45.536 L18.779 45.536 L18.779 16.944 L32.981 16.944 C42.712 16.946 50.6 24.894 50.6 34.697 C50.6 44.502 42.71 52.45 32.976 52.45 L25.861 52.45 L25.694 52.45 L25.694 69.394 L34.697 69.393 C53.859 69.393 69.394 53.383 69.394 34.699 Z"/>
+<rect x="18.779" y="0" width="16.221" height="16.944" fill="url(#f)"/>
+<path fill="#F2931D" d="M0 52.45 H18.779 V69.394 H0 Z Z"/>
+</g></svg>
