@@ -1,0 +1,60 @@
+From 23bec799a7d57137d1462ca2f1864a47ed086bf3 Mon Sep 17 00:00:00 2001
+From: changs0124 <haeya0124@gmail.com>
+Date: Fri, 11 Sep 2026 10:38:05 +0900
+Subject: [PATCH] =?UTF-8?q?fix(scripts):=20=EA=B1=B4=EB=84=88=EB=9C=80=20?=
+ =?UTF-8?q?=EA=B2=BD=EA=B3=A0=EC=A4=84=EC=9D=B4=20=EA=B2=80=EC=82=AC=20?=
+ =?UTF-8?q?=EC=9D=B4=EB=A6=84=EA=B3=BC=20=EC=82=AC=EC=9C=A0=EB=A5=BC=20?=
+ =?UTF-8?q?=EC=B0=8D=EA=B2=8C=20=ED=95=9C=EB=8B=A4=20(#138)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+check-all.sh 의 skip() 은 도구가 없어 검사를 건너뛸 때 그 사실을 노란 줄로
+크게 남기려고 만든 함수다. 그런데 포맷 문자열에 변환 지정자가 없었다 :
+
+    printf '""N""' "$1" "$2"
+
+인자 둘이 조용히 버려지고 리터럴 `""N""` 만 찍혔다. 이 함수가 존재하는
+이유가 정작 동작하지 않았다.
+
+**왜 아무도 못 알아챘나** : 요약부는 SKIPPED 배열을 따로 순회하므로 최종
+요약에는 건너뜀이 제대로 나온다. 검사가 도는 도중의 한 줄만 깨진 것이라
+눈에 띄지 않았다. CONVENTIONS.md 와 CHANGELOG 는 이 동작을 "크게 찍는다"
+고 적어 두고 있었다 - 문서가 맞고 코드가 틀린 상태였다.
+
+**게이트도 못 잡는다.** bash -n 은 구문 오류가 아니라 통과하고, shellcheck
+는 SC2183 으로 정확히 잡지만 이 저장소에는 셸 검사 자체가 없다(#136).
+
+형태는 run() 과 맞췄다 - 호출부에서 run 자리에 그대로 들어가기 때문이다.
+SKIPPED 배열·요약부·종료 코드 처리는 건드리지 않았다.
+
+검증 : skip() 단독 실행 시 검사 이름과 사유가 모두 출력되고 SKIPPED 가
+2건 그대로 쌓인다. bash -n 통과. 변경은 check-all.sh 한 파일 6줄.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014F19ufeBKaCPWxpLWYWfQp
+---
+ scripts/check-all.sh | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/check-all.sh b/scripts/check-all.sh
+index ea790b3..2ec18d5 100644
+--- a/scripts/check-all.sh
++++ b/scripts/check-all.sh
+@@ -33,7 +33,12 @@ declare -a SKIPPED=()
+ # docker/gitleaks/trivy 가 셋 다 없어도 **"전부 통과" + exit 0** 이 나왔다.
+ # 한 건도 돌리지 않고 초록불이 뜬다 - 이 스크립트가 스스로 경고하던 바로 그 혼동이다.
+ skip() {
+-	printf '""N""' "$1" "$2"
++	# **`%s` 둘을 반드시 남긴다(#138).** 종전 포맷 문자열에는 변환 지정자가 없어
++	# 인자 둘이 조용히 버려지고 리터럴만 찍혔다 - 이 함수가 존재하는 이유인 "건너뛴 사실을
++	# 크게 남긴다"가 정작 동작하지 않았다. `bash -n` 은 구문 오류가 아니라 통과한다(#136).
++	# 형태는 `run()` 과 맞춘다 - 호출부에서 `run` 자리에 그대로 들어가기 때문이다.
++	printf '\n\033[1m▶ %s\033[0m\n' "$1"
++	printf '\033[33m  - 건너뜀: %s\033[0m\n' "$2"
+ 	SKIPPED+=("$1 - $2")
+ }
+ 
+-- 
+2.54.0.windows.1
+
