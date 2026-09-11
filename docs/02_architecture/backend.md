@@ -427,11 +427,15 @@ SSH 를 완전히 닫으려면 `gcloud compute ssh --tunnel-through-iap` 로 바
 `docker save` → `scp` → `docker load` 로 서버에 넣는다. 압축 후 90MB 남짓이고 GCP 인바운드
 전송은 무료다.
 
-**왜 GHCR 이 아닌가** — 처음에는 CI 가 GHCR 에 미는 안으로 갔으나 접었다. 이 저장소는 비공개라
-GHCR 도 **저장 500MB · 전송 1GB/월** 한도가 걸리는데, 이미지가 320MB(압축 98MB)라 커밋 SHA 태그를
-몇 개만 쌓아도 저장 한도를 넘긴다. 실제로 같은 성격의 한도(Actions 분)가 소진되어 CI 가 통째로
-멎은 적이 있어(`The job was not started because ... spending limit needs to be increased`),
-같은 함정을 하나 더 들이지 않기로 했다. 직접 전송은 한도도 토큰도 없다.
+**왜 GHCR 이 아닌가** — 처음에는 CI 가 GHCR 에 미는 안으로 갔으나 접었다. 직접 전송은 **토큰도
+정리 정책도 필요 없고**, 서버가 하나뿐이라 레지스트리가 주는 이점(여러 대에 같은 이미지를 뿌리는
+것)을 쓸 데가 없다. 압축 98MB 를 `scp` 로 한 번 넘기는 편이 단순하다.
+
+**한도 근거는 이제 없다(#137).** 당시 판단의 큰 축은 "GHCR 도 **저장 500MB ·
+전송 1GB/월** 한도가 걸린다" 였다. 실제로 같은 성격의 한도(Actions 분)가 소진되어 CI 가 통째로 멎은
+적이 있어(`The job was not started because ... spending limit needs to be increased`) 같은 함정을
+하나 더 들이지 않으려 했다. **2026-09-11 공개 전환으로 공개 패키지는 저장·전송이 무료**가 되어
+이 근거는 사라졌다 — 위의 남은 근거만으로도 결론은 그대로지만, 근거가 바뀌었다는 사실은 남긴다.
 
 **CI 는 이미지를 만들지 않는다.** `docker` 잡은 종전대로 **빌드만 하고 버린다** — 배포 산출물이
 조용히 썩는 것을 막는 검증이다. 배포본을 만드는 것은 `scripts/deploy.sh` 뿐이다.

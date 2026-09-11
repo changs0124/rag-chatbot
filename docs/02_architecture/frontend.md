@@ -199,7 +199,8 @@ Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts
 연결하려면 Vercel 대시보드에서 :
 
 1. 프로젝트 → Settings → Git → Connect Git Repository → `changs0124/rag-chatbot`
-   (private 저장소이므로 Vercel GitHub App 설치 승인이 필요함)
+   (공개 저장소라 별도 접근 승인은 필요 없다. 처음 연결하는 계정이면 Vercel GitHub App 설치는
+   한 번 거친다 — 저장소 공개 여부와 무관한 절차다)
 2. **Root Directory 를 `frontend` 로 지정** — 모노레포라 이걸 빼면 루트에서 빌드를 시도해 실패한다
 3. 연결 후 첫 배포부터는 저장소의 `package-lock.json` 으로 빌드되므로 CI 와 같은 의존성이 잡힌다
 
