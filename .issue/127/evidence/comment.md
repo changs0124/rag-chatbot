@@ -20,7 +20,7 @@
 
 ## 2. 메모리 실측 — GCP e2-micro 실기기
 
-`us-west1-b` / `e2-micro` / 953Mi + 스왑 2GB / `pd-standard` 30GB / Ubuntu 24.04.5 LTS
+`<존>` / `e2-micro` / 953Mi + 스왑 2GB / `pd-standard` 30GB / Ubuntu 24.04.5 LTS
 
 ```
 NAME           MEM USAGE / LIMIT   MEM %    CPU %
