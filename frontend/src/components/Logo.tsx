@@ -44,7 +44,12 @@ interface LogoProps {
   variant?: 'full' | 'mark'
   /** 같은 화면에 이름을 읽어 주는 로고가 이미 있을 때. 스크린리더에서 숨긴다 */
   decorative?: boolean
-  className?: string
+  /**
+   * 필수다. 기본값을 두면 호출부가 넘긴 값이 병합이 아니라 **교체**라,
+   * 크기 없는 className 하나에 `h-`/`w-` 가 통째로 사라진다 -
+   * width/height 없이 viewBox 만 있는 SVG 는 그때 부모 폭 전체로 부푼다
+   */
+  className: string
 }
 
 export default function Logo({ variant = 'full', decorative = false, className }: LogoProps) {
@@ -56,7 +61,7 @@ export default function Logo({ variant = 'full', decorative = false, className }
   return (
     <svg
       viewBox={mark ? '0 0 69.394 69.394' : '0 0 299.761 69.394'}
-      className={className ?? (mark ? 'h-7 w-7' : 'h-7 w-auto')}
+      className={className}
       role={decorative ? undefined : 'img'}
       aria-label={decorative ? undefined : '디인사이트'}
       aria-hidden={decorative || undefined}
@@ -73,8 +78,9 @@ export default function Logo({ variant = 'full', decorative = false, className }
       <path fill={BRAND_ORANGE} d={ORANGE} />
       {!mark && (
         <g fill="currentColor">
-          {WORDMARK.map((d) => (
-            <path key={d.slice(0, 24)} d={d} />
+          {/* 모듈 상수라 재정렬·필터·삽입이 없다 - 인덱스가 정확하고 접두 충돌도 없다 */}
+          {WORDMARK.map((d, i) => (
+            <path key={i} d={d} />
           ))}
         </g>
       )}
