@@ -1,0 +1,10 @@
+조합 4개 실측 — OS 설정(Playwright colorScheme) x 앱 설정(계정 저장값)
+측정: 1440x900, http://localhost:5174/, 채팅 화면
+
+OS     앱설정      data-theme  color-scheme  meta수   theme-color           --c-canvas
+----------------------------------------------------------------------------------------
+light  light    light       light dark    2       #F7F9FB | #12171A     #f7f9fb
+light  dark     dark        light dark    2       #F7F9FB | #12171A     #12171a
+dark   light    light       light dark    2       #F7F9FB | #12171A     #f7f9fb
+dark   system   dark        light dark    2       #F7F9FB | #12171A     #12171a
+
