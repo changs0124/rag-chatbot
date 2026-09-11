@@ -17,7 +17,10 @@
  * 바탕이 순백이 아닌 이유 : 대화가 길어지는 화면에서 순백은 눈이 빨리 지친다.
  */
 :root {
-  color-scheme: light dark;
+  /* `light dark` 는 **UA 에게 고르라고 맡기는** 선언이고 UA 는 OS 설정을 본다. 이 앱은 이미
+     답을 알고 있으므로(data-theme) 알려 준다 - 안 그러면 앱에서 라이트를 골라도 OS 가 다크면
+     스크롤바·<input> 기본 UI 만 다크로 남는다(#156) */
+  color-scheme: light;
 
   --c-canvas: #f7f9fb;
   --c-surface: #edf1f5;
@@ -36,6 +39,8 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
+
   --c-canvas: #12171a;
   --c-surface: #1a2126;
   --c-raised: #222b31;

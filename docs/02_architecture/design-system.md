@@ -284,9 +284,10 @@ s.save('frontend/public/favicon.ico',sizes=[(16,16),(32,32),(48,48)])"
 `apple-touch-icon` 만 흰 타일을 까는 이유 : iOS 는 투명을 검게 메워 버려서, 투명으로 두면
 홈 화면에서 검은 사각형 위에 마크가 앉는다.
 
-`frontend/index.html` 이 png · ico 를 가리키고, 주소창 색(`theme-color`)은 라이트·다크 각각 `canvas` 값과 같다.
-다만 **`theme-color` 는 `data-theme` 이 아니라 OS 설정(`prefers-color-scheme`)을 본다** — 앱 설정과
-OS 가 어긋나면 주소창만 반대 테마가 된다(#156).
+`frontend/index.html` 이 png · ico 를 가리키고, 주소창 색(`theme-color`)은 `canvas` 값과 같다.
+**`<meta>` 는 하나뿐이고 `ThemeProvider` 가 `--c-canvas` 를 읽어 `content` 를 갱신한다**(#156에서 고침) —
+HTML 의 값은 JS 가 돌기 전까지만 쓰이는 초기값이다. 미디어쿼리로 두면 `data-theme` 이 아니라
+OS 설정을 보게 되어 앱 설정과 어긋나면 주소창만 반대 테마가 됐다.
 32px 로 줄이면 접힘면 그라데이션은 뭉개지지만 **D 실루엣과 오렌지 블록은 남는다** — 그 상태에서도 구분되는 것을 채택 기준으로 삼았다.
 
 ## 7-3. 로고 자산
@@ -374,7 +375,7 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 |------|-----|-----------------|
 | `frontend/src/index.css` | 토큰 28개 (라이트·다크 각 14) | 정본 |
 | `frontend/src/components/Logo.tsx` | 브랜드색 2 + 램프 5스톱 | **로고는 테마를 타면 안 된다.** 토큰은 `data-theme` 으로 뒤집히는데 CI 색은 양 테마에서 고정이어야 한다 — 토큰으로 빼는 순간 다크에서 로고가 다른 회사 색이 된다. 파비콘도 여기서 렌더하므로 사본을 따로 두지 않는다 |
-| `frontend/index.html` | `theme-color` 2개 | `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 **같은 값을 손으로 맞춘다** |
+| `frontend/index.html` | `theme-color` **초기값 1개** | `<meta>` 는 CSS 변수를 못 읽는다. 라이트 `canvas` 와 **같은 값을 손으로 맞추고**, 이후 값은 `ThemeProvider` 가 토큰에서 읽어 넣는다(#156) |
 
 **이 예외는 [CONVENTIONS.md](../CONVENTIONS.md) 「스타일」에도 적혀 있다.** 한쪽만 읽고 고치면 어긋난다.
 
