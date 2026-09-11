@@ -94,7 +94,7 @@ export default function MyPage() {
           <p className="mb-4 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-accent">{notice}</p>
         )}
         {error && (
-          <p className="mb-4 rounded-xl bg-surface px-3.5 py-2.5 text-sm text-danger">{error}</p>
+          <p className="mb-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</p>
         )}
 
         <div className="space-y-4">
