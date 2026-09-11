@@ -1,0 +1,20 @@
+변경 전 — 셸 스크립트에 게이트가 없다
+
+① 추적 셸 스크립트
+  scripts/check-all.sh
+  scripts/check-case-floor.sh
+  scripts/check-doc-refs.sh
+  scripts/check-doc-sections.sh
+  scripts/check-doc-versions.sh
+  scripts/check-response-contract.sh
+  scripts/check-runtime-versions.sh
+  scripts/deploy.sh
+  총 8개 (check-*: 7개)
+
+② 게이트로 도는 셸 검사
+  scripts/check-all.sh:38:	# 크게 남긴다"가 정작 동작하지 않았다. `bash -n` 은 구문 오류가 아니라 통과한다(#136).
+  scripts/check-case-floor.sh:18:# shellcheck source=./case-floors.env
+  → 위 1건은 check-case-floor.sh 의 **지시 주석**이고, 실행되는 검사는 0건
+
+③ 셸 조각(.sh 아님)
+  scripts/case-floors.env
