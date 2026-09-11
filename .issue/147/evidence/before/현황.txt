@@ -1,0 +1,14 @@
+변경 전 — 공개된 데모가 동작하지 않는데 문서는 '배포됨'으로 읽힌다
+
+① 실측
+   $ curl -s -o /dev/null -w '%{http_code}' <데모 주소>
+   200                    ← 사이트는 떠 있다
+
+   $ curl -s <데모 주소>/assets/index-Dis3zn5O.js | grep -o 'http://localhost:8080' | wc -l
+   3                      ← 번들이 자기 PC 의 8080 을 부른다
+   → 화면은 뜨지만 로그인부터 실패한다. 방문자는 이유를 알 길이 없다
+
+② 현재 문서 서술
+   README.md:45:프론트는 Vercel(https://rag-chatbot-jade-pi.vercel.app), 백엔드는 자체 호스팅 + Cloudflare Tunnel 임.
+   docs/02_architecture/frontend.md:191:현재 배포 : https://rag-chatbot-jade-pi.vercel.app (프로젝트 `rag-chatbot`, 스코프 `changs0124s-projects`)
+   → 둘 다 '배포돼 있다'로 읽힌다
