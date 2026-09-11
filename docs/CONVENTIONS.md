@@ -84,7 +84,9 @@
   - `frontend/src/components/Logo.tsx` — **회사 CI 색.** 토큰은 `data-theme` 으로 뒤집히는데
     로고는 양 테마에서 고정이어야 한다. 토큰으로 빼면 다크에서 로고가 다른 회사 색이 된다.
     파비콘도 이 파일에서 렌더하므로 **사본을 따로 두지 않는다**
-  - `frontend/index.html` 의 `theme-color` — `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 같은 값을 손으로 맞춘다
+  - `frontend/index.html` 의 `theme-color` **초기값** — `<meta>` 는 CSS 변수를 못 읽는다. 라이트 `canvas` 와
+    같은 값을 손으로 맞춘다. **테마를 따라가는 것은 `ThemeProvider` 가 하고**(#156), `media="(prefers-color-scheme: …)"`
+    로 두지 않는다 — 그건 OS 를 보므로 위 「`prefers-color-scheme` 를 직접 참조하지 않는다」 규칙을 어긴다
   - 아래가 **토큰이 아닌 면** 위에 얹히는 곳 — 사진·영상 위 오버레이(`ImageLightbox` · `CameraCapture` ·
     `Composer` 썸네일). 아래 면이 테마와 무관하므로 토큰이 성립하지 않는다
   자리를 늘리려면 [design-system.md](./02_architecture/design-system.md) 「색 값을 들고 있는 파일 — 셋이다」를 함께 고친다.

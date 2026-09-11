@@ -5,9 +5,10 @@
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <!-- 주소창 색 - 화면 바탕(canvas) 토큰과 같은 값 -->
-    <meta name="theme-color" content="#F7F9FB" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#12171A" media="(prefers-color-scheme: dark)" />
+    <!-- 주소창 색. 이 값은 **초기값일 뿐**이고 ThemeProvider 가 --c-canvas 를 읽어 덮어쓴다.
+         미디어쿼리로 두면 OS 설정을 보므로 앱 테마 설정과 어긋난다(#156).
+         라이트 canvas 와 손으로 맞춘다 - <meta> 는 CSS 변수를 못 읽는다 -->
+    <meta name="theme-color" content="#F7F9FB" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RAG 챗봇</title>
   </head>

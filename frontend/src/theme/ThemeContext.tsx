@@ -5,13 +5,24 @@ import type { Theme } from '../lib/types'
 const THEME_KEY = 'rag_chatbot_theme'
 
 function applyTheme(theme: Theme): void {
+  const root = document.documentElement
   const resolved =
     theme === 'system'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light'
       : theme
-  document.documentElement.dataset.theme = resolved
+  root.dataset.theme = resolved
+
+  /*
+   * 주소창 색은 여기서 함께 옮긴다. `<meta>` 는 CSS 변수를 못 읽어 토큰을 직접 못 쓰고,
+   * `media="(prefers-color-scheme: …)"` 로 두면 **OS 를 보므로 앱 설정과 어긋난다**(#156).
+   * 그래서 data-theme 을 바꾼 **뒤에** 그 상태의 canvas 값을 읽어 넣는다 -
+   * 색 값을 JS 로 복사해 오는 것이 아니라 토큰에서 읽으므로 정본은 여전히 index.css 다.
+   */
+  const meta = document.querySelector('meta[name="theme-color"]')
+  const canvas = getComputedStyle(root).getPropertyValue('--c-canvas').trim()
+  if (meta && canvas) meta.setAttribute('content', canvas)
 }
 
 interface ThemeContextValue {
