@@ -84,8 +84,11 @@ export default function ChatPage() {
 
           {/* md 미만에서는 사이드바가 드로어로 접혀 로고가 보이지 않는다 - 마크만 헤더에 둔다.
               제목은 truncate 라 이 28px 때문에 잘리기는 해도 밀려나지는 않는다.
-              드로어를 열면 사이드바 로고가 같은 이름을 읽어 주므로 이쪽은 장식으로 둔다 */}
-          <Logo variant="mark" decorative className="h-7 w-7 shrink-0 md:hidden" />
+              **장식은 드로어가 열렸을 때뿐이다.** 닫혀 있으면 데스크톱 사이드바는 display:none 이고
+              드로어는 DOM 에 아예 없어서, 이걸 숨기면 화면에 브랜드 이름이 하나도 남지 않는다.
+              열려 있을 때는 드로어 안 사이드바 로고가 같은 이름을 읽는데 드로어에 aria-modal·inert 가
+              없어 헤더도 트리에 남으므로, 숨기지 않으면 「디인사이트」가 두 번 읽힌다 */}
+          <Logo variant="mark" decorative={sidebarOpen} className="h-7 w-7 shrink-0 md:hidden" />
 
           {/* 활성 대화 제목 - 클릭하면 인라인 수정(GPT/Claude 방식) */}
           <div className="min-w-0 flex-1">
