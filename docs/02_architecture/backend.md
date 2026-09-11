@@ -402,14 +402,16 @@ SSH 를 완전히 닫으려면 `gcloud compute ssh --tunnel-through-iap` 로 바
 4. Cloudflare 대시보드에서 터널을 만들고 공개 호스트명을 **`http://app:8080`** 에 매핑한다.
    `localhost` 가 아니다 - cloudflared 는 별도 컨테이너라 compose 네트워크 이름으로 찾아간다
 5. 개발 PC 에서 `bash scripts/deploy.sh` — 빌드 · 전송 · 기동 · 헬스체크까지 한 번에 한다.
-   접속 대상은 환경변수로 바꾼다(기본값은 현재 서버) :
+   접속 대상은 환경변수로 지정한다. **앞의 셋은 기본값이 없어 반드시 넣어야 한다(#133)** —
+   저장소가 공개라 기본값을 두는 것은 배포 대상이 어디인지 적어 두는 것과 같다.
+   셋 중 하나라도 비면 `--dry-run` 을 포함해 **아무것도 하기 전에** 무엇이 빠졌는지 알리고 멈춘다 :
 
-   | 변수 | 기본값 | 뜻 |
-   |------|--------|-----|
-   | `DEPLOY_HOST` | `free-vm` | 인스턴스 이름 |
-   | `DEPLOY_ZONE` | `us-west1-b` | 영역 |
-   | `DEPLOY_PROJECT` | `free-vm-haeya-260910` | GCP 프로젝트 |
-   | `DEPLOY_DIR` | `/home/User/deploy` | 서버의 compose 디렉터리 |
+   | 변수 | 필수 | 뜻 |
+   |------|------|-----|
+   | `DEPLOY_HOST` | 예 | 인스턴스 이름 |
+   | `DEPLOY_ZONE` | 예 | 영역 |
+   | `DEPLOY_PROJECT` | 예 | GCP 프로젝트 |
+   | `DEPLOY_DIR` | 아니오 (기본 `/home/User/deploy`) | 서버의 compose 디렉터리 |
 
    플래그는 둘이다 — `--dry-run`(무엇을 할지만 출력) · `--skip-build`(이미 빌드된 이미지로 전송만).
    **`.env` 두 개는 보내지 않는다** — 비밀이 로컬에 있을 이유가 없고, 서버에 이미 있다.
