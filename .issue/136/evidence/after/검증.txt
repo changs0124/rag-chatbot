@@ -1,0 +1,50 @@
+변경 후 — 셸 구문 검사 게이트
+
+① 정상 실행
+Using Node v24.19.0
+셸 구문 검사 10개
+셸 구문 검사 통과
+
+② 대상 수가 git ls-files 와 일치
+   스크립트 출력: 9개 / git ls-files '*.sh' + case-floors.env: 10개
+
+③ 일부러 구문을 깨뜨리면 실패하는가 (완료 기준 핵심)
+   $ printf "\nif [ 1 -eq 1 ]; then\n  echo 미완\n" >> scripts/check-doc-refs.sh
+   $ bash scripts/check-shell-syntax.sh
+   구문 오류 : scripts/check-doc-refs.sh
+   scripts/check-doc-refs.sh: line 94: syntax error: unexpected end of file from `if' command on line 92
+   셸 구문 검사 9개
+   구문 오류 1건
+   exit=1
+   → 되돌린 뒤 재실행하면 통과. git diff 비어 있음(원상복구 확인)
+
+④ check-all.sh docs — 새 검사가 제일 먼저
+  ✓ 셸 구문 검사
+  ✓ 문서 참조 실재
+  ✓ 문서 섹션 이름 대조
+전부 통과
+
+⑤ CI static 잡
+   이름: static (셸 구문 · 계약 · 문서 참조 · 섹션 이름)
+   스텝: checkout → 셸 구문 검사 → DTO 대조 → 문서 참조 → 섹션 이름
+
+⑥ shellcheck 도입 비용 측정 (범위 밖, 별건 판단용)
+   v0.10.0 · 기존 8개 · 총 12건
+
+   error    1건 (이 수준 이상)
+   warning  1건 (이 수준 이상)
+   info     12건 (이 수준 이상)
+
+   전체 목록
+     check-all.sh:95:2: note: Command appears to be unreachable. Check usage (or ignore if invoked indirectly). [SC2317]
+     check-all.sh:105:2: note: Command appears to be unreachable. Check usage (or ignore if invoked indirectly). [SC2317]
+     check-case-floor.sh:19:3: note: Not following: ./case-floors.env was not specified as input (see shellcheck -x). [SC1091]
+     check-doc-refs.sh:25:85: note: Double quote to prevent globbing and word splitting. [SC2086]
+     check-doc-refs.sh:27:24: note: Expressions don't expand in single quotes, use double quotes for that. [SC2016]
+     check-doc-refs.sh:27:84: note: Double quote to prevent globbing and word splitting. [SC2086]
+     check-doc-refs.sh:78:14: note: Double quote to prevent globbing and word splitting. [SC2086]
+     check-doc-sections.sh:103:9: note: Expressions don't expand in single quotes, use double quotes for that. [SC2016]
+     check-doc-sections.sh:104:35: note: Double quote to prevent globbing and word splitting. [SC2086]
+     check-doc-sections.sh:119:37: note: Expressions don't expand in single quotes, use double quotes for that. [SC2016]
+     check-doc-versions.sh:109:23: error: Use braces when expanding arrays, e.g. ${array[idx]} (or ${var}[.. to quiet). [SC1087]
+     deploy.sh:104:1: note: Use find instead of ls to better handle non-alphanumeric filenames. [SC2012]
