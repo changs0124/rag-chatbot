@@ -1,0 +1,34 @@
+변경 후 — 완료 기준 검증
+
+① shellcheck 경고
+   0건 (도입 전 12건)
+
+② 대상 수
+   구문 검사(bash -n)   : 11개  = 추적 *.sh 10 + case-floors.env 1
+   정적 분석(shellcheck): 10개  = 추적 *.sh 만 (env 는 단독으로 셸 종류를 못 정해 -x 로 함께 본다)
+
+③ #138 의 버그를 되살리면 잡는가 (완료 기준 핵심)
+   bash -n          : 통과 — 못 잡는다
+   shellcheck       : check-all.sh:36:9: error: This printf format string has no variables.
+                      Other arguments are ignored. [SC2182]
+   check-shell-lint : exit 1 / 되돌린 뒤 exit 0
+
+④ 로컬에 shellcheck 가 없을 때 ("모름" 처리)
+     ✓ 셸 구문 검사
+     - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+     ✓ 문서 참조 실재
+     ✓ 문서 섹션 이름 대조
+   돌린 검사는 전부 통과
+   건너뜀 1건 - 이 검사들은 돌지 않았다:
+   도구를 설치하고 다시 돌리기 전까지 이 항목은 "통과"가 아니라 "모름"이다.
+
+⑤ CI 환경 재현 (shellcheck 있음)
+     ✓ 셸 구문 검사
+     ✓ 셸 정적 분석
+     ✓ 문서 참조 실재
+     ✓ 문서 섹션 이름 대조
+   전부 통과
+
+⑥ 배열 전환이 동작을 바꾸지 않았나
+   수정 전 스크립트로 현재 문서 검사 : 참조 234/실재 223 · 섹션 24
+   수정 후                          : 참조 234/실재 223 · 섹션 24  → 동일
