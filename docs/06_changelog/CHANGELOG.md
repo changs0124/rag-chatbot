@@ -5,6 +5,27 @@
 ## [Unreleased]
 
 ### Changed
+- **시크릿·의존성 스캔을 변경마다 다시 돌린다(#135).** `secrets`(gitleaks) · `deps-backend`(Trivy) ·
+  `deps-frontend`(npm audit) 세 잡이 주 1회만 돌고 있었다. 근거는 **"이 저장소는 비공개라 Actions
+  분이 유료 한도에 묶인다"**(#127) 였는데, **2026-09-11 공개 전환으로 그 전제가 사라졌다** —
+  공개 저장소는 standard runner 분이 무료다.
+
+  **비용이 0 이 된 동시에 놓쳤을 때의 대가는 커졌다.** 공개 저장소는 시크릿이 한 번 들어오면
+  회수가 불가능하다. 실제로 PR #134 는 이 세 잡이 `skipped` 인 채로 merge 됐다 — 공개 저장소의
+  첫 PR 이 정작 시크릿 검사를 받지 않은 셈이다.
+
+  **`schedule` 은 없애지 않았다.** 이 셋은 우리 커밋이 아니라 **바깥**(취약점 DB · 커밋 이력
+  전체)이 바뀔 때도 결과가 달라진다 — PR 마다 도는 것과 주간 실행은 서로 다른 것을 잡는다.
+  없앴다면 코드 4잡의 `if: != 'schedule'` 도 전부 의미를 잃어 함께 지워야 했다.
+
+  **부작용 하나** : 이제 PR 레인에서도 돌므로 force-push 시 `cancel-in-progress` 가 gitleaks 의
+  이력 전체 스캔을 중간에 끊는다. 새 푸시가 곧바로 다시 돌리므로 실해는 없다 — concurrency 주석이
+  경고한 "취소되고 재시도가 없다"는 **schedule 레인** 이야기다.
+
+  근거가 흩어져 있어 함께 고쳤다 : `ci.yml`(트리거 주석 + 세 잡) · `scripts/check-all.sh`(머리주석 ·
+  구획 제목 2곳) · `docs/CONVENTIONS.md` · `docs/INDEX.md` · `docs/04_tasks/current-sprint.md`.
+  조건만 바꾸고 근거를 남기면 다음 사람이 옛 근거를 읽고 되돌린다.
+
 - **GHCR·Vercel 절차의 옛 전제를 걷어냈다(#137).** 2026-09-11 공개 전환으로
   전제가 바뀐 자리가 세 곳 남아 있었다 — `scripts/deploy.sh` 와 `backend.md` 의 **GHCR 을 쓰지
   않는 근거**(공개 패키지는 저장·전송이 무료라 한도 논리가 성립하지 않는다), `frontend.md` 의
