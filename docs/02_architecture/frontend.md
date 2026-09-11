@@ -188,7 +188,12 @@ Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts
 
 ## 배포 (Vercel)
 
-현재 배포 : https://rag-chatbot-jade-pi.vercel.app (프로젝트 `rag-chatbot`, 스코프 `changs0124s-projects`)
+**UI 미리보기(백엔드 미연결)** : https://rag-chatbot-jade-pi.vercel.app (Vercel 프로젝트명 `rag-chatbot`)
+
+「배포 완료」가 아니다. Vercel 에 `VITE_API_BASE_URL` 을 아직 넣지 않아 **번들에 `http://localhost:8080`
+이 박혀 있고**(2026-09-11 실측, 3곳), 화면은 뜨지만 로그인부터 실패한다. 저장소가 공개라 이 주소를
+따라오는 사람이 있으므로 상태를 명시한다. 런칭 때 그 값을 넣고 **재배포**하면 풀린다 —
+빌드 시점에 박히는 값이라 설정만 바꾸고 재배포하지 않으면 그대로다.
 
 `frontend/vercel.json` 이 빌드 명령·출력 디렉터리와 **SPA 리라이트**를 고정한다. 리라이트가 없으면
 `/me` 를 직접 열거나 새로고침할 때 404 가 난다 — 라우팅을 `BrowserRouter` 가 하기 때문이다.
