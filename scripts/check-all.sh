@@ -87,11 +87,25 @@ summary() {
 # 오류가 있으면 그 검사만 죽고 나머지는 통과해 **부분적인 초록불**이 나온다. 앞에 두면
 # "검사가 깨졌다"와 "검사가 잡아냈다"가 구분된다. 이 스크립트 자신도 검사 대상이다
 run "셸 구문 검사"          bash scripts/check-shell-syntax.sh
+# **구문 검사 바로 뒤다(#145).** 파싱이 되어야 정적 분석도 의미가 있다. 둘을 합치지 않는
+# 이유는 실패 신호가 다르기 때문이다 - 앞이 죽으면 파일이 파싱조차 안 되는 것이고,
+# 여기가 죽으면 파싱은 되는데 의도와 다르게 도는 것이다.
+# 이 검사는 shellcheck 가 없으면 exit 0 으로 빠진다. 그때는 "통과"가 아니라 "모름"이므로
+# 아래에서 skip() 으로 다시 등록한다 - run() 으로만 두면 초록 체크가 찍힌다
+if command -v shellcheck >/dev/null 2>&1; then
+	run "셸 정적 분석"      bash scripts/check-shell-lint.sh
+else
+	skip "셸 정적 분석" "shellcheck 없음 - CI 러너에는 기본 설치돼 있다"
+fi
 run "문서 참조 실재"        bash scripts/check-doc-refs.sh
 run "문서 섹션 이름 대조"    bash scripts/check-doc-sections.sh
 
 if [ "$MODE" = "docs" ]; then
 	summary
+	# **summary() 가 스스로 exit 하므로 여기는 도달하지 않는다(#145).** 지우지 않고 남기는 것은
+	# summary 가 exit 를 잃는 날 조기 종료가 조용히 전체 실행으로 바뀌는 것을 막는 안전망이기
+	# 때문이다. 그때 이 줄이 없으면 `docs` 모드가 백엔드 빌드까지 돌린다
+	# shellcheck disable=SC2317
 	exit "$fail"
 fi
 
@@ -102,6 +116,8 @@ run "런타임 버전 대조(node)" bash scripts/check-runtime-versions.sh node
 
 if [ "$MODE" = "quick" ]; then
 	summary
+	# 위와 같다 - 안전망이라 남긴다
+	# shellcheck disable=SC2317
 	exit "$fail"
 fi
 

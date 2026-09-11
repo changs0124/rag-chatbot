@@ -16,15 +16,19 @@ EXT='md|mdx|ts|tsx|js|jsx|mjs|cjs|json|ya?ml|java|kt|py|sql|sh|xml|css|html?|txt
 
 command -v grep >/dev/null || { echo "grep 없음 - 검사 불가"; exit 1; }
 
-paths=""
-for p in $DOC_PATHS; do [ -e "$p" ] && paths="$paths $p"; done
-[ -n "$paths" ] || { echo "검사 대상 경로가 하나도 없음 - DOC_PATHS 를 확인할 것"; exit 1; }
+# **배열로 받는다(#145).** 문자열에 이어 붙이면 아래 호출부마다 따옴표 없이 전개해야 하고
+# (shellcheck SC2086), 경로에 공백이 있으면 조각난다. 배열이면 "${paths[@]}" 로 안전하다
+paths=()
+for p in $DOC_PATHS; do [ -e "$p" ] && paths+=("$p"); done
+[ "${#paths[@]}" -gt 0 ] || { echo "검사 대상 경로가 하나도 없음 - DOC_PATHS 를 확인할 것"; exit 1; }
 
 # --- 수집 ---------------------------------------------------------------
 # 1) 마크다운 링크 · 참조형 정의 · <img src>. 앵커(#) · 타이틀(" ") · 꺾쇠(< >)가 붙은 형태까지
-md_links="$(grep -rHoE "(\]\(<?|\]:[[:space:]]+|src=\")[^)\"#<>[:space:]]+\.($EXT)" $paths || true)"
+md_links="$(grep -rHoE "(\]\(<?|\]:[[:space:]]+|src=\")[^)\"#<>[:space:]]+\.($EXT)" "${paths[@]}" || true)"
 # 2) 백틱으로 적은 저장소 경로 - 최상위 디렉터리로 시작하는 것만(상대 경로 오탐 방지)
-bt_links="$(grep -rHoE '`(docs|scripts|backend|frontend|\.github)/[^`[:space:]]+`' $paths || true)"
+# 백틱을 **리터럴로** 찾는 정규식이다. 단일 따옴표가 의도이므로 확장되면 안 된다
+# shellcheck disable=SC2016
+bt_links="$(grep -rHoE '`(docs|scripts|backend|frontend|\.github)/[^`[:space:]]+`' "${paths[@]}" || true)"
 
 links=""
 [ -n "$md_links" ] && links="$md_links"
@@ -75,7 +79,7 @@ done <<< "$links"
 
 # --- 위키링크 잔존 검사 --------------------------------------------------
 # 여는 [[ 뒤 공백을 배제함 - bash 의 [[ -n $x ]] 스니펫이 위키링크로 오탐되던 것을 막음(가이드 v3.6)
-wiki="$(find $paths -name '*.md' 2>/dev/null | sort | while IFS= read -r f; do
+wiki="$(find "${paths[@]}" -name '*.md' 2>/dev/null | sort | while IFS= read -r f; do
   awk -v f="$f" '
     /^[[:space:]]*```/ { fence = !fence; next }
     !fence && /\[\[[^] 	][^]]*\]\]/ { print f ":" NR ":" $0 }
