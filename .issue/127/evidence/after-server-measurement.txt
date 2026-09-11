@@ -1,6 +1,6 @@
 # after — GCP e2-micro 실측
 일시: 2026-09-10T05:34:49Z
-인스턴스: free-vm / us-west1-b / e2-micro (953Mi + 스왑 2GB, pd-standard 30GB)
+인스턴스: <인스턴스명> / <존> / e2-micro (953Mi + 스왑 2GB, pd-standard 30GB)
 구성: APP_MODE=mock, db+app 2컨테이너 (cloudflared 는 TUNNEL_TOKEN 부재로 제외)
 이미지: 로컬 빌드분을 docker save/load 로 반입 후 GHCR 태그로 재태그
 
