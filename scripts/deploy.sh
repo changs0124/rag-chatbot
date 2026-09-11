@@ -11,16 +11,19 @@
 #   bash scripts/deploy.sh --skip-build    # 이미 빌드된 이미지로 전송만
 #   bash scripts/deploy.sh --dry-run       # 무엇을 할지만 출력
 #
-# 서버 접속은 gcloud 를 쓴다. 환경변수로 바꿀 수 있다 :
-#   DEPLOY_HOST(기본 free-vm) · DEPLOY_ZONE · DEPLOY_PROJECT · DEPLOY_DIR
+# 서버 접속은 gcloud 를 쓴다. 접속 대상 셋은 **환경변수로 반드시 지정한다**(#133) :
+#   DEPLOY_HOST · DEPLOY_ZONE · DEPLOY_PROJECT (필수) · DEPLOY_DIR (선택)
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-HOST="${DEPLOY_HOST:-free-vm}"
-ZONE="${DEPLOY_ZONE:-us-west1-b}"
-PROJECT="${DEPLOY_PROJECT:-free-vm-haeya-260910}"
+# **기본값을 두지 않는다(#133).** 저장소가 공개라 기본값은 곧 "내 배포 대상이 어디인지"를
+# 적어 두는 것과 같다. 빈 값으로 받아 아래에서 한 번에 검사한다 - `set -u` 아래에서
+# `${DEPLOY_HOST}` 로 두면 여기서 `unbound variable` 로 **안내 없이** 죽는다
+HOST="${DEPLOY_HOST:-}"
+ZONE="${DEPLOY_ZONE:-}"
+PROJECT="${DEPLOY_PROJECT:-}"
 # **홈 상대 경로로 둔다(#129).** `/home/User/deploy` 는 Windows 사용자명 `User` 에 우연히
-# 맞았던 값이다. gcloud 가 OS Login 을 쓰면 원격 사용자가 `haeya0124_gmail_com` 이 되어
+# 맞았던 값이다. gcloud 가 OS Login 을 쓰면 원격 사용자가 로컬 사용자명과 달라져
 # 경로가 통째로 어긋난다. 상대 경로면 어느 계정으로 붙든 그 홈 아래를 가리킨다
 REMOTE_DIR="${DEPLOY_DIR:-deploy}"
 IMAGE="rag-chatbot-backend:latest"
@@ -35,6 +38,23 @@ for a in "$@"; do
 		*) echo "알 수 없는 인자: $a" >&2; exit 2 ;;
 	esac
 done
+
+# 접속 대상이 비었는지 **여기서** 본다(#133). `preflight` 안에 넣으면 안 된다 -
+# 아래 `--dry-run` 분기가 `preflight` 보다 먼저 `exit 0` 하므로 그 경로가 검사를 통째로
+# 비껴가고, 빈 계획(`호스트   ( / )`)을 출력하며 정상 종료한다. 하필 backlog 와
+# current-sprint 가 「`--dry-run` 을 먼저 볼 것」을 배포 첫 동작으로 지정하고 있어,
+# 처음 배포하는 사람이 가장 먼저 밟는 경로가 정확히 그 사각지대다.
+# 빠진 것을 **한 번에 모아** 알린다 - 하나씩 알리면 세 번 돌려야 한다
+missing_vars=()
+[ -n "$HOST" ]    || missing_vars+=("DEPLOY_HOST(인스턴스 이름)")
+[ -n "$ZONE" ]    || missing_vars+=("DEPLOY_ZONE(영역)")
+[ -n "$PROJECT" ] || missing_vars+=("DEPLOY_PROJECT(GCP 프로젝트)")
+if [ "${#missing_vars[@]}" -ne 0 ]; then
+	echo "배포 대상이 지정되지 않았다. 아래 환경변수를 넣고 다시 실행할 것 :" >&2
+	for v in "${missing_vars[@]}"; do echo "  - $v" >&2; done
+	echo "  예) DEPLOY_HOST=… DEPLOY_ZONE=… DEPLOY_PROJECT=… bash scripts/deploy.sh --dry-run" >&2
+	exit 2
+fi
 
 # 320MB 빌드와 90MB 전송을 **다 끝낸 뒤** command not found 로 죽는 것을 막는다(#129).
 # 늦고 비싼 실패를 앞으로 당긴다
