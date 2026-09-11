@@ -1,0 +1,10 @@
+변경 전 — GHCR·Vercel 의 「비공개」 전제
+
+$ git grep -n '비공개\|private 저장소' -- scripts docs
+docs/02_architecture/backend.md:430:**왜 GHCR 이 아닌가** — 처음에는 CI 가 GHCR 에 미는 안으로 갔으나 접었다. 이 저장소는 비공개라
+docs/02_architecture/frontend.md:202:   (private 저장소이므로 Vercel GitHub App 설치 승인이 필요함)
+docs/06_changelog/CHANGELOG.md:82:- **CI 를 무료 한도 안으로 줄였다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶인다.
+docs/06_changelog/CHANGELOG.md:111:  **GHCR 을 쓰지 않는 이유** : 비공개 패키지는 저장 500MB · 전송 1GB/월 한도가 걸리는데 이미지가
+docs/CONVENTIONS.md:126:  종전에는 PR·푸시마다 돌렸으나, 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이고
+scripts/check-all.sh:5:# 전에 먼저 잡으려는 것이다. 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이므로
+scripts/deploy.sh:5:# 그렇다고 GHCR 을 끼우면 비공개 저장소 기준 패키지 저장(500MB)·전송(1GB/월) 이 또 유료 한도에
