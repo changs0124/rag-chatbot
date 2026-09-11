@@ -1,0 +1,20 @@
+변경 전 — 「비공개」를 Actions 한도 근거로 드는 곳
+
+.github/workflows/ci.yml:141:    # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
+.github/workflows/ci.yml:165:    # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
+.github/workflows/ci.yml:188:    # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
+scripts/check-all.sh:5:# 전에 먼저 잡으려는 것이다. 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이므로
+docs/CONVENTIONS.md:126:  종전에는 PR·푸시마다 돌렸으나, 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이고
+
+건수: 5건
+
+--- 주 1회 서술 ---
+.github/workflows/ci.yml:17:  # 상시 검사에서 뺀 잡(secrets · deps)을 주 1회 몰아서 돈다. 아래 각 잡의 주석 참고
+.github/workflows/ci.yml:141:    # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
+.github/workflows/ci.yml:165:    # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
+.github/workflows/ci.yml:188:    # **주 1회로 뺐다(#127).** 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이는데,
+scripts/check-all.sh:9:# 하나 더 : `secrets` · `deps` 잡은 비용 때문에 CI 에서 **주 1회 스케줄로 뺐다.** 그 사이에
+scripts/check-all.sh:138:# --- 시크릿 스캔 (CI 의 secrets 잡 · 주 1회) --------------------------------------------
+scripts/check-all.sh:148:# --- 의존성 취약점 (CI 의 deps 잡 · 주 1회) ---------------------------------------------
+docs/CONVENTIONS.md:125:- 시크릿 스캔(gitleaks)·의존성 취약점 스캔(Trivy · `npm audit`)은 **주 1회 스케줄로 돈다**(#127).
+docs/INDEX.md:18:| CI | GitHub Actions — 변경마다 4잡(backend · frontend · docker · static), **secrets · deps 2종은 주 1회 스케줄**(#127 · #129). 푸시 전 로컬 예행은 `bash scripts/check-all.sh` |
