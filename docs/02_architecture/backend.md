@@ -411,7 +411,7 @@ SSH 를 완전히 닫으려면 `gcloud compute ssh --tunnel-through-iap` 로 바
    | `DEPLOY_HOST` | 예 | 인스턴스 이름 |
    | `DEPLOY_ZONE` | 예 | 영역 |
    | `DEPLOY_PROJECT` | 예 | GCP 프로젝트 |
-   | `DEPLOY_DIR` | 아니오 (기본 `/home/User/deploy`) | 서버의 compose 디렉터리 |
+   | `DEPLOY_DIR` | 아니오 (기본 `deploy`) | 서버의 compose 디렉터리. **원격 홈 기준 상대 경로다**(#129) |
 
    플래그는 둘이다 — `--dry-run`(무엇을 할지만 출력) · `--skip-build`(이미 빌드된 이미지로 전송만).
    **`.env` 두 개는 보내지 않는다** — 비밀이 로컬에 있을 이유가 없고, 서버에 이미 있다.
