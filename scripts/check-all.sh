@@ -82,7 +82,11 @@ summary() {
 	exit "$fail"
 }
 
-# --- 문서 계열 : JDK·Node 없이 돈다 (CI 의 static 잡) ------------------------
+# --- 문서·셸 계열 : JDK·Node 없이 돈다 (CI 의 static 잡) ---------------------
+# **셸 구문을 제일 먼저 본다(#136).** 아래 검사들이 전부 셸 스크립트라, 그중 하나에 구문
+# 오류가 있으면 그 검사만 죽고 나머지는 통과해 **부분적인 초록불**이 나온다. 앞에 두면
+# "검사가 깨졌다"와 "검사가 잡아냈다"가 구분된다. 이 스크립트 자신도 검사 대상이다
+run "셸 구문 검사"          bash scripts/check-shell-syntax.sh
 run "문서 참조 실재"        bash scripts/check-doc-refs.sh
 run "문서 섹션 이름 대조"    bash scripts/check-doc-sections.sh
 
