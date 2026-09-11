@@ -24,7 +24,7 @@
 없음. 위 항목들은 막힌 것이 아니라 **저장소 밖 준비물(API 키 · 공용 Vector Store ·
 Cloudflare 터널 토큰)을 기다리는 중**이다.
 
-**다만 GitHub Actions 는 유료 한도 소진으로 멎어 있다**(#127). 코드 변경을 밀어도 CI 가 돌지
-않으므로, 그동안은 `bash scripts/check-all.sh` 로 로컬에서 확인한다. 한도가 풀리면 Actions 탭에서
-`workflow_dispatch` 로 한 번 돌려 트리거·잡 조건이 의도대로 동작하는지 확인할 것 —
-#129 의 변경분은 아직 실행으로 검증되지 않았다.
+**GitHub Actions 한도 문제는 해소됐다**(2026-09-11 공개 전환). 공개 저장소는 standard runner
+분이 무료다. PR #134 에서 7잡 중 코드 4잡이 정상 완주하는 것을 확인했고, #135 로 `secrets`·`deps`
+3잡도 변경마다 돌도록 되돌렸다. 로컬 예행(`bash scripts/check-all.sh`)은 **왕복 시간을 아끼는
+용도로** 그대로 유용하다.
