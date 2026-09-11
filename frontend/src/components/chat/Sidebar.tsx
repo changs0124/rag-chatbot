@@ -51,7 +51,8 @@ export default function Sidebar({
     <aside className="flex h-full w-full flex-col bg-surface">
       {/* 락업은 h-7 에서 121px 이고 사이드바 최소 폭이 200px(패딩 빼고 168px)이라 늘 들어간다 -
           좁아질 때 마크로 줄이는 분기는 두지 않았다 */}
-      <div className="px-4 pt-4 pb-1">
+      {/* px-6 은 바로 아래 「새 대화」 버튼의 내용 시작(p-3 + px-3 = 24px)에 맞춘 값이다 */}
+      <div className="px-6 pt-4 pb-1">
         <Logo className="h-7 w-auto text-ink" />
       </div>
       <div className="p-3">

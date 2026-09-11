@@ -28,7 +28,7 @@
 | 로고 값 | 자리 | 흰 글자 대비 | 판정 |
 |---------|------|--------------|------|
 | `#41BAE9` | D 마크 본체 | 2.2:1 | 버튼색 불가. **다크 테마의 accent 로만** 쓴다 |
-| `#F2931D` | 좌하단 블록 | 2.3:1 | 글자색 불가. **배경 칠로만** 쓴다(`highlight`) |
+| `#F2931D` | 좌하단 블록 | 2.3:1 | 밝은 면 위 글자색 불가. **배경 칠**과 **어두운 고정 스크림 위 아이콘**에만 쓴다(`highlight`) |
 | `#3F4444` | 워드마크 | — | 본문 잉크의 기준점 |
 | `#0070B5` | D 마크 접힘면 그라데이션의 가장 어두운 지점 | 5.3:1 | **라이트 테마의 accent** |
 
@@ -50,7 +50,7 @@
 | `accent` | `#0070B5` | 강조 · 활성 · 주요 버튼 · 포커스 |
 | `accent-ink` | `#FFFFFF` | accent 위 글자 |
 | `accent-soft` | `#E1F1FA` | 활성 항목 배경 |
-| `highlight` | `#F2931D` | **배경 전용.** 주의 배지(「자료 없음」) |
+| `highlight` | `#F2931D` | 주의 배지 배경(「자료 없음」) + **어두운 고정 스크림 위 아이콘**(첨부 실패). 밝은 면 위 글자로는 쓰지 않는다 |
 | `highlight-ink` | `#2A2F33` | highlight 위 글자 |
 | `danger` | `#C0392B` | 삭제 · 오류 |
 | `danger-ink` | `#FFFFFF` | danger 위 글자 |
@@ -93,11 +93,37 @@
 | 오류 글자 / 오류 배경 | 4.64 | 5.22 | 4.5 |
 | 삭제 확인 버튼 글자 / 버튼 | 5.44 | 6.20 | 4.5 |
 
+### 토큰 밖 겹침 — 실측 (#155)
+
+반투명을 겹치면 실제 바탕이 토큰 값이 아니게 된다. 그 자리는 위 표가 못 덮으므로 따로 잰다.
+**아래 면이 여럿이면 최악값**을 적는다(오버레이는 `canvas`·`surface`·`raised` 중 최악,
+첨부 실패 패널은 임의 이미지 중 최악인 흰 이미지).
+
+| 자리 | 조합 | 라이트 | 다크 | 기준 |
+|------|------|--------|------|------|
+| 드롭 오버레이 글자 | `text-ink` / `bg-canvas/85` | 12.70 | 14.86 | 4.5 |
+| 드롭 오버레이 점선 | `border-accent` / `bg-canvas/85` | 4.95 | 7.89 | 3.0 |
+| 첨부 실패 아이콘 | `text-highlight` / `bg-black/75` + 이미지 | 4.43 | 4.43 | 3.0 |
+
+첨부 실패 패널이 양 테마에서 같은 값인 것은 **그 패널이 테마와 무관한 고정 어두운 면**이기
+때문이다. 같은 이유로 **여기에는 테마 의존 토큰을 쓸 수 없다** — `danger` 를 쓰면 라이트의
+`#C0392B` 가 어두운 패널에 얹혀 **1.06** 이 된다.
+
+스크림을 `bg-black/60` 에서 `/75` 로 내린 것도 이 표 때문이다 : 60% 에서는 `highlight` 가
+**2.45** 로 아이콘 기준 3.0 에 미달했다(종전 `amber-400` 은 3.44 로 통과했지만 토큰 밖 색이었다).
+
+| 스크림 | `highlight` | `white` |
+|--------|------------:|--------:|
+| `bg-black/60` | 2.45 | 5.74 |
+| `bg-black/70` | 3.61 | 8.45 |
+| **`bg-black/75`** | **4.43** | 10.37 |
+
 ### 이 표가 덮지 못하는 것
 
 **"토큰 쌍"이라고 쓴 것은 한정이다.** 화면에는 토큰끼리 만나지 않는 조합이 남아 있고,
-그건 위 계산에 들어가지 않는다. 아래 둘이 그렇다 — **#151 이 만든 것이 아니라 그 전부터 있었고,
-#151 범위(색과 로고) 밖이라 고치지 않았다.**
+그건 위 계산에 들어가지 않는다. 바로 위 「토큰 밖 겹침」 셋은 #155 에서 고쳐 재 놓았고,
+아래 둘은 **아직 그대로다** — **#151 이 만든 것이 아니라 그 전부터 있었고, #151 범위(색과 로고)
+밖이라 고치지 않았다.** #155 도 이 둘은 이슈 본문이 명시적으로 범위 밖에 두었다.
 
 | 자리 | 값 | 기준 | 비고 |
 |------|-----|------|------|
@@ -117,11 +143,11 @@
 bg-canvas · bg-surface · bg-raised · from-canvas
 text-ink · text-ink-muted · border-line
 bg-accent · text-accent · text-accent-ink · bg-accent-soft · border-accent
-bg-highlight · text-highlight-ink
+bg-highlight · text-highlight · text-highlight-ink
 bg-danger · text-danger · text-danger-ink · bg-danger-soft
 ```
 
-18종이 실제로 쓰인다. **토큰 14개가 전부 쓰이고, 쓰는데 정의 안 된 것은 없다.**
+19종이 실제로 쓰인다(#155 에서 `text-highlight` 가 늘었다). **토큰 14개가 전부 쓰이고, 쓰는데 정의 안 된 것은 없다.**
 (`TextInput` · `Composer` 의 포커스 링은 유틸리티가 아니라 `var(--c-accent-soft)` 를 직접 참조한다)
 
 **토큰을 만들면 쓰는 자리를 함께 정한다.** #151 신규 4종은 자리가 이렇게 정해져 있다.
@@ -129,10 +155,13 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | 토큰 | 자리 | 사용 |
 |------|------|------|
 | `highlight` · `highlight-ink` | `chat/MessageList.tsx:181` 「자료 없음」 배지 | 각 1회 (같은 줄) |
+| `highlight` | `chat/Composer.tsx` 첨부 실패 아이콘 — **#155** | 1회. 어두운 고정 스크림 위라 테마 의존 토큰을 못 쓴다 |
 | `danger-ink` | `ConfirmModal.tsx:42` 삭제 확인 버튼 | 1회 — `bg-danger` 가 있는 유일한 자리다 |
 | `danger-soft` | `pages/AdminPage.tsx:166` 관리자 오류 배너 | 1회 |
+| `danger-soft` | `pages/MyPage.tsx` 오류 배너 — **#155** | 1회. 관리자 쪽과 같은 모양인데 #151 이 한쪽만 고쳤다 |
 
 쓰이지 않는 토큰은 다음 사람이 아무 데나 갖다 쓰는 근거가 된다.
+**#155 에서 `highlight` 와 `danger-soft` 가 각각 한 자리씩 늘어 지금은 둘 다 두 곳이다.**
 
 `dark:` 는 색이 아닌 것(그림자 세기, 반투명 겹침 등)에만 남긴다.
 
@@ -300,7 +329,9 @@ OS 설정을 보게 되어 앱 설정과 어긋나면 주소창만 반대 테마
 | 원본 | `디인사이트 CI.ai` (PDF 1.6 호환). 저장소 밖에 있다 — 회사 자산이라 여기서 관리하지 않는다 |
 | 채택 락업 | **국문(디인사이트)**. UI 가 전부 한국어라 결이 맞고, 1250x290 으로 영문판보다 짧아 사이드바에 잘 들어간다 |
 | `variant="full"` | D 마크 + 워드마크. 로그인 · 사이드바 |
-| `variant="mark"` | D 마크만. **모바일 헤더에만 쓴다** — 파비콘은 이 컴포넌트가 아니라 `public/favicon.svg` 에서 나온다(같은 마크 모양이지만 별개 파일) |
+| `variant="mark"` | D 마크만. 모바일 헤더 · **파비콘의 벡터 정본**이다 — `favicon-source.png` 를 이 마크에서 렌더하고 작은 크기는 거기서 뽑는다(§7-2) |
+| `className` | **필수다.** 기본값을 두면 호출부가 넘긴 값이 병합이 아니라 교체라, 크기 없는 className 하나에 `h-`/`w-` 가 사라지고 SVG 가 부모 폭 전체로 부푼다 (#154) |
+| `decorative` | 스크린리더에서 숨긴다. **같은 화면에 이름을 읽어 주는 로고가 실제로 있을 때만** 켠다 — 모바일 헤더 마크는 드로어가 열렸을 때만 해당한다 (#154) |
 | 워드마크 색 | `currentColor` — **SVG 하나로 라이트·다크가 다 된다** |
 | D 마크 색 | 양 테마에서 브랜드색 고정 |
 
@@ -348,8 +379,8 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 | `frontend/src/components/chat/ResizableSidebar.tsx` | 신규 — 사이드바 폭 조절. **`FEAT-` ID 가 없다** — `features.md` 에 UI 카테고리가 없어 명세된 적이 없고, 구현이 정본이다 |
 | `frontend/src/pages/ChatPage.tsx` | `100dvh` · 드로어 blur + 스크롤 잠금 · 스크롤 페이드 |
 | `frontend/src/components/chat/MessageList.tsx` | 답변 버블 제거 · 사용자만 `raised` 카드 · **#151** 「자료 없음」 배지를 `highlight` 로 |
-| `frontend/src/components/chat/Composer.tsx` · `Citations.tsx` | 떠 있는 입력 판 · safe-area · 토큰 |
-| `frontend/src/pages/LoginPage.tsx` · `MyPage.tsx` | Editorial Split · 카드 + 세그먼트 컨트롤 · **#151** 로그인 좌측 상단 로고(알약 텍스트 대체) |
+| `frontend/src/components/chat/Composer.tsx` · `Citations.tsx` | 떠 있는 입력 판 · safe-area · 토큰 · **#155** 드롭 오버레이를 검정 스크림에서 `canvas/85` 로, 첨부 실패 아이콘을 `highlight` 로 |
+| `frontend/src/pages/LoginPage.tsx` · `MyPage.tsx` | Editorial Split · 카드 + 세그먼트 컨트롤 · **#151** 로그인 좌측 상단 로고(알약 텍스트 대체) · **#155** `MyPage` 오류 배너를 `danger-soft` 로(#151 이 `AdminPage` 만 고쳤다) |
 | `frontend/src/pages/AdminPage.tsx` | **#151** 오류 배너를 `danger-soft` 로 — accent 가 파랑이 되며 연파랑 위 빨간 글씨로 깨지던 자리다 |
 | `frontend/src/components/chat/CameraCapture.tsx` | 껍데기·버튼은 토큰, 안쪽 미리보기만 검정(영상이 주인공) |
 | `frontend/src/components/ErrorBoundary.tsx` | 토큰 · `100dvh` · accent 알약 버튼 |
