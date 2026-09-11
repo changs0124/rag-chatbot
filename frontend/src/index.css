@@ -31,6 +31,7 @@
   --c-highlight: #f2931d;
   --c-highlight-ink: #2a2f33;
   --c-danger: #c0392b;
+  --c-danger-ink: #ffffff;
   --c-danger-soft: #fbe9e7;
 }
 
@@ -48,6 +49,8 @@
   --c-highlight: #f2931d;
   --c-highlight-ink: #1b1205;
   --c-danger: #f07167;
+  /* 다크에서 danger 위에 흰 글자를 얹으면 2.89:1 이다 - 삭제 확인 버튼이라 잘못 읽히면 되돌릴 수 없다 */
+  --c-danger-ink: #2a0f0c;
   --c-danger-soft: #3a1f1c;
 }
 
@@ -64,6 +67,7 @@
   --color-highlight: var(--c-highlight);
   --color-highlight-ink: var(--c-highlight-ink);
   --color-danger: var(--c-danger);
+  --color-danger-ink: var(--c-danger-ink);
   --color-danger-soft: var(--c-danger-soft);
 
   --font-sans: "Pretendard Variable", Pretendard, system-ui, -apple-system, "Segoe UI",
@@ -72,7 +76,7 @@
   /* 모션 시그니처 - 전 컴포넌트가 이 이징 하나를 쓴다. linear · ease-in-out 은 쓰지 않음 */
   --ease-out-quint: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* 확산형 그림자만 씀. 짙은 그림자는 웜 톤에서 때가 낀 것처럼 보임 */
+  /* 확산형 그림자만 씀. 짙은 그림자는 면 색 차이로 만든 계층을 뭉개 버림 */
   --shadow-ambient: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.1);
   --shadow-lifted: 0 2px 4px rgb(0 0 0 / 0.05), 0 16px 40px -16px rgb(0 0 0 / 0.18);
 }
