@@ -4,6 +4,36 @@
 
 ## [Unreleased]
 
+### Fixed
+- **`color-scheme` 과 `theme-color` 가 앱 테마 설정을 따르게 했다(#156).** 테마의 정본은
+  `data-theme` 하나인데 **이 둘만 OS 설정을 직접 보고 있었다.** OS 가 다크인 기기에서 앱 설정을
+  「라이트」로 바꾸면 화면은 라이트인데 **스크롤바 · `<input>` 기본 UI · 주소창만 다크로 남았다.**
+
+  **새 규칙이 아니라 이미 있는 규칙을 어긴 자리였다.** `CONVENTIONS.md` 「스타일」이 이미
+  "`prefers-color-scheme` 를 직접 참조하지 않는다 — 시스템 설정 해석은 `ThemeProvider` 가 단독으로
+  한다" 고 적어 뒀고, `frontend/src` 전체에 `dark:` 접두가 0건인 것도 그 규칙을 지킨 결과다.
+  예외가 딱 둘 남아 있었다.
+
+  `color-scheme` 은 `:root` 에 `light dark` 로 박혀 있었다. **이건 값이 아니라 「UA 가 골라라」는
+  위임**이고 UA 는 OS 를 본다. 이 앱은 답을 이미 알고 있으므로 `:root { color-scheme: light }` ·
+  `:root[data-theme="dark"] { color-scheme: dark }` 로 알려 준다.
+
+  `theme-color` 는 `media="(prefers-color-scheme: …)"` 로 갈린 `<meta>` 두 개였다. **미디어쿼리로는
+  `data-theme` 을 따라갈 수 없다.** `<meta>` 를 하나로 줄이고 `ThemeProvider.applyTheme` 이
+  `--c-canvas` 를 읽어 `content` 를 갱신한다. **색 값을 JS 로 복사해 오지 않는다** — `data-theme` 을
+  바꾼 뒤 그 상태의 토큰을 읽으므로 정본은 여전히 `index.css` 다. HTML 에 남은 값은 JS 가 돌기
+  전까지만 쓰이는 **초기값**이고, 그 사실을 `design-system.md` 「색 값을 들고 있는 파일」과
+  `CONVENTIONS.md` 양쪽에 적었다.
+
+  **테스트에도 색 값을 적지 않았다.** 적으면 색을 든 네 번째 자리가 생긴다. 대신 테스트가 토큰을
+  심고 `<meta>` 가 **그것을 따라오는지** 라는 배선을 단언한다. 변이로 확인했다 — `content` 갱신을
+  빼면 두 케이스가 모두 깨진다. `color-scheme` 쪽은 jsdom 이 `index.css` 를 적용하지 않아 단언할
+  수 없어 **캡처가 맡는다.**
+
+  **이 PR 은 #153 위에 쌓았다.** #153 이 바로 이 문단에 "`theme-color` 는 OS 설정을 본다(#156)" 는
+  문장을 새로 넣어 뒀고, main 에서 따면 그 문장을 고칠 수가 없다. 코드와 문서를 한 번에 맞추려면
+  같은 줄기 위에 있어야 한다.
+
 ### Changed
 - **#151 이 남긴 문서↔코드 어긋남을 맞췄다(#153).** #151 머지 뒤 병렬 검증 에이전트 넷으로 전수
   대조했더니 문서가 **스스로와 모순되는 곳**이 여럿 나왔다. 원인은 하나다 — 리뷰 반영 커밋에서
