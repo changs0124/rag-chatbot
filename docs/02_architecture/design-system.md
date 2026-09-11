@@ -153,8 +153,20 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | 라운드(카드·모달) | `rounded-2xl` (16px) | |
 | 라운드(입력창) | `rounded-3xl` (24px) | 두 제품 모두 알약에 가깝다 |
 | 라운드(버튼) | `rounded-xl`, 주요 CTA 는 `rounded-full` | |
-| 그림자 | `0 1px 2px rgba(0,0,0,.04), 0 8px 24px -12px rgba(0,0,0,.10)` | 확산형만. 짙은 `shadow-md` 금지 |
+| 그림자 | **두 단계다.** 아래 표 참고 | 확산형만. 짙은 `shadow-md` 금지 |
 | 구분선 | `border-line` 1px | 필요한 곳에만. 면 색 차이로 구분되면 선을 넣지 않는다 |
+
+### 그림자는 두 단계다
+
+깊이를 섞으면 같은 층위의 것들이 다른 높이로 보인다. **면 위에 얹힌 것과 화면 위에 뜬 것을 나눈다.**
+
+| 토큰 | 값 | 쓰는 곳 |
+|------|-----|---------|
+| `--shadow-ambient` | `0 1px 2px rgb(0 0 0 / .04), 0 8px 24px -12px rgb(0 0 0 / .1)` | 면 위 카드 · 입력창 · 「새 대화」 버튼 |
+| `--shadow-lifted` | `0 2px 4px rgb(0 0 0 / .05), 0 16px 40px -16px rgb(0 0 0 / .18)` | **화면 위에 뜬 것** — 모달(`ConfirmModal` · `AdminPage`) · 드로어(`ChatPage`) · 팝오버(`Sidebar`) · `+` 메뉴(`Composer`) · 카메라 시트(`CameraCapture`) |
+
+`--shadow-lifted` 는 v1.0 부터 6곳에서 쓰였는데 **이 표에 없었다**(#153 에서 채움).
+이 절만 보고 모달에 `ambient` 를 쓰면 기존 모달과 깊이가 갈린다.
 
 ## 4. 모션
 
@@ -211,37 +223,44 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 
 사방에 **12% 여백**을 둔다. 여백 없이 꽉 채우면 32px 로 줄었을 때 가장자리가 타일에 물린다.
 
+**벡터 정본은 `frontend/src/components/Logo.tsx` 의 `variant="mark"` 다.** 파비콘 전용 SVG 를
+따로 두지 않는다 — 같은 좌표를 두 파일이 들고 있게 되고, 한쪽만 고쳐도 잡아 줄 게이트가 없다.
+(#153 에서 실제로 `favicon.svg` 를 커밋해 봤다가 **몇 시간 만에 오렌지 경로가 한 글자 갈라져**
+되돌렸다.)
+
 | 파일 | 쓰임 | 배경 |
 |------|------|------|
-| `frontend/public/favicon.svg` | **정본(벡터).** 아래 래스터는 전부 여기서 파생시킨다 | 투명 |
-| `frontend/public/favicon-source.png` | 512px 래스터. 작은 크기를 뽑는 중간 산물 | 투명 |
+| `frontend/public/favicon-source.png` | 512px 래스터. `Logo.tsx` 의 마크를 렌더한 산출물이고 작은 크기는 여기서 뽑는다 | 투명 |
 | `frontend/public/favicon.ico` | 16 · 32 · 48px 묶음 (탭) | 투명 |
 | `frontend/public/favicon-32.png` | 32px PNG | 투명 |
 | `frontend/public/apple-touch-icon.png` | 180px (iOS 홈 화면) | **흰 타일** |
 
-`favicon.svg` 는 **화면이 불러 가지 않는다.** `index.html` 이 가리키는 것은 png · ico 이고,
-저장소에 두는 이유는 래스터를 재생성할 수 있게 벡터를 남기기 위해서다.
-#151 은 이 파일을 커밋하지 않아 **문서가 설명하는 자산이 저장소에 없는 상태**를 만들었다(#153 에서 고침).
+#151 은 이 절에 「파비콘 SVG」를 전제한 문장을 남겼는데 **그 파일이 저장소에 없었다.**
+계획 단계에서는 `logo-mark.svg` 를 커밋할 예정이었고, 구현이 인라인 SVG 로 바뀌면서 그 문단만
+주인을 잃은 것이다(#153 에서 정리).
 
-**`public/` 에 있으므로 빌드 산출물에 그대로 실린다**(1.9KB). 아무도 참조하지 않는 채로 배포되는데,
-`favicon-source.png`(10KB)가 이미 같은 처지라 새로 생긴 성질은 아니다. 줄이려면 두 갈래다 —
-생성 자산을 `public/` 밖(빌드가 복사하지 않는 곳)으로 옮기거나, `index.html` 이 SVG 파비콘을
-함께 가리키게 해 실제로 쓰이게 만드는 것이다. **후자가 낫다** : 최신 브라우저는 SVG 파비콘을
-선호하고 어느 크기에서도 또렷하다. 다만 **이번 범위(문서 정합)를 넘으므로 하지 않았다.**
+`favicon-source.png` 는 **아무도 참조하지 않는 채 빌드 산출물에 실린다**(10KB). 생성 중간 산물이
+`public/` 에 있어서인데, 줄이려면 빌드가 복사하지 않는 곳으로 옮겨야 한다. **이번 범위 밖이라 두었다.**
 
 ### 재생성 절차
 
-`favicon.svg` 를 고쳤을 때만 돌린다. 브라우저로 512px 을 렌더한 뒤 Pillow 로 파생시킨다.
+`Logo.tsx` 의 마크를 고쳤을 때만 돌린다. **3단계다.**
+
+1. `Logo.tsx` 에서 `MARK` · `ORANGE` · `FOLD_STOPS` 를 읽어 12% 여백을 넣은 512px SVG 문자열을 만든다
+2. 브라우저로 512px 렌더 (`omitBackground` 로 투명 유지)
+3. Pillow 로 32px · 180px(흰 타일) · ico(16·32·48) 파생
+
+2·3 단계는 이렇다.
 
 ```bash
-# 1) SVG -> 512px PNG  (투명 배경 유지)
+# 2) SVG 문자열 -> 512px PNG
 node -e "
 const {chromium}=require('playwright'),{readFileSync}=require('fs');
 (async()=>{const b=await chromium.launch(),p=await(await b.newContext({viewport:{width:512,height:512}})).newPage();
-await p.setContent('<body style=\"margin:0\">'+readFileSync('frontend/public/favicon.svg','utf8')+'</body>');
-await p.screenshot({path:'frontend/public/favicon-source.png',omitBackground:true});await b.close()})()"
+await p.setContent('<body style=\"margin:0\">'+readFileSync(process.argv[1],'utf8')+'</body>');
+await p.screenshot({path:'frontend/public/favicon-source.png',omitBackground:true});await b.close()})()" <svg파일>
 
-# 2) 512px -> 나머지 3종
+# 3) 512px -> 나머지 3종
 python -c "
 from PIL import Image
 s=Image.open('frontend/public/favicon-source.png').convert('RGBA')
@@ -251,8 +270,16 @@ t.convert('RGB').save('frontend/public/apple-touch-icon.png')
 s.save('frontend/public/favicon.ico',sizes=[(16,16),(32,32),(48,48)])"
 ```
 
-**검증** : 1번을 돌린 결과가 커밋된 `favicon-source.png` 와 **픽셀 단위로 같아야 한다**
-(#153 에서 최대 채널차 0 으로 확인). 다르면 SVG 를 고쳤거나 렌더러가 바뀐 것이다.
+**1단계의 좌표 주의** : 여백을 주려면 마크를 `translate` 안에 넣게 되는데,
+`gradientUnits="userSpaceOnUse"` 는 **참조하는 요소(rect)의 좌표계**에서 해석된다.
+`x1`/`x2` 에 translate 밖 좌표를 넣으면 접힘면 음영이 그만큼 밀려 **탭의 파비콘과 화면 안 로고가
+서로 달라진다** — #151 에서 실제로 겪었고 #152 리뷰에서 잡혔다.
+
+**검증** : 돌린 결과가 커밋된 `favicon-source.png` 와 **픽셀 단위로 같아야 한다**
+(#153 에서 최대 채널차 0 으로 확인). 다르면 마크를 고쳤거나 렌더러가 바뀐 것이다.
+
+**1단계를 자동화하는 스크립트는 없다.** 마크가 바뀌는 일이 드물어 근거가 한 건뿐이고,
+이 저장소는 그럴 때 도구를 만들지 않는다(#55 · #149 기준). 필요해지면 그때 만든다.
 
 `apple-touch-icon` 만 흰 타일을 까는 이유 : iOS 는 투명을 검게 메워 버려서, 투명으로 두면
 홈 화면에서 검은 사각형 위에 마크가 앉는다.
@@ -339,15 +366,14 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 | `pages/AdminPage.tsx:166` | `bg-accent-soft` → `bg-danger-soft` | **재도색이 드러낸 것** — 종전엔 accent(테라코타)와 danger(붉은)가 같은 계열이라 우연히 어울렸다 |
 | `components/ConfirmModal.tsx:42` | `text-white` → `text-danger-ink` | **재도색이 강제한 것** — 다크 danger 가 바뀌며 흰 글자가 2.89:1 이 됐다 |
 
-### 색 값을 들고 있는 파일 — 넷이다
+### 색 값을 들고 있는 파일 — 셋이다
 
 토큰이 유일한 출처라는 말은 **화면 코드**에 한정된다. 실제로 색 리터럴을 든 파일은 셋이다.
 
 | 파일 | 값 | 왜 토큰이 아닌가 |
 |------|-----|-----------------|
 | `frontend/src/index.css` | 토큰 28개 (라이트·다크 각 14) | 정본 |
-| `frontend/src/components/Logo.tsx` | 브랜드색 2 + 램프 5스톱 | **로고는 테마를 타면 안 된다.** 토큰은 `data-theme` 으로 뒤집히는데 CI 색은 양 테마에서 고정이어야 한다 — 토큰으로 빼는 순간 다크에서 로고가 다른 회사 색이 된다 |
-| `frontend/public/favicon.svg` | 같은 값 | 위와 같다. 브라우저 탭은 앱 테마를 모른다 |
+| `frontend/src/components/Logo.tsx` | 브랜드색 2 + 램프 5스톱 | **로고는 테마를 타면 안 된다.** 토큰은 `data-theme` 으로 뒤집히는데 CI 색은 양 테마에서 고정이어야 한다 — 토큰으로 빼는 순간 다크에서 로고가 다른 회사 색이 된다. 파비콘도 여기서 렌더하므로 사본을 따로 두지 않는다 |
 | `frontend/index.html` | `theme-color` 2개 | `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 **같은 값을 손으로 맞춘다** |
 
 **이 예외는 [CONVENTIONS.md](../CONVENTIONS.md) 「스타일」에도 적혀 있다.** 한쪽만 읽고 고치면 어긋난다.
