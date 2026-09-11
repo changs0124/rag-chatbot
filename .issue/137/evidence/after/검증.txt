@@ -1,0 +1,20 @@
+변경 후 — GHCR·Vercel 전제 정리
+
+① 대상 세 곳
+docs/02_architecture/backend.md:434:**한도 근거는 이제 없다(#137).** 당시 판단의 큰 축은 "GHCR 도 **저장 500MB ·
+docs/02_architecture/frontend.md:202:   (공개 저장소라 별도 접근 승인은 필요 없다. 처음 연결하는 계정이면 Vercel GitHub App 설치는
+docs/06_changelog/CHANGELOG.md:11:  **Vercel 연결 절차**(공개 저장소라 별도 접근 승인이 필요 없다).
+scripts/deploy.sh:8:# **한도 근거는 이제 없다(#137).** 종전 주석은 "패키지 저장 500MB ·
+
+② 결론이 유지되는가 (GHCR 을 안 쓰는 이유가 여전히 설명되나)
+scripts/deploy.sh:4:# **왜 레지스트리를 쓰지 않나** : 배포 서버가 1GB 급(GCP e2-micro)이라 거기서 빌드할 수 없고,
+docs/02_architecture/backend.md:430:**왜 GHCR 이 아닌가** — 처음에는 CI 가 GHCR 에 미는 안으로 갔으나 접었다. 직접 전송은 **토큰도
+
+③ 잔여 (#135 의 몫 — 이 PR 범위 밖)
+docs/CONVENTIONS.md:126:  종전에는 PR·푸시마다 돌렸으나, 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이고
+scripts/check-all.sh:5:# 전에 먼저 잡으려는 것이다. 이 저장소는 비공개라 Actions 분이 유료 한도에 묶이므로
+
+④ 이력 서술은 보존 (의도)
+  docs/06_changelog/CHANGELOG.md:2
+
+⑤ bash -n + 문서 게이트 : 통과
