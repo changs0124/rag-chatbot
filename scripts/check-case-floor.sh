@@ -15,7 +15,7 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-# shellcheck source=./case-floors.env
+# shellcheck source=scripts/case-floors.env
 . scripts/case-floors.env
 
 target="${1:-}"

@@ -106,7 +106,7 @@ while IFS='|' read -r name actual; do
 	[ -n "$actual" ] || die "$name 의 실제 버전을 수집하지 못함"
 
 	# docs/ 와 README.md 에서 "<이름> <숫자>" 를 찾음. CHANGELOG 는 이력이라 제외
-	hits="$(grep -rHnoE "$name[[:space:]]+v?[0-9]+(\.[0-9]+)*" docs README.md \
+	hits="$(grep -rHnoE "${name}[[:space:]]+v?[0-9]+(\.[0-9]+)*" docs README.md \
 		--exclude-dir=06_changelog 2>/dev/null || true)"
 	[ -n "$hits" ] || continue
 

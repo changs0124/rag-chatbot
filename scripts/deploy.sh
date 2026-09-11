@@ -101,6 +101,9 @@ say "이미지 저장 (gzip)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 docker save "$IMAGE" | gzip -c > "$TMP/$TARBALL"
+# 파일명은 바로 위에서 우리가 만든 고정값($TARBALL)이라 글롭도 특수문자도 없다.
+# find 로 바꿔 얻을 것이 없다
+# shellcheck disable=SC2012
 ls -lh "$TMP/$TARBALL" | awk '{print "  크기: " $5}'
 
 # 3. 전송 --------------------------------------------------------------------

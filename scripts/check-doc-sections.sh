@@ -32,9 +32,11 @@ DOC_PATHS="${DOC_PATHS:-docs README.md}"
 fail=0
 checked=0
 
-paths=""
-for p in $DOC_PATHS; do [ -e "$p" ] && paths="$paths $p"; done
-[ -n "$paths" ] || { echo "검사 대상 경로가 하나도 없음 - DOC_PATHS 를 확인할 것" >&2; exit 1; }
+# **배열로 받는다(#145).** 문자열에 이어 붙이면 아래 호출부마다 따옴표 없이 전개해야 하고
+# (shellcheck SC2086), 경로에 공백이 있으면 조각난다. 배열이면 "${paths[@]}" 로 안전하다
+paths=()
+for p in $DOC_PATHS; do [ -e "$p" ] && paths+=("$p"); done
+[ "${#paths[@]}" -gt 0 ] || { echo "검사 대상 경로가 하나도 없음 - DOC_PATHS 를 확인할 것" >&2; exit 1; }
 
 # `a/b/../c` 같은 경로를 눕힘. realpath 가 없는 환경도 있어 직접 처리함
 normalize() {
@@ -100,8 +102,10 @@ has_section() {
 # 셸 파라미터 확장으로 잘라낸다 - 그쪽은 바이트 안전하다.
 #
 # 한계 : 한 줄에 이런 참조가 둘이면 첫 번째만 본다. 현재 문서에는 그런 줄이 없다.
+# 위와 같다 - 백틱을 리터럴로 찾는 정규식이라 단일 따옴표가 의도다
+# shellcheck disable=SC2016
 PATTERN='(\[[^]]*\]\([^)]+\.md[^)]*\)|`[^`]+\.md`)[[:space:]]*「.*'
-matches="$(grep -rHnoE "$PATTERN" $paths --include='*.md' 2>/dev/null \
+matches="$(grep -rHnoE "$PATTERN" "${paths[@]}" --include='*.md' 2>/dev/null \
 	| grep -v '^docs/06_changelog/' || true)"
 
 if [ -n "$matches" ]; then
@@ -116,6 +120,8 @@ if [ -n "$matches" ]; then
 		if printf '%s' "$text" | grep -q '^\['; then
 			ref="$(printf '%s' "$text" | sed 's/^\[[^]]*\](\([^)]*\)).*/\1/')"
 		else
+			# sed 스크립트 안의 백틱도 리터럴이다 - 단일 따옴표가 의도다
+			# shellcheck disable=SC2016
 			ref="$(printf '%s' "$text" | sed 's/^`\([^`]*\)`.*/\1/')"
 		fi
 
