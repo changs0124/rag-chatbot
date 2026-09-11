@@ -1,0 +1,23 @@
+변경 전 — 게이트 목록에 빠진 스크립트
+
+실제 scripts/check-*.sh (9개)
+  check-all.sh
+  check-case-floor.sh
+  check-doc-refs.sh
+  check-doc-sections.sh
+  check-doc-versions.sh
+  check-response-contract.sh
+  check-runtime-versions.sh
+  check-shell-lint.sh
+  check-shell-syntax.sh
+
+CONVENTIONS.md 가 이름으로 서술 (7개)
+  check-doc-refs.sh
+  check-doc-sections.sh
+  check-doc-versions.sh
+  check-response-contract.sh
+  check-runtime-versions.sh
+  check-shell-lint.sh
+  check-shell-syntax.sh
+
+→ check-case-floor.sh 가 없다 (check-all.sh 는 러너로 :148 에 서술됨)
