@@ -1,0 +1,13 @@
+변경 전 — shellcheck 경고 12건
+
+$ shellcheck -f gcc $(git ls-files '*.sh')
+(HEAD~1 기준)
+  총 12건 / error 1 · info 11
+
+  check-doc-refs.sh      4  SC2086 x3 · SC2016 x1
+  check-doc-sections.sh  3  SC2086 x1 · SC2016 x2
+  check-all.sh           2  SC2317 x2
+  check-case-floor.sh    1  SC1091
+  check-doc-versions.sh  1  SC1087 (error)
+  deploy.sh              1  SC2012
+  check-response-contract.sh · check-runtime-versions.sh · check-shell-syntax.sh  0
