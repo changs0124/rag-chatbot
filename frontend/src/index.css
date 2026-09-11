@@ -8,34 +8,50 @@
 /*
  * 색 토큰. 값은 여기 CSS 변수에만 두고 @theme 이 그 변수를 가리킨다 -
  * 그래서 화면 코드에서는 `bg-surface` 한 번이면 두 테마가 다 되고, 색에 `dark:` 를 쓰지 않는다.
- * 웜 크림 계열인 이유 : 대화가 길어지는 화면에서 순백·순회색은 눈이 빨리 지친다.
+ *
+ * 값의 출처는 회사 CI(디인사이트)다. accent 는 임의로 고른 파랑이 아니라 **D 마크 접힘면
+ * 그라데이션의 가장 어두운 실측값**(#0070B5)이다 - 로고 원색 #41BAE9 는 흰 글자와 2.2:1 이라
+ * 버튼색으로 쓸 수 없고, 그 그라데이션 안에 이미 대비를 버는 값이 있었다.
+ * highlight(#F2931D)는 로고의 오렌지인데 글자로는 어떤 밝은 배경에서도 AA 에 못 미쳐
+ * **배경 칠로만** 쓴다(그 위 글자는 highlight-ink).
+ * 바탕이 순백이 아닌 이유 : 대화가 길어지는 화면에서 순백은 눈이 빨리 지친다.
  */
 :root {
   color-scheme: light dark;
 
-  --c-canvas: #faf9f5;
-  --c-surface: #f0eee6;
+  --c-canvas: #f7f9fb;
+  --c-surface: #edf1f5;
   --c-raised: #ffffff;
-  --c-line: #e4e1d7;
-  --c-ink: #1f1e1b;
-  --c-ink-muted: #6b6862;
-  --c-accent: #c96442;
+  --c-line: #cdd3da;
+  --c-ink: #2a2f33;
+  --c-ink-muted: #666e76;
+  --c-accent: #0070b5;
   --c-accent-ink: #ffffff;
-  --c-accent-soft: #f3e3db;
-  --c-danger: #b4453a;
+  --c-accent-soft: #e1f1fa;
+  --c-highlight: #f2931d;
+  --c-highlight-ink: #2a2f33;
+  --c-danger: #c0392b;
+  --c-danger-ink: #ffffff;
+  --c-danger-soft: #fbe9e7;
 }
 
 :root[data-theme="dark"] {
-  --c-canvas: #1f1e1d;
-  --c-surface: #262522;
-  --c-raised: #2f2d2a;
-  --c-line: #3a3835;
-  --c-ink: #f5f4ef;
-  --c-ink-muted: #a8a49c;
-  --c-accent: #d97757;
-  --c-accent-ink: #231c18;
-  --c-accent-soft: #3a2b24;
-  --c-danger: #e0705f;
+  --c-canvas: #12171a;
+  --c-surface: #1a2126;
+  --c-raised: #222b31;
+  --c-line: #2e383f;
+  --c-ink: #e6edf2;
+  --c-ink-muted: #93a1ab;
+  /* 어두운 면에서는 로고 원색이 대비를 번다 - 라이트와 달리 어둡게 깎을 이유가 없다 */
+  --c-accent: #41bae9;
+  --c-accent-ink: #06222f;
+  --c-accent-soft: #10303f;
+  --c-highlight: #f2931d;
+  --c-highlight-ink: #1b1205;
+  --c-danger: #f07167;
+  /* 다크에서 danger 위에 흰 글자를 얹으면 2.89:1 이다 - 삭제 확인 버튼이라 잘못 읽히면 되돌릴 수 없다 */
+  --c-danger-ink: #2a0f0c;
+  --c-danger-soft: #3a1f1c;
 }
 
 @theme inline {
@@ -48,7 +64,11 @@
   --color-accent: var(--c-accent);
   --color-accent-ink: var(--c-accent-ink);
   --color-accent-soft: var(--c-accent-soft);
+  --color-highlight: var(--c-highlight);
+  --color-highlight-ink: var(--c-highlight-ink);
   --color-danger: var(--c-danger);
+  --color-danger-ink: var(--c-danger-ink);
+  --color-danger-soft: var(--c-danger-soft);
 
   --font-sans: "Pretendard Variable", Pretendard, system-ui, -apple-system, "Segoe UI",
     "Apple SD Gothic Neo", sans-serif;
@@ -56,7 +76,7 @@
   /* 모션 시그니처 - 전 컴포넌트가 이 이징 하나를 쓴다. linear · ease-in-out 은 쓰지 않음 */
   --ease-out-quint: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* 확산형 그림자만 씀. 짙은 그림자는 웜 톤에서 때가 낀 것처럼 보임 */
+  /* 확산형 그림자만 씀. 짙은 그림자는 면 색 차이로 만든 계층을 뭉개 버림 */
   --shadow-ambient: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.1);
   --shadow-lifted: 0 2px 4px rgb(0 0 0 / 0.05), 0 16px 40px -16px rgb(0 0 0 / 0.18);
 }

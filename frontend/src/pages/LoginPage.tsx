@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
+import Logo from '../components/Logo'
 import TextInput from '../components/TextInput'
 import { ApiError } from '../lib/api'
 
@@ -32,9 +33,7 @@ export default function LoginPage() {
       <div className="mx-auto grid min-h-[100dvh] w-full max-w-5xl items-center gap-10 px-4 py-10 md:grid-cols-2 md:gap-16 md:px-8">
         {/* 왼쪽은 정체성, 오른쪽은 폼. 모바일에서는 위아래로 쌓임 */}
         <div className="md:pr-4">
-          <p className="inline-block rounded-full bg-accent-soft px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-accent uppercase">
-            RAG Chatbot
-          </p>
+          <Logo className="h-10 w-auto text-ink" />
           <h1 className="mt-4 text-3xl leading-snug font-semibold text-ink md:text-4xl">
             출처를 밝히는
             <br />
