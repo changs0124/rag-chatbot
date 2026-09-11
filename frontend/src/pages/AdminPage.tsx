@@ -163,7 +163,7 @@ export default function AdminPage() {
         </p>
 
         {error && (
-          <p className="mt-4 rounded-2xl bg-accent-soft px-4 py-3 text-sm text-danger">{error}</p>
+          <p className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>
         )}
 
         <section className="mt-6">

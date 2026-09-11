@@ -178,7 +178,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             스트리밍 중에는 아직 citations가 안 왔으므로 complete 인 메시지에만 붙임.
             중단된 답변(stopped)은 출처 판정 자체를 못 마쳐 늘 0건이므로 제외함 - 붙이면 거짓말이 됨 */}
         {!isUser && message.status === 'complete' && !message.stopped && message.citations.length === 0 && (
-          <p className="mb-2 inline-block rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-medium text-accent">
+          <p className="mb-2 inline-block rounded-full bg-highlight px-2.5 py-1 text-[11px] font-medium text-highlight-ink">
             자료 없음 - 관련 자료를 찾지 못해 추론으로 답변함
           </p>
         )}

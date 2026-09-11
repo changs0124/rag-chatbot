@@ -6,6 +6,7 @@ import ResizableSidebar from '../components/chat/ResizableSidebar'
 import MessageList from '../components/chat/MessageList'
 import Composer from '../components/chat/Composer'
 import { IconEdit, IconMenu } from '../components/icons'
+import Logo from '../components/Logo'
 
 export default function ChatPage() {
   const { user, logout } = useAuth()
@@ -80,6 +81,10 @@ export default function ChatPage() {
           >
             <IconMenu />
           </button>
+
+          {/* md 미만에서는 사이드바가 드로어로 접혀 로고가 보이지 않는다 - 마크만 헤더에 둔다.
+              제목은 truncate 라 이 28px 때문에 잘리기는 해도 밀려나지는 않는다 */}
+          <Logo variant="mark" className="h-7 w-7 shrink-0 md:hidden" />
 
           {/* 활성 대화 제목 - 클릭하면 인라인 수정(GPT/Claude 방식) */}
           <div className="min-w-0 flex-1">
