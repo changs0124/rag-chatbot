@@ -114,12 +114,24 @@
 그 변수를 가리키게 한다. 그래서 **색에는 `dark:` 접두를 쓰지 않는다** — `bg-surface` 한 번이면 두 테마가 다 된다.
 
 ```
-bg-canvas · bg-surface · bg-raised · text-ink · text-ink-muted · border-line · bg-accent · text-accent
-bg-highlight · text-highlight-ink · bg-danger-soft
+bg-canvas · bg-surface · bg-raised · from-canvas
+text-ink · text-ink-muted · border-line
+bg-accent · text-accent · text-accent-ink · bg-accent-soft · border-accent
+bg-highlight · text-highlight-ink
+bg-danger · text-danger · text-danger-ink · bg-danger-soft
 ```
 
-**토큰을 만들면 쓰는 자리를 함께 정한다.** `highlight` 계열과 `danger-soft` 는 #151 에서 각각
-「자료 없음」 배지와 관리자 오류 배너를 위해 생겼고, 그 둘 말고는 쓰이지 않는다 —
+18종이 실제로 쓰인다. **토큰 14개가 전부 쓰이고, 쓰는데 정의 안 된 것은 없다.**
+(`TextInput` · `Composer` 의 포커스 링은 유틸리티가 아니라 `var(--c-accent-soft)` 를 직접 참조한다)
+
+**토큰을 만들면 쓰는 자리를 함께 정한다.** #151 신규 4종은 자리가 이렇게 정해져 있다.
+
+| 토큰 | 자리 | 사용 |
+|------|------|------|
+| `highlight` · `highlight-ink` | `chat/MessageList.tsx:181` 「자료 없음」 배지 | 각 1회 (같은 줄) |
+| `danger-ink` | `ConfirmModal.tsx:42` 삭제 확인 버튼 | 1회 — `bg-danger` 가 있는 유일한 자리다 |
+| `danger-soft` | `pages/AdminPage.tsx:166` 관리자 오류 배너 | 1회 |
+
 쓰이지 않는 토큰은 다음 사람이 아무 데나 갖다 쓰는 근거가 된다.
 
 `dark:` 는 색이 아닌 것(그림자 세기, 반투명 겹침 등)에만 남긴다.
@@ -201,15 +213,53 @@ bg-highlight · text-highlight-ink · bg-danger-soft
 
 | 파일 | 쓰임 | 배경 |
 |------|------|------|
-| `frontend/public/favicon-source.png` | 512px 원본. 다른 크기는 여기서 파생시킨다 | 투명 |
+| `frontend/public/favicon.svg` | **정본(벡터).** 아래 래스터는 전부 여기서 파생시킨다 | 투명 |
+| `frontend/public/favicon-source.png` | 512px 래스터. 작은 크기를 뽑는 중간 산물 | 투명 |
 | `frontend/public/favicon.ico` | 16 · 32 · 48px 묶음 (탭) | 투명 |
 | `frontend/public/favicon-32.png` | 32px PNG | 투명 |
 | `frontend/public/apple-touch-icon.png` | 180px (iOS 홈 화면) | **흰 타일** |
 
+`favicon.svg` 는 **화면이 불러 가지 않는다.** `index.html` 이 가리키는 것은 png · ico 이고,
+저장소에 두는 이유는 래스터를 재생성할 수 있게 벡터를 남기기 위해서다.
+#151 은 이 파일을 커밋하지 않아 **문서가 설명하는 자산이 저장소에 없는 상태**를 만들었다(#153 에서 고침).
+
+**`public/` 에 있으므로 빌드 산출물에 그대로 실린다**(1.9KB). 아무도 참조하지 않는 채로 배포되는데,
+`favicon-source.png`(10KB)가 이미 같은 처지라 새로 생긴 성질은 아니다. 줄이려면 두 갈래다 —
+생성 자산을 `public/` 밖(빌드가 복사하지 않는 곳)으로 옮기거나, `index.html` 이 SVG 파비콘을
+함께 가리키게 해 실제로 쓰이게 만드는 것이다. **후자가 낫다** : 최신 브라우저는 SVG 파비콘을
+선호하고 어느 크기에서도 또렷하다. 다만 **이번 범위(문서 정합)를 넘으므로 하지 않았다.**
+
+### 재생성 절차
+
+`favicon.svg` 를 고쳤을 때만 돌린다. 브라우저로 512px 을 렌더한 뒤 Pillow 로 파생시킨다.
+
+```bash
+# 1) SVG -> 512px PNG  (투명 배경 유지)
+node -e "
+const {chromium}=require('playwright'),{readFileSync}=require('fs');
+(async()=>{const b=await chromium.launch(),p=await(await b.newContext({viewport:{width:512,height:512}})).newPage();
+await p.setContent('<body style=\"margin:0\">'+readFileSync('frontend/public/favicon.svg','utf8')+'</body>');
+await p.screenshot({path:'frontend/public/favicon-source.png',omitBackground:true});await b.close()})()"
+
+# 2) 512px -> 나머지 3종
+python -c "
+from PIL import Image
+s=Image.open('frontend/public/favicon-source.png').convert('RGBA')
+s.resize((32,32),Image.LANCZOS).save('frontend/public/favicon-32.png')
+t=Image.new('RGBA',(180,180),(255,255,255,255)); t.alpha_composite(s.resize((180,180),Image.LANCZOS))
+t.convert('RGB').save('frontend/public/apple-touch-icon.png')
+s.save('frontend/public/favicon.ico',sizes=[(16,16),(32,32),(48,48)])"
+```
+
+**검증** : 1번을 돌린 결과가 커밋된 `favicon-source.png` 와 **픽셀 단위로 같아야 한다**
+(#153 에서 최대 채널차 0 으로 확인). 다르면 SVG 를 고쳤거나 렌더러가 바뀐 것이다.
+
 `apple-touch-icon` 만 흰 타일을 까는 이유 : iOS 는 투명을 검게 메워 버려서, 투명으로 두면
 홈 화면에서 검은 사각형 위에 마크가 앉는다.
 
-`frontend/index.html` 이 이 파일들을 가리키고, 주소창 색(`theme-color`)은 라이트·다크 각각 `canvas` 값과 같다.
+`frontend/index.html` 이 png · ico 를 가리키고, 주소창 색(`theme-color`)은 라이트·다크 각각 `canvas` 값과 같다.
+다만 **`theme-color` 는 `data-theme` 이 아니라 OS 설정(`prefers-color-scheme`)을 본다** — 앱 설정과
+OS 가 어긋나면 주소창만 반대 테마가 된다(#156).
 32px 로 줄이면 접힘면 그라데이션은 뭉개지지만 **D 실루엣과 오렌지 블록은 남는다** — 그 상태에서도 구분되는 것을 채택 기준으로 삼았다.
 
 ## 7-3. 로고 자산
@@ -222,7 +272,7 @@ bg-highlight · text-highlight-ink · bg-danger-soft
 | 원본 | `디인사이트 CI.ai` (PDF 1.6 호환). 저장소 밖에 있다 — 회사 자산이라 여기서 관리하지 않는다 |
 | 채택 락업 | **국문(디인사이트)**. UI 가 전부 한국어라 결이 맞고, 1250x290 으로 영문판보다 짧아 사이드바에 잘 들어간다 |
 | `variant="full"` | D 마크 + 워드마크. 로그인 · 사이드바 |
-| `variant="mark"` | D 마크만. 모바일 헤더 · 파비콘 |
+| `variant="mark"` | D 마크만. **모바일 헤더에만 쓴다** — 파비콘은 이 컴포넌트가 아니라 `public/favicon.svg` 에서 나온다(같은 마크 모양이지만 별개 파일) |
 | 워드마크 색 | `currentColor` — **SVG 하나로 라이트·다크가 다 된다** |
 | D 마크 색 | 양 테마에서 브랜드색 고정 |
 
@@ -265,9 +315,9 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 |------|------|
 | `frontend/src/index.css` | 토큰 · `@theme inline` · Pretendard · 이징 · reduced-motion 규칙 |
 | `frontend/src/components/Logo.tsx` | **#151 신규** — 회사 CI 국문 락업(인라인 SVG · `full`/`mark`) |
-| `frontend/src/components/TextInput.tsx` · `ConfirmModal.tsx` · `ProtectedRoute.tsx` | 토큰 · 44px 터치 높이 · 이중 테두리 모달 |
+| `frontend/src/components/TextInput.tsx` · `ConfirmModal.tsx` · `ProtectedRoute.tsx` | 토큰 · 44px 터치 높이 · 이중 테두리 모달 · **#151** `ConfirmModal` 삭제 버튼을 `danger-ink` 로 |
 | `frontend/src/components/chat/Sidebar.tsx` | 토큰 · 시간 묶음(오늘/지난 7일/이전) · 활성 항목 `accent-soft` |
-| `frontend/src/components/chat/ResizableSidebar.tsx` | 신규 — 폭 조절(FEAT-UI-001) |
+| `frontend/src/components/chat/ResizableSidebar.tsx` | 신규 — 사이드바 폭 조절. **`FEAT-` ID 가 없다** — `features.md` 에 UI 카테고리가 없어 명세된 적이 없고, 구현이 정본이다 |
 | `frontend/src/pages/ChatPage.tsx` | `100dvh` · 드로어 blur + 스크롤 잠금 · 스크롤 페이드 |
 | `frontend/src/components/chat/MessageList.tsx` | 답변 버블 제거 · 사용자만 `raised` 카드 · **#151** 「자료 없음」 배지를 `highlight` 로 |
 | `frontend/src/components/chat/Composer.tsx` · `Citations.tsx` | 떠 있는 입력 판 · safe-area · 토큰 |
@@ -280,8 +330,32 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 `frontend/src/pages/ChatPage.tsx` 는 **#151** 로 모바일 헤더에 D 마크가 붙었다(`md:hidden`) —
 드로어로 접히면 사이드바 로고가 보이지 않기 때문이다.
 
-화면 코드에 남은 `zinc-*` 색은 0건이고, **색 값을 들고 있는 파일도 `index.css` 하나뿐이다.**
-그래서 #151 의 전면 재도색이 컴포넌트를 한 줄도 건드리지 않고 끝났다 — 손댄 컴포넌트 둘은
-색 교체가 아니라 **의미가 틀렸던 토큰**을 바로잡은 것이다.
+화면 코드에 남은 `zinc-*` 색은 0건이고, **화면이 쓰는 색은 전부 토큰이다.** 그래서 #151 의
+전면 재도색이 화면의 색 클래스를 한 줄도 바꾸지 않고 끝났다. 손댄 컴포넌트 셋은 사정이 각각 다르다.
+
+| 파일 | 바뀐 것 | 성격 |
+|------|---------|------|
+| `chat/MessageList.tsx:181` | `accent-soft`/`accent` → `highlight`/`highlight-ink` | **의미가 틀렸던 토큰** — 동작색을 주의에 쓰고 있었다 |
+| `pages/AdminPage.tsx:166` | `bg-accent-soft` → `bg-danger-soft` | **재도색이 드러낸 것** — 종전엔 accent(테라코타)와 danger(붉은)가 같은 계열이라 우연히 어울렸다 |
+| `components/ConfirmModal.tsx:42` | `text-white` → `text-danger-ink` | **재도색이 강제한 것** — 다크 danger 가 바뀌며 흰 글자가 2.89:1 이 됐다 |
+
+### 색 값을 들고 있는 파일 — 넷이다
+
+토큰이 유일한 출처라는 말은 **화면 코드**에 한정된다. 실제로 색 리터럴을 든 파일은 셋이다.
+
+| 파일 | 값 | 왜 토큰이 아닌가 |
+|------|-----|-----------------|
+| `frontend/src/index.css` | 토큰 28개 (라이트·다크 각 14) | 정본 |
+| `frontend/src/components/Logo.tsx` | 브랜드색 2 + 램프 5스톱 | **로고는 테마를 타면 안 된다.** 토큰은 `data-theme` 으로 뒤집히는데 CI 색은 양 테마에서 고정이어야 한다 — 토큰으로 빼는 순간 다크에서 로고가 다른 회사 색이 된다 |
+| `frontend/public/favicon.svg` | 같은 값 | 위와 같다. 브라우저 탭은 앱 테마를 모른다 |
+| `frontend/index.html` | `theme-color` 2개 | `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 **같은 값을 손으로 맞춘다** |
+
+**이 예외는 [CONVENTIONS.md](../CONVENTIONS.md) 「스타일」에도 적혀 있다.** 한쪽만 읽고 고치면 어긋난다.
+
+⚠️ **같은 값이 두 곳에 있다** : `#0070B5` 는 `index.css` 의 라이트 `accent` 이자 `Logo.tsx` 램프의
+첫 스톱이고, `#41BAE9` 는 다크 `accent` 이자 `Logo.tsx` 의 `BRAND_CYAN` 이다. 출처는 같은 실측
+픽셀이지만 **두 값은 독립적으로 변할 수 있다.** 한쪽만 고치면 문서의 「accent = 접힘면 최암부의
+실측 픽셀」 주장이 조용히 거짓이 되고, 게이트 셋(`check-doc-refs` · `check-doc-sections` ·
+`check-doc-versions`)은 경로·섹션명·버전만 보므로 전부 통과한다. **색을 건드릴 때 둘 다 본다.**
 
 화면별 배치와 폭 조절 규격은 구현이 정본이며, 기능 단위 명세는 `docs/01_specs/features.md` 에 있다.

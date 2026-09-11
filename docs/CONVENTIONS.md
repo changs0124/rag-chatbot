@@ -80,6 +80,14 @@
   시스템 설정 해석은 `ThemeProvider`가 단독으로 한다.
 - **색은 토큰(`bg-surface` · `text-ink` · `bg-accent` …)으로만 쓴다.** 토큰이 테마별 값을 이미 들고 있으므로
   색에 `dark:` 를 붙이지 않는다. 새 색이 필요하면 유틸리티에 값을 박지 말고 `index.css` 에 토큰을 먼저 추가한다.
+- **색 리터럴이 허용되는 자리는 아래 셋뿐이다.** 나머지는 전부 토큰이다.
+  - `frontend/src/components/Logo.tsx` · `frontend/public/favicon.svg` — **회사 CI 색.**
+    토큰은 `data-theme` 으로 뒤집히는데 로고는 양 테마에서 고정이어야 한다. 토큰으로 빼면 다크에서
+    로고가 다른 회사 색이 된다
+  - `frontend/index.html` 의 `theme-color` — `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 같은 값을 손으로 맞춘다
+  - 아래가 **토큰이 아닌 면** 위에 얹히는 곳 — 사진·영상 위 오버레이(`ImageLightbox` · `CameraCapture` ·
+    `Composer` 썸네일). 아래 면이 테마와 무관하므로 토큰이 성립하지 않는다
+  자리를 늘리려면 [design-system.md](./02_architecture/design-system.md) 「색 값을 들고 있는 파일 — 넷이다」를 함께 고친다.
 - 모션은 `ease-[var(--ease-out-quint)]` 하나로 통일한다. `transition` 기본 이징(`ease-in-out`)을 그대로 쓰지 않는다.
 
 ### 테스트
