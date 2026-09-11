@@ -1,0 +1,129 @@
+From fee3397eb5d124c91e14d0ab7bfd361a0ef94c47 Mon Sep 17 00:00:00 2001
+From: changs0124 <haeya0124@gmail.com>
+Date: Fri, 11 Sep 2026 10:55:37 +0900
+Subject: [PATCH 1/2] =?UTF-8?q?chore(evidence):=20#127=20=EC=A6=9D?=
+ =?UTF-8?q?=EA=B1=B0=EC=9D=98=20=EB=B0=B0=ED=8F=AC=20=EB=8C=80=EC=83=81=20?=
+ =?UTF-8?q?=EC=8B=9D=EB=B3=84=EC=9E=90=EB=A5=BC=20=EA=B0=80=EB=A6=B0?=
+ =?UTF-8?q?=EB=8B=A4=20(#142)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+#133 이 scripts/deploy.sh 와 문서에서 없앤 것과 같은 부류(DEPLOY_HOST ·
+DEPLOY_ZONE 의 값)가 #127 증거 두 줄에 평문으로 남아 있었다. 그때 .issue/
+증거를 명시적으로 범위 밖에 둔 결과다(#133 본문 「남는 한계」).
+
+표기는 #133 증거와 맞춘다 - <인스턴스명> · <존>.
+
+**나머지 실측값은 그대로 둔다.** 메모리 953Mi · 스왑 2GB · pd-standard 30GB ·
+Ubuntu 24.04.5 는 배포 대상을 지목하지 않고, #127 이 e2-micro 에서 실제로
+무엇을 측정했는지 보여주는 근거다. 가리면 증거의 값이 사라진다.
+
+**과거 커밋 이력은 건드리지 않는다.** 이력 재작성을 하지 않기로 한 결정(#133)이
+그대로 적용된다 - 두 값은 #127 당시 커밋에 남는다. 현재 파일 상태만 정리한다.
+
+**이미 게시된 이슈 코멘트는 바뀌지 않는다.** comment.md 는 그 코멘트의 원본
+파일일 뿐이라 GitHub 쪽 코멘트에는 값이 그대로 있다. 저장소가 정본이고
+코멘트는 그 시점의 사본이므로 어긋나도 된다고 판단했다 - 코멘트를 수정하면
+"나중에 손댔다"는 사실이 이력에서 사라지는 쪽이 더 나쁘다.
+
+즉시 악용 가능한 값은 아니다 - 프로젝트 ID 는 추적 파일 어디에도 없어
+(전수 grep 0건) 인스턴스 이름만으로는 지목할 수 없다. 다만 backend.md 의
+방화벽 표(SSH 22 가 0.0.0.0/0)와 결합하면 「어디에 무엇이 열려 있는지」가
+한 저장소 안에서 완성되므로, 그 결합을 끊는다.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014F19ufeBKaCPWxpLWYWfQp
+---
+ .issue/127/evidence/after-server-measurement.txt | 2 +-
+ .issue/127/evidence/comment.md                   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/.issue/127/evidence/after-server-measurement.txt b/.issue/127/evidence/after-server-measurement.txt
+index 913ffd3..029ffbc 100644
+--- a/.issue/127/evidence/after-server-measurement.txt
++++ b/.issue/127/evidence/after-server-measurement.txt
+@@ -1,6 +1,6 @@
+ # after — GCP e2-micro 실측
+ 일시: 2026-09-10T05:34:49Z
+-인스턴스: <인스턴스명> / <존> / e2-micro (953Mi + 스왑 2GB, pd-standard 30GB)
++인스턴스: <인스턴스명> / <존> / e2-micro (953Mi + 스왑 2GB, pd-standard 30GB)
+ 구성: APP_MODE=mock, db+app 2컨테이너 (cloudflared 는 TUNNEL_TOKEN 부재로 제외)
+ 이미지: 로컬 빌드분을 docker save/load 로 반입 후 GHCR 태그로 재태그
+ 
+diff --git a/.issue/127/evidence/comment.md b/.issue/127/evidence/comment.md
+index 8e4acdc..5caf40a 100644
+--- a/.issue/127/evidence/comment.md
++++ b/.issue/127/evidence/comment.md
+@@ -20,7 +20,7 @@
+ 
+ ## 2. 메모리 실측 — GCP e2-micro 실기기
+ 
+-`<존>` / `e2-micro` / 953Mi + 스왑 2GB / `pd-standard` 30GB / Ubuntu 24.04.5 LTS
++`<존>` / `e2-micro` / 953Mi + 스왑 2GB / `pd-standard` 30GB / Ubuntu 24.04.5 LTS
+ 
+ ```
+ NAME           MEM USAGE / LIMIT   MEM %    CPU %
+-- 
+2.54.0.windows.1
+
+
+From 747f4963ae6ac5175d1def82070582993e8d50fe Mon Sep 17 00:00:00 2001
+From: changs0124 <haeya0124@gmail.com>
+Date: Fri, 11 Sep 2026 10:56:17 +0900
+Subject: [PATCH 2/2] =?UTF-8?q?docs(changelog):=20#138=20=EC=9D=98=20?=
+ =?UTF-8?q?=EC=9D=B4=EB=A0=A5=20=ED=95=AD=EB=AA=A9=EC=9D=84=20=EC=B6=94?=
+ =?UTF-8?q?=EA=B0=80=ED=95=9C=EB=8B=A4=20(#142)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+#138(check-all.sh 의 건너뜀 경고줄이 출력되지 않던 버그)은 실제 결함 수정인데
+CHANGELOG 항목이 없었다. 그 이슈의 완료 기준에 넣지 않은 것이 원인이다 -
+같은 시기 #135 · #137 에는 있었다.
+
+**앞 커밋과 원인이 다르다.** 앞은 #133 의 범위 누락(증거에 남은 식별자)이고
+이것은 #138 의 완료 기준 누락이다. 한 PR 로 가지만 커밋은 나눈다.
+
+항목에 **왜 게이트가 못 잡았는지**를 함께 적었다 - bash -n 은 통과하고
+shellcheck 는 SC2183 으로 잡는다는 대비가 #136(셸 구문 검사 게이트)의 근거와
+직접 이어지기 때문이다. 이력만 남기면 다음 사람이 "왜 게이트를 만드나"를
+다시 물어야 한다.
+
+`### Fixed` 절을 새로 열었다 - [Unreleased] 에 Changed 만 있었다.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014F19ufeBKaCPWxpLWYWfQp
+---
+ docs/06_changelog/CHANGELOG.md | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/docs/06_changelog/CHANGELOG.md b/docs/06_changelog/CHANGELOG.md
+index 8c8ad3e..93731c3 100644
+--- a/docs/06_changelog/CHANGELOG.md
++++ b/docs/06_changelog/CHANGELOG.md
+@@ -4,6 +4,21 @@
+ 
+ ## [Unreleased]
+ 
++### Fixed
++- **건너뜀 경고줄이 출력되지 않던 것을 고쳤다(#138).** `scripts/check-all.sh` 의 `skip()` 은
++  도구(gitleaks · trivy · docker)가 없어 검사를 건너뛸 때 그 사실을 **크게 남기려고** 만든
++  함수다. 그런데 포맷 문자열에 변환 지정자가 없어(`printf '""N""' "$1" "$2"`) **인자 둘이
++  조용히 버려지고 리터럴만 찍혔다.** 이 함수가 존재하는 이유가 정작 동작하지 않았다.
++
++  **아무도 못 알아챈 이유** : 요약부는 `SKIPPED` 배열을 따로 순회하므로 **최종 요약에는
++  건너뜀이 제대로 나온다.** 검사가 도는 도중의 한 줄만 깨진 것이라 눈에 띄지 않았다.
++  `CONVENTIONS.md` 와 이 CHANGELOG 는 그 동작을 "크게 찍는다"고 적어 두고 있었다 —
++  **문서가 맞고 코드가 틀린 상태**였다.
++
++  **게이트도 못 잡았다.** `bash -n` 은 구문 오류가 아니라 **통과하고**, `shellcheck` 는
++  SC2183 으로 정확히 잡지만 이 저장소에는 셸 검사 자체가 없다. 그 공백은 #136 에서 다룬다 —
++  이 버그가 그 이슈의 필요성을 보여주는 실증 사례다.
++
+ ### Changed
+ - **시크릿·의존성 스캔을 변경마다 다시 돌린다(#135).** `secrets`(gitleaks) · `deps-backend`(Trivy) ·
+   `deps-frontend`(npm audit) 세 잡이 주 1회만 돌고 있었다. 근거는 **"이 저장소는 비공개라 Actions
+-- 
+2.54.0.windows.1
+
