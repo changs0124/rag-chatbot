@@ -1,0 +1,10 @@
+변경 전
+
+① 증거에 남은 배포 대상 식별자
+.issue/127/evidence/after-server-measurement.txt:3:인스턴스: <인스턴스명> / <존> / e2-micro (953Mi + 스왑 2GB, pd-standard 30GB)
+.issue/127/evidence/comment.md:23:`<존>` / `e2-micro` / 953Mi + 스왑 2GB / `pd-standard` 30GB / Ubuntu 24.04.5 LTS
+  (위 출력은 값을 가려 표시. 실제 파일에는 평문으로 있다)
+  건수: 2파일
+
+② #138 의 CHANGELOG 항목
+  grep -c '#138' docs/06_changelog/CHANGELOG.md → 0

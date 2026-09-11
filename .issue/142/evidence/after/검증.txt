@@ -1,0 +1,36 @@
+변경 후 — 완료 기준 검증
+
+보정 1
+  ① 제거 대상 두 값으로 git grep -- '.issue'  → 0건
+  ② 나머지 실측값 보존
+     .issue/127/evidence/after-server-measurement.txt:953Mi
+     .issue/127/evidence/after-server-measurement.txt:e2-micro
+     .issue/127/evidence/after-server-measurement.txt:pd-standard 30GB
+     .issue/127/evidence/after-server-measurement.txt:스왑 2GB
+     .issue/127/evidence/comment.md:953Mi
+     .issue/127/evidence/comment.md:Ubuntu 24.04.5
+     .issue/127/evidence/comment.md:e2-micro
+     .issue/127/evidence/comment.md:스왑 2GB
+  ③ 마스킹된 줄
+     인스턴스: <인스턴스명> / <존> / e2-micro (953Mi + 스왑 2GB, pd-standard 30GB)
+     `<존>` / `e2-micro` / 953Mi + 스왑 2GB / `pd-standard` 30GB / Ubuntu 24.04.5 LTS
+
+보정 2
+  grep -c '#138' docs/06_changelog/CHANGELOG.md → 1
+
+공통
+  check-all.sh docs → 전부 통과
+  커밋 2개 (원인별 분리)
+     747f496 docs(changelog): #138 의 이력 항목을 추가한다 (#142)
+     fee3397 chore(evidence): #127 증거의 배포 대상 식별자를 가린다 (#142)
+
+주의 — 변경-diff.patch 의 마스킹에 대하여
+
+  보정 1 의 diff 는 삭제줄(-)과 추가줄(+)이 똑같아 보인다. 이는 no-op 이 아니라
+  **증거 파일에도 실값을 싣지 않기 위해 patch 자체를 한 번 더 가렸기 때문**이다.
+  실제 변경은 삭제줄에 인스턴스명·존의 평문이 있었고 추가줄에 <인스턴스명>·<존>이
+  들어간 것이다.
+
+  제거가 목적인 값을 증거로 다시 공개하면 이슈 자체가 무의미해진다 - #133 에서
+  같은 이유로 증거를 가렸고, 그 판단을 여기서도 따른다. 실제 전후는 위
+  「보정 1 ③ 마스킹된 줄」과 커밋 fee3397 이 보여준다.
