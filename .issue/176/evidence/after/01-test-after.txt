@@ -1,0 +1,78 @@
+# after — 고친 뒤 상태와 증명
+# 측정 시각: 2026-09-12T10:26:07Z
+
+## 1) 상한이 2 -> 1 로 내려갔다
+
+  53: @TestPropertySource(properties = {
+  54: 		"app.ratelimit.upload-per-minute=1",
+  55: 		"app.ratelimit.password-change-per-minute=1" })
+
+## 2) 보장의 근거 — 비둘기집 원리 (샘플이 아니라 증명이다)
+
+  **한 번 통과한 것으로는 간헐 실패를 고쳤다는 증명이 안 된다.** 그래서 경우를 전수로 따진다.
+
+  전제 : 세 요청은 밀리초 안에 끝나므로 분 경계는 **최대 한 번** 끼어든다. 즉 창은 최대 2개다.
+  상한 1 이므로 `increment(key) > 1` 에서 **한 창이 2개 이상 받으면 반드시 거절이 나온다.**
+
+  비둘기집 : 요청 3개를 창 2개에 넣으면 **어느 창은 ceil(3/2) = 2 개 이상**을 받는다.
+  따라서 거절이 **반드시 1건 이상** 생긴다. 전수로 확인하면 :
+
+    (3,0) -> max(0,3-1) + max(0,0-1) = 2 + 0 = 2
+    (2,1) -> max(0,2-1) + max(0,1-1) = 1 + 0 = 1
+    (1,2) -> max(0,1-1) + max(0,2-1) = 0 + 1 = 1
+    (0,3) -> max(0,0-1) + max(0,3-1) = 0 + 2 = 2
+
+  최소 1. **확률이 아니라 하한이다.**
+
+  (before 는 상한 2 · 요청 3번이라 (2,1) 과 (1,2) 에서 거절이 0건이었다 — before 증거의 3절 참고)
+
+  그리고 **첫 요청은 어느 창에서든 그 창의 첫 번째**이므로 `1 > 1` 이 아니라 항상 통과한다.
+  「상한 안의 요청은 통과해야 한다」(이 파일 주석)가 지켜진다.
+
+## 3) 단언을 두 방향으로 유지했다
+
+  104: 	void upload_over_the_limit_is_rejected() {
+  105: 		String token = createUser("upload-limit@b.com");
+  106: 
+  107: 		var codes = repeat(3, () -> upload(token));
+  108: 
+  109: 		assertThat(codes.get(0))
+  110: 				.withFailMessage("첫 업로드가 막힘 - 상한 안의 요청까지 거절하는 구현이다 (관측: %s)", codes)
+  111: 				.isEqualTo(HttpStatus.OK);
+  112: 		assertThat(codes)
+  113: 				.withFailMessage("세 번 중 429 가 한 번도 없음 - 업로드에 유량 상한이 없다는 뜻 (관측: %s)", codes)
+  114: 				.contains(HttpStatus.TOO_MANY_REQUESTS);
+  115: 	}
+  116: 
+
+  「어딘가에서 429」만 보면 무조건 거절하는 구현이 통과하고,
+  「정확히 3번째가 429」를 보면 종전 결함으로 돌아간다. 둘을 함께 본다.
+  실패 메시지에 관측된 코드 목록(`%s`)을 찍어 다음 사람이 바로 알게 했다.
+
+## 4) 테스트 실행 결과
+
+  이 테스트만 (clean 후)
+    tests=3 failures=0 errors=0 skipped=0
+      PASS password_change_over_the_limit_is_rejected (0.412s)
+      PASS upload_limit_is_per_user (0.569s)
+      PASS upload_over_the_limit_is_rejected (0.285s)
+
+  반복 시행 3회 (리포트 갱신 시각이 달라 각 시행이 새로 돈 것이 확인됨) : 전부 failures=0
+  분 경계 2초 전에 맞춘 시행 1회 : failures=0
+
+  **반복 시행은 보조 증거다.** 경계가 실제로 끼었는지는 밖에서 관측할 수 없으므로,
+  증명은 2절의 경우 분석이고 이쪽은 회귀가 없다는 확인에 그친다. 과장하지 않는다.
+
+  전체 백엔드 (clean verify)
+    tests=230 failures=0 errors=0 skipped=0
+    jar 생성 : backend/target/backend-0.0.1-SNAPSHOT.jar
+
+  케이스 수 게이트
+    케이스 수(backend) : 실측 230 / 하한 230  -> OK
+    **케이스 수가 230 그대로라 scripts/case-floors.env 는 바꾸지 않았다.**
+    (테스트 3건을 고쳤을 뿐 늘리거나 줄이지 않았다)
+
+## 5) 프로덕션 코드는 건드리지 않았다
+
+  RateLimiterService 는 한 줄도 바뀌지 않았다. 고정 윈도우는 의도된 설계이고
+  docs/02_architecture/overview.md 「알려진 제약」에 기록돼 있다.
