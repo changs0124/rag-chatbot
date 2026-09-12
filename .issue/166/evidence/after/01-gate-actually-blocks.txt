@@ -1,0 +1,31 @@
+# after-1 — 규칙이 merge 를 실제로 막는가 (우회 없는 임시 ruleset 으로 격리 검증)
+# 측정 시각: 2026-09-12T07:24:28Z
+#
+# 왜 임시 base 로 하는가:
+#   main 용 ruleset 은 관리자 우회를 허용한다(결정 2). 관리자 토큰으로 main 에 merge 를 시도하면
+#   우회가 적용돼 그냥 성공하므로 '규칙이 막는가' 를 증명하지 못한다. 그래서 우회를 뺀 동일 규칙을
+#   버릴 브랜치(ci-gate-probe-base)에 걸어 규칙 자체의 집행력만 분리해 확인한다.
+#   혹시 막히지 않았더라도 깨진 커밋은 그 브랜치에 들어가 main 은 영향이 없다.
+
+## 임시 ruleset (id 23021365) — bypass_actors 비움, 체크 7개
+$ gh api repos/changs0124/rag-chatbot/rules/branches/ci-gate-probe-base
+[{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":false,"do_not_enforce_on_create":false,"required_status_checks":[{"context":"backend (test + build + 케이스 수 하한)"},{"context":"frontend (lint + test + build + 케이스 수 하한)"},{"context":"docker (백엔드 이미지 빌드)"},{"context":"static (셸 구문·분석 · 계약 · 문서 참조 · 섹션 이름)"},{"context":"secrets (시크릿 스캔)"},{"context":"deps (백엔드 의존성 취약점)"},{"context":"deps (프론트 의존성 취약점)"}]},"ruleset_source_type":"Repository","ruleset_source":"changs0124/rag-chatbot","ruleset_id":23021365}]
+## GitHub 이 계산한 merge 상태
+$ gh pr view 167 --json baseRefName,mergeable,mergeStateStatus
+{"baseRefName":"ci-gate-probe-base","mergeStateStatus":"BLOCKED","mergeable":"MERGEABLE"}
+#   before: UNSTABLE (실패 체크 있어도 merge 허용)
+#   after : BLOCKED  (보호 규칙이 merge 를 막음)
+
+## 설정을 읽은 것이 아니라 merge 를 실제로 시도한 결과
+$ gh pr merge 167 --merge
+X Pull request changs0124/rag-chatbot#167 is not mergeable: the base branch policy prohibits the merge.
+To have the pull request merged after all the requirements have been met, add the `--auto` flag.
+To use administrator privileges to immediately merge the pull request, add the `--admin` flag.
+
+#   -> 거부됐다. merge 되지 않았다.
+#   -> 마지막 줄이 결정 2 의 근거를 동시에 확인해 준다: 우회는 --admin 이라는
+#      **별도의 명시적 동작**으로만 가능하고, 기본 merge 경로는 막힌다.
+
+$ gh pr view 167 --json state,mergedAt
+{"mergedAt":null,"state":"OPEN"}
+#   -> OPEN · mergedAt null. merge 되지 않았음이 확인된다.

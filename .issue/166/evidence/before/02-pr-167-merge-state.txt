@@ -1,0 +1,12 @@
+# before — 실패하는 PR #167 의 merge 가능 여부 (ruleset 적용 전)
+# 측정 시각: 2026-09-12T07:21:34Z
+# PR: https://github.com/changs0124/rag-chatbot/pull/167
+# 일부러 깨뜨린 것: docs/99_inbox/GATE-PROBE.md 가 없는 경로를 참조 -> static 잡의 check-doc-refs.sh 실패
+
+$ gh pr view 167 --json mergeable,mergeStateStatus,statusCheckRollup
+{"checks":[{"conclusion":"","name":"backend (test + build + 케이스 수 하한)"},{"conclusion":"SUCCESS","name":"frontend (lint + test + build + 케이스 수 하한)"},{"conclusion":"SUCCESS","name":"docker (백엔드 이미지 빌드)"},{"conclusion":"FAILURE","name":"static (셸 구문·분석 · 계약 · 문서 참조 · 섹션 이름)"},{"conclusion":"SUCCESS","name":"secrets (시크릿 스캔)"},{"conclusion":"SUCCESS","name":"deps (백엔드 의존성 취약점)"},{"conclusion":"SUCCESS","name":"deps (프론트 의존성 취약점)"},{"conclusion":"SUCCESS","name":"Vercel"},{"conclusion":"SUCCESS","name":"Vercel Preview Comments"}],"mergeStateStatus":"UNSTABLE","mergeable":"MERGEABLE"}
+
+# mergeStateStatus 의 뜻 (GitHub 정의)
+#   UNSTABLE = 실패한 체크가 있지만 **merge 는 허용된다**  <- 지금 이 상태
+#   BLOCKED  = 브랜치 보호 규칙이 merge 를 막는다
+# 이 필드가 merge 버튼의 상태를 그대로 결정한다. 설정값을 읽은 것이 아니라 GitHub 이 계산한 결과다.

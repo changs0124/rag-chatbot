@@ -1,0 +1,9 @@
+# before — main 브랜치에 걸린 규칙 (ruleset 적용 전)
+# 측정 시각: 2026-09-12T07:19:35Z
+
+$ gh api repos/changs0124/rag-chatbot/rules/branches/main
+[]
+$ gh api repos/changs0124/rag-chatbot/rulesets
+[]
+$ gh api repos/changs0124/rag-chatbot/branches/main --jq "{protected, enforcement: .protection.required_status_checks.enforcement_level}"
+{"enforcement":"off","protected":false}
