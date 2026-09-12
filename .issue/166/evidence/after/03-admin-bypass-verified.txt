@@ -1,0 +1,34 @@
+# after-3 — 관리자 우회가 실제로 살아 있는가 (이 작업 자체가 검증이 되었다)
+# 측정 시각: 2026-09-12T07:29:20Z
+#
+# 결정 2 의 근거는 '관리자까지 강제하면 증거 미러 커밋의 main 직접 푸시가 영구 차단된다' 였다.
+# 그 푸시를 이 이슈에서 실제로 해 봤다 — issue-start 10단계가 바로 그 동작이다.
+
+## 증거 미러 푸시 결과
+$ node issue-start.mjs evidence-mirror 166 --push
+{ "base": "main", "mirrorRef": "main", "pushed": true, "fallback": false }
+#   -> pushed: true / fallback: false. main 에 직접 푸시가 성공했다.
+#      fallback 이 true 면 보호에 막혀 별도 브랜치로 밀렸다는 뜻인데, 그렇지 않았다.
+
+## 그 커밋에 붙은 체크 수 — 0 이어야 우회가 증명된다
+$ git log origin/main --oneline -2
+0d4864b docs(issue-166): 증거 자료 main 반영
+50ef53b Merge pull request #164 from changs0124/fix/161-ci-triggers-on-any-pr-base
+
+$ gh api repos/changs0124/rag-chatbot/commits/<그 커밋>/check-runs --jq "{total:.total_count}"
+{"total":0}
+#   -> total 0. 필수 체크가 하나도 붙지 않은 커밋이 main 에 들어갔다.
+#      required_status_checks 는 직접 푸시도 막으므로, 우회 없이는 이 푸시가 불가능했다.
+#      즉 Repository admin / always 우회가 실제로 집행 경로에서 작동한다.
+
+## 정리 — 이 이슈에서 만든 임시 자원은 남아 있지 않다
+$ git ls-remote --heads origin
+chore/166-required-status-checks-on-main
+main
+#   -> ci-gate-probe-base · chore/166-scratch-gate-probe 모두 삭제됨 (작업 브랜치만 남음)
+$ gh api repos/changs0124/rag-chatbot/rulesets --jq ".[]|{id,name}"
+{"id":23021430,"name":"main: CI must pass"}
+#   -> 임시 probe ruleset(23021365) 삭제됨. 정본 하나만 남음.
+$ gh pr view 167 --json state,mergedAt
+{"mergedAt":null,"state":"CLOSED"}
+#   -> CLOSED · merge 되지 않음.
