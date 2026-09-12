@@ -1,0 +1,62 @@
+# before — 하드닝 적용 전 세 컨테이너의 런타임 실측
+# 측정 시각: 2026-09-12T07:49:01Z
+#
+# 신규 볼륨으로 띄운 프로브 프로젝트(rag130probe)에서 재었다.
+# 보존 중인 로컬 데이터(rag-chatbot_pgdata/uploads)는 건드리지 않았다.
+# db 는 **초기화 경로를 실제로 타고** healthy 에 도달했다 = 기본 capability 기준선.
+
+## db  (rag130probe-db-1)
+  CapDrop        : []
+  CapAdd         : []
+  SecurityOpt    : []
+  ReadonlyRootfs : false
+  PidsLimit      : <nil>
+  LogConfig      : json-file map[]
+  Tmpfs          : map[]
+  Networks       : rag130probe_default 
+  Image          : postgres:16-alpine
+
+## app  (rag130probe-app-1)
+  CapDrop        : []
+  CapAdd         : []
+  SecurityOpt    : []
+  ReadonlyRootfs : false
+  PidsLimit      : <nil>
+  LogConfig      : json-file map[max-file:3 max-size:10m]
+  Tmpfs          : map[]
+  Networks       : rag130probe_default 
+  Image          : rag-chatbot-backend:latest
+
+## cloudflared  (rag130probe-cloudflared-1)
+  CapDrop        : []
+  CapAdd         : []
+  SecurityOpt    : []
+  ReadonlyRootfs : false
+  PidsLimit      : <nil>
+  LogConfig      : json-file map[]
+  Tmpfs          : map[]
+  Networks       : rag130probe_default 
+  Image          : cloudflare/cloudflared:latest
+
+## 컨테이너 안에서 실제로 보유한 capability (bounding set)
+$ docker exec <c> grep CapBnd /proc/1/status
+  db           CapBnd:	00000000a80425fb
+  app          CapBnd:	00000000a80425fb
+  cloudflared  (중지됨 — 토큰이 유효하지 않아 crash-loop. 아래 주석 참고)
+
+## 네트워크 분리 여부 — cloudflared 가 db 에 닿는가
+$ docker exec rag130probe-app-1 getent hosts db   (app 은 db 에 닿아야 정상)
+172.19.0.2        db  db
+#   -> 지금은 셋 다 같은 기본 네트워크(rag130probe_default)에 있어
+#      cloudflared 도 db 에 닿는다. 분리 후에는 닿지 않아야 한다.
+
+## app 기동 확인 (신규 볼륨)
+  Health: healthy
+
+## cloudflared 에 대한 한계 — 솔직히 적는다
+#   .env 의 TUNNEL_TOKEN 이 자리표시자라 'Provided Tunnel token is not valid' 로 crash-loop 한다.
+#   (배포가 아직 토큰 셋 단계에서 멈춰 있다)
+#   따라서 이 컨테이너는 '하드닝 후에도 정상 동작한다'를 확인할 수 없다.
+#   확인 가능한 것은 두 가지뿐이다 : (1) 설정이 런타임에 실제로 걸렸는가,
+#   (2) 실패 원인이 capability 가 아니라 여전히 토큰인가. 그 둘만 주장한다.
+#   부수 효과는 없었다 — 토큰이 무효라 운영 터널에 붙지 않았고 공개 주소는 영향받지 않았다.

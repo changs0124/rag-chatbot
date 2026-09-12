@@ -1,0 +1,41 @@
+# 게이트 실행 결과
+# 측정 시각: 2026-09-12T08:05:45Z
+#
+# shellcheck 가 로컬에 없어 평소 「모름」으로 남는 항목인데, Docker 이미지
+# (koalaman/shellcheck:stable, 0.11.0)를 PATH 에 얹어 **실제로 돌렸다.**
+# 저장소의 check-shell-lint.sh 를 그대로 불러 CI 와 같은 인자로 검사했다.
+
+$ bash scripts/check-all.sh docs
+Using Node v24.19.0
+
+▶ 셸 구문 검사
+Using Node v24.19.0
+셸 구문 검사 11개
+셸 구문 검사 통과
+  ✓ 셸 구문 검사
+
+▶ 셸 정적 분석
+Using Node v24.19.0
+셸 정적 분석 10개
+Using Node v24.19.0
+셸 정적 분석 통과
+  ✓ 셸 정적 분석
+
+▶ 문서 참조 실재
+Using Node v24.19.0
+참조 수집 258건 · 실재 검사 246건
+문서 참조 검사 통과
+  ✓ 문서 참조 실재
+
+▶ 문서 섹션 이름 대조
+Using Node v24.19.0
+섹션 참조 27 건 대조
+섹션 참조 검사 통과
+  ✓ 문서 섹션 이름 대조
+
+────────────────────────────
+전부 통과
+종료코드: 0
+
+$ docker compose -f docker-compose.yml config -q
+  (출력 없음 = 문법 정상)
