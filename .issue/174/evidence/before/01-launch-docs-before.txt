@@ -1,0 +1,50 @@
+# before — 두 문서의 「런칭」 서술과 누락 계수
+# 측정 시각: 2026-09-12T09:39:05Z
+
+## 1) 대기 이슈·VM 상태가 언급되는가 — 둘 다 전부 0건
+
+  문자열              current-sprint.md   backlog.md
+  ------------------  -----------------   ----------
+  #130                              0건         0건
+  #132                              0건         0건
+  #37                               0건         0건
+  e2-micro                          0건         0건
+  free-vm                           0건         0건
+  중지                                0건         0건
+  TERMINATED                        0건         0건
+
+#   -> 열려 있는 세 이슈(#130 · #132 · #37)가 전부 배포·실키를 기다리는데
+#      두 문서 어디에도 이름이 없다. VM 이 구축됐지만 중지라는 사실도 없다.
+
+## 2) VM 의 실제 상태 (문서에 없는 사실)
+
+$ gcloud compute instances list
+  NAME     STATUS      ZONE
+  free-vm  TERMINATED  us-west1-b
+
+## 3) 「런칭」 서술이 두 곳에 중복돼 있다
+
+current-sprint.md 「런칭」:
+  - [ ] **런칭** — 서버 쪽 준비는 끝났다(#127 · #129). 절차 정본은
+    [backend](../02_architecture/backend.md) 「배포」. 남은 것은 저장소 밖 준비물과 실행이다 :
+    - `TUNNEL_TOKEN` · `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` 확보
+    - `bash scripts/deploy.sh` — **통짜로 실행된 적이 없다.** `--dry-run` 을 먼저 볼 것
+    - Vercel `VITE_API_BASE_URL` 설정 후 **재배포** · 백엔드 `ALLOWED_ORIGINS` 에 Vercel 도메인
+  
+  ## 블로커
+
+backlog.md 「런칭」:
+  - [ ] **런칭** — 절차는 위에서 끝났으나 **실제로 수행된 적이 없다.** 남은 것 :
+    - `TUNNEL_TOKEN`(Cloudflare 터널 생성) · `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` 확보
+    - `bash scripts/deploy.sh` 로 실배포 — **이 스크립트는 통짜로 실행된 적이 없다.** `--dry-run` 을 먼저 볼 것
+    - Vercel 프로젝트에 `VITE_API_BASE_URL`(터널 도메인) 설정 후 **재배포**.
+      현재 프로덕션 번들에 `http://localhost:8080` 이 박혀 있다(배포된 `/assets/index-*.js` 에서 확인)
+    - 백엔드 `ALLOWED_ORIGINS` 에 Vercel 도메인 — 빠뜨리면 CORS 로 전 API 차단
+  
+
+#   -> 같은 준비물 목록(TUNNEL_TOKEN · OPENAI_API_KEY · deploy.sh · Vercel · ALLOWED_ORIGINS)이
+#      양쪽에 있다. 한쪽만 고치면 갈라진다.
+
+## 4) 마지막 업데이트 날짜
+  > 마지막 업데이트 : 2026-09-10
+#   -> 오늘은 2026-09-12 이고 그 뒤 #161 · #166 · #130 · #170 · #172 가 들어갔다.
