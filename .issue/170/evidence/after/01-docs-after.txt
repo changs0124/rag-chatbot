@@ -1,0 +1,56 @@
+# after — 추가한 단락과, 문서에 적은 명령을 실제로 돌린 결과
+# 측정 시각: 2026-09-12T08:53:30Z
+# 기준: 648622f Merge pull request #169 from changs0124/chore/130-container-hardening-log-rotation
+
+## 1) 문서에 적은 명령을 **문서에서 그대로 추출해** 실행한다
+#    문서에 명령을 적고 돌려보지 않으면 그 자체가 다음 사고가 된다.
+#    실제로 처음 작성 때 줄바꿈 이스케이프가 공백으로 뭉쳐 한 줄 140자가 됐고,
+#    이 검증에서 잡아 두 줄로 고쳤다.
+
+추출된 명령 (CONVENTIONS.md 184-185행):
+  gh api "repos/changs0124/rag-chatbot/actions/runs?branch=<�귣ġ>" \
+  --jq '.workflow_runs[]|"\(.created_at) \(.event) \(.head_sha[0:8])"'
+
+# (a) run 이 있는 브랜치 — 출력 형식 확인
+  2026-09-12T08:43:33Z pull_request 26838124
+  2026-09-12T08:11:30Z pull_request 30316cef
+#    -> head SHA 에 해당하는 pull_request 줄이 있다 = run 이 생겼다
+
+# (b) #166 브랜치 — 문제 사례가 남아 있다
+  2026-09-12T08:18:37Z pull_request c3e5accc
+  2026-09-12T08:15:52Z workflow_dispatch c3e5accc
+  2026-09-12T07:36:30Z pull_request ef622788
+  2026-09-12T07:36:14Z pull_request 56b19926
+#    -> c3e5acc 에 workflow_dispatch(손수 돌린 것)와 pull_request(재개방으로 생긴 것)가 둘 다 있다.
+#       재개방 전에는 pull_request 줄이 **없었다** — 그게 이 이슈의 증상이다.
+
+# (c) 이 브랜치 — 아직 PR 도 push 도 없어 run 이 0건이다
+$ (문서의 명령, <브랜치>를 docs/170-ci-run-missing-recovery 로)
+  (출력 없음)
+#    -> 종료코드 0 에 출력 0줄. 「run 없음」이 이렇게 보인다는 것을 그대로 보여 준다.
+
+## 2) workflow_dispatch 체크가 PR 롤업에 안 잡힌다 — 관측 당시 실측값
+#    PR #168, head c3e5acc. 그 PR 은 이미 merge 돼 지금은 재측정할 수 없으므로 기록을 남긴다.
+      커밋 기준 check-runs : total 8  (CI 7잡 전부 success + Vercel)
+      PR 롤업             : named 1  (Vercel Preview Comments 뿐)
+      mergeStateStatus    : BLOCKED  (2분 30초간 5회 관측 — 집계 지연이 아님)
+      gh pr merge 시도     : 거부
+      재개방 직후          : 롤업 named 8 -> 7잡 통과 -> CLEAN
+
+## 3) before 에서 0건이던 문자열이 이제 있는가
+  "pr reopen" : 1건
+  "workflow run" : 1건
+  "actions/runs" : 1건
+  "run 자체가 안 생긴" : 1건
+
+## 4) 구분 기준이 #166 항목 바로 뒤에 있는가 (떨어뜨리면 읽는 사람이 구분 못 한다)
+  163:- **위 7잡은 `main` 에서 required status checks 다**(#166). 빨간불이면 merge 가 **막힌다** —
+  173:- **체크가 「어긋난 것」과 「아예 없는 것」은 증상이 같고 고치는 법이 다르다**(#170).
+  207:- **관리자 우회는 남겨 두었다**(`bypass_actors` = Repository admin / always, #166). 잠그지 않은
+
+## 5) 게이트
+    ✓ 셸 구문 검사
+    ✓ 셸 정적 분석
+    ✓ 문서 참조 실재
+    ✓ 문서 섹션 이름 대조
+  전부 통과
