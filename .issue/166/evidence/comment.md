@@ -99,6 +99,7 @@ $ gh api repos/changs0124/rag-chatbot/rules/branches/main
 | `after/01-gate-actually-blocks.txt` | 실제 merge 시도가 거부된 기록 (우회 없는 격리 검증) |
 | `after/02-main-ruleset-applied.txt` | 적용된 정본 ruleset + 체크 이름 대조 |
 | `after/03-admin-bypass-verified.txt` | 우회가 살아 있음 + 임시 자원 전부 정리됨 |
+| `after/04-docs-gate.txt` | `check-all.sh docs` 로컬 실행 결과 (shellcheck 는 「모름」으로 표기) |
 
 ## 남은 이슈
 
