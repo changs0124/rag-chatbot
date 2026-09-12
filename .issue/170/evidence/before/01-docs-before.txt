@@ -1,0 +1,38 @@
+# before — #166 이 넣은 단락의 현재 상태 (아직 #170 내용이 없다)
+# 측정 시각: 2026-09-12T08:50:50Z
+# 기준 커밋: 648622f Merge pull request #169 from changs0124/chore/130-container-hardening-log-rotation
+
+## docs/CONVENTIONS.md — 「테스트·CI 게이트」 중 required checks 관련 항목
+$ grep -n "required status checks\|영영 pending\|rules/branches/main" docs/CONVENTIONS.md
+163:- **위 7잡은 `main` 에서 required status checks 다**(#166). 빨간불이면 merge 가 **막힌다** —
+172:  context 가 그 즉시 영영 pending 이 되어 merge 가 완전히 막힌다. **둘은 같이 고쳐야 한다.**
+185:  gh api repos/changs0124/rag-chatbot/rules/branches/main
+
+## 그 항목의 전문
+- **위 7잡은 `main` 에서 required status checks 다**(#166). 빨간불이면 merge 가 **막힌다** —
+  `main: CI must pass` ruleset 이 집행한다. 필수인 것은 CI 7잡 **전부**다 :
+  `backend` · `frontend` · `docker` · `static` · `secrets` · `deps (백엔드)` · `deps (프론트)`.
+  **`docker` 를 빼지 않았다** — 빼도 잡은 어차피 모든 PR 에서 도니 걸리는 시간이 줄지 않고,
+  얻는 것 없이 Dockerfile 게이트만 잃는다. **`secrets` · `deps` 도 필수다** — 공개 저장소는
+  시크릿이 한 번 들어오면 회수가 불가능하다는 위 #135 항목의 근거가 필수에서 빼는 순간 거짓이 된다.
+  **Vercel 은 넣지 않았다** : #161 에서 「Vercel 만 green」이 오독의 원인이었고, 외부 앱 체크는
+  배포가 건너뛰어지면 아예 보고되지 않아 필수로 걸면 pending 으로 남아 merge 를 영영 막는다.
+  **필수 체크는 잡의 `name:` 문자열로 대조된다** — `ci.yml` 의 `name:` 을 고치면 ruleset 의
+  context 가 그 즉시 영영 pending 이 되어 merge 가 완전히 막힌다. **둘은 같이 고쳐야 한다.**
+- **관리자 우회는 남겨 두었다**(`bypass_actors` = Repository admin / always, #166). 잠그지 않은
+
+## 빠진 것 — 이 이슈가 메울 자리
+#   1) 체크가 **아예 붙지 않은** 경우의 증상이 없다. 위 항목은 「이름이 어긋나면 pending」만 다룬다
+#   2) run 유무를 확인하는 명령이 없다
+#   3) 복구 절차(gh pr close -> gh pr reopen)가 없다
+#   4) gh workflow run 이 듣지 않는다는 점이 없다 — #161 의 기록이 그쪽을 가리키고 있다
+
+## 확인: 현재 문서에 복구 관련 문자열이 있는가
+  "pr reopen" : 0
+0건
+  "workflow run" : 0
+0건
+  "actions/runs" : 0
+0건
+  "run 이 생성" : 0
+0건
