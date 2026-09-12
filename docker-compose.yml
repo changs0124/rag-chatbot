@@ -34,18 +34,64 @@ services:
       -c work_mem=2MB
       -c maintenance_work_mem=32MB
     mem_limit: 160m
+    security_opt:
+      # app 과 같은 이유로 권한 상승 경로를 닫는다(#130).
+      - no-new-privileges:true
+    # **db 만 cap_drop: ALL 로 끝내지 못한다(#130).** postgres 이미지는 **초기화 중** root 로
+    # `chown -R postgres:postgres` 를 하고 `gosu` 로 강등하므로 다섯 개가 필요하다 :
+    #   DAC_OVERRIDE · FOWNER  - 데이터 디렉터리 읽기/권한 조정
+    #   SETUID · SETGID        - postgres 사용자로 강등
+    # 나머지는 전부 버린다(기본 14개 중 10개 제거).
+    #
+    # **넷은 추측이 아니라 실측이다.** 하나씩 빼 보며 좁혔다(증거: 위 evidence 파일) :
+    #   CHOWN 은 빼도 healthy 다 - 이미지의 data 디렉터리가 이미 postgres 소유라 신규 named
+    #   volume 이 그 소유권을 물려받아 chown 할 일이 없다. 그래서 **넣지 않는다.**
+    #   DAC_OVERRIDE 를 빼면 find 가 디렉터리를 못 읽어 초기화가 멎는다.
+    #   FOWNER 는 빼도 healthy 에 닿지만 chmod 가 **조용히 실패한다** - healthcheck 는 통과하는데
+    #   권한만 어긋나는 조합이라, 나중에 원인을 찾기 어려워지므로 넣어 둔다.
+    #
+    # **복구 절차를 만들 때 다시 볼 것(#132).** 위 결론은 named volume 전제다. 백업을 호스트
+    # bind mount 나 다른 uid 로 되살리면 소유권이 어긋나 CHOWN 이 다시 필요해질 수 있다.
+    #
+    # **기존 볼륨으로 시험하면 거짓 통과한다.** 초기화가 끝난 pgdata 는 위 경로를 타지 않아
+    # `cap_drop: ALL` 만으로도 잘 뜨고, **신규 서버의 첫 배포에서 깨진다.** 그래서 검증은
+    # 매번 `down -v` 로 볼륨을 버리고 초기화를 실제로 태웠다(증거: .issue/130/evidence/).
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+    # **fork 폭주의 안전망이다(#130).** 유휴 시 실측 14개이고, max_connections=20 이므로
+    # 접속당 프로세스 하나를 더해도 35 선이다. 128 은 그 3배 이상이라 정상 운영에서 걸리지 않는다.
+    pids_limit: 128
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-ragchatbot}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 를 .env 에 넣을 것}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      # **db 는 backend 에만 둔다(#130).** 종전에는 셋 다 기본 네트워크 하나에 있어
+      # cloudflared 가 db 에 직접 닿았다 - 터널 컨테이너는 바깥과 말하는 유일한 컨테이너라
+      # 침해 표면이 가장 넓은데, 그쪽에서 DB 포트가 보일 이유가 없다.
+      - backend
     healthcheck:
       # 앱이 Flyway 로 스키마를 잡으므로 DB 가 실제로 받을 준비가 된 뒤에 떠야 한다
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ragchatbot}"]
       interval: 5s
       timeout: 5s
       retries: 10
+    logging:
+      # **회전을 켠다(#130).** 종전에는 app 에만 걸려 있고 db · cloudflared 는 **무제한**이었다.
+      # Docker 기본 json-file 은 회전이 없어 계속 쌓인다. 그런데 이 디스크는 30GB 이고
+      # pgdata · uploads 와 **같은 디스크**다 - 로그가 차면 **DB 가 먼저 멎는다.**
+      # app 로그 회전을 켤 때 바로 이 이유를 적었는데 정작 db 자신에게는 안 걸었던 것이다.
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
   app:
@@ -53,6 +99,33 @@ services:
     # 서버에 이 태그가 없으면 기동에 실패한다. **그게 의도다** - 빌드로 조용히 빠지지 않는다
     image: rag-chatbot-backend:latest
     mem_limit: 420m
+    security_opt:
+      # **setuid 바이너리로 권한을 되찾는 길을 막는다(#130).** 컨테이너 안에서 실행되는
+      # 프로세스가 setuid/setgid 비트나 파일 capability 로 **새 권한을 얻는 것**을 커널이 거부한다.
+      # 세 컨테이너 모두 비루트로 돌거나(app) 이미지가 내부에서 강등하므로(db), 일단 강등된 뒤에는
+      # 권한을 올릴 이유가 없다. 침해 후 권한 상승의 가장 흔한 경로 하나를 값싸게 닫는다.
+      - no-new-privileges:true
+    # **app 은 capability 가 하나도 필요 없다(#130).** 이미 비루트(`USER app`)로 돌고,
+    # 8080 은 비특권 포트이며, 쓰는 곳은 `/data/uploads` 볼륨과 JVM 의 `/tmp` 뿐이다.
+    # 특권 포트 바인딩(NET_BIND_SERVICE)도 소유권 변경(CHOWN)도 하지 않는다.
+    cap_drop:
+      - ALL
+    # **루트 파일시스템을 읽기 전용으로 잠근다(#130).** 침해가 일어나도 이미지 안에 도구를 내려받아
+    # 심지 못하고, jar 를 덮어쓰지도 못한다. 이 컨테이너가 쓰는 곳은 둘뿐이다 :
+    #   /data/uploads - 볼륨이라 read_only 와 무관하게 쓰기 가능
+    #   /tmp          - JVM 이 hsperfdata(성능 카운터)를 만든다. 아래 tmpfs 로 덮는다
+    read_only: true
+    # **Tomcat 자체 한도 뒤의 안전망으로 잡는다(#130).** 유휴 시 실측 36 스레드인데 이 값을
+    # 40~50 으로 조이면 **정상 부하에서 pids_limit 이 먼저 터진다** - application.yml 에
+    # max-threads 설정이 없어 Spring Boot 기본값 200 이 살아 있기 때문이다.
+    # 256 은 200 + 유휴 36 + 여유라, 한도 역할은 Tomcat 이 먼저 하고 이 값은 fork/스레드
+    # 폭주만 막는다. (실제로는 mem_limit 420m 과 -Xss512k 때문에 200 스레드에 닿기 전에
+    # 컨테이너가 먼저 메모리로 죽는다 - 이 값은 그 경우에도 남는 마지막 울타리다.)
+    pids_limit: 256
+    tmpfs:
+      # **크기를 묶는다.** 상한이 없으면 tmpfs 가 컨테이너 메모리(420m)를 먹어 들어가
+      # mem_limit 으로 DB 를 지키려던 의도가 무너진다. hsperfdata 는 수십 KB 라 64m 면 넉넉하다.
+      - /tmp:size=64m
     env_file:
       - backend/.env
     environment:
@@ -75,6 +148,10 @@ services:
     volumes:
       # 첨부는 로컬 디스크에 쌓인다. 이 볼륨을 떼면 업로드된 이미지가 사라진다
       - uploads:/data/uploads
+    networks:
+      # app 만 두 네트워크에 걸친다 - db 와 말해야 하고(backend) 터널도 받아야 한다(edge).
+      - backend
+      - edge
     ports:
       # 루프백에만 묶는다 - 외부 노출은 터널이 담당하므로 여기서 공개할 이유가 없다.
       # 서버에서 curl 로 직접 찔러볼 때 쓴다
@@ -102,16 +179,56 @@ services:
     restart: unless-stopped
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    # **다이제스트로 고정한다(#130).** 이 저장소는 서드파티 액션을 커밋 SHA 로 고정할 만큼
+    # 공급망을 신경 쓰는데 컨테이너 이미지만 `latest` 였다. `--no-autoupdate` 로 바이너리
+    # 자동 갱신은 껐지만 **이미지 자체는 pull 할 때마다 바뀐다.**
+    #
+    # 표류는 가설이 아니다 - 고정하던 날 로컬에 있던 `latest`(2026-09-09 빌드)와 레지스트리의
+    # `latest`(2026-09-11 빌드)가 **이미 서로 달랐다.** 고정하지 않으면 다음 배포가 어떤
+    # 바이너리로 도는지 아무도 모른다.
+    #
+    # 올릴 때는 **다이제스트를 바꾸는 커밋**으로 올린다(그 자체가 이력이 된다) :
+    #   docker pull cloudflare/cloudflared:latest
+    #   docker inspect cloudflare/cloudflared:latest --format '{{.RepoDigests}}'
+    image: cloudflare/cloudflared@sha256:b269e8abd07a5bf6f3f4be65d5050b2174eca89c56a0241a8ff32a16aec454e4
     # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ http://app:8080 매핑은 Cloudflare 대시보드에 있다.
     # 터널 설정을 저장소에 두지 않는 대신, 토큰만 있으면 어느 서버에서든 같은 주소로 붙는다
     command: tunnel --no-autoupdate run
     mem_limit: 64m
+    security_opt:
+      # app 과 같은 이유로 권한 상승 경로를 닫는다(#130).
+      - no-new-privileges:true
+    # 아웃바운드 연결만 건다 - 리슨도 바인딩도 하지 않으므로 capability 가 필요 없다(#130).
+    cap_drop:
+      - ALL
+    # 터널 프로세스 하나와 그 고루틴뿐이다. 64 면 넉넉하다(#130).
+    pids_limit: 64
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN 을 .env 에 넣을 것}
     depends_on:
       - app
+    networks:
+      # edge 에만 둔다 - app:8080 에만 닿으면 되고 db 는 보이지 않아야 한다.
+      - edge
+    logging:
+      # db 와 같은 이유로 회전을 켠다(#130). 터널은 연결이 끊길 때마다 재시도 로그를 남기므로
+      # 네트워크가 불안한 구간에서는 이쪽이 더 빨리 쌓인다.
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
+
+# **두 네트워크로 나눈다(#130).** 이름만 나누는 것이 아니라 실제로 닿지 못하게 하는 것이 목적이다 :
+#   backend : db ↔ app
+#   edge    : app ↔ cloudflared
+# cloudflared 에서 `db` 가 이름 해석조차 되지 않아야 성공이다(증거로 그 실패를 남긴다).
+#
+# **backend 를 `internal: true` 로 만들지는 않았다.** db 의 아웃바운드까지 끊는 것은 이 이슈가
+# 요구한 「네트워크 분리」를 넘어서고, 새 실패 모드를 들인다. 더 잠그고 싶으면 별도로 판단할 것.
+networks:
+  backend:
+  edge:
 
 volumes:
   pgdata:
