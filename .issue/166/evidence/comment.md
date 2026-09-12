@@ -48,6 +48,11 @@ To use administrator privileges to immediately merge the pull request, add the `
 
 `mergeStateStatus` 는 설정값이 아니라 **GitHub 이 계산해 merge 버튼 상태를 그대로 결정하는 필드**다.
 
+**(4) 막기만 하는 게 아니라 풀리기도 하는가** — 이 변경의 PR [#168](https://github.com/changs0124/rag-chatbot/pull/168)
+이 규칙의 첫 시행 대상이 되었다. 생성 직후 `BLOCKED`(7잡 pending) → 6잡 통과·1 pending 에도 `BLOCKED`
+→ **7잡 전부 통과 시점에 `CLEAN`** 으로 풀렸다. 체크 이름이 어긋나면 영영 pending 으로 굳어 merge 를
+완전히 막는데(#161 에서 가장 걱정했던 실패 모드), 그렇지 않다는 것이 실전에서 확인됐다.
+
 **(2) 우회가 실제로 살아 있는가** — 이 이슈의 증거 미러 푸시 자체가 검증이 되었다.
 `.issue/**` 만 바꿔 체크가 **0개**인 커밋이 `main` 에 직접 들어갔다(`pushed: true`, `fallback: false`).
 우회가 없었다면 불가능한 푸시다.
@@ -100,6 +105,7 @@ $ gh api repos/changs0124/rag-chatbot/rules/branches/main
 | `after/02-main-ruleset-applied.txt` | 적용된 정본 ruleset + 체크 이름 대조 |
 | `after/03-admin-bypass-verified.txt` | 우회가 살아 있음 + 임시 자원 전부 정리됨 |
 | `after/04-docs-gate.txt` | `check-all.sh docs` 로컬 실행 결과 (shellcheck 는 「모름」으로 표기) |
+| `after/05-gate-releases-when-green.txt` | 게이트가 **풀리기도** 하는지 — PR #168 에서 `BLOCKED` → `CLEAN` |
 
 ## 남은 이슈
 
