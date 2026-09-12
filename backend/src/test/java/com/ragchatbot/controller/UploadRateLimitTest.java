@@ -30,12 +30,37 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  * <p>비밀번호 변경은 매 호출이 BCrypt 를 두 번 돈다(현재 비밀번호 검증 + 새 해시). 현재 비밀번호를
  * 일부러 틀려도 검증은 돈다.
  *
- * <p><b>상한을 낮게 두어 결정적으로 만든다</b> — 동시 요청을 실제로 띄우면 타이밍에 기대게 되고,
- * 그런 테스트는 CI 에서 흔들린다({@code ChatBackPressureTest} 와 같은 수법).
+ * <p><b>흔들림의 원인이 둘이고 서로 다르다(#176).</b> 하나를 막았다고 다른 하나가 사라지지 않는다.
+ *
+ * <ul>
+ * <li><b>동시 요청 타이밍</b> — 요청을 실제로 병렬로 띄우면 순서에 기대게 된다.
+ * <b>상한을 낮게 두어</b> 순차 호출만으로 상한을 넘기게 만들어 막는다
+ * ({@code ChatBackPressureTest} 와 같은 수법).</li>
+ * <li><b>고정 윈도우 경계</b> — {@code RateLimiterService} 는 분이 바뀌면 카운터를 0 으로 새로
+ * 시작한다. 경계가 요청들 사이에 끼면 거절이 한 건도 안 나온다. <b>상한을 낮추는 것으로는 이쪽이
+ * 사라지지 않는다</b> — 2026-09-12 에 상한 2 · 요청 3번 구성이 실제로 이것 때문에 깨졌다.</li>
+ * </ul>
+ *
+ * <p><b>경계 쪽은 「상한의 두 배 넘게 보내기」로 막는다</b>({@code docs/CONVENTIONS.md} 「테스트·CI
+ * 게이트」). 상한을 <b>1</b> 로 두고 <b>3번</b> 보내면 경계가 어디에 끼어도 거절이 최소 한 건 남는다 —
+ * 두 창에 {@code (k, 3-k)} 로 쪼개질 때 거절 수가 {@code max(0,k-1) + max(0,(3-k)-1)} 이고
+ * 네 경우 모두 1 이상이다. 상한 2 · 요청 5번도 같은 효과지만, 비밀번호 변경은 호출당 BCrypt 가
+ * 두 번 돌아 <b>요청을 늘리는 쪽이 더 비싸다.</b>
+ *
+ * <p><b>단언은 두 방향으로 유지한다</b> — 「첫 요청은 통과」와 「어딘가에서 429」를 함께 본다.
+ * 뒤만 보면 <b>무조건 거절하는 구현</b>이 통과하고, 「정확히 N번째가 429」를 보면 경계에 다시 흔들린다.
+ *
+ * <p><b>이 보장은 「창이 2개 이하」를 전제한다.</b> 요청 3개가 창 <b>3개</b>에 하나씩 쪼개지면
+ * 어느 창도 상한을 넘지 못해 다시 0건이 된다. 창이 3개가 되려면 세 요청이 <b>1분을 걸쳐야</b> 한다.
+ * 실측은 한 테스트당 <b>0.3~1.7초</b>(2026-09-12, 4회 시행 · 세 요청 + 계정 생성 포함)다.
+ * 가장 느린 것은 {@code password_change_over_the_limit_is_rejected} 로 <b>1.4~1.7초</b> —
+ * BCrypt 때문이다. <b>최악값 1.7초 기준으로 60초 대비 약 35배 여유</b>다.
+ * <b>이 전제를 깨는 변경을 하면 요청 수를 늘려야 한다</b> — 창 W 개를 견디려면 요청이 W 개보다
+ * 많아야 한다(상한 1 기준). 예: 요청 사이에 sleep 을 넣거나 BCrypt 강도를 크게 올리는 경우.
  */
 @TestPropertySource(properties = {
-		"app.ratelimit.upload-per-minute=2",
-		"app.ratelimit.password-change-per-minute=2" })
+		"app.ratelimit.upload-per-minute=1",
+		"app.ratelimit.password-change-per-minute=1" })
 class UploadRateLimitTest extends AbstractPgIntegrationTest {
 
 	/** 앞 4바이트가 PNG 매직인 최소 파일 - 매직바이트 검사를 통과하되 내용은 중요하지 않다 */
@@ -56,6 +81,20 @@ class UploadRateLimitTest extends AbstractPgIntegrationTest {
 		return HttpStatus.valueOf(res.getStatusCode().value());
 	}
 
+	/**
+	 * 같은 호출을 {@code times} 번 보내고 상태 코드를 순서대로 모은다(#176).
+	 *
+	 * <p>호출 지점에서 「첫 요청은 통과」와 「어딘가에서 429」를 따로 단언하기 위한 것이다.
+	 * 몇 번째가 429 인지는 고정 윈도우 경계 때문에 정해지지 않으므로 단언하지 않는다.
+	 */
+	private static java.util.List<HttpStatus> repeat(int times, java.util.function.Supplier<HttpStatus> call) {
+		java.util.List<HttpStatus> out = new java.util.ArrayList<>(times);
+		for (int i = 0; i < times; i++) {
+			out.add(call.get());
+		}
+		return out;
+	}
+
 	@SuppressWarnings("rawtypes")
 	private HttpStatus changePassword(String token, String current) {
 		var res = rest.exchange("/api/profile/password", HttpMethod.PATCH,
@@ -73,11 +112,14 @@ class UploadRateLimitTest extends AbstractPgIntegrationTest {
 	void upload_over_the_limit_is_rejected() {
 		String token = createUser("upload-limit@b.com");
 
-		assertThat(upload(token)).isEqualTo(HttpStatus.OK);
-		assertThat(upload(token)).isEqualTo(HttpStatus.OK);
-		assertThat(upload(token))
-				.withFailMessage("세 번째 업로드가 막히지 않음 - 업로드에 유량 상한이 없다는 뜻")
-				.isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+		var codes = repeat(3, () -> upload(token));
+
+		assertThat(codes.get(0))
+				.withFailMessage("첫 업로드가 막힘 - 상한 안의 요청까지 거절하는 구현이다 (관측: %s)", codes)
+				.isEqualTo(HttpStatus.OK);
+		assertThat(codes)
+				.withFailMessage("세 번 중 429 가 한 번도 없음 - 업로드에 유량 상한이 없다는 뜻 (관측: %s)", codes)
+				.contains(HttpStatus.TOO_MANY_REQUESTS);
 	}
 
 	/** 상한은 사용자별이다 - 남의 업로드가 내 한도를 먹으면 한 사람이 전체를 막을 수 있다 */
@@ -86,10 +128,14 @@ class UploadRateLimitTest extends AbstractPgIntegrationTest {
 		String a = createUser("upload-a@b.com");
 		String b = createUser("upload-b@b.com");
 
-		upload(a);
-		upload(a);
-		assertThat(upload(a)).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
-		assertThat(upload(b)).isEqualTo(HttpStatus.OK);
+		var codesA = repeat(3, () -> upload(a));
+
+		assertThat(codesA)
+				.withFailMessage("a 가 상한에 걸리지 않음 - 이 검사의 전제가 성립하지 않는다 (관측: %s)", codesA)
+				.contains(HttpStatus.TOO_MANY_REQUESTS);
+		assertThat(upload(b))
+				.withFailMessage("a 가 상한을 넘겼는데 b 도 막힘 - 한 사람이 전체를 막을 수 있다는 뜻")
+				.isEqualTo(HttpStatus.OK);
 	}
 
 	/**
@@ -102,10 +148,13 @@ class UploadRateLimitTest extends AbstractPgIntegrationTest {
 	void password_change_over_the_limit_is_rejected() {
 		String token = createUser("pw-limit@b.com");
 
-		assertThat(changePassword(token, "wrong-1")).isEqualTo(HttpStatus.UNAUTHORIZED);
-		assertThat(changePassword(token, "wrong-2")).isEqualTo(HttpStatus.UNAUTHORIZED);
-		assertThat(changePassword(token, "wrong-3"))
-				.withFailMessage("세 번째 시도가 막히지 않음 - BCrypt 를 무한히 돌릴 수 있다는 뜻")
-				.isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+		var codes = repeat(3, () -> changePassword(token, "wrong"));
+
+		assertThat(codes.get(0))
+				.withFailMessage("첫 시도가 401 이 아님 - 상한 안의 요청까지 거절하는 구현이다 (관측: %s)", codes)
+				.isEqualTo(HttpStatus.UNAUTHORIZED);
+		assertThat(codes)
+				.withFailMessage("세 번 중 429 가 한 번도 없음 - BCrypt 를 무한히 돌릴 수 있다는 뜻 (관측: %s)", codes)
+				.contains(HttpStatus.TOO_MANY_REQUESTS);
 	}
 }
