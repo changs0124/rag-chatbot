@@ -170,6 +170,40 @@
   배포가 건너뛰어지면 아예 보고되지 않아 필수로 걸면 pending 으로 남아 merge 를 영영 막는다.
   **필수 체크는 잡의 `name:` 문자열로 대조된다** — `ci.yml` 의 `name:` 을 고치면 ruleset 의
   context 가 그 즉시 영영 pending 이 되어 merge 가 완전히 막힌다. **둘은 같이 고쳐야 한다.**
+- **체크가 「어긋난 것」과 「아예 없는 것」은 증상이 같고 고치는 법이 다르다**(#170).
+  둘 다 merge 가 영구 차단된 모습으로 보이므로 먼저 어느 쪽인지 가린다.
+
+  ```text
+  체크가 이름만 다른 것이 붙어 pending   -> 위 항목. ci.yml 의 name: 과 ruleset context 를 맞춘다
+  체크가 아예 붙지 않음                   -> run 자체가 안 생긴 것이다. 아래 절차
+  ```
+
+  **run 이 생겼는지 확인한다.** PR 화면은 「체크 없음」과 「run 없음」을 구분해 주지 않는다.
+
+  ```bash
+  gh api "repos/changs0124/rag-chatbot/actions/runs?branch=<브랜치>" \
+    --jq '.workflow_runs[]|"\(.created_at) \(.event) \(.head_sha[0:8])"'
+  ```
+
+  PR head SHA 에 해당하는 `pull_request` 줄이 없으면 run 이 안 생긴 것이다.
+  **GitHub 이 푸시를 인지했는데도 run 만 없을 수 있다** — 2026-09-12 PR #168 에서 PR 의
+  `updatedAt` 은 갱신됐는데 run 이 생성되지 않았다. 원인은 확정하지 못했다(같은 시간대 다른 PR 은
+  정상이었으므로 간헐적이다).
+
+  **복구는 PR 을 닫고 다시 여는 것이다.**
+
+  ```bash
+  gh pr close <n> && gh pr reopen <n>
+  ```
+
+  `reopened` 는 `pull_request` 의 기본 트리거 타입이라 `ci.yml` 이 그대로 받고, **커밋 이력을
+  건드리지 않는다**(빈 커밋보다 나은 이유다).
+
+  **`gh workflow run` 으로는 풀리지 않는다.** #161 의 기록이 잡이 안 돌 때의 확인 수단으로 그것을
+  가리키고 있어 먼저 손이 가는데, **required checks 를 걸어 둔 지금은 듣지 않는다** —
+  커밋에는 7잡이 `success` 로 붙지만 **PR 의 required checks 는 `workflow_dispatch` 로 생긴 체크를
+  세지 않는다.** 같은 날 실측했다 : 커밋 기준 `check-runs` 는 8건인데 PR 롤업은 1건이었고
+  `BLOCKED` 이 2분 30초 동안 그대로였다. 재개방 직후 롤업이 8건으로 바뀌며 `CLEAN` 이 됐다.
 - **관리자 우회는 남겨 두었다**(`bypass_actors` = Repository admin / always, #166). 잠그지 않은
   이유가 취향이 아니라 구체적 파손이다 — required checks 는 PR merge 뿐 아니라 **그 브랜치로의
   직접 푸시도 막는데**, 증거 미러 커밋은 `.issue/**` 만 바꿔 바로 아래 항목대로 CI 를 건너뛰므로
