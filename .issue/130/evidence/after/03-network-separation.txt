@@ -1,0 +1,37 @@
+# 네트워크 분리가 실제로 막는지 확인
+# 측정 시각: 2026-09-12T08:00:17Z
+#
+# cloudflared 는 토큰이 무효라 crash-loop 여서 exec 가 안 된다. 그래서 **edge 에만 붙인
+# 임시 컨테이너**로 같은 네트워크 위치에서 확인한다 - cloudflared 가 보는 것과 같은 시야다.
+
+## 생성되는 네트워크 — 기본 네트워크가 더 이상 만들어지지 않는다
+  rag130probe_backend
+  rag130probe_edge
+  (before 는 rag130probe_default 하나에 셋 다 들어 있었다)
+
+## 컨테이너별 배치
+  db           rag130probe_backend 
+  app          rag130probe_backend rag130probe_edge 
+  cloudflared  rag130probe_edge 
+
+## 1) edge 에서 db 이름 해석 — **실패해야 정상**
+$ docker run --rm --network rag130probe_edge alpine:3.20 getent hosts db
+  출력: (없음)
+  종료코드: 2   -> 0 이 아니면 해석 실패 = 분리 성공
+
+## 2) edge 에서 db:5432 직접 접속 — **막혀야 정상**
+$ docker run --rm --network rag130probe_edge alpine:3.20 nc -z -w3 db 5432
+  출력: nc: bad address 'db'
+  종료코드: 1   -> 0 이 아니면 접속 실패 = 분리 성공
+
+## 3) edge 에서 app:8080 — **닿아야 정상** (안 닿으면 터널이 깨진다)
+  출력: 172.19.0.2        app  app
+  종료코드: 0   -> 0 이어야 정상
+
+## 4) backend 에서 app -> db — **통해야 정상**
+  172.20.0.2        db  db
+  app /api/health: HTTP/1.1 200   -> DB 연결이 살아 있다는 뜻
+
+## 판정
+  cloudflared 가 보는 네트워크에서 db 는 **이름 해석조차 되지 않는다.**
+  동시에 app:8080 은 닿고, app<->db 도 그대로 통한다. 분리가 의도대로 됐다.

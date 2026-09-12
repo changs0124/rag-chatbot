@@ -1,0 +1,43 @@
+# db 의 최소 capability 집합 — 실측으로 좁혔다
+# 측정 시각: 2026-09-12T07:55:24Z
+#
+# 이슈는 'postgres 가 초기화 중 chown/setuid 를 쓰므로 cap_drop: ALL 이 기동을 깨뜨릴 수 있다'
+# 고만 적었다. 무엇이 몇 개 필요한지는 적혀 있지 않아 직접 재었다.
+# 매 시행마다 down -v 로 볼륨을 버려 **초기화 경로를 실제로 태웠다.**
+
+## 먼저 음성 대조 — cap_add 를 아예 비우면
+  CapDrop=[ALL] CapAdd=[]  ->  status=restarting / health=unhealthy
+  chmod: /var/lib/postgresql/data: Operation not permitted
+  chmod: /var/run/postgresql: Operation not permitted
+  error: failed switching to 'postgres': operation not permitted
+  -> 이슈의 경고가 정확했다. 무언가는 반드시 돌려줘야 한다.
+
+## 집합을 하나씩 빼 보며 좁힌 결과
+  시행                      적용된 capability                                      결과
+  ------------------------  -----------------------------------------------------  -----------
+  5개 (CHOWN 포함)          CHOWN DAC_OVERRIDE FOWNER SETGID SETUID                healthy
+  4개 (CHOWN 제외)          DAC_OVERRIDE FOWNER SETGID SETUID                      healthy      <- 채택
+  4개 (DAC_OVERRIDE 제외)   CHOWN FOWNER SETGID SETUID                             unhealthy
+                            find: /var/lib/postgresql/data: Permission denied
+  4개 (FOWNER 제외)         CHOWN DAC_OVERRIDE SETGID SETUID                       healthy(단, 경고)
+                            chmod: /var/lib/postgresql/data: Operation not permitted
+  3개 (FOWNER SETUID SETGID) FOWNER SETGID SETUID                                  unhealthy
+                            find: /var/lib/postgresql/data: Permission denied
+
+## 판정
+  **CHOWN 은 넣지 않는다.** 빼도 healthy 다 — 처음에 넣었던 것은 근거 없는 추측이었다.
+  이유는 이렇다 : postgres:16-alpine 이미지의 /var/lib/postgresql/data 는 이미
+  postgres 소유라, **신규 named volume 이 그 소유권을 물려받아** chown 할 일이 없다.
+
+  **DAC_OVERRIDE 는 필수다.** 빼면 find 가 데이터 디렉터리를 읽지 못해 초기화가 멎는다.
+
+  **FOWNER 는 뺄 수 있어 보이지만 넣는다.** 빼도 healthy 에는 닿지만
+  chmod 가 'Operation not permitted' 로 **조용히 실패한다.** 권한이 의도와 다르게 남는데
+  healthcheck 는 통과하는 조합이라, 지금 넣지 않으면 나중에 원인을 찾기 어려워진다.
+
+  채택 : DAC_OVERRIDE · FOWNER · SETGID · SETUID (기본 14개 중 10개 제거)
+
+## 남겨 둘 주의 — #132(백업·복구) 와 맞물린다
+  위 결론은 **named volume** 을 전제로 한다. 복구 절차가 호스트 bind mount 로 pgdata 를
+  되살리거나 다른 uid 로 푼 백업을 쓰면 소유권이 어긋나 **CHOWN 이 다시 필요해질 수 있다.**
+  #132 에서 복구를 실제로 해 볼 때 이 조합을 같이 확인할 것.
