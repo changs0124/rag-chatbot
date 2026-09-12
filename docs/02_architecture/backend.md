@@ -472,6 +472,66 @@ Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip
 이 볼륨을 떼면 업로드된 이미지가 사라진다. 볼륨을 쓸 수 없는 환경이면 `FileStorage` 구현을
 S3 등으로 교체해야 한다.
 
+**컨테이너를 하드닝했다(#130).** 종전에는 `security_opt` · `cap_drop` · `read_only` · `pids_limit`
+이 **하나도 없어** 세 컨테이너가 Docker 기본 capability 14개를 그대로 들고 돌았다. 단일 VM 에
+전부 모으는 구성이라 침해 하나가 전부를 먹는 형태였다.
+
+| 설정 | `app` | `db` | `cloudflared` |
+|------|-------|------|---------------|
+| `no-new-privileges` | ✅ | ✅ | ✅ |
+| `cap_drop: ALL` | ✅ (추가 없음 — **capability 0개**) | ✅ + 최소 4개 | ✅ |
+| `read_only` | ✅ + `/tmp` tmpfs 64m | — (postgres 가 런타임에 쓴다) | — (동작 검증 불가, 아래 참고) |
+| `pids_limit` | 256 | 128 | 64 |
+| 로그 회전 | 10m × 3 | **10m × 3 (신규)** | **10m × 3 (신규)** |
+| 네트워크 | `backend` + `edge` | `backend` | `edge` |
+
+**`db` 의 `cap_add` 네 개는 추측이 아니라 실측이다.** `DAC_OVERRIDE` · `FOWNER` · `SETUID` ·
+`SETGID` 다. 처음에는 `CHOWN` 까지 다섯 개로 잡았는데 **빼도 정상 기동한다** — 이미지의
+`/var/lib/postgresql/data` 가 이미 postgres 소유라 신규 named volume 이 그 소유권을 물려받아
+chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 못 읽어 초기화가 멎고,
+`FOWNER` 를 빼면 **healthy 에는 닿지만 `chmod` 가 조용히 실패한다**(그래서 넣어 둔다).
+
+**검증은 기존 볼륨으로 하면 거짓 통과한다.** 깨지는 자리가 postgres **초기화 경로**인데 이미
+초기화가 끝난 `pgdata` 는 그 경로를 타지 않는다. 그래서 매 항목마다 `down -v` 로 볼륨을 버리고
+초기화를 실제로 태워 확인했다. 서버가 중지되어 있어도 이렇게 검증할 수 있는 것은
+**`scripts/deploy.sh` 가 저장소의 `docker-compose.yml` 을 그대로 서버로 올려** 로컬과 운영이
+같은 파일을 쓰기 때문이다.
+
+**네트워크를 둘로 나눴다.** `backend`(db↔app)와 `edge`(app↔cloudflared)다. 터널 컨테이너는
+바깥과 말하는 유일한 컨테이너라 침해 표면이 가장 넓은데, 그쪽에서 DB 포트가 보일 이유가 없다.
+확인은 `edge` 에만 붙인 임시 컨테이너에서 `db` 가 **이름 해석조차 되지 않는** 것으로 했다.
+`backend` 를 `internal: true` 로 만들지는 않았다 — db 의 아웃바운드까지 끊는 것은 이 이슈가
+요구한 분리를 넘어서고 새 실패 모드를 들인다.
+
+**`cloudflared` 는 「설정이 걸렸다」까지만 확인했다.** `.env` 의 `TUNNEL_TOKEN` 이 아직
+자리표시자라 `Provided Tunnel token is not valid` 로 crash-loop 한다. 확인한 것은 (1) 설정이
+런타임에 실제로 걸렸는가, (2) 실패 원인이 capability 가 아니라 여전히 토큰인가 **둘뿐**이다.
+토큰을 넣은 뒤 터널이 정상 동작하는지 한 번 더 봐야 한다.
+
+**`cloudflared` 이미지를 다이제스트로 고정했다(#130).** 이 저장소는 서드파티 액션을 커밋 SHA 로
+고정할 만큼 공급망을 신경 쓰는데 컨테이너 이미지만 `latest` 였다. 표류는 가설이 아니다 —
+고정하던 날 로컬의 `latest`(2026-09-09 빌드)와 레지스트리의 `latest`(2026-09-11 빌드)가 **이미
+서로 달랐다.** 올릴 때는 다이제스트를 바꾸는 커밋으로 올린다. (`postgres:16-alpine` 도 움직이는
+태그지만 이번 범위가 아니다 — 별도로 판단할 것.)
+
+**서버의 `.env` 권한은 `deploy.sh` 가 600 으로 고정한다(#130).** 이 파일들에는 `JWT_SECRET` ·
+`OPENAI_API_KEY` · `DB_PASSWORD` · `TUNNEL_TOKEN` 이 평문으로 있고, 기본 umask 로 만들면 644 가
+되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
+프리플라이트에서 확인하고 고치며, 무엇을 바꿨는지 출력한다.
+
+**장애 대응 중 `docker inspect` 출력을 그대로 공유하지 말 것(#130).** `env_file` 과
+`environment:` 로 넘어간 값은 `/var/lib/docker/containers/<id>/config.v2.json` 에 평문으로 굳어
+`Config.Env` 에 전부 남는다. 사람은 보통 `State` 나 `Mounts` 를 보려고 전체를 복사하는데
+그 JSON 안에 비밀이 같이 있다 — 한 번에 JWT 서명키(전 사용자 위장) · OpenAI 키(과금) ·
+터널 토큰(도메인 트래픽 탈취)이 함께 나간다. 필요한 필드만 `--format` 으로 뽑아 쓴다.
+**이 노출 자체는 아직 열린 문제다** — `TUNNEL_TOKEN` 을 Docker secret 이나 credentials 파일로
+옮기는 일은 Cloudflare 쪽 자료가 필요해 #130 에서 처리하지 않았다.
+
+**업로드 기반 DoS 와 스왑의 관계는 아직 정하지 않았다(#130).** `memswap_limit` 을 비워 스왑을
+`mem_limit` 만큼 더 허용한 것이 26MB 멀티파트 동시 업로드에서 **스왑 스래싱**으로 쓰일 수 있다 —
+`pd-standard` 30GB 는 쓰기 45 IOPS 라 이때 사실상 멎는다. 판단 근거가 그 IOPS 수치라
+개발 PC 에서는 재현할 수 없다. **배포 후 부하를 걸어 보고 정할 것.**
+
 **DB 백업은 자동이 아니다.** `pg_dump` 를 정기 실행하지 않으면 서버 디스크가 죽을 때 대화가 함께 사라진다.
 
 ### 데모 - 로컬 + 터널

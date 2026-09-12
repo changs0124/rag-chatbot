@@ -69,6 +69,34 @@ preflight() {
 	[ "$missing" -eq 0 ] || exit 2
 	# scp 는 대상 디렉터리를 만들어 주지 않는다. 없으면 전송 단계에서 실패한다
 	ssh_run "mkdir -p '$REMOTE_DIR'"
+	env_perms
+}
+
+# **서버의 .env 권한을 600 으로 고정한다(#130).** 이 파일들에는 JWT_SECRET · OPENAI_API_KEY ·
+# DB_PASSWORD · TUNNEL_TOKEN 이 평문으로 있다. 기본 umask 로 만들면 644 가 되어 **서버에 셸이
+# 닿는 누구나 읽는다** - 단일 VM 에 전부 모으는 구성이라 "호스트 셸 하나 = 전 비밀" 이 된다.
+#
+# **여기서 고친다.** 런북에만 적으면 사람이 기억해야만 지켜지고, 이번처럼 잊힌다.
+# 권한을 좁히는 방향이라 되돌릴 피해가 없어 확인 없이 적용하되 **무엇을 바꿨는지 찍는다.**
+# .env 를 보내지 않는 것(3단계 주석)과 짝을 이룬다 - 비밀은 서버에만 있고, 거기서 잠근다.
+env_perms() {
+	# 원격에서 도는 스크립트다. `$REMOTE_DIR` 는 **로컬에서** 펼쳐 넣고, 원격에서 펼쳐야 하는
+	# 것은 `\$` 로 넘긴다 - 아래 4단계의 이미지 ID 대조가 쓰는 것과 같은 방식이다.
+	ssh_run "
+for f in .env backend/.env; do
+  p=\"$REMOTE_DIR/\$f\"
+  if [ ! -f \"\$p\" ]; then
+    echo \"  경고: \$f 가 서버에 없다 - compose 기동이 실패한다\"
+    continue
+  fi
+  mode=\$(stat -c '%a' \"\$p\" 2>/dev/null || echo '?')
+  if [ \"\$mode\" = '600' ]; then
+    echo \"  \$f 권한 600 (정상)\"
+  else
+    chmod 600 \"\$p\" && echo \"  \$f 권한 \$mode -> 600 으로 고쳤다\"
+  fi
+done
+"
 }
 
 say() { printf '\n\033[1m▶ %s\033[0m\n' "$1"; }
