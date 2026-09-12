@@ -1,0 +1,88 @@
+# 항목별 기동 확인 로그 — 신규 볼륨(down -v)으로 매번 초기화 경로를 태운다
+=========================================================
+## A단계 — cloudflared 다이제스트 고정 + db·cloudflared 로그 회전   (2026-09-12T07:50:50Z)
+ Container rag130probe-db-1 Started 
+ Container rag130probe-db-1 Healthy 
+ Container rag130probe-app-1 Started 
+ Container rag130probe-cloudflared-1 Started 
+  db: status=running health=healthy
+  app: status=running health=starting
+  cloudflared 마지막 로그: Provided Tunnel token is not valid. See 'cloudflared tunnel run --help'. 
+
+=========================================================
+## A단계(재확인) — 다이제스트 고정 + db·cloudflared 로그 회전   (2026-09-12T07:51:20Z)
+ Container rag130probe-db-1 Started 
+ Container rag130probe-db-1 Healthy 
+ Container rag130probe-app-1 Started 
+ Container rag130probe-cloudflared-1 Started 
+  db: status=running health=healthy restarts=0
+  app: status=running health=healthy restarts=0
+  app /api/health 직접 호출: HTTP/1.1 200
+  cloudflared 마지막 로그: See 'cloudflared tunnel run --help'.
+
+=========================================================
+## B단계 — no-new-privileges (세 서비스 전부)   (2026-09-12T07:51:51Z)
+ Container rag130probe-db-1 Started 
+ Container rag130probe-db-1 Healthy 
+ Container rag130probe-app-1 Started 
+ Container rag130probe-cloudflared-1 Started 
+  db: status=running health=healthy restarts=0
+  app: status=running health=healthy restarts=0
+  app /api/health 직접 호출: HTTP/1.1 200
+  cloudflared 마지막 로그: See 'cloudflared tunnel run --help'.
+
+=========================================================
+## C단계 — cap_drop ALL (app·cloudflared 전면 / db 는 최소 cap_add 5개)   (2026-09-12T07:52:28Z)
+ Container rag130probe-db-1 Started 
+ Container rag130probe-db-1 Healthy 
+ Container rag130probe-app-1 Started 
+ Container rag130probe-cloudflared-1 Started 
+  db: status=running health=healthy restarts=0
+  app: status=running health=healthy restarts=0
+  app /api/health 직접 호출: HTTP/1.1 200
+  cloudflared 마지막 로그: See 'cloudflared tunnel run --help'.
+
+=========================================================
+## C단계(확정) — cap_drop ALL / db 는 실측으로 좁힌 cap_add 4개   (2026-09-12T07:55:33Z)
+ Container rag130probe-db-1 Started 
+ Container rag130probe-db-1 Healthy 
+ Container rag130probe-app-1 Started 
+ Container rag130probe-cloudflared-1 Started 
+  db: status=running health=healthy restarts=0
+  app: status=running health=healthy restarts=0
+  app /api/health 직접 호출: HTTP/1.1 200
+  cloudflared 마지막 로그: See 'cloudflared tunnel run --help'.
+
+=========================================================
+## D단계 — app read_only:true + /tmp tmpfs(64m)   (2026-09-12T07:56:03Z)
+ Container rag130probe-db-1 Started 
+ Container rag130probe-db-1 Healthy 
+ Container rag130probe-app-1 Started 
+ Container rag130probe-cloudflared-1 Started 
+  db: status=running health=healthy restarts=0
+  app: status=running health=healthy restarts=0
+  app /api/health 직접 호출: HTTP/1.1 200
+  cloudflared 마지막 로그: See 'cloudflared tunnel run --help'.
+
+=========================================================
+## E단계 — pids_limit (db 128 / app 256 / cloudflared 64)   (2026-09-12T07:57:43Z)
+ Container rag130probe-db-1 Started 
+ Container rag130probe-db-1 Healthy 
+ Container rag130probe-app-1 Started 
+ Container rag130probe-cloudflared-1 Started 
+  db: status=running health=healthy restarts=0
+  app: status=running health=healthy restarts=0
+  app /api/health 직접 호출: HTTP/1.1 200
+  cloudflared 마지막 로그: See 'cloudflared tunnel run --help'.
+
+=========================================================
+## F단계 — 네트워크 분리 (backend: db+app / edge: app+cloudflared)   (2026-09-12T07:58:22Z)
+ Container rag130probe-db-1 Started 
+ Container rag130probe-db-1 Healthy 
+ Container rag130probe-app-1 Started 
+ Container rag130probe-cloudflared-1 Started 
+  db: status=running health=healthy restarts=0
+  app: status=running health=healthy restarts=0
+  app /api/health 직접 호출: HTTP/1.1 200
+  cloudflared 마지막 로그: See 'cloudflared tunnel run --help'.
+

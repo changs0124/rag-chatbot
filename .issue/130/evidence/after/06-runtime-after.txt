@@ -1,0 +1,70 @@
+# after — 하드닝 적용 후 세 컨테이너의 런타임 실측
+# 측정 시각: 2026-09-12T08:06:32Z
+#
+# before 와 **같은 명령 · 같은 형식**으로 쟀다(before/01-runtime-before.txt 와 짝).
+# 신규 볼륨 프로브(rag130probe)에서 재었고, 보존 중인 로컬 데이터는 건드리지 않았다.
+
+## db  (rag130probe-db-1)
+  CapDrop        : [ALL]
+  CapAdd         : [CAP_DAC_OVERRIDE CAP_FOWNER CAP_SETGID CAP_SETUID]
+  SecurityOpt    : [no-new-privileges:true]
+  ReadonlyRootfs : false
+  PidsLimit      : 128
+  LogConfig      : json-file map[max-file:3 max-size:10m]
+  Tmpfs          : map[]
+  Networks       : rag130probe_backend 
+  Image          : postgres:16-alpine
+
+## app  (rag130probe-app-1)
+  CapDrop        : [ALL]
+  CapAdd         : []
+  SecurityOpt    : [no-new-privileges:true]
+  ReadonlyRootfs : true
+  PidsLimit      : 256
+  LogConfig      : json-file map[max-file:3 max-size:10m]
+  Tmpfs          : map[/tmp:size=64m]
+  Networks       : rag130probe_backend rag130probe_edge 
+  Image          : rag-chatbot-backend:latest
+
+## cloudflared  (rag130probe-cloudflared-1)
+  CapDrop        : [ALL]
+  CapAdd         : []
+  SecurityOpt    : [no-new-privileges:true]
+  ReadonlyRootfs : false
+  PidsLimit      : 64
+  LogConfig      : json-file map[max-file:3 max-size:10m]
+  Tmpfs          : map[]
+  Networks       : rag130probe_edge 
+  Image          : cloudflare/cloudflared@sha256:b269e8abd07a5bf6f3f4be65d5050b2174eca89c56a0241a8ff32a16aec454e4
+
+## 컨테이너 안에서 실제로 보유한 capability (bounding set)
+  db           CapBnd:	00000000000000ca
+  app          CapBnd:	0000000000000000
+  (before 는 셋 다 00000000a80425fb = Docker 기본 14개였다)
+  app  0000000000000000 = **capability 0개**
+  db   복원한 4개만
+
+## before / after 한눈 대조
+  항목                 before              after
+  -------------------  ------------------  ----------------------------------------
+  no-new-privileges    없음 (셋 다)        셋 다 적용
+  cap_drop             없음 (기본 14개)    app 0개 / db 4개 / cloudflared 0개
+  read_only            없음                app 적용 (+ /tmp tmpfs 64m)
+  pids_limit           없음                db 128 / app 256 / cloudflared 64
+  로그 회전            app 만              셋 다 (10m x 3)
+  네트워크             기본 하나에 셋 다   backend(db+app) / edge(app+cloudflared)
+  cloudflared 이미지   :latest (표류)      @sha256:b269e8ab... 고정
+  서버 .env 권한       확인하지 않음       deploy.sh 프리플라이트가 600 으로 고정
+
+## 기동 영향 — 전부 정상
+  /rag130probe-db-1 status=running health=healthy restarts=0
+  /rag130probe-app-1 status=running health=healthy restarts=0
+  app /api/health: HTTP/1.1 200
+
+## 범위에서 제외한 것 — 숨기지 않고 적는다
+  1) memswap_limit / 스왑 : 판단 근거가 pd-standard 의 쓰기 45 IOPS 라 개발 PC 에서 재현 불가.
+     배포 후 부하 측정으로 미뤘다. 이슈는 열어 둔다.
+  2) TUNNEL_TOKEN 을 Docker secret / credentials 파일로 : Cloudflare 쪽 자료가 필요하다.
+     docker inspect 평문 노출은 아직 열린 문제이며, 문서에 「출력을 공유하지 말 것」을 적었다.
+  3) cloudflared 정상 동작 : 토큰이 자리표시자라 확인 불가. 설정 적용과 실패 원인만 확인했다.
+  4) postgres:16-alpine 다이제스트 고정 : 이슈 범위가 cloudflared 였다. 별도 판단 대상.

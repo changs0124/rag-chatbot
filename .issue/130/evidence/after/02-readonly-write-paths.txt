@@ -1,0 +1,32 @@
+# read_only 가 실제 쓰기 경로를 깨뜨리지 않았는지 직접 확인
+# 측정 시각: 2026-09-12T07:56:45Z
+#
+# healthcheck 는 /api/health 만 본다. read_only 가 업로드를 깨뜨려도 **healthy 로 보인다.**
+# 그래서 세 경로를 직접 찔러본다 — 볼륨은 써져야 하고, /tmp 는 써져야 하고, 루트는 막혀야 한다.
+
+## 1) /data/uploads — 첨부가 쌓이는 볼륨. **써져야 정상**
+  probe
+    -> 쓰기/읽기/삭제 성공
+
+## 2) /tmp — JVM 이 hsperfdata 를 만드는 곳. **써져야 정상**
+    -> 쓰기 성공
+  JVM 이 실제로 만든 것:
+    /tmp/hsperfdata_app
+
+## 3) 루트 파일시스템 — **막혀야 정상**
+  sh: can't create /app/evil: Read-only file system
+  sh: can't create /usr/local/evil: Read-only file system
+  -> 위 둘이 'Read-only file system' 이어야 한다
+
+## 4) jar 를 덮어쓸 수 있는가 — **막혀야 정상**
+  sh: can't create /app/app.jar: Read-only file system
+
+## 5) tmpfs 상한이 걸렸는지
+  tmpfs            64M   32K   64M   1% /tmp
+
+## 6) 런타임 실측
+  ReadonlyRootfs: true
+  Tmpfs         : map[/tmp:size=64m]
+  CapDrop       : [ALL]
+  CapBnd:	0000000000000000
+  (before 는 00000000a80425fb = 기본 14개였다)
