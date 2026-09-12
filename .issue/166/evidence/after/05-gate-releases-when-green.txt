@@ -1,0 +1,20 @@
+# after-5 — 게이트가 막기만 하는 게 아니라 풀리기도 하는가 (PR #168 실전 확인)
+# 측정 시각: 2026-09-12T07:39:24Z
+# PR: https://github.com/changs0124/rag-chatbot/pull/168  (이 변경 자체의 PR = 규칙의 첫 시행 대상)
+#
+# 막는 것만 확인하면 반쪽이다. 체크 이름이 어긋나거나 잡이 안 돌면 required checks 는
+# 영영 pending 으로 굳어 merge 를 완전히 막는데, 그게 #161 에서 가장 걱정했던 실패 모드다.
+# 그래서 풀리는 것까지 확인한다.
+
+## 시간순 관측
+  PR 생성 직후      mergeStateStatus = BLOCKED  (7잡 pending)
+  6잡 통과 · 1 pending  BLOCKED            (backend 가 아직 안 끝남)
+  7잡 전부 통과      mergeStateStatus = CLEAN   <- 풀렸다
+
+$ gh pr view 168 --json mergeStateStatus,mergeable,statusCheckRollup
+{"checks":[{"conclusion":"SUCCESS","name":"backend (test + build + 케이스 수 하한)"},{"conclusion":"SUCCESS","name":"frontend (lint + test + build + 케이스 수 하한)"},{"conclusion":"SUCCESS","name":"docker (백엔드 이미지 빌드)"},{"conclusion":"SUCCESS","name":"static (셸 구문·분석 · 계약 · 문서 참조 · 섹션 이름)"},{"conclusion":"SUCCESS","name":"secrets (시크릿 스캔)"},{"conclusion":"SUCCESS","name":"deps (백엔드 의존성 취약점)"},{"conclusion":"SUCCESS","name":"deps (프론트 의존성 취약점)"},{"conclusion":"SUCCESS","name":"Vercel"},{"conclusion":"SUCCESS","name":"Vercel Preview Comments"}],"mergeStateStatus":"CLEAN","mergeable":"MERGEABLE"}
+
+#   -> CLEAN. 필수 7개가 전부 SUCCESS 일 때 정확히 풀린다.
+#   -> 즉 이 ruleset 은 빨간불·pending 을 막고 초록불을 통과시킨다. 양쪽 다 확인됐다.
+#   -> static 잡이 통과했다는 것은 로컬에서 「모름」으로 남았던 shellcheck 도
+#      CI 러너에서 실제로 돌아 통과했다는 뜻이다.
