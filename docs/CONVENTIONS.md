@@ -163,6 +163,20 @@
 - **위 7잡은 `main` 에서 required status checks 다**(#166). 빨간불이면 merge 가 **막힌다** —
   `main: CI must pass` ruleset 이 집행한다. 필수인 것은 CI 7잡 **전부**다 :
   `backend` · `frontend` · `docker` · `static` · `secrets` · `deps (백엔드)` · `deps (프론트)`.
+  **위 목록은 축약이다(#172).** 실제 ruleset 의 context 는 `ci.yml` 의 잡 `name:` **전체 문자열**이다
+  (예 : `backend` 가 아니라 `backend (test + build + 케이스 수 하한)`). **여기에 그 전체 문자열을
+  옮겨 적지 않는다** — 지금 그것이 사는 곳은 `ci.yml` 과 ruleset 둘뿐이고, 문서에 적으면 셋이 되는데
+  **그 사본을 지킬 게이트가 없다**(아래 `check-doc-versions.sh` 항목이 「목록형 서술」을 일부러 제외한다).
+  #105 가 허용 목록을 놓고 같은 거래를 이미 거절했다.
+
+  **ruleset 을 복원해야 하면 문서를 보지 말고 정본에서 뽑는다.**
+
+  ```bash
+  gh api repos/changs0124/rag-chatbot/rules/branches/main \
+    --jq '[.[]|select(.type=="required_status_checks").parameters.required_status_checks[].context]'
+  ```
+
+  규칙이 사라져 그것조차 못 읽는 상황이면 `ci.yml` 의 잡 `name:` 값을 그대로 쓴다.
   **`docker` 를 빼지 않았다** — 빼도 잡은 어차피 모든 PR 에서 도니 걸리는 시간이 줄지 않고,
   얻는 것 없이 Dockerfile 게이트만 잃는다. **`secrets` · `deps` 도 필수다** — 공개 저장소는
   시크릿이 한 번 들어오면 회수가 불가능하다는 위 #135 항목의 근거가 필수에서 빼는 순간 거짓이 된다.
