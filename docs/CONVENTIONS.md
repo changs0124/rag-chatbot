@@ -160,6 +160,38 @@
   오히려 공개 저장소는 **시크릿이 한 번 들어오면 회수가 불가능**하므로 merge 전에 돌아야 한다.
   **주간 실행은 그대로 둔다** — 이 셋은 우리 커밋이 아니라 **바깥**(취약점 DB · 커밋 이력 전체)이
   바뀔 때도 결과가 달라져, 둘은 서로 다른 것을 잡는다.
+- **위 7잡은 `main` 에서 required status checks 다**(#166). 빨간불이면 merge 가 **막힌다** —
+  `main: CI must pass` ruleset 이 집행한다. 필수인 것은 CI 7잡 **전부**다 :
+  `backend` · `frontend` · `docker` · `static` · `secrets` · `deps (백엔드)` · `deps (프론트)`.
+  **`docker` 를 빼지 않았다** — 빼도 잡은 어차피 모든 PR 에서 도니 걸리는 시간이 줄지 않고,
+  얻는 것 없이 Dockerfile 게이트만 잃는다. **`secrets` · `deps` 도 필수다** — 공개 저장소는
+  시크릿이 한 번 들어오면 회수가 불가능하다는 위 #135 항목의 근거가 필수에서 빼는 순간 거짓이 된다.
+  **Vercel 은 넣지 않았다** : #161 에서 「Vercel 만 green」이 오독의 원인이었고, 외부 앱 체크는
+  배포가 건너뛰어지면 아예 보고되지 않아 필수로 걸면 pending 으로 남아 merge 를 영영 막는다.
+  **필수 체크는 잡의 `name:` 문자열로 대조된다** — `ci.yml` 의 `name:` 을 고치면 ruleset 의
+  context 가 그 즉시 영영 pending 이 되어 merge 가 완전히 막힌다. **둘은 같이 고쳐야 한다.**
+- **관리자 우회는 남겨 두었다**(`bypass_actors` = Repository admin / always, #166). 잠그지 않은
+  이유가 취향이 아니라 구체적 파손이다 — required checks 는 PR merge 뿐 아니라 **그 브랜치로의
+  직접 푸시도 막는데**, 증거 미러 커밋은 `.issue/**` 만 바꿔 바로 아래 항목대로 CI 를 건너뛰므로
+  **체크가 영영 붙지 않는다.** 관리자까지 강제하면 그 푸시가 영구 차단되고, 탈출구는 보호를 통째로
+  끄는 것뿐이라 그 순간 모든 게이트가 같이 사라진다. 우회를 남겨도 게이트는 산다 — merge 박스는
+  관리자에게도 `BLOCKED` 으로 막히고, 우회는 `--admin` 이라는 **별도의 명시적 동작**이라 기록이 남는다.
+  **「최신 `main` 위에 있어야 한다」(strict)는 끄고 간다** : 증거 미러 커밋이 `main` 에 직접
+  올라가는 워크플로라, 켜면 증거를 푸시할 때마다 열려 있는 모든 PR 이 낡아져 매번 rebase 와 7잡
+  재실행을 요구한다.
+- **무엇이 필수인지 확인하는 명령은 하나다.**
+
+  ```bash
+  gh api repos/changs0124/rag-chatbot/rules/branches/main
+  ```
+
+  레거시 branch protection 과 ruleset 을 **둘 다** 모아 보여준다. `branches/main` 의
+  `.protection.required_status_checks.enforcement_level` 로는 **ruleset 이 안 보인다**(`off` 로 나온다) —
+  그 명령으로 판단하면 걸려 있는데 없다고 읽는다.
+- **게이트를 걸었다고 API 응답만 보고 판단하지 않는다.** #161 이 정확히 그렇게 새어 나갔다.
+  **일부러 깨뜨린 PR 로 merge 가 실제로 거부되는지** 확인한다(#166 에서 그렇게 검증했다 —
+  우회 없는 임시 ruleset 을 버릴 브랜치에 걸고 `gh pr merge` 를 실제로 시도해 거부를 받았다.
+  관리자 우회가 켜진 `main` 에서 시도하면 그냥 성공해 아무것도 증명하지 못한다).
 - **`.issue/**` 만 바뀐 푸시는 CI 를 건너뛴다**(`paths-ignore`). 증거 미러 커밋은 코드가 한 줄도
   바뀌지 않는다. `pull_request` 에는 넣지 않았다 — 건너뛴 워크플로는 required checks 에서
   pending 으로 남아 merge 를 막는다.
