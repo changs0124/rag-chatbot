@@ -1,0 +1,87 @@
+# before — 고치기 전 상태
+# 측정 시각: 2026-09-12T10:19:57Z
+# 기준 커밋: a57ab9d Merge pull request #175 from changs0124/docs/174-launch-waiting-issues
+
+## 1) 테스트 전용 상한 — 2
+
+  36: @TestPropertySource(properties = {
+  37: 		"app.ratelimit.upload-per-minute=2",
+  38: 		"app.ratelimit.password-change-per-minute=2" })
+  39: class UploadRateLimitTest extends AbstractPgIntegrationTest {
+
+## 2) 세 테스트가 보내는 횟수 — 전부 3번 (상한+1)
+
+  --- upload_over_the_limit_is_rejected ---
+  72: 	@Test
+  73: 	void upload_over_the_limit_is_rejected() {
+  74: 		String token = createUser("upload-limit@b.com");
+  75: 
+  76: 		assertThat(upload(token)).isEqualTo(HttpStatus.OK);
+  77: 		assertThat(upload(token)).isEqualTo(HttpStatus.OK);
+  78: 		assertThat(upload(token))
+  79: 				.withFailMessage("세 번째 업로드가 막히지 않음 - 업로드에 유량 상한이 없다는 뜻")
+  80: 				.isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+  81: 	}
+
+  --- upload_limit_is_per_user ---
+  84: 	@Test
+  85: 	void upload_limit_is_per_user() {
+  86: 		String a = createUser("upload-a@b.com");
+  87: 		String b = createUser("upload-b@b.com");
+  88: 
+  89: 		upload(a);
+  90: 		upload(a);
+  91: 		assertThat(upload(a)).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+  92: 		assertThat(upload(b)).isEqualTo(HttpStatus.OK);
+  93: 	}
+
+  --- password_change_over_the_limit_is_rejected ---
+  101: 	@Test
+  102: 	void password_change_over_the_limit_is_rejected() {
+  103: 		String token = createUser("pw-limit@b.com");
+  104: 
+  105: 		assertThat(changePassword(token, "wrong-1")).isEqualTo(HttpStatus.UNAUTHORIZED);
+  106: 		assertThat(changePassword(token, "wrong-2")).isEqualTo(HttpStatus.UNAUTHORIZED);
+  107: 		assertThat(changePassword(token, "wrong-3"))
+  108: 				.withFailMessage("세 번째 시도가 막히지 않음 - BCrypt 를 무한히 돌릴 수 있다는 뜻")
+  109: 				.isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+  110: 	}
+
+## 3) 왜 흔들리는가 — 경우 분석 (상한 2, 요청 3번)
+
+  고정 윈도우다. `increment(key) > limit` 이면 거절하고, 분이 바뀌면 count 0 으로 새 창이 열린다
+  (RateLimiterService.java:114-123).
+
+  세 요청이 두 창에 (k, 3-k) 로 쪼개질 때 거절 수 = max(0, k-2) + max(0, (3-k)-2) :
+
+    (3,0) -> 1 + 0 = 1
+    (2,1) -> 0 + 0 = 0   <- 여기서 깨진다
+    (1,2) -> 0 + 0 = 0   <- 여기서도
+    (0,3) -> 0 + 1 = 1
+
+  **네 경우 중 둘에서 거절이 0건이다.** 경계가 1~2번째 또는 2~3번째 사이에 끼면 통과한다.
+  경계가 끼는 확률이 낮아 평소에는 초록이고, 어느 날 갑자기 빨간불이 된다.
+
+## 4) 실측 실패 기록 (2026-09-12, PR #175 의 backend 잡)
+
+  UploadRateLimitTest.password_change_over_the_limit_is_rejected:109
+  세 번째 시도가 막히지 않음 - BCrypt 를 무한히 돌릴 수 있다는 뜻
+  [ERROR] Tests run: 230, Failures: 1, Errors: 0, Skipped: 0
+
+  그 PR 의 diff 는 문서 3개뿐이었고, **같은 커밋을 재시도하니 7잡 전부 통과**했다(attempt 2).
+  회귀가 아니라 간헐 실패임이 이것으로 확정됐다.
+
+## 5) 규약이 이미 경고해 둔 것
+
+  docs/CONVENTIONS.md:104
+    - 레이트리밋은 **고정 윈도우**라 분 경계에서 카운터가 리셋된다. 상한 검사는 **상한의 두 배 넘게** 보내
+      경계를 한 번 넘어도 한쪽 창에 초과분이 쌓이게 하거나, 429가 관측될 때까지 반복한다.
+
+## 6) 머리주석이 다른 문제를 막고 있다
+
+  33:  * <p><b>상한을 낮게 두어 결정적으로 만든다</b> — 동시 요청을 실제로 띄우면 타이밍에 기대게 되고,
+  34:  * 그런 테스트는 CI 에서 흔들린다({@code ChatBackPressureTest} 와 같은 수법).
+  35:  */
+
+  이 판단은 「동시 요청 타이밍」에 대해서는 옳다. 다만 그것과 「고정 윈도우 경계」는 서로 다른
+  실패 원인이고, 상한을 낮추는 것으로는 경계 문제가 사라지지 않는다.
