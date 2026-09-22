@@ -1,0 +1,10 @@
+# #185 before — 2026-09-22T11:33:15+09:00
+
+## 런칭 절차를 backlog.md 로 안내하는 줄
+README.md:50:> 런칭 때 그 값을 넣고 재배포하면 풀림(절차는 `docs/04_tasks/backlog.md` 의 런칭 항목).
+README.md:60:- 진행 중인 작업은 `docs/04_tasks/current-sprint.md`, 남은 항목은 `docs/04_tasks/backlog.md`.
+docs/INDEX.md:47:정해야 할 것과 남은 항목은 `docs/04_tasks/backlog.md` 에 있다.
+docs/INDEX.md:69:| [Backlog](./04_tasks/backlog.md) | 전체 태스크 |
+
+## backlog.md 가 스스로 정본을 넘긴 문장
+25:- [ ] **런칭** — **정본은 [current-sprint](./current-sprint.md) 「진행 중」의 런칭 항목이다**(#174).
