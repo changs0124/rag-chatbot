@@ -1,0 +1,30 @@
+# #37 after — 2026-09-22T09:29:37+09:00 · commit feac356
+
+## 남은 「셋」·「#37 판정 대기」 서술 (0 이어야 함) — 테스트 머리주석 1건은 후속 커밋에서 추가로 고침
+0
+
+## #37 을 언급하는 곳 (CHANGELOG 제외)
+docs/01_specs/live-integration.md:33:**#37 은 판정이 끝났다(2026-09-22) — 결과는 `200`, 헤더는 필수가 아니다.** 위 요
+docs/01_specs/live-integration.md:40:| `200` | 정상 | **없어도 통한다** — #37 의 실제 결과다 | 2-1 로 넘어간다 |
+docs/01_specs/live-integration.md:41:| `400` | 정상 | 필수였다면 나왔을 코드. #37 판정으로 **나오지 않음이 확인됐�
+docs/01_specs/live-integration.md:182:| F | Vector Store 계열 호출에 `OpenAI-Beta: assistants=v2` 가 **필요하다** | **확인됨 �
+docs/04_tasks/current-sprint.md:37:  **키가 들어오면 이 순서로 한다** — 종전 1번이던 #37(`OpenAI-Beta` 헤더 판정)은 
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:53:	 * Vector Store 계열 호출에만 싣는 베타 헤더(#37).
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:62:	 * API 레퍼런스)과 맞추려고</b> 남긴다. 판정 기록은 
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealBetaHeaderTest.java:18: * Vector Store 계열 호출에 {@code OpenAI-Beta: assistants
+
+## scripts/check-all.sh
+셸 구문 검사 통과
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+문서 참조 검사 통과
+섹션 참조 검사 통과
+문서 버전 대조 통과
+  - 건너뜀: gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것
+  - 건너뜀: trivy 없음
+돌린 검사는 전부 통과
+건너뜀 3건 - 이 검사들은 돌지 않았다:
+도구를 설치하고 다시 돌리기 전까지 이 항목은 "통과"가 아니라 "모름"이다.
+
+## OpenAiRealBetaHeaderTest
+tests="2" errors="0" skipped="0" failures="0"
+OpenAiRealBetaHeaderTest 머리주석 수정 후 재실행 : tests="2" errors="0" skipped="0" failures="0"
