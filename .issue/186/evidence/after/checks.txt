@@ -1,0 +1,34 @@
+# #186 after — 2026-09-22T11:39:19+09:00
+
+onMeta 등장 : 0
+IconPaperclip 등장 : 0
+IconFile 등장 : 0
+
+## 주석
+ * 얕은 liveness 헬스체크. 비인증 허용 경로(SecurityConfig 에서 permitAll).
+ * 고정 코퍼스 키워드에 매칭되면 출처 포함 답변, 아니면 무자료 플래그(noSource, P-8 · AC-6).
+
+## 프론트 (before 와 같은 명령)
+warning: The current Node.js path is not on your PATH environment variable.
+You should setup your shell profile to evaluate `fnm env`, see https://github.com/Schniz/fnm#shell-setup on how to do this
+Check out our documentation for more information: https://fnm.vercel.app
+lint exit=0
+ Test Files  18 passed (18)
+      Tests  115 passed (115)
+      Tests  5 passed (5)
+build exit=0
+
+## 백엔드 컴파일
+compile exit=0
+
+## scripts/check-all.sh
+셸 구문 검사 통과
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+문서 참조 검사 통과
+섹션 참조 검사 통과
+문서 버전 대조 통과
+  - 건너뜀: gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것
+  - 건너뜀: trivy 없음
+돌린 검사는 전부 통과
+건너뜀 3건 - 이 검사들은 돌지 않았다:
+도구를 설치하고 다시 돌리기 전까지 이 항목은 "통과"가 아니라 "모름"이다.

@@ -1,0 +1,30 @@
+# #186 before — 2026-09-22T11:38:41+09:00 · commit 376dbc5
+
+## onMeta — 전체 등장 위치
+frontend/src/lib/endpoints.ts:58:  onMeta?: (data: { messageId: string; conversationId: string }) => void
+frontend/src/lib/endpoints.ts:155:      handlers.onMeta?.(data as { messageId: string; conversationId: string })
+
+## IconPaperclip — 전체 등장 위치
+frontend/src/components/icons.tsx:34:export function IconPaperclip({ className }: IconProps) {
+
+## IconFile — 전체 등장 위치
+frontend/src/components/icons.tsx:61:export function IconFile({ className }: IconProps) {
+
+## HealthController 주석 vs SecurityConfig
+ * 얕은 liveness 헬스체크. 비인증 허용 경로(Phase 2 SecurityConfig에서 permitAll 예정).
+42:						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+
+## OpenAiMockService 머리주석 vs 07-28 결정
+ * 고정 코퍼스 키워드에 매칭되면 출처 포함 답변, 아니면 무자료 접두(P-8, AC-6).
+	// 무자료는 **텍스트 접두가 아니라 플래그**로 알림(2026-07-28 결정).
+	// 라이브는 인용 0건 여부를 스트림이 끝나야 알 수 있어 이미 흘려보낸 토큰 앞에 접두를 붙일 수 없음 -
+	// 접두를 유지하면 화면(접두 없음)과 재조회(접두 있음)가 어긋남(Phase 4 리뷰 H4-1).
+
+## 프론트 기준선
+warning: The current Node.js path is not on your PATH environment variable.
+You should setup your shell profile to evaluate `fnm env`, see https://github.com/Schniz/fnm#shell-setup on how to do this
+Check out our documentation for more information: https://fnm.vercel.app
+lint exit=0
+ Test Files  18 passed (18)
+      Tests  115 passed (115)
+build exit=0
