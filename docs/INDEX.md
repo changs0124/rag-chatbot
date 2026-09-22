@@ -44,7 +44,7 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 | OpenAI 키 없이 | `APP_MODE=mock` 으로 전 경로가 목업으로 동작 |
 | Vector Store 없이 | `live` 라도 기동·응답은 되며, 출처가 0건이라 전부 "자료 없음"으로 표시됨 |
 
-정해야 할 것과 남은 항목은 `docs/04_tasks/backlog.md` 에 있다.
+런칭까지 정해야 할 것과 남은 준비물 · 순서는 [current-sprint](./04_tasks/current-sprint.md) 「진행 중」의 런칭 항목에 있다.
 계층별 배포 절차는 [backend](./02_architecture/backend.md) · [frontend](./02_architecture/frontend.md) 참고.
 
 ## Docs 구조
