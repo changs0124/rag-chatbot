@@ -16,8 +16,8 @@ import com.ragchatbot.openai.OpenAiService.Stage;
  * Phase 7 : 라이브 스트림 → 진행 단계 매핑을 실 호출 없이 고정함(AC-24 · 리스크 R-13).
  * 캔드 SSE를 파서에 직접 먹임 - OpenAI 호출·Docker 불필요.
  *
- * <p>주의(S-1) : 이 테스트는 <b>매핑 로직</b>만 검증함. 실 API가 어떤 순서로 이벤트를 보내는지는
- * 실 키로 확인해야 하며 이관-6(M2 스파이크)에 남아 있음.
+ * <p>주의(S-1) : 이 테스트는 <b>매핑 로직</b>만 검증함. 실 API 가 이 순서로 이벤트를 보낸다는 것은
+ * 2026-09-22 실 키로 확인됨(stage analyzing → searching → generating, live-integration.md 3절 가정 A · #184).
  */
 class OpenAiRealStageMappingTest {
 

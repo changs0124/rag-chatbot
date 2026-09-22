@@ -7,12 +7,6 @@
 
 ## 진행 중
 
-- [ ] **OpenAI 실 연동 투입** — 절차와 대조 항목은 [live-integration.md](../01_specs/live-integration.md).
-  **키·공용 Vector Store 확보가 선행 조건이라 아직 착수 불가**다. 코드는 `APP_MODE=live` 로 바꾸면 도는 상태이며,
-  문서 등록이 제품 안(`/admin`)에 있으므로 대시보드를 거치지 않아도 된다
-  - ⚠️ **두 경로를 섞지 말 것** — 대시보드로 올린 문서는 검색에는 잡히는데 관리 화면에서는 안 보인다.
-    실 연동 문서 5절이 "대시보드에서 수동" → "제품 안 API" 로 뒤집힌 자리다
-
 - [ ] **런칭** — **여기가 런칭의 정본이다**(#174). `backlog.md` 는 이 항목을 가리키기만 한다.
   절차 정본은 [backend](../02_architecture/backend.md) 「배포」이고, 아래는 **남은 준비물과 순서**다.
 
@@ -21,7 +15,9 @@
   (`us-west1-b`)이 현재 `TERMINATED`. 재개는 **켜고 `bash scripts/deploy.sh`** 다.
 
   저장소 밖 준비물 :
-  - `TUNNEL_TOKEN`(Cloudflare 터널 생성) · `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` 확보
+  - `TUNNEL_TOKEN`(Cloudflare 터널 생성) 확보
+  - `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` — **로컬 실연동용으로는 확보됐다**(테스트 프로젝트, 2026-09-22, #184).
+    배포에 같은 키·스토어를 쓸지, 운영용을 따로 만들지는 정하지 않았다. 스토어를 새로 만들면 문서를 `/admin` 으로 다시 올린다
   - `bash scripts/deploy.sh` 로 실배포 — **이 스크립트는 통짜로 실행된 적이 없다.** `--dry-run` 을 먼저 볼 것
   - Vercel 프로젝트에 `VITE_API_BASE_URL`(터널 도메인) 설정 후 **재배포**.
     현재 프로덕션 번들에 `http://localhost:8080` 이 박혀 있다(배포된 `/assets/index-*.js` 에서 확인)
@@ -45,8 +41,8 @@
 
 ## 블로커
 
-없음. 위 항목들은 막힌 것이 아니라 **저장소 밖 준비물(API 키 · 공용 Vector Store ·
-Cloudflare 터널 토큰)을 기다리는 중**이다. 그 준비물 하나가 이슈 **둘**(#130 · #132)을
+없음. 위 항목들은 막힌 것이 아니라 **저장소 밖 준비물(Cloudflare 터널 토큰 · 배포에 쓸 키와 스토어)과
+VM 재가동을 기다리는 중**이다. API 키와 공용 Vector Store 자체는 2026-09-22 로컬 실연동으로 확보됐다. 그 준비물 하나가 이슈 **둘**(#130 · #132)을
 동시에 막고 있다 — 목록과 순서는 위 「런칭」 항목에 있다.
 
 **#105 는 대기 항목이 아니다.** [#105](https://github.com/changs0124/rag-chatbot/issues/105)
