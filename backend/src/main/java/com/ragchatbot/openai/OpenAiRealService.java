@@ -38,10 +38,9 @@ import com.ragchatbot.storage.FileStorage;
  * 텍스트를 건드리지 않고 {@code noSource} 플래그로만 알림(P-8) - 인용 0건은 스트림이 끝나야 알 수 있어
  * 이미 보낸 토큰 앞에 접두를 붙일 수 없기 때문임.
  *
- * <p><b>주의(S-1)</b> : 실호출 검증은 OPENAI_API_KEY·공용 Store 확보 후 M2 스파이크에서 수행함(미결 표).
- * 현재는 컴파일·구조만 검증된 상태이며, 실 응답 스키마와 무자료 임계는 실물로 확인 전까지 완성으로 위장하지 않음.
- * 특히 무자료 접두는 스트림 종료 후에야 인용 유무를 알 수 있어, 라이브 토큰 순서상 접두가 저장 텍스트에만 반영됨
- * (프론트 표기 방식은 M2에서 확정).
+ * <p><b>실 응답으로 검증됨(S-1, 2026-09-22)</b> : 실키 · 공용 Vector Store 로 스트리밍 · 검색 단계 이벤트 ·
+ * 완료 이벤트 · {@code file_citation} 인용 · 결과 스니펫 · 이미지 입력 · 문서 업로드/삭제를 확인함.
+ * 가정별 관측과 날짜는 {@code docs/01_specs/live-integration.md} 3절이 정본임(#184).
  */
 @Service
 @ConditionalOnProperty(prefix = "app", name = "mode", havingValue = "live")
