@@ -17,8 +17,8 @@ import com.sun.net.httpserver.HttpServer;
 /**
  * Vector Store 계열 호출에 {@code OpenAI-Beta: assistants=v2} 가 실려 나가는지 검증함(#37).
  *
- * <p><b>왜 이렇게 재는가</b> - 실키가 없어 서버가 헤더 없는 요청을 실제로 거절하는지는 확인할 수 없음.
- * 무인증 프로빙은 인증 검사가 먼저 걸려 401 로만 돌아옴. 그래서 <b>우리가 무엇을 보내는지</b>를
+ * <p><b>왜 이렇게 재는가</b> - 헤더가 필수인지는 2026-09-22 실키로 판정됨(필수 아님, 실어도 무해). 그래도
+ * 헤더는 공식 SDK 와 맞추려고 싣기로 했으므로, 그 선택이 유지되는지 <b>우리가 무엇을 보내는지</b>를
  * 로컬 서버로 받아 판정함. {@code OpenAiRealDeleteResourcesTest} 와 같은 방식임.
  *
  * <p>부착 범위가 새지 않는지도 함께 잠금 - {@code /files} 는 Assistants 베타와 무관하므로
