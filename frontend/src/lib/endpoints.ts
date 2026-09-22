@@ -55,7 +55,6 @@ export function uploadDocument(file: File): Promise<RagDocument> {
 }
 
 export interface ChatStreamHandlers {
-  onMeta?: (data: { messageId: string; conversationId: string }) => void
   /** 진행 단계(R-11) - 라벨 문자열은 서버가 소유함(모드별로 다름) */
   onStage?: (data: { stage: string; label: string }) => void
   onToken?: (delta: string) => void
@@ -150,10 +149,8 @@ function dispatchEvent(raw: string, handlers: ChatStreamHandlers): boolean {
   } catch {
     return false
   }
+  // meta 는 쓰는 곳이 없어 받지 않고 흘려보낸다(#186) - 아래 어느 case 에도 안 걸려 false 로 끝난다
   switch (event) {
-    case 'meta':
-      handlers.onMeta?.(data as { messageId: string; conversationId: string })
-      break
     case 'stage':
       handlers.onStage?.(data as { stage: string; label: string })
       break
