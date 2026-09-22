@@ -21,6 +21,15 @@
   준비물이 들어와도 없어지지 않는다는 점에서 나머지 셋과 성격이 다르다.
 
 ### Fixed
+- **사용처가 0 인 프론트 코드와 사실과 어긋난 주석을 정리했다(#186).** 2026-09-22 코드 리뷰에서 나왔다.
+  `endpoints.ts` 의 `onMeta` 핸들러는 `meta` 이벤트를 파싱해 넘기지만 받는 쪽이 없었고, 아이콘
+  `IconPaperclip` · `IconFile` 은 import 가 0건이었다(문서 첨부 경로를 걷어낼 때 함께 죽은 것으로 보인다).
+  **`meta` 이벤트는 분기가 없어도 `switch` 를 그냥 지나가므로** 스트림 처리는 그대로이고,
+  `stream.test.ts` 의 `event:meta` 케이스가 그것을 확인한다.
+
+  주석 둘 — `HealthController` 는 이미 `SecurityConfig` 에 있는 permitAll 을 「예정」으로,
+  `OpenAiMockService` 머리주석은 07-28 에 플래그로 바꾼 무자료 표시를 「접두」로 적고 있었다.
+  **같은 파일 몇 줄 아래가 그 결정을 적고 있어** 한 파일 안에서 스스로 모순이었다.
 - **README · INDEX 가 런칭 절차를 옛 위치로 안내하고 있었다(#185).** 런칭의 정본은 #174 에서
   `current-sprint.md` 「진행 중」으로 옮겨졌고 `backlog.md` 는 스스로 「여기에 같은 목록을 두지 않는다」고
   적었는데, `README.md` 의 데모 안내와 `INDEX.md` 「배포 준비 상태」가 여전히 `backlog.md` 를 가리켰다.
