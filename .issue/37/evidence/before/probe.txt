@@ -1,0 +1,8 @@
+# #37 헤더 없는 실호출 2026-09-22T09:25:13 · 모든 요청에 OpenAI-Beta 헤더 없음
+GET  /vector_stores                                     → 200  {   "object": "list",   "data": [     {       "id": "vs_6ab1bfc0bfc081919f7c9db212993588",       "object": "ve
+(준비) POST /files — 시험 파일 file-2MrXekKmBckoKtW8JzEaoa
+POST /vector_stores/{id}/files  (업로드 연결)                → 200  {   "id": "file-2MrXekKmBckoKtW8JzEaoa",   "object": "vector_store.file",   "usage_bytes": 0,   "created_at": 
+GET  /vector_stores/{id}/files/{fid}  (상태 조회)           → 200  {   "id": "file-2MrXekKmBckoKtW8JzEaoa",   "object": "vector_store.file",   "usage_bytes": 1052,   "created_at
+DELETE /vector_stores/{id}/files/{fid}  (연결 해제)         → 200  {   "id": "file-2MrXekKmBckoKtW8JzEaoa",   "object": "vector_store.file.deleted",   "deleted": true }
+(정리) DELETE /files/{fid}                                → 200  {   "object": "file",   "deleted": true,   "id": "file-2MrXekKmBckoKtW8JzEaoa" } 
+스토어 file_counts (정리 후) : {'in_progress': 0, 'completed': 2, 'failed': 0, 'cancelled': 0, 'total': 2}
