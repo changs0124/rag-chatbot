@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 
 /**
  * OpenAI 호출 경계(P-2). Mock/Real 두 구현을 APP_MODE로 전환함.
- * 실 연동 시 이 인터페이스 뒤(OpenAiRealService)만 실 응답에 맞춰 마무리하면 됨(M2 스파이크).
+ * 실 응답과의 대조는 OpenAiRealService 에서 끝남(2026-09-22, live-integration.md 3절).
  */
 public interface OpenAiService {
 
