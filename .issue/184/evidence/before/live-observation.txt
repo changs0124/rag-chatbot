@@ -1,0 +1,31 @@
+# #184 before — 실연동 관측 2026-09-22T11:22:26 · APP_MODE=live · model=gpt-5.6-terra · 스토어 문서 2건
+
+## 2-4 유자료 질문
+이벤트 순서 : meta → stage → token → citations → done
+token 이벤트 수 : 345 (한 번에 뭉치지 않고 흘러옴 = 확인 ①)
+stage : ['analyzing', 'searching', 'generating'] (searching 이 있으면 file_search 시작 이벤트 도착 = 가정 A · 확인 ②)
+citations : [('TM매뉴얼_VSVDTMNOPK10_v3.md', 201), ('필드클레임현황.md', 201)] (파일명 = 가정 C · 스니펫 길이>0 = 가정 D·E · 확인 ③)
+done : {'finishReason': 'stop', 'noSource': False} (completed 이벤트로 정상 종료 = 가정 B)
+
+## 2-5 무자료 질문
+citations 수 : 0 · done : {'finishReason': 'stop', 'noSource': True}
+
+## 2-6 이미지 첨부
+token 수 : 2 · done : {'finishReason': 'stop', 'noSource': True}
+
+## 2-3 · 2-7 업로드 상태
+ - 필드클레임현황.md completed
+ - TM매뉴얼_VSVDTMNOPK10_v3.md completed
+
+## 낡은 서술 (수정 전)
+docs/04_tasks/current-sprint.md:11:  **키·공용 Vector Store 확보가 선행 조건이라 아직 착수 불가**다. 코드는 `APP_MODE=live` 로 바꾸면 도는 상태이며,
+docs/01_specs/live-integration.md:55:`backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java` 는 **컴파일과 구조만 검증된 상태**다.
+docs/01_specs/live-integration.md:172:아래는 **문서만 보고 작성돼 실물로 확인된 적이 없는** 값들이다. 2-4에서 기대와 다른 결과가 나오면
+docs/01_specs/requirements.md:107:| REQ-RAG-005 | 실 연동이 실 응답과 대조되어야 한다 | `Must` | **미검증** |
+docs/01_specs/requirements.md:161:| Phase 9 | 실 연동 투입 (REQ-RAG-005) | 키·Vector Store 확보 시 |
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:41: * <p><b>주의(S-1)</b> : 실호출 검증은 OPENAI_API_KEY·공용 Store 확보 후 M2 스파이크에서 수행함(미결 표).
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:42: * 현재는 컴파일·구조만 검증된 상태이며, 실 응답 스키마와 무자료 임계는 실물로 확인 전까지 완성으로 위장하지 않음.
+backend/src/main/java/com/ragchatbot/openai/OpenAiService.java:9: * 실 연동 시 이 인터페이스 뒤(OpenAiRealService)만 실 응답에 맞춰 마무리하면 됨(M2 스파이크).
+
+## 2-6 이미지 답변 본문 (이미지에 적힌 문자열 'ALARM AL.2144 UNDER VOLTAGE')
+답변 : 2144
