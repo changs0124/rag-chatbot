@@ -1,0 +1,21 @@
+# #185 after — 2026-09-22T11:35:34+09:00 · commit a92320c
+
+## 런칭 절차를 backlog.md 로 안내하는 줄 (README:60 · INDEX 표의 Backlog 링크는 착수 전 항목 안내라 정상)
+README.md:60:- 진행 중인 작업은 `docs/04_tasks/current-sprint.md`, 남은 항목은 `docs/04_tasks/backlog.md`.
+docs/INDEX.md:69:| [Backlog](./04_tasks/backlog.md) | 전체 태스크 |
+
+## 바뀐 줄
+README.md:50:> 런칭 때 그 값을 넣고 재배포하면 풀림(남은 준비물과 순서는 `docs/04_tasks/current-sprint.md` 「진행 중」의 런칭 항목).
+docs/INDEX.md:47:런칭까지 정해야 할 것과 남은 준비물 · 순서는 [current-sprint](./04_tasks/current-sprint.md) 「진행 중」의 런칭 항목에 있다.
+
+## scripts/check-all.sh
+셸 구문 검사 통과
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+문서 참조 검사 통과
+섹션 참조 검사 통과
+문서 버전 대조 통과
+  - 건너뜀: gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것
+  - 건너뜀: trivy 없음
+돌린 검사는 전부 통과
+건너뜀 3건 - 이 검사들은 돌지 않았다:
+도구를 설치하고 다시 돌리기 전까지 이 항목은 "통과"가 아니라 "모름"이다.
