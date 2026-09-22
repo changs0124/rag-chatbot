@@ -82,6 +82,22 @@ class OpenAiRealInstructionsTest {
 	}
 
 	/**
+	 * 못 찾았으면 인용하지 말라는 지시가 실린다(#181).
+	 *
+	 * <p>판정이 {@code citations.isEmpty()} 하나라서, 모델이 부재 설명 문장에 인용을 1건만 달아도
+	 * 「자료 없음」이 사라진다. 이 줄이 빠지면 실 연동 무자료 질문 5회 중 4회가 출처 있음으로 판정됐다.
+	 */
+	@Test
+	void tells_model_not_to_cite_when_nothing_was_found() {
+		chat("shared-store");
+
+		assertThat(bodies.get(0))
+				.withFailMessage("무자료 무인용 지시가 빠짐 - 부재 설명 문장의 인용 때문에 「자료 없음」이 안 뜬다 (보낸 바디: %s)",
+						bodies.get(0))
+				.contains("근거를 찾지 못했으면 인용을 하나도 달지 않는다");
+	}
+
+	/**
 	 * 스토어가 없으면 지시를 싣지 않는다.
 	 *
 	 * <p>검색 도구가 없는데 "사내 문서를 먼저 찾아본다" 고 지시하면 <b>모델에게 없는 도구를 쓰라고
