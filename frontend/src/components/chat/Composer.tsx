@@ -338,7 +338,7 @@ export default function Composer({
 
       {/* 스크림을 검정이 아니라 canvas 로 깐다 - 검정 30% 는 다크 전제였고, 라이트에서는
           밝은 회색(rgb(173,174,176))이 되어 그 위 흰 글자가 2.10~2.36 밖에 안 나왔다.
-          canvas/85 는 두 테마에서 다 성립한다 : 글자 12.70(라이트)/14.86(다크) · 점선 4.95/7.89.
+          canvas/85 에서 글자 12.70 · 점선 4.95 다(다크 테마는 #191 에서 걷었다).
           불투명도는 85~95 가 사실상 같은 값이라(아래 면이 canvas 와 가깝다) 뒤가 비치는 85 를 쓴다 */}
       {dragging && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-canvas/85 p-6 backdrop-blur-sm">
@@ -405,8 +405,8 @@ function DraftCard({
           className="absolute inset-0 grid place-items-center gap-0.5 rounded-xl bg-black/75 text-white"
         >
           {/* 바탕이 임의의 이미지라 최악(흰 이미지)을 기준으로 잰다. 스크림을 60% → 75% 로 내려
-              highlight 가 2.45 → 4.43 이 된다(아이콘 기준 3.0). 이 패널은 테마와 무관한 고정
-              어두운 면이라 danger 를 쓰면 라이트에서 1.06 으로 무너진다 */}
+              highlight 가 2.45 → 4.43 이 된다(아이콘 기준 3.0). 이 패널은 화면 색과 무관한 고정
+              어두운 면이라 danger 를 쓰면 1.06 으로 무너진다 */}
           <IconAlert className="h-4 w-4 text-highlight" />
           <button type="button" onClick={onRetry} className="text-[10px] underline">
             재시도

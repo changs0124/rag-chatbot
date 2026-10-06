@@ -63,7 +63,7 @@
 - 유틸·훅 파일은 camelCase(`useChat.ts`), 상수는 UPPER_SNAKE_CASE(`STAGE_MIN_MS`).
 
 ### 상태관리
-- **외부 상태 라이브러리를 쓰지 않는다.** 전역은 Context(`auth/AuthContext.tsx`, `theme/ThemeContext.tsx`),
+- **외부 상태 라이브러리를 쓰지 않는다.** 전역은 Context(`auth/AuthContext.tsx`) 하나,
   화면 상태는 도메인 훅(`hooks/useChat.ts`)이 `useState`/`useRef`로 보유한다.
 - 서버 캐시 라이브러리(react-query 등)도 없다. 필요한 시점에 직접 호출하고 로컬 상태를 갱신한다.
 
@@ -76,19 +76,18 @@
 
 ### 스타일
 - Tailwind CSS 4 유틸리티 클래스. 별도 CSS 모듈·CSS-in-JS 없음. 전역은 `frontend/src/index.css`뿐.
-- 다크 모드는 `html[data-theme="dark"]` 기준의 커스텀 variant다. `prefers-color-scheme`를 직접 참조하지 않는다 —
-  시스템 설정 해석은 `ThemeProvider`가 단독으로 한다.
-- **색은 토큰(`bg-surface` · `text-ink` · `bg-accent` …)으로만 쓴다.** 토큰이 테마별 값을 이미 들고 있으므로
-  색에 `dark:` 를 붙이지 않는다. 새 색이 필요하면 유틸리티에 값을 박지 말고 `index.css` 에 토큰을 먼저 추가한다.
+- **다크 모드가 없다 — 화면은 라이트 하나다**(#191). `dark:` · `data-theme` · `prefers-color-scheme` 을 쓰지 않는다.
+  Tailwind 4 의 `dark:` 기본값이 OS 미디어쿼리라 하나라도 들어오면 OS 가 다크인 사용자에게만 화면이 갈린다.
+  `src/theme-tokens.test.ts` 가 막는다.
+- **색은 토큰(`bg-surface` · `text-ink` · `bg-accent` …)으로만 쓴다.** 새 색이 필요하면 유틸리티에 값을 박지 말고 `index.css` 에 토큰을 먼저 추가한다.
 - **색 리터럴이 허용되는 자리는 아래 셋뿐이다.** 나머지는 전부 토큰이다.
-  - `frontend/src/components/Logo.tsx` — **회사 CI 색.** 토큰은 `data-theme` 으로 뒤집히는데
-    로고는 양 테마에서 고정이어야 한다. 토큰으로 빼면 다크에서 로고가 다른 회사 색이 된다.
+  - `frontend/src/components/Logo.tsx` — **회사 CI 색.** 로고는 CI 원색 그대로여야 하므로 화면 토큰을
+    따라가지 않는다. 토큰으로 빼면 화면 색을 바꿀 때 로고가 다른 회사 색이 된다.
     파비콘도 이 파일에서 렌더하므로 **사본을 따로 두지 않는다**
-  - `frontend/index.html` 의 `theme-color` **초기값** — `<meta>` 는 CSS 변수를 못 읽는다. 라이트 `canvas` 와
-    같은 값을 손으로 맞춘다. **테마를 따라가는 것은 `ThemeProvider` 가 하고**(#156), `media="(prefers-color-scheme: …)"`
-    로 두지 않는다 — 그건 OS 를 보므로 위 「`prefers-color-scheme` 를 직접 참조하지 않는다」 규칙을 어긴다
+  - `frontend/index.html` 의 `theme-color`(주소창 색) — `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와
+    같은 값을 손으로 맞춘다. `media="(prefers-color-scheme: …)"` 로 두지 않는다 — OS 가 다크면 주소창만 다크가 된다
   - 아래가 **토큰이 아닌 면** 위에 얹히는 곳 — 사진·영상 위 오버레이(`ImageLightbox` · `CameraCapture` ·
-    `Composer` 썸네일). 아래 면이 테마와 무관하므로 토큰이 성립하지 않는다
+    `Composer` 썸네일). 아래 면이 화면 색과 무관하므로 토큰이 성립하지 않는다
   자리를 늘리려면 [design-system.md](./02_architecture/design-system.md) 「색 값을 들고 있는 파일 — 셋이다」를 함께 고친다.
 - 모션은 `ease-[var(--ease-out-quint)]` 하나로 통일한다. `transition` 기본 이징(`ease-in-out`)을 그대로 쓰지 않는다.
 

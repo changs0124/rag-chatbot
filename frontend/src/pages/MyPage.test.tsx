@@ -2,13 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
-import { ThemeProvider } from '../theme/ThemeContext'
 import { getToken, setToken } from '../lib/api'
 import MyPage from './MyPage'
 
 vi.mock('../lib/endpoints', () => ({
   updateName: vi.fn(),
-  updateTheme: vi.fn(),
   updatePassword: vi.fn(),
 }))
 
@@ -24,13 +22,13 @@ vi.mock('../lib/api', async (importOriginal) => {
     api: {
       ...actual.api,
       get: vi.fn(() =>
-        Promise.resolve({ id: 'u1', email: 'a@b.com', name: '사용자', theme: 'system', role: currentRole }),
+        Promise.resolve({ id: 'u1', email: 'a@b.com', name: '사용자', role: currentRole }),
       ),
     },
   }
 })
 
-const { updatePassword, updateTheme } = await import('../lib/endpoints')
+const { updatePassword } = await import('../lib/endpoints')
 
 /** 두 칸을 채우고 변경 버튼을 누름(버튼은 두 값이 다 차야 활성화됨) */
 function submitPasswordChange() {
@@ -46,11 +44,9 @@ function submitPasswordChange() {
 function renderMyPage() {
   render(
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <MyPage />
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <MyPage />
+      </AuthProvider>
     </BrowserRouter>,
   )
 }
@@ -73,7 +69,7 @@ describe('MyPage 비밀번호 변경', () => {
   it('변경에 성공하면 응답의 새 토큰으로 교체함', async () => {
     vi.mocked(updatePassword).mockResolvedValue({
       token: 'new-token',
-      user: { id: 'u1', email: 'a@b.com', name: '사용자', theme: 'system', role: 'user' },
+      user: { id: 'u1', email: 'a@b.com', name: '사용자', role: 'user' },
     })
     renderMyPage()
     submitPasswordChange()
@@ -113,37 +109,15 @@ describe('MyPage 비밀번호 변경', () => {
   })
 
   /**
-   * #78 - 테마 변경이 실패하면 화면을 되돌린다.
-   *
-   * 낙관적으로 먼저 적용하는 것은 의도다(왕복을 기다리면 클릭이 굼떠 보인다). 문제는 실패해도
-   * 되돌리지 않아 **화면은 새 테마인데 서버는 옛 값**이었다는 것이다. `ThemeContext` 가
-   * localStorage 에도 이미 저장해 둔 상태라, 다시 로그인해 서버 값이 적용될 때까지
-   * **어느 쪽이 진짜인지 알 수 없었다.**
-   *
-   * 적용 결과는 `document.documentElement.dataset.theme` 에 드러나므로 그것으로 잰다.
+   * #191 - 테마 전환을 걷었다. 화면은 라이트 하나라 고를 것이 없다.
+   * 선택기가 되살아나면 저장할 API 도 없이 버튼만 생긴다.
    */
-  it('테마 변경이 실패하면 이전 테마로 되돌아감', async () => {
-    vi.mocked(updateTheme).mockRejectedValue(new Error('network'))
+  it('테마 선택 UI 가 없다', async () => {
     renderMyPage()
-    await screen.findByRole('button', { name: '다크' })
-    const before = document.documentElement.dataset.theme
-
-    fireEvent.click(screen.getByRole('button', { name: '다크' }))
-
-    await waitFor(() => expect(screen.getByText(/오류|실패/)).toBeInTheDocument())
-    expect(document.documentElement.dataset.theme).toBe(before)
-  })
-
-  /** 반대편 - 성공하면 새 테마가 그대로 남는다 */
-  it('테마 변경이 성공하면 적용된 채로 남음', async () => {
-    vi.mocked(updateTheme).mockResolvedValue({
-      id: 'u1', email: 'a@b.com', name: '사용자', theme: 'dark', role: 'user',
-    })
-    renderMyPage()
-    await screen.findByRole('button', { name: '다크' })
-
-    fireEvent.click(screen.getByRole('button', { name: '다크' }))
-
-    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'))
+    await screen.findByText('비밀번호')
+    expect(screen.queryByText('테마')).not.toBeInTheDocument()
+    for (const label of ['라이트', '다크', '시스템']) {
+      expect(screen.queryByRole('button', { name: label })).not.toBeInTheDocument()
+    }
   })
 })

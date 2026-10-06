@@ -76,7 +76,7 @@ public class AdminRoleSynchronizer {
 				}
 				String temporary = temporaryPasswords.generate();
 				userRepository.insert(new User(UUID.randomUUID(), email, passwordEncoder.encode(temporary),
-						email, "system", "admin", null, null));
+						email, "admin", null, null));
 				created++;
 				// 이 한 줄이 첫 로그인의 유일한 통로다. 로그를 지우기 전에 옮겨 적어야 한다
 				log.warn("관리자 계정 발급 : {} · 임시 비밀번호 {} (최초 로그인 후 마이페이지에서 변경할 것)",

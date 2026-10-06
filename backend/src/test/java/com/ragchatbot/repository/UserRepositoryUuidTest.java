@@ -22,13 +22,12 @@ class UserRepositoryUuidTest extends AbstractPgIntegrationTest {
 	@Test
 	void uuid_insert_select_roundtrip() {
 		UUID id = UUID.randomUUID();
-		userRepository.insert(new User(id, "uuidtest@b.com", "hash", "홍길동", "system", "user", null, null));
+		userRepository.insert(new User(id, "uuidtest@b.com", "hash", "홍길동", "user", null, null));
 
 		User found = userRepository.findById(id).orElseThrow();
 		assertThat(found.id()).isEqualTo(id);
 		assertThat(found.email()).isEqualTo("uuidtest@b.com");
 		assertThat(found.name()).isEqualTo("홍길동");
-		assertThat(found.theme()).isEqualTo("system");
 		assertThat(found.createdAt()).isNotNull(); // DB default now()
 	}
 

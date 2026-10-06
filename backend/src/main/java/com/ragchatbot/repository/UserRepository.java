@@ -38,8 +38,6 @@ public interface UserRepository {
 	/** 비밀번호 변경 시각 - 이 시각 이전에 발급된 JWT를 거르는 기준선. 없는 사용자면 null */
 	OffsetDateTime findPasswordChangedAt(UUID id);
 
-	void updateTheme(@Param("id") UUID id, @Param("theme") String theme);
-
 	/**
 	 * 명단에 없는 관리자를 일반 사용자로 내림(FEAT-ADMIN-001).
 	 *
