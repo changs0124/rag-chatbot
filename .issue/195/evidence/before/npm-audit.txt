@@ -1,0 +1,36 @@
+$ npm audit --audit-level=high
+# npm audit report
+
+@vitest/mocker  2.1.0 - 4.1.10
+Severity: moderate
+Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock - https://github.com/advisories/GHSA-82fw-gwwq-j7x9
+fix available via `npm audit fix`
+node_modules/@vitest/mocker
+  vitest  2.1.0-beta.1 - 4.1.10
+  Depends on vulnerable versions of @vitest/mocker
+  node_modules/vitest
+
+source-map-js  1.0.0 - 1.2.1
+Severity: high
+source-map-js allows event-loop denial of service through indexed source-map section offsets - https://github.com/advisories/GHSA-68fv-2mgg-jv7q
+fix available via `npm audit fix`
+node_modules/source-map-js
+
+
+3 vulnerabilities (2 moderate, 1 high)
+
+To address all issues, run:
+  npm audit fix
+exit=1
+
+$ npm ls source-map-js vitest @vitest/mocker --all
+rag-chatbot-frontend@0.0.1 D:\dev\rag-chatbot\.issue\worktrees\195-frontend-deps-audit\frontend
++-- @tailwindcss/vite@4.3.3
+| `-- @tailwindcss/node@4.3.3
+|   `-- source-map-js@1.2.1
++-- vite@8.1.5
+| `-- postcss@8.5.26
+|   `-- source-map-js@1.2.1 deduped
+`-- vitest@4.1.10
+  `-- @vitest/mocker@4.1.10
+
