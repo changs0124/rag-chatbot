@@ -51,10 +51,10 @@ export default function MyPage() {
 
   return (
     <div className="min-h-[100dvh] overflow-y-auto bg-canvas">
-      <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+      <div className="mx-auto max-w-2xl px-4 pt-2 pb-8 md:px-6 md:pt-8">
         <Link
           to="/"
-          className="inline-flex items-center gap-1 text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink"
+          className="-ml-2 inline-flex h-11 items-center gap-1 rounded-xl px-2 text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink md:ml-0 md:h-auto md:rounded-none md:px-0"
         >
           <IconChevronLeft className="h-4 w-4" />
           채팅으로

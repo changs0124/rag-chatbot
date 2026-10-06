@@ -58,7 +58,7 @@ export default function Sidebar({
       <div className="p-3">
         <button
           onClick={onNew}
-          className="flex w-full items-center gap-2 rounded-xl bg-raised px-3 py-2.5 text-sm font-medium text-ink shadow-[var(--shadow-ambient)] transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.01] active:scale-[0.99]"
+          className="flex w-full items-center gap-2 rounded-xl bg-raised px-3 py-3 text-sm font-medium text-ink shadow-[var(--shadow-ambient)] transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.01] active:scale-[0.99] md:py-2.5"
         >
           <IconPlus className="h-4 w-4 text-accent" />새 대화
         </button>
@@ -81,13 +81,13 @@ export default function Sidebar({
                       : 'text-ink-muted hover:bg-raised hover:text-ink')
                   }
                 >
-                  <button onClick={() => onSelect(c.id)} className="min-w-0 flex-1 truncate px-3 py-2 text-left">
+                  <button onClick={() => onSelect(c.id)} className="min-w-0 flex-1 truncate px-3 py-3 text-left md:py-2">
                     {c.title}
                   </button>
                   <button
                     onClick={() => setPendingDelete(c)}
                     aria-label="대화 삭제"
-                    className="shrink-0 rounded-md p-1 text-ink-muted opacity-100 transition duration-150 ease-[var(--ease-out-quint)] hover:text-danger md:opacity-0 md:group-hover:opacity-100"
+                    className="shrink-0 rounded-md p-3.5 text-ink-muted opacity-100 md:p-1 transition duration-150 ease-[var(--ease-out-quint)] hover:text-danger md:opacity-0 md:group-hover:opacity-100"
                   >
                     <IconClose className="h-4 w-4" />
                   </button>
