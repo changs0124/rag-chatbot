@@ -1,0 +1,20 @@
+# before — 운영 cloudflared (2026-10-06, main 이미지)
+## cloudflared Config.Env (값은 가림 — 키와 길이만)
+TUNNEL_TOKEN=<가림 184자>
+PATH=<가림 60자>
+SSL_CERT_FILE=<가림 34자>
+
+## config.v2.json 안에 토큰 값이 평문으로 있는가
+일치 줄 수: 1
+
+## Cmd · Mounts
+Cmd=["tunnel","--no-autoupdate","run"] Mounts=[]
+
+## 연결 · health
+Registered tunnel connection (누적 로그): 4
+api health 200
+
+## 서버 파일
+-rw------- 1 User User   249 Oct  6 16:32 .env
+-rw------- 1 User User    88 Oct  6 16:32 .env.bak-20261006
+.env 의 TUNNEL_TOKEN 줄: 1
