@@ -1,0 +1,7 @@
+# 2회차 before (main 26a74ca 기준 backend.md) — VM 검증 전 문구
+197:  대신 `(이미지 첨부)` 자리표시자를 남겨 "그때 첨부가 있었다"는 사실은 잃지 않는다. 구조화된 비전 입력은
+502:초기화를 실제로 태워 확인했다. 서버가 중지되어 있어도 이렇게 검증할 수 있는 것은
+512:**`cloudflared` 는 「설정이 걸렸다」까지만 확인했다.** `.env` 의 `TUNNEL_TOKEN` 이 아직
+513:자리표시자라 `Provided Tunnel token is not valid` 로 crash-loop 한다. 확인한 것은 (1) 설정이
+533:**이 노출 자체는 아직 열린 문제다** — `TUNNEL_TOKEN` 을 Docker secret 이나 credentials 파일로
+539:개발 PC 에서는 재현할 수 없다. **배포 후 부하를 걸어 보고 정할 것.**
