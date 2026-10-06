@@ -404,7 +404,8 @@ SSH 를 완전히 닫으려면 `gcloud compute ssh --tunnel-through-iap` 로 바
 1. 서버에 Docker 와 compose 플러그인을 설치한다
 2. `backend/.env` 를 만든다(정본 `backend/.env.example`). **`DB_URL` · `DB_USERNAME` · `DB_PASSWORD` 는
    넣어도 무시된다** — compose 가 덮어쓴다
-3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD` · `TUNNEL_TOKEN`
+3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD`. **터널 토큰은 `.env` 가 아니라
+   `secrets/tunnel_token` 파일**에 넣는다(#203, 디렉터리 700 · 파일 644 — 이유는 아래 「터널 토큰은 파일로 넘긴다」)
 4. Cloudflare 대시보드에서 터널을 만들고 공개 호스트명을 **`http://app:8080`** 에 매핑한다.
    `localhost` 가 아니다 - cloudflared 는 별도 컨테이너라 compose 네트워크 이름으로 찾아간다
 5. 개발 PC 에서 `bash scripts/deploy.sh` — 빌드 · 전송 · 기동 · 헬스체크까지 한 번에 한다.
@@ -530,8 +531,25 @@ chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 �
 `Config.Env` 에 전부 남는다. 사람은 보통 `State` 나 `Mounts` 를 보려고 전체를 복사하는데
 그 JSON 안에 비밀이 같이 있다 — 한 번에 JWT 서명키(전 사용자 위장) · OpenAI 키(과금) ·
 터널 토큰(도메인 트래픽 탈취)이 함께 나간다. 필요한 필드만 `--format` 으로 뽑아 쓴다.
-**이 노출 자체는 아직 열린 문제다** — `TUNNEL_TOKEN` 을 Docker secret 이나 credentials 파일로
-옮기는 일은 Cloudflare 쪽 자료가 필요해 #130 에서 처리하지 않았다.
+터널 토큰은 #203 에서 이 경로에서 뺐다(아래). **JWT 서명키 · OpenAI 키 · DB 비밀번호는 여전히 env 로 들어가
+노출된다** — 앱이 환경변수로 읽는 구조라 별도 판단 대상이다.
+
+**터널 토큰은 파일로 넘긴다(#203).** `cloudflared tunnel run --token-file /run/secrets/tunnel_token` 에
+compose `secrets`(파일)로 마운트한다. 고정한 이미지(2026.9.1)가 `--token-file` 을 지원한다.
+**권한 조합이 일반적인 비밀 파일과 다르다** — swarm 이 아닌 compose 의 secrets 는 바인드 마운트라 `uid`·`mode`
+지정이 먹지 않고 호스트 권한이 그대로 보인다. cloudflared 는 65532 로 돌아 **파일이 600 이면 못 읽는다**
+(`permission denied`, 운영 VM 에서 음성 대조로 확인). 그래서 파일은 644, 대신 **디렉터리 `secrets/` 를 700** 으로
+막아 호스트의 다른 사용자는 경로부터 들어오지 못한다. `deploy.sh` 프리플라이트가 파일이 있는지 보고 디렉터리를
+700 으로 고정하며, `.env` 에 옛 `TUNNEL_TOKEN` 값이 남아 있으면 경고한다. 파일이 없으면 compose 가 기동 전에 멈춘다.
+
+옛 방식에서 옮길 때(서버에서, 한 번) :
+
+```bash
+install -d -m 700 secrets
+grep '^TUNNEL_TOKEN=' .env | cut -d= -f2- | tr -d '
+' > secrets/tunnel_token && chmod 644 secrets/tunnel_token
+# 새 compose 로 cloudflared 를 다시 만든 뒤 터널이 붙는 것을 보고 나서 .env 의 TUNNEL_TOKEN 줄을 지운다
+```
 
 **업로드 기반 DoS 와 스왑의 관계는 아직 정하지 않았다(#130).** `memswap_limit` 을 비워 스왑을
 `mem_limit` 만큼 더 허용한 것이 26MB 멀티파트 동시 업로드에서 **스왑 스래싱**으로 쓰일 수 있다 —
