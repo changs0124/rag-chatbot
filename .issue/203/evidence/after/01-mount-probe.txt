@@ -1,0 +1,12 @@
+# after — 마운트 방식 시험 (운영 VM 의 임시 디렉터리, 가짜 토큰, 운영 터널과 무관)
+# 같은 이미지 · cap_drop ALL · no-new-privileges · compose secrets(file)
+
+== 644 (700 디렉터리 안) → 파일을 읽었다 (토큰이 가짜라 거부)
+Provided Tunnel token is not valid.
+
+== 600 (음성 대조) → 컨테이너 사용자 65532 가 못 읽는다
+Failed to read token file: open /run/secrets/tunnel_token: permission denied
+
+== 파일 없음 → compose 가 기동 전에 멈춘다
+time="2026-10-06T19:22:01+09:00" level=warning msg="secret file rag203probe_tunnel_token does not exist"
+Error response from daemon: invalid mount config for type "bind": bind source path does not exist: /tmp/<임시>/secrets/tunnel_token
