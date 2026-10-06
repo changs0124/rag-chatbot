@@ -249,7 +249,7 @@ export default function Composer({
               onClick={() => setMenuOpen((v) => !v)}
               aria-label="첨부 추가"
               aria-expanded={menuOpen}
-              className="grid h-10 w-10 place-items-center rounded-full text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink active:scale-[0.95]"
+              className="grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10 text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink active:scale-[0.95]"
             >
               <IconPlus />
             </button>
@@ -310,7 +310,7 @@ export default function Composer({
               type="button"
               onClick={onStop}
               aria-label="중단"
-              className="grid h-10 w-10 place-items-center rounded-full bg-surface text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97]"
+              className="grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10 bg-surface text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97]"
             >
               <IconStop />
             </button>
@@ -318,7 +318,7 @@ export default function Composer({
             <button
               type="submit"
               aria-label="보내기"
-              className="grid h-10 w-10 place-items-center rounded-full bg-accent text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97] disabled:scale-100 disabled:opacity-35"
+              className="grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10 bg-accent text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97] disabled:scale-100 disabled:opacity-35"
               // 올라가지 않은(또는 실패한) 첨부를 둔 채 보내면 그 이미지가 빠진 줄 모르고 보내게 됨
               disabled={pending || (!text.trim() && drafts.length === 0)}
               // 비활성 버튼은 이유를 말하지 않으면 고장으로 읽힌다(#101)

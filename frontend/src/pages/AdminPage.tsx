@@ -158,10 +158,10 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-[100dvh] overflow-y-auto bg-canvas">
-      <div className="mx-auto max-w-3xl px-4 py-8 md:px-6">
+      <div className="mx-auto max-w-3xl px-4 pt-2 pb-8 md:px-6 md:pt-8">
         <Link
           to="/me"
-          className="inline-flex items-center gap-1 text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink"
+          className="-ml-2 inline-flex h-11 items-center gap-1 rounded-xl px-2 text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink md:ml-0 md:h-auto md:rounded-none md:px-0"
         >
           <IconChevronLeft className="h-4 w-4" />
           마이페이지
@@ -211,7 +211,7 @@ export default function AdminPage() {
               {documents.map((doc) => (
                 <li
                   key={doc.id}
-                  className="rounded-2xl bg-surface px-4 py-3 md:flex md:items-center md:gap-4"
+                  className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 md:gap-4"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-ink">{doc.filename}</p>
@@ -229,7 +229,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => setPendingDelete(doc)}
-                    className="mt-2 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-danger md:mt-0"
+                    className="min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-danger md:min-h-0"
                   >
                     삭제
                   </button>
@@ -274,7 +274,7 @@ export default function AdminPage() {
             {users.map((person) => (
               <li
                 key={person.id}
-                className="rounded-2xl bg-surface px-4 py-3 md:flex md:items-center md:gap-4"
+                className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 md:gap-4"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-ink">
@@ -289,7 +289,7 @@ export default function AdminPage() {
                 {person.id !== user?.id && (
                   <button
                     onClick={() => void onReset(person)}
-                    className="mt-2 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink md:mt-0"
+                    className="min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink md:min-h-0"
                   >
                     비밀번호 초기화
                   </button>
