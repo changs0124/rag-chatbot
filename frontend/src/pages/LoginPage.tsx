@@ -30,23 +30,24 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[100dvh] bg-canvas">
-      <div className="mx-auto grid min-h-[100dvh] w-full max-w-5xl items-center gap-10 px-4 py-10 md:grid-cols-2 md:gap-16 md:px-8">
+      <div className="mx-auto grid min-h-[100dvh] w-full max-w-5xl items-center gap-6 px-3 py-6 md:grid-cols-2 md:gap-16 md:px-8 md:py-10">
         {/* 왼쪽은 정체성, 오른쪽은 폼. 모바일에서는 위아래로 쌓임 */}
         <div className="md:pr-4">
-          <Logo className="h-10 w-auto text-ink" />
-          <h1 className="mt-4 text-3xl leading-snug font-semibold text-ink md:text-4xl">
+          <Logo className="h-8 w-auto text-ink md:h-10" />
+          <h1 className="mt-3 text-2xl leading-snug font-semibold text-ink md:mt-4 md:text-4xl">
             출처를 밝히는
             <br />
             문서 기반 답변
           </h1>
-          <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-ink-muted">
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-ink-muted md:mt-4 md:text-[15px]">
             답변마다 근거가 된 자료를 함께 보여줍니다. 찾은 자료가 없으면 없다고 먼저 밝힌 뒤
             추론으로 답합니다.
           </p>
         </div>
 
-        <div className="rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-ambient)]">
-          <div className="rounded-[1.375rem] bg-raised p-6 md:p-8">
+        {/* 모바일에서는 바깥 프레임(면 + 1.5 여백)을 걷는다 - 좁은 폭에서 이중 테두리가 입력칸을 268px 까지 줄였다(#198) */}
+        <div className="md:rounded-[1.75rem] md:bg-surface md:p-1.5 md:shadow-[var(--shadow-ambient)]">
+          <div className="rounded-[1.375rem] bg-raised px-4 py-6 shadow-[var(--shadow-ambient)] md:p-8 md:shadow-none">
             <h2 className="text-lg font-semibold text-ink">로그인</h2>
             <p className="mt-1 mb-6 text-sm text-ink-muted">계속하려면 로그인하세요</p>
 
