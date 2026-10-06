@@ -1,0 +1,15 @@
+$ npm audit --audit-level=high
+found 0 vulnerabilities
+exit=0
+
+$ npm ls source-map-js vitest @vitest/mocker --all
+rag-chatbot-frontend@0.0.1 D:\dev\rag-chatbot\.issue\worktrees\195-frontend-deps-audit\frontend
++-- @tailwindcss/vite@4.3.3
+| `-- @tailwindcss/node@4.3.3
+|   `-- source-map-js@1.2.2
++-- vite@8.1.5
+| `-- postcss@8.5.26
+|   `-- source-map-js@1.2.2 deduped
+`-- vitest@4.1.11
+  `-- @vitest/mocker@4.1.11
+
