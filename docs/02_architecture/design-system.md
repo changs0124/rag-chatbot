@@ -227,6 +227,10 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - **활성 대화** : `accent-soft` 배경 + `accent` 글자. 선을 두르지 않는다.
 - **이중 테두리(double-bezel)는 모달과 로그인 폼에만** 쓴다. 대화 버블·첨부 카드에는 과하다.
 - **아이콘** : 지금의 자체 SVG 세트(`frontend/src/components/icons.tsx`)를 계속 쓴다. 굵기 1.8 유지.
+  **이모지·장식 기호(📄 ⚠ ● ← → 등)를 화면에 쓰지 않는다**(#192) — 글꼴·OS 마다 모양이 다르고 일부는 컬러 이모지로 떠서
+  무채색 화면에서 혼자 튄다. 필요한 모양은 같은 규약(24 격자 · 1.8 stroke · `currentColor`)으로 `icons.tsx` 에 더한다.
+  아이콘은 뜻을 혼자 전하지 않는다 — 옆 글자를 남기고 아이콘은 `aria-hidden`(Svg 기본값).
+  `src/no-emoji.test.ts` 가 화면 코드(주석 제외)를 훑어 막는다.
 
 ## 6. supanova 스킬에서 **버린** 규칙과 사유
 

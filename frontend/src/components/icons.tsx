@@ -130,3 +130,32 @@ export function IconMenu({ className }: IconProps) {
     </Svg>
   )
 }
+
+// 문서 — 첨부 칩 · 문서 관리 링크(#192). 종전에는 컬러 이모지 📄 였다
+export function IconFile({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 3 14 8 19 8" />
+    </Svg>
+  )
+}
+
+// 문서 상태 「완료」(#192)
+export function IconCheck({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <polyline points="5 12 10 17 19 7" />
+    </Svg>
+  )
+}
+
+// 문서 상태 「처리중」(#192)
+export function IconClock({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="12 7 12 12 15 14" />
+    </Svg>
+  )
+}
