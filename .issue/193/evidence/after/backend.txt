@@ -1,0 +1,15 @@
+# feat/193 (4eae6a3) — 전체 백엔드 테스트 (mvnw clean test, Docker Testcontainers)
+전체 : 239건 통과 (실패 0 · 에러 0) — surefire 합계, 하한 231 → 239
+<testcase name="soft_deleted_row_with_file_still_in_store_is_reregistered"
+<testcase name="sync_is_idempotent"
+<testcase name="plain_user_gets_not_found_and_anonymous_gets_unauthorized"
+<testcase name="alive_file_id_is_unique_but_deleted_rows_are_not_counted"
+<testcase name="deleting_synced_document_removes_it_from_store"
+<testcase name="sync_registers_store_file_missing_from_db"
+tests="6" errors="0" skipped="0" failures="0"
+<testcase name="any_lookup_failure_throws_instead_of_returning_a_partial_list"
+<testcase name="reads_every_page_and_looks_up_names_only_for_files_without_rows"
+tests="2" errors="0" skipped="0" failures="0"
+
+케이스 수(backend) : 실측 239 / 하한 239
+OK
