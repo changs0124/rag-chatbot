@@ -546,8 +546,7 @@ compose `secrets`(파일)로 마운트한다. 고정한 이미지(2026.9.1)가 `
 
 ```bash
 install -d -m 700 secrets
-grep '^TUNNEL_TOKEN=' .env | cut -d= -f2- | tr -d '
-' > secrets/tunnel_token && chmod 644 secrets/tunnel_token
+grep '^TUNNEL_TOKEN=' .env | cut -d= -f2- | tr -d '\n' > secrets/tunnel_token && chmod 644 secrets/tunnel_token
 # 새 compose 로 cloudflared 를 다시 만든 뒤 터널이 붙는 것을 보고 나서 .env 의 TUNNEL_TOKEN 줄을 지운다
 ```
 
