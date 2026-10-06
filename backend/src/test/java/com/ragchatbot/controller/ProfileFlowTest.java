@@ -84,15 +84,21 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 	}
 
+	/**
+	 * 테마 전환은 #191 에서 걷었다 - 화면이 라이트 하나다. 경로가 되살아나거나 응답에 theme 이 다시 실리면
+	 * 프론트에 읽는 코드가 없는 값이 생긴다. 셋 다 같은 사용자의 응답으로 본다.
+	 */
 	@Test
 	@SuppressWarnings("unchecked")
-	void update_theme_valid_and_invalid() {
+	void theme_is_gone_from_api() {
 		String token = createUser("prof-theme@b.com");
-		var ok = patch(token, "/api/profile/theme", Map.of("theme", "dark"), Map.class);
-		assertThat(ok.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(ok.getBody().get("theme")).isEqualTo("dark");
+		var gone = patch(token, "/api/profile/theme", Map.of("theme", "dark"), Map.class);
+		assertThat(gone.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
-		var bad = patch(token, "/api/profile/theme", Map.of("theme", "rainbow"), Map.class);
-		assertThat(bad.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		var profile = rest.exchange("/api/profile", HttpMethod.GET, new HttpEntity<>(bearer(token)), Map.class);
+		assertThat(profile.getBody()).doesNotContainKey("theme").containsKey("role");
+
+		var me = rest.exchange("/api/auth/me", HttpMethod.GET, new HttpEntity<>(bearer(token)), Map.class);
+		assertThat(me.getBody()).doesNotContainKey("theme");
 	}
 }

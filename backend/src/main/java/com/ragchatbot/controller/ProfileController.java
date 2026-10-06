@@ -13,7 +13,6 @@ import com.ragchatbot.dto.AuthDtos.AuthResponse;
 import com.ragchatbot.dto.AuthDtos.MeResponse;
 import com.ragchatbot.dto.ProfileDtos.UpdateNameRequest;
 import com.ragchatbot.dto.ProfileDtos.UpdatePasswordRequest;
-import com.ragchatbot.dto.ProfileDtos.UpdateThemeRequest;
 
 import jakarta.validation.Valid;
 
@@ -45,10 +44,5 @@ public class ProfileController {
 		// 초과 시 429(#95). BCrypt 를 두 번 도는 경로라 검증 전에 막는다
 		rateLimiter.checkPasswordChange(CurrentUser.id());
 		return profileService.updatePassword(CurrentUser.id(), req.currentPassword(), req.newPassword());
-	}
-
-	@PatchMapping("/theme")
-	public MeResponse updateTheme(@Valid @RequestBody UpdateThemeRequest req) {
-		return profileService.updateTheme(CurrentUser.id(), req.theme());
 	}
 }

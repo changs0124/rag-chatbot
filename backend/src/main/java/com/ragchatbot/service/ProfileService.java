@@ -2,14 +2,12 @@ package com.ragchatbot.service;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ragchatbot.entity.User;
-import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.exception.ApiExceptions.UnauthorizedException;
 import com.ragchatbot.repository.UserRepository;
@@ -18,12 +16,10 @@ import com.ragchatbot.dto.AuthDtos.AuthResponse;
 import com.ragchatbot.dto.AuthDtos.MeResponse;
 
 /**
- * 마이페이지 - 이름/비밀번호/테마 변경 (AC-15·16). 소유자 본인만(userId는 JWT에서).
+ * 마이페이지 - 이름/비밀번호 변경 (AC-15·16). 소유자 본인만(userId는 JWT에서).
  */
 @Service
 public class ProfileService {
-
-	private static final Set<String> THEMES = Set.of("light", "dark", "system");
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
@@ -70,19 +66,11 @@ public class ProfileService {
 		return new AuthResponse(jwtService.issue(userId, user.email()), toResponse(user));
 	}
 
-	public MeResponse updateTheme(UUID userId, String theme) {
-		if (!THEMES.contains(theme)) {
-			throw new BadRequestException("허용되지 않은 테마: " + theme);
-		}
-		userRepository.updateTheme(userId, theme);
-		return toResponse(require(userId));
-	}
-
 	private User require(UUID userId) {
 		return userRepository.findById(userId).orElseThrow(() -> new NotFoundException("사용자 없음"));
 	}
 
 	private MeResponse toResponse(User u) {
-		return new MeResponse(u.id(), u.email(), u.name(), u.theme(), u.role());
+		return new MeResponse(u.id(), u.email(), u.name(), u.role());
 	}
 }

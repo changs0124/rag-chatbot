@@ -119,7 +119,7 @@
 | API-GET-003 | GET | `/api/profile` | 프로필 조회 | USER | 구현됨 |
 | API-PATCH-001 | PATCH | `/api/profile/name` | 이름 변경 | USER | 구현됨 |
 | API-PATCH-002 | PATCH | `/api/profile/password` | 비밀번호 변경 → **새 토큰** | USER | 구현됨 |
-| API-PATCH-003 | PATCH | `/api/profile/theme` | 테마 변경 | USER | 구현됨 |
+| API-PATCH-003 | PATCH | `/api/profile/theme` | 테마 변경 — **제거됨**(#191, 2026-10-06). 화면이 라이트 단일이라 저장할 값이 없다. 지금은 404 | USER | 제거됨 |
 | API-GET-004 | GET | `/api/conversations` | 대화 목록 | USER | 구현됨 |
 | API-POST-003 | POST | `/api/conversations` | 대화 생성 | USER | 구현됨 |
 | API-PATCH-004 | PATCH | `/api/conversations/{id}` | 제목 변경 | USER | 구현됨 |
@@ -162,7 +162,7 @@
 ```json
 {
   "token": "eyJhbGc…",
-  "user": { "id": "…", "email": "user@company.com", "name": "홍길동", "theme": "system" }
+  "user": { "id": "…", "email": "user@company.com", "name": "홍길동", "role": "user" }
 }
 ```
 

@@ -10,7 +10,6 @@
 			<arg column="email" javaType="java.lang.String"/>
 			<arg column="password_hash" javaType="java.lang.String"/>
 			<arg column="name" javaType="java.lang.String"/>
-			<arg column="theme" javaType="java.lang.String"/>
 			<arg column="role" javaType="java.lang.String"/>
 			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
 			<arg column="updated_at" javaType="java.time.OffsetDateTime"/>
@@ -18,18 +17,18 @@
 	</resultMap>
 
 	<insert id="insert" parameterType="com.ragchatbot.entity.User">
-		insert into users (id, email, password_hash, name, theme, role)
-		values (#{id}, #{email}, #{passwordHash}, #{name}, #{theme}, #{role})
+		insert into users (id, email, password_hash, name, role)
+		values (#{id}, #{email}, #{passwordHash}, #{name}, #{role})
 	</insert>
 
 	<select id="findById" resultMap="userResult">
-		select id, email, password_hash, name, theme, role, created_at, updated_at
+		select id, email, password_hash, name, role, created_at, updated_at
 		from users
 		where id = #{id}
 	</select>
 
 	<select id="findByEmail" resultMap="userResult">
-		select id, email, password_hash, name, theme, role, created_at, updated_at
+		select id, email, password_hash, name, role, created_at, updated_at
 		from users
 		where email = #{email}
 	</select>
@@ -57,7 +56,7 @@
 	</update>
 
 	<select id="listAll" resultMap="userResult">
-		select id, email, password_hash, name, theme, role, created_at, updated_at
+		select id, email, password_hash, name, role, created_at, updated_at
 		from users
 		order by created_at asc
 	</select>
@@ -77,8 +76,5 @@
 		select password_changed_at from users where id = #{id}
 	</select>
 
-	<update id="updateTheme">
-		update users set theme = #{theme} where id = #{id}
-	</update>
 
 </mapper>

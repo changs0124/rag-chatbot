@@ -19,7 +19,7 @@ public final class AuthDtos {
 	}
 
 	/** role 은 프론트가 관리 메뉴 노출을 판단하는 값임. **표시 판단일 뿐 접근 제어가 아님** - 차단은 서버가 함 */
-	public record MeResponse(UUID id, String email, String name, String theme, String role) {
+	public record MeResponse(UUID id, String email, String name, String role) {
 	}
 
 	public record AuthResponse(String token, MeResponse user) {

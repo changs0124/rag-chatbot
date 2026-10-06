@@ -4,6 +4,26 @@
 
 ## [Unreleased]
 
+### Removed
+- **다크·라이트 모드 전환을 걷었다 — 화면은 라이트 하나다(#191).** 회사 홈페이지(dinsight.kr)가
+  2026-10-01 에 테마를 걷어 라이트로 간 것에 맞췄다. 기능이 화면에만 있지 않아 **화면 · API · 컬럼을 함께** 걷었다 —
+  화면만 지우면 읽는 코드가 없는 API 와 값이 남는다(사용자 결정).
+
+  - 프론트 : `ThemeContext` · 마이페이지 테마 선택 · `index.css` 의 다크 토큰 14개와 `dark` custom-variant ·
+    주소창 색 동기화 · `Me.theme` · `updateTheme` · 테스트 셋업의 `matchMedia` 폴리필(다른 사용처 0건)
+  - 백엔드 : `PATCH /api/profile/theme`(이제 404) · 로그인 · `/api/auth/me` · `/api/profile` 응답의 `theme`
+  - DB : `V8__drop_user_theme.sql` — `drop column if exists`. **운영 VM DB 는 V7 까지 이미 돌았으므로**
+    빈 DB 와 기존 DB 양쪽에서 같은 파일이 돌아야 한다. 운영 적용은 다음 배포에서 확인한다
+
+  **`dark:` 가 되살아나는 길을 테스트로 막았다**(`src/theme-tokens.test.ts`). 커스텀 variant 를 지우면
+  Tailwind 4 의 기본 `dark:` 가 살아나는데 그건 **OS 미디어쿼리**다 — 누가 `dark:` 한 줄을 쓰면 OS 가 다크인
+  사용자에게만 화면이 갈리고 개발자 화면에서는 안 보인다. 일부러 `dark:bg-black` 을 넣어 실패하는 것을 확인했다.
+
+  **케이스 하한을 내렸다 — 프론트 115 → 114.** 지운 것 4건 : `ThemeContext.test.tsx` 2건(주소창 색이 앱 테마를
+  따르는지) · `MyPage.test.tsx` 2건(테마 변경 실패 시 되돌림 · 성공 시 유지). 더한 것 3건 : `theme-tokens.test.ts`
+  2건 · `MyPage.test.tsx` 「테마 선택 UI 가 없다」. 검사 대상(테마 기능)이 사라져 준 것이고 테스트를 덜어낸 것이 아니다.
+  백엔드는 231 그대로다 — `update_theme_valid_and_invalid` 를 「테마 API 가 404 이고 응답에 theme 이 없다」로 바꿨다.
+
 ### Added
 - **남은 할 일의 정본을 닫는 김에 두 가지를 더 적었다.** 오늘 이슈 일곱 건을 닫으면서
   **닫힌 이슈의 코멘트에만 남아 있던 관측**과 **열린 이슈 수의 오독 가능성**이 둘 다 드러났다.
