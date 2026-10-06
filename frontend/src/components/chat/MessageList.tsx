@@ -4,6 +4,7 @@ import type { ChatMessage } from '../../lib/types'
 import Citations from './Citations'
 import { nextStick } from './scroll'
 import ImageLightbox from './ImageLightbox'
+import { IconFile } from '../icons'
 
 /** 스크롤을 실제로 하는 조상. MessageList 는 컨테이너를 소유하지 않는다(ChatPage 가 가진다) */
 function findScrollParent(el: HTMLElement | null): HTMLElement | null {
@@ -167,8 +168,12 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                   />
                 </button>
               ) : (
-                <span key={a.id} className="rounded-lg bg-surface px-2 py-1 text-xs text-ink-muted">
-                  📄 문서
+                <span
+                  key={a.id}
+                  className="inline-flex items-center gap-1 rounded-lg bg-surface px-2 py-1 text-xs text-ink-muted"
+                >
+                  <IconFile className="h-3.5 w-3.5" />
+                  문서
                 </span>
               ),
             )}

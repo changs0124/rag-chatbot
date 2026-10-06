@@ -4,6 +4,7 @@ import { Link, Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmModal from '../components/ConfirmModal'
 import TextInput from '../components/TextInput'
+import { IconAlert, IconCheck, IconChevronLeft, IconClock } from '../components/icons'
 import { ApiError } from '../lib/api'
 import {
   createAdminUser,
@@ -18,10 +19,18 @@ import type { AdminUser, RagDocument } from '../lib/types'
 /** 인덱싱 중인 문서가 있을 때만 도는 폴링 간격. 완료를 알려줄 푸시 경로가 없어 폴링으로 한다 */
 const POLL_MS = 5000
 
+// 기호(● ◐ ⚠)는 글꼴·OS 마다 모양이 달라 ⚠ 는 컬러 이모지로도 뜬다 - 무채색 라인 아이콘으로 바꿨다(#192).
+// 뜻은 글자가 전하고 아이콘은 보조다(aria-hidden). 색은 아래 STATUS_CLASS 를 그대로 따른다
 const STATUS_LABEL: Record<RagDocument['status'], string> = {
-  completed: '● 완료',
-  in_progress: '◐ 처리중',
-  failed: '⚠ 실패',
+  completed: '완료',
+  in_progress: '처리중',
+  failed: '실패',
+}
+
+const STATUS_ICON: Record<RagDocument['status'], typeof IconCheck> = {
+  completed: IconCheck,
+  in_progress: IconClock,
+  failed: IconAlert,
 }
 
 const STATUS_CLASS: Record<RagDocument['status'], string> = {
@@ -152,9 +161,10 @@ export default function AdminPage() {
       <div className="mx-auto max-w-3xl px-4 py-8 md:px-6">
         <Link
           to="/me"
-          className="text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink"
+          className="inline-flex items-center gap-1 text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink"
         >
-          ← 마이페이지
+          <IconChevronLeft className="h-4 w-4" />
+          마이페이지
         </Link>
 
         <h1 className="mt-6 text-xl font-semibold text-ink">문서 관리</h1>
@@ -206,7 +216,7 @@ export default function AdminPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-ink">{doc.filename}</p>
                     <p className="mt-0.5 text-xs text-ink-muted">
-                      <span className={STATUS_CLASS[doc.status]}>{STATUS_LABEL[doc.status]}</span>
+                      <StatusLabel status={doc.status} />
                       {' · '}
                       {formatSize(doc.byteSize)} · {doc.uploadedByName} · {formatDate(doc.createdAt)}
                     </p>
@@ -334,5 +344,15 @@ export default function AdminPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function StatusLabel({ status }: { status: RagDocument['status'] }) {
+  const Icon = STATUS_ICON[status]
+  return (
+    <span className={'inline-flex items-center gap-1 align-[-2px] ' + STATUS_CLASS[status]}>
+      <Icon className="h-3.5 w-3.5" />
+      {STATUS_LABEL[status]}
+    </span>
   )
 }
