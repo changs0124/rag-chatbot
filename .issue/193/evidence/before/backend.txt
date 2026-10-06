@@ -1,0 +1,8 @@
+# origin/main (26a74ca) — 동기화 경로가 없다
+$ git grep -n "documents/sync" origin/main -- backend frontend
+(결과 없음)
+
+# 문서 경로는 목록·업로드·삭제 셋뿐
+51:	@GetMapping("/documents")
+57:	@PostMapping("/documents")
+65:	@DeleteMapping("/documents/{id}")
