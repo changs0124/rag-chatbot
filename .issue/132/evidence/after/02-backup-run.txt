@@ -1,0 +1,13 @@
+# after — 첫 백업 실행 (서버에서 bash backup.sh)
+# 1차 시도는 gcloud storage cp 가 objects.get 403 으로 실패(아무것도 안 올라감) → JSON API 로 바꾼 뒤 2차
+
+2026-10-06 19:08:36 KST 업로드 → <버킷>/20261006T100827Z/
+ERROR: (gcloud.storage.cp) HTTPError 403: rag-backup-writer@<프로젝트>.iam.gserviceaccount.com does not have storage.objects.get access ...
+2026-10-06 19:08:44 KST 실패: 업로드 실패: SHA256SUMS-20261006T100827Z
+
+--- 2차 (JSON API) ---
+2026-10-06 19:09:53 KST DB 덤프
+2026-10-06 19:09:56 KST 첨부 묶기
+2026-10-06 19:10:07 KST 업로드 → <버킷>/20261006T100953Z/
+2026-10-06 19:10:08 KST 완료 16586 bytes · 3 파일
+exit=0

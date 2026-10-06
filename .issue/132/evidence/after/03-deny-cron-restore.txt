@@ -1,0 +1,31 @@
+# after — 키 권한 거부 · cron · 복구 리허설 (서버)
+## 1. 쓰기 전용 키가 '못 하는 것' (전부 거부여야 한다)
+목록 (objects.list)                        HTTP 403
+읽기 (objects.get, alt=media)              HTTP 403
+삭제 (objects.delete)                      HTTP 403
+덮어쓰기 (같은 이름 업로드)       HTTP 403
+버킷 설정 읽기 (buckets.get)           HTTP 403
+
+## 2. cron 등록 (두 번 불러도 한 줄)
+2026-10-06 19:10:53 KST cron 등록: 0 4 * * * bash /home/User/deploy/backup.sh >> /home/User/deploy/backup/backup.log 2>&1
+2026-10-06 19:10:53 KST cron 등록: 0 4 * * * bash /home/User/deploy/backup.sh >> /home/User/deploy/backup/backup.log 2>&1
+0 4 * * * bash /home/User/deploy/backup.sh >> /home/User/deploy/backup/backup.log 2>&1
+
+## 3. 복구 리허설 — 버킷에서 받아 임시 postgres 에 복구, 운영과 행 수 대조 (운영 DB 는 읽기만)
+받음 (VM 기본 서비스 계정 · 읽기 전용 scope)
+-rw-rw-r-- 1 User User   193 Oct  6 19:11 SHA256SUMS-20261006T100953Z
+-rw-rw-r-- 1 User User 16256 Oct  6 19:11 db-20261006T100953Z.dump
+-rw-rw-r-- 1 User User   137 Oct  6 19:11 uploads-20261006T100953Z.tar.gz
+./db-20261006T100953Z.dump: OK
+./uploads-20261006T100953Z.tar.gz: OK
+pg_restore 종료코드 0
+표 | 운영 | 복구
+attachments | 0 | 0
+citations | 0 | 0
+conversations | 0 | 0
+flyway | 8 | 8
+messages | 0 | 0
+rag_documents | 0 | 0
+users | 1 | 1
+행 수 전부 일치
+첨부 묶음 풀기 OK: 0 파일 / 운영 0
