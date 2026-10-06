@@ -3,8 +3,10 @@ package com.ragchatbot.service;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -17,8 +19,10 @@ import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.repository.RagDocumentRepository;
 import com.ragchatbot.openai.OpenAiService;
+import com.ragchatbot.openai.OpenAiService.StoreFile;
 import com.ragchatbot.openai.OpenAiService.UploadedDocument;
 import com.ragchatbot.dto.AdminDtos.DocumentResponse;
+import com.ragchatbot.dto.AdminDtos.SyncResponse;
 
 /**
  * RAG 문서 관리(FEAT-ADMIN-002). 업로드 · 목록 · 삭제.
@@ -216,6 +220,37 @@ public class AdminDocumentService {
 		// 그 창은 순서를 어떻게 두든 남는다(deleteQuietly 가 실패를 보고하지 않기 때문). 대신
 		// 경고 로그에 file_id 가 남아 손으로 찾을 수 있다 - #72 가 업로드 쪽에 세운 것과 같은 방식이다
 		openAiService.deleteDocument(doc.vectorStoreId(), doc.openaiFileId());
+	}
+
+	/**
+	 * 스토어와 동기화(#193). 공용 스토어에 있는데 살아 있는 행이 없는 파일을 행으로 넣는다.
+	 *
+	 * <p>목록은 이 서버 DB 만 읽으므로, 스토어 하나를 DB 여럿이 공유하면 검색에는 잡히는데 목록에는 없는
+	 * 문서가 생긴다(로컬 DB 로 올리고 운영 DB 를 새로 만든 2026-10-06 런칭이 그랬다). 그 어긋남을
+	 * 스토어 → DB 한 방향으로만 메운다.
+	 *
+	 * <p><b>OpenAI 를 전부 읽은 뒤에 쓴다.</b> 조회가 도중에 실패하면 예외가 올라와 아무 행도 생기지 않는다 -
+	 * 일부만 넣고 성공처럼 보이면 관리자는 빠진 문서가 없다고 읽는다.
+	 *
+	 * <p>soft delete 된 행만 있는 파일은 살아 있는 행이 없으므로 다시 들어온다. 삭제 때 OpenAI 정리가
+	 * 조용히 실패한 파일이며 여전히 검색에 잡힌다 - 목록에 보여야 다시 지울 수 있다.
+	 */
+	public SyncResponse sync(UUID adminId) {
+		if (!openAiService.hasSharedVectorStore()) {
+			throw new BadRequestException("Vector Store 가 설정되지 않아 동기화할 수 없음 (OPENAI_VECTOR_STORE_ID)");
+		}
+		Set<String> alive = new HashSet<>(documentRepository.findAliveOpenaiFileIds());
+		List<StoreFile> files = openAiService.listStoreFiles(fileId -> !alive.contains(fileId));
+
+		int added = 0;
+		for (StoreFile file : files) {
+			if (alive.contains(file.openaiFileId())) {
+				continue;
+			}
+			added += documentRepository.insertIfAbsent(new RagDocument(UUID.randomUUID(), file.filename(),
+					file.openaiFileId(), file.vectorStoreId(), file.byteSize(), file.status(), adminId, null, null));
+		}
+		return new SyncResponse(added, files.size());
 	}
 
 	private static boolean startsWith(byte[] data, byte[] prefix) {

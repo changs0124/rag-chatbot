@@ -95,6 +95,11 @@ class ChatStreamAbortTest {
 		public void deleteDocument(String vectorStoreId, String openaiFileId) {
 			throw new UnsupportedOperationException("채팅 전용 대역");
 		}
+
+		@Override
+		public List<StoreFile> listStoreFiles(java.util.function.Predicate<String> needsDetail) {
+			throw new UnsupportedOperationException("채팅 전용 대역");
+		}
 	}
 
 	private record Saved(String content, String status, boolean stopped, boolean timedOut, Integer inputTokens,

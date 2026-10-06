@@ -3,6 +3,7 @@ package com.ragchatbot.openai;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * OpenAI 호출 경계(P-2). Mock/Real 두 구현을 APP_MODE로 전환함.
@@ -115,4 +116,22 @@ public interface OpenAiService {
 
 	/** Vector Store 연결 해제 + 파일 삭제. 실패해도 예외를 던지지 않음(호출자는 삭제를 계속 진행함) */
 	void deleteDocument(String vectorStoreId, String openaiFileId);
+
+	/**
+	 * 공용 스토어의 파일 하나(#193). {@code status} 는 {@link #documentStatus} 와 같은 어휘로 좁힌 값이다.
+	 * 스토어 ID 를 함께 싣는 것은 {@link UploadedDocument} 와 같은 이유다 - 호출자는 어느 스토어인지 모른다.
+	 */
+	record StoreFile(String openaiFileId, String vectorStoreId, String filename, long byteSize, String status) {
+	}
+
+	/**
+	 * 공용 Vector Store 에 들어 있는 파일 전부 - 스토어 동기화용(#193).
+	 *
+	 * <p>{@code needsDetail} 이 참인 파일만 파일명·크기를 따로 조회한다(스토어 파일 응답에는 파일명이 없다).
+	 * 나머지는 {@code filename} 이 null 이고 {@code byteSize} 가 0 이다 - 이미 행이 있는 파일까지 매번
+	 * 조회하지 않기 위함이다.
+	 *
+	 * <p><b>하나라도 실패하면 던진다.</b> 일부만 돌려주면 호출자가 그것을 전부로 읽어 빠진 문서가 없다고 보고한다.
+	 */
+	List<StoreFile> listStoreFiles(Predicate<String> needsDetail);
 }
