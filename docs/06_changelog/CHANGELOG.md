@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Security
+- **프론트 빌드·테스트 도구의 취약점을 패치 버전으로 올렸다(#195).** 2026-10-06 새로 공개된 권고 둘이 CI 의
+  `deps (프론트 의존성 취약점)` 잡을 빨갛게 만들어 **열린 PR 전부(#194 포함)가 그 잡에서 실패**했다 — PR 변경과 무관했다.
+  - `source-map-js` 1.2.1 → **1.2.2** (high · [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q))
+  - `vitest` · `@vitest/mocker` 4.1.10 → **4.1.11** (moderate · [GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9))
+
+  `package.json` 의 범위(`^`) 안이라 **lock 만 바뀌었다.** 둘 다 postcss · Tailwind · vitest 를 거치는 빌드·테스트
+  도구 의존이라 배포 번들(`dist/`)에는 실리지 않는다 — 사용자 화면에 닿는 위험은 아니었고, CI 게이트를 되살린 것이 목적이다.
+
 ### Added
 - **남은 할 일의 정본을 닫는 김에 두 가지를 더 적었다.** 오늘 이슈 일곱 건을 닫으면서
   **닫힌 이슈의 코멘트에만 남아 있던 관측**과 **열린 이슈 수의 오독 가능성**이 둘 다 드러났다.
