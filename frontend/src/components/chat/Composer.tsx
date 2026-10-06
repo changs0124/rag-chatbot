@@ -405,7 +405,8 @@ function DraftCard({
           className="absolute inset-0 grid place-items-center gap-0.5 rounded-xl bg-black/75 text-white"
         >
           {/* 바탕이 임의의 이미지라 최악(흰 이미지)을 기준으로 잰다. 스크림을 60% → 75% 로 내려
-              highlight 가 2.45 → 4.43 이 된다(아이콘 기준 3.0). 이 패널은 화면 색과 무관한 고정
+              당시 highlight(오렌지)가 2.45 → 4.43 이 됐다(아이콘 기준 3.0). #190 에서 highlight 가
+              밝은 회색이 되어 지금은 8.34 다. 이 패널은 화면 색과 무관한 고정
               어두운 면이라 danger 를 쓰면 1.06 으로 무너진다 */}
           <IconAlert className="h-4 w-4 text-highlight" />
           <button type="button" onClick={onRetry} className="text-[10px] underline">
