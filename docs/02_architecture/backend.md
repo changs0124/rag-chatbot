@@ -538,7 +538,66 @@ chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 �
 `pd-standard` 30GB 는 쓰기 45 IOPS 라 이때 사실상 멎는다. 판단 근거가 그 IOPS 수치라
 개발 PC 에서는 재현할 수 없다. **배포 후 부하를 걸어 보고 정할 것.**
 
-**DB 백업은 자동이 아니다.** `pg_dump` 를 정기 실행하지 않으면 서버 디스크가 죽을 때 대화가 함께 사라진다.
+**DB 와 첨부를 매일 GCS 로 백업한다(#132).** 단일 VM · 단일 디스크라 `pgdata` · `uploads` · 이미지 · 로그가
+같은 30GB 에 있고, 무료 티어에는 스냅샷이 없다. 종전에는 어떤 디스크 사고에도 복구 수단이 없었다.
+
+| 결정 | 값 | 근거 |
+|------|-----|------|
+| 무엇을 | `pg_dump -Fc` + `uploads` 볼륨 tar.gz + `SHA256SUMS` | 첨부는 DB 밖에 있어 덤프만으로는 반쪽이다 |
+| 어디에 | **GCS 버킷(`us-west1`, STANDARD)** | 같은 VM 의 다른 경로는 디스크 사고에 무용하다. 무료 5GB 이고 같은 리전이라 전송비가 없다. 버킷 이름은 저장소에 두지 않는다(#133) — 서버의 `backup/backup.env` |
+| 얼마나 | **매일 04:00(서버 시간대 KST) · 14일** | 2026-10-06 기준 1회분이 약 16KB 라 한도와 거리가 멀다. 14일이 지나면 **버킷 수명주기 규칙이 지운다** |
+| 무엇이 돌리나 | **서버의 cron**(`backup.sh --install-cron`) | CI 는 후보가 아니고(유료 한도), 개발 PC 는 꺼져 있으면 돌지 않고 PC 가 새 유출 지점이 된다 |
+| 복구 | 아래 절차 — **2026-10-06 실제로 한 번 했다** | 복구해 본 적 없는 백업은 백업이 아니다 |
+
+**전용 키를 쓰는 이유.** VM 기본 서비스 계정의 저장소 권한(scope)이 **읽기 전용**이다. 바꾸려면 VM 을 멈춰야
+하는데, 2026-09-30 이 존에서 자원 부족으로 재기동이 12회 연속 실패했다 — 운영이 다시 못 뜰 수 있다. 그래서
+**그 버킷 하나에 `roles/storage.objectCreator` 만 가진** 서비스 계정(`rag-backup-writer`)의 키를 서버
+`backup/sa-key.json`(600, 디렉터리 700)에 둔다. 키가 새도 **목록 · 읽기 · 삭제 · 덮어쓰기 · 버킷 설정 읽기가
+전부 403** 이다(2026-10-06 실측). 즉 유출돼도 할 수 있는 일은 「쓰레기 객체를 올리는 것」뿐이고, 그것도
+수명주기가 14일 뒤 지운다. `backup.sh` 는 키 권한이 600 이 아니면 **고치지 않고 멈춘다** — 사람이 넣은
+파일이 넓어졌다면 누가 읽었을 수 있다는 사실을 조용히 덮지 않기 위해서다.
+
+**`gcloud storage cp` 를 쓰지 않는다.** 올리기 전에 대상 객체를 읽어 보는데(`objects.get`) 쓰기 전용 키에는 그
+권한이 없어, 어떤 플래그(`--no-clobber` · `--if-generation-match=0`)를 줘도 403 으로 멎고 **아무것도 올라가지
+않는다**(실측). JSON API 로 직접 올린다(`curl` · `ifGenerationMatch=0`). gcloud 는 토큰을 얻는 데만 쓰고,
+설정 디렉터리를 `backup/.gcloud` 로 격리해 서버의 기본 계정을 건드리지 않는다.
+
+**보관 · 권한 · 수명주기**
+
+- 버킷 : 균일 접근(uniform) · 공개 접근 차단(enforced). 읽기는 프로젝트 소유자 · 편집자(VM 기본 서비스 계정 포함)뿐
+- 수명주기 : 생성 14일 뒤 삭제. GCS 기본 **soft delete 7일**이 켜져 있어 지워진 객체가 7일 더 과금된다(용량이 작아 무시할 수준)
+- 산출물에는 **사용자 이메일 · BCrypt 해시 · 전체 대화**가 들어 있다. 받은 덤프는 쓰고 나서 지운다
+
+**처음 설정(서버, 한 번)** — 버킷 · 서비스 계정 · 키는 위 결정대로 만든 뒤 :
+
+```bash
+# 서버의 배포 디렉터리에서. backup.sh 는 deploy.sh 가 같이 보낸다
+install -d -m 700 backup                                   # 키는 개발 PC 에서 scp 로 넣고 로컬 사본은 지운다
+chmod 600 backup/sa-key.json
+umask 077; echo 'BACKUP_BUCKET=gs://<버킷>' > backup/backup.env
+bash backup.sh                 # 한 번 돌려 확인
+bash backup.sh --install-cron  # 매일 04:00. 여러 번 불러도 한 줄
+```
+
+실행 기록은 `backup/backup.log` 에 쌓인다(하루 4줄 남짓).
+
+**복구 절차** — 2026-10-06 리허설 그대로다. 운영 DB 는 건드리지 않고 임시 컨테이너에 먼저 복구해 확인한다 :
+
+```bash
+B=gs://<버킷>; S=<시각 폴더, 예: 20261006T100953Z>
+R=$(mktemp -d); gcloud storage cp "$B/$S/*" "$R/"           # VM 기본 서비스 계정으로 읽힌다
+( cd "$R" && sha256sum -c SHA256SUMS-* )
+docker run -d --name restore --network none --tmpfs /var/lib/postgresql/data -e POSTGRES_PASSWORD=x postgres:16-alpine
+docker exec restore createdb -U postgres restored
+docker exec -i restore pg_restore -U postgres -d restored --no-owner < "$R"/db-*.dump
+# 표별 행 수를 운영과 대조한 뒤, 실제 복구는 app 을 멈추고 운영 DB 에 같은 pg_restore(--clean)
+tar -xzf "$R"/uploads-*.tar.gz -C <uploads 볼륨 경로>
+docker rm -f restore; rm -rf "$R"
+```
+
+리허설 결과 : 체크섬 2건 OK · `pg_restore` 종료코드 0 · 표 7개 행 수 운영과 전부 일치. **다만 그날 운영 데이터가
+거의 비어 있었다**(사용자 1 · 대화 0 · 첨부 0) — 스키마와 계정이 돌아오는 것까지는 확인했지만 큰 데이터의 복구
+시간은 아직 모른다. 운영 DB 에 직접 덮는 단계(`--clean`)도 해 보지 않았다.
 
 ### 데모 - 로컬 + 터널
 

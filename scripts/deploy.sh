@@ -140,6 +140,8 @@ ls -lh "$TMP/$TARBALL" | awk '{print "  크기: " $5}'
 say "서버로 전송"
 gcloud compute scp "$TMP/$TARBALL" "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
 gcloud compute scp docker-compose.yml "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
+# 백업 스크립트도 같은 이유로 같이 보낸다(#132). cron 이 서버의 사본을 부르므로 여기서 갱신해야 고친 것이 반영된다
+gcloud compute scp scripts/backup.sh "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
 
 # 4. 로드 + 기동 --------------------------------------------------------------
 # **실행 중인 컨테이너가 방금 넣은 이미지를 쓰는지 확인한다(#129).** `docker compose up -d` 는
