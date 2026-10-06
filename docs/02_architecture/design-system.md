@@ -57,9 +57,9 @@
 | `line` | `#D0D2D3` | 실선 구분 | `border-dark/[0.22]`(카드 헤어라인)를 흰 바탕에 합성 |
 | `ink` | `#283139` | 본문 | `text-dark`(body 글자) |
 | `ink-muted` | `#4A545F` | 보조 텍스트 | `dark-light` |
-| `accent` | `#08719B` | 강조 · 활성 · 주요 버튼 · 포커스 | `--brand-deep`(`.btn-primary` 면 · 링크) |
+| `accent` | `#08719B` | 강조 · 활성 · 주요 버튼 · 포커스(입력칸 테두리 · 키보드 외곽선) | `--brand-deep`(`.btn-primary` 면 · 링크 · `.field` 포커스 테두리) |
 | `accent-ink` | `#FFFFFF` | accent 위 글자 | `.btn-primary` 흰 글자 |
-| `accent-soft` | `#E8F7FC` | 활성 항목 배경 · 포커스 링 | `--brand` 12% 를 흰 바탕에 합성(body 틴트와 같은 세기) |
+| `accent-soft` | `#E8F7FC` | 활성 항목 배경 · 알림 배너 | `--brand` 12% 를 흰 바탕에 합성(body 틴트와 같은 세기) |
 | `highlight` | `#E2E7ED` | 주의 배지 배경(「자료 없음」) + **어두운 고정 스크림 위 아이콘**(첨부 실패) | 무채색 — 홈페이지 칩이 무채색이다(사용자 결정) |
 | `highlight-ink` | `#283139` | highlight 위 글자 | `text-dark` |
 | `danger` | `#C0392B` | 삭제 · 오류 | **대응 없음** — 홈페이지에 오류 표시가 없다. 대비만 다시 쟀다 |
@@ -144,7 +144,21 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 ```
 
 19종이 실제로 쓰인다(#155 에서 `text-highlight` 가 늘었다). **토큰 14개가 전부 쓰이고, 쓰는데 정의 안 된 것은 없다.**
-(`TextInput` · `Composer` 의 포커스 링은 유틸리티가 아니라 `var(--c-accent-soft)` 를 직접 참조한다)
+(`TextInput` · `Composer` · 대화 제목 편집의 포커스 링은 유틸리티가 아니라 `var(--c-focus-ring)` 을 직접 참조한다)
+
+### 포커스 — 홈페이지 규칙 그대로 (#190)
+
+| 자리 | 표시 | 홈페이지 대응 |
+|------|------|---------------|
+| 입력칸(`TextInput` · `Composer` · 대화 제목 편집) | 테두리 `accent` + 바깥 링 4px `--c-focus-ring` | `.field` 의 `focus:border-primary-deep focus:ring-4 focus:ring-primary/15` |
+| 버튼 · 링크 등 나머지 | 키보드 포커스(`:focus-visible`)에 2px `accent` 외곽선, 2px 띄움 | `.rule-row-link:focus-visible` 의 `outline-2 outline-primary-deep` |
+
+`--c-focus-ring` 은 `rgb(67 186 232 / 0.15)` — 토큰 14개와 달리 **투명도를 그대로 둔** 변수다. 링은 아래 면 위에 얹히므로
+불투명으로 섞어 두면 면에 따라 색이 어긋난다. `@theme` 에 올리지 않아 `bg-…` 유틸리티로는 쓸 수 없다(쓸 자리가 링뿐이다).
+
+**종전에는 버튼·링크에 포커스 스타일이 없어 브라우저 기본 링(파랑·검정 이중선)이 떴다.** 전역 `:focus-visible` 규칙은
+`@layer base` 안에 둔다 — 레이어 밖이면 `outline-none` 유틸리티보다 강해져 자체 포커스 표시가 있는 입력칸에 외곽선이 겹친다.
+외곽선 `#08719B` 는 바탕(`canvas`)에서 5.32, 사이드바(`surface`)에서 4.85 로 비텍스트 기준 3.0 을 넘는다.
 
 **토큰을 만들면 쓰는 자리를 함께 정한다.** #151 신규 4종은 자리가 이렇게 정해져 있다.
 
@@ -208,7 +222,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 
 - **말풍선은 사용자 쪽에만 둔다.** ChatGPT · Claude 모두 답변에는 배경을 깔지 않는다 —
   답변이 길 때 큰 색면이 화면을 갈라 읽기 흐름을 끊는다. 사용자 메시지만 `raised` 카드로 오른쪽 정렬한다.
-- **입력창은 떠 있는 판이다.** `raised` + 확산 그림자 + `rounded-3xl`. 포커스면 `accent` 링을 얇게 두른다.
+- **입력창은 떠 있는 판이다.** `raised` + 확산 그림자 + `rounded-3xl`. 포커스면 테두리가 `accent` 로 바뀌고 시안 15% 링이 4px 둘린다(#190).
 - **스크롤 페이드** : 메시지 영역 하단에 `canvas` 로 가는 그라데이션을 깔아 입력창 뒤로 글이 사라지게 한다.
 - **활성 대화** : `accent-soft` 배경 + `accent` 글자. 선을 두르지 않는다.
 - **이중 테두리(double-bezel)는 모달과 로그인 폼에만** 쓴다. 대화 버블·첨부 카드에는 과하다.

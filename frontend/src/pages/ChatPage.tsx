@@ -107,7 +107,7 @@ export default function ChatPage() {
                       setEditingTitle(false)
                     }
                   }}
-                  className="w-full max-w-xs rounded-lg border border-line bg-raised px-2.5 py-1.5 text-[15px] font-semibold text-ink outline-none focus:border-accent"
+                  className="w-full max-w-xs rounded-lg border border-line bg-raised px-2.5 py-1.5 text-[15px] font-semibold text-ink outline-none focus:border-accent focus:shadow-[0_0_0_4px_var(--c-focus-ring)]"
                 />
               ) : (
                 <button

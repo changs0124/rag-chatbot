@@ -241,7 +241,7 @@ export default function Composer({
           </p>
         )}
 
-        <div className="flex items-end gap-2 rounded-3xl border border-line bg-raised px-2 py-1.5 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--c-accent-soft)]">
+        <div className="flex items-end gap-2 rounded-3xl border border-line bg-raised px-2 py-1.5 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-within:border-accent focus-within:shadow-[0_0_0_4px_var(--c-focus-ring)]">
           {/* + 첨부 메뉴 */}
           <div className="relative">
             <button

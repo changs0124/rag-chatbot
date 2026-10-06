@@ -17,4 +17,4 @@ type TextInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'className'>
 const inputClass =
   'h-11 w-full rounded-xl border border-line bg-raised px-3.5 text-[15px] text-ink outline-none ' +
   'transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] ' +
-  'placeholder:text-ink-muted focus:border-accent focus:shadow-[0_0_0_3px_var(--c-accent-soft)]'
+  'placeholder:text-ink-muted focus:border-accent focus:shadow-[0_0_0_4px_var(--c-focus-ring)]'
