@@ -160,7 +160,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   - 면 : `canvas`(바탕) · `surface`(가라앉음) · `raised`(카드·입력창) · `line`(구분선)
   - 글 : `ink` · `ink-muted`
   - 강조 : `accent` · `accent-ink` · `accent-soft`
-  - 주의 : `highlight` · `highlight-ink` — **배경 전용**이다. 로고 오렌지라 글자로 쓰면 어떤 밝은 배경에서도 AA 에 못 미친다
+  - 주의 : `highlight` · `highlight-ink` — **배경 전용**이다. 옅은 무채색이라(#190) 글자로 쓰면 밝은 바탕에서 보이지 않는다
   - 경고 : `danger` · `danger-ink` · `danger-soft`
   - **14종이고 값의 정본은 [design-system.md](./design-system.md) 「색 — 토큰으로만 쓴다」다.** 여기에는 이름만 둔다
   - **예외** : 회사 CI 색(`components/Logo.tsx`)은 토큰이 아니다.
