@@ -91,9 +91,9 @@ describe('관리자 화면', () => {
 
     renderPage()
 
-    expect(await screen.findByText('● 완료')).toBeInTheDocument()
-    expect(screen.getByText('◐ 처리중')).toBeInTheDocument()
-    expect(screen.getByText('⚠ 실패')).toBeInTheDocument()
+    expect(await screen.findByText('완료')).toBeInTheDocument()
+    expect(screen.getByText('처리중')).toBeInTheDocument()
+    expect(screen.getByText('실패')).toBeInTheDocument()
   })
 
   /**
@@ -120,7 +120,7 @@ describe('관리자 화면', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.mocked(listDocuments).mockResolvedValue([doc({ status: 'in_progress' })])
     renderPage()
-    await screen.findByText('◐ 처리중')
+    await screen.findByText('처리중')
     const before = vi.mocked(listDocuments).mock.calls.length
 
     await vi.advanceTimersByTimeAsync(6000)
@@ -137,7 +137,7 @@ describe('관리자 화면', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.mocked(listDocuments).mockResolvedValue([doc({ status: 'completed' })])
     renderPage()
-    await screen.findByText('● 완료')
+    await screen.findByText('완료')
     const before = vi.mocked(listDocuments).mock.calls.length
 
     await vi.advanceTimersByTimeAsync(20000)

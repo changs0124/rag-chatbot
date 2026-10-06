@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import TextInput from '../components/TextInput'
+import { IconChevronLeft, IconChevronRight, IconFile } from '../components/icons'
 import { ApiError, setToken } from '../lib/api'
 import { updateName, updatePassword } from '../lib/endpoints'
 
@@ -53,9 +54,10 @@ export default function MyPage() {
       <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
         <Link
           to="/"
-          className="text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink"
+          className="inline-flex items-center gap-1 text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink"
         >
-          ← 채팅으로
+          <IconChevronLeft className="h-4 w-4" />
+          채팅으로
         </Link>
 
         <h1 className="mt-4 mb-1 text-2xl font-semibold text-ink">설정</h1>
@@ -112,8 +114,11 @@ export default function MyPage() {
                 to="/admin"
                 className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas"
               >
-                <span>📄 문서 관리</span>
-                <span className="text-ink-muted">→</span>
+                <span className="inline-flex items-center gap-2">
+                  <IconFile className="h-4 w-4 text-ink-muted" />
+                  문서 관리
+                </span>
+                <IconChevronRight className="h-4 w-4 text-ink-muted" />
               </Link>
             </Card>
           )}

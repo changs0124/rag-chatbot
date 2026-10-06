@@ -89,6 +89,7 @@
   - 아래가 **토큰이 아닌 면** 위에 얹히는 곳 — 사진·영상 위 오버레이(`ImageLightbox` · `CameraCapture` ·
     `Composer` 썸네일). 아래 면이 화면 색과 무관하므로 토큰이 성립하지 않는다
   자리를 늘리려면 [design-system.md](./02_architecture/design-system.md) 「색 값을 들고 있는 파일 — 셋이다」를 함께 고친다.
+- **이모지·장식 기호를 화면에 쓰지 않는다**(#192). 아이콘은 `components/icons.tsx` 의 라인 아이콘만 쓴다 — `src/no-emoji.test.ts` 가 막는다.
 - 모션은 `ease-[var(--ease-out-quint)]` 하나로 통일한다. `transition` 기본 이징(`ease-in-out`)을 그대로 쓰지 않는다.
 
 ### 테스트
