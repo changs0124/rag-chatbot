@@ -2,12 +2,13 @@
 /* Pretendard - 동적 서브셋(필요한 글자 범위만 내려받음). CDN 을 새로 물리지 않으려고 번들에 넣음 */
 @import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 
-/* 테마 : [data-theme="dark"]가 html에 있으면 다크. 없으면 시스템 설정을 ThemeProvider가 해석해 세팅 */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-
 /*
  * 색 토큰. 값은 여기 CSS 변수에만 두고 @theme 이 그 변수를 가리킨다 -
- * 그래서 화면 코드에서는 `bg-surface` 한 번이면 두 테마가 다 되고, 색에 `dark:` 를 쓰지 않는다.
+ * 화면 코드는 `bg-surface` 처럼 토큰 이름만 쓴다.
+ *
+ * **테마는 하나다(#191).** 다크·시스템 테마를 걷었다 - 회사 홈페이지가 테마를 걷은 것에 맞췄다.
+ * `dark:` 를 다시 쓰지 말 것 : Tailwind 4 의 기본 `dark:` 는 OS 미디어쿼리라 OS 가 다크인 사용자에게만
+ * 화면이 갈린다. src/theme-tokens.test.ts 가 막는다.
  *
  * 값의 출처는 회사 CI(디인사이트)다. accent 는 임의로 고른 파랑이 아니라 **D 마크 접힘면
  * 그라데이션의 가장 어두운 실측값**(#0070B5)이다 - 로고 원색 #41BAE9 는 흰 글자와 2.2:1 이라
@@ -17,9 +18,8 @@
  * 바탕이 순백이 아닌 이유 : 대화가 길어지는 화면에서 순백은 눈이 빨리 지친다.
  */
 :root {
-  /* `light dark` 는 **UA 에게 고르라고 맡기는** 선언이고 UA 는 OS 설정을 본다. 이 앱은 이미
-     답을 알고 있으므로(data-theme) 알려 준다 - 안 그러면 앱에서 라이트를 골라도 OS 가 다크면
-     스크롤바·<input> 기본 UI 만 다크로 남는다(#156) */
+  /* `light dark` 로 두면 UA 가 OS 설정을 보고 스크롤바·<input> 기본 UI 만 다크로 칠한다(#156).
+     화면이 라이트 하나이므로 라이트로 못 박는다 */
   color-scheme: light;
 
   --c-canvas: #f7f9fb;
@@ -36,27 +36,6 @@
   --c-danger: #c0392b;
   --c-danger-ink: #ffffff;
   --c-danger-soft: #fbe9e7;
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-
-  --c-canvas: #12171a;
-  --c-surface: #1a2126;
-  --c-raised: #222b31;
-  --c-line: #2e383f;
-  --c-ink: #e6edf2;
-  --c-ink-muted: #93a1ab;
-  /* 어두운 면에서는 로고 원색이 대비를 번다 - 라이트와 달리 어둡게 깎을 이유가 없다 */
-  --c-accent: #41bae9;
-  --c-accent-ink: #06222f;
-  --c-accent-soft: #10303f;
-  --c-highlight: #f2931d;
-  --c-highlight-ink: #1b1205;
-  --c-danger: #f07167;
-  /* 다크에서 danger 위에 흰 글자를 얹으면 2.89:1 이다 - 삭제 확인 버튼이라 잘못 읽히면 되돌릴 수 없다 */
-  --c-danger-ink: #2a0f0c;
-  --c-danger-soft: #3a1f1c;
 }
 
 @theme inline {

@@ -3,20 +3,11 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import TextInput from '../components/TextInput'
-import { useTheme } from '../theme/ThemeContext'
 import { ApiError, setToken } from '../lib/api'
-import { updateName, updatePassword, updateTheme } from '../lib/endpoints'
-import type { Theme } from '../lib/types'
-
-const THEMES: { value: Theme; label: string }[] = [
-  { value: 'light', label: '라이트' },
-  { value: 'dark', label: '다크' },
-  { value: 'system', label: '시스템' },
-]
+import { updateName, updatePassword } from '../lib/endpoints'
 
 export default function MyPage() {
   const { user, setUser } = useAuth()
-  const { theme, setTheme } = useTheme()
   const [name, setName] = useState(user?.name ?? '')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -53,26 +44,6 @@ export default function MyPage() {
       setNewPassword('')
       flash('비밀번호를 변경했습니다')
     } catch (e) {
-      fail(e)
-    }
-  }
-
-  /**
-   * 테마는 낙관적으로 먼저 적용한다 - 왕복을 기다리면 클릭이 굼떠 보인다.
-   *
-   * **실패하면 되돌린다**(#78). 종전에는 되돌리지 않아 화면은 새 테마인데 서버는 옛 값이었고,
-   * `ThemeContext` 가 localStorage 에도 이미 저장해 둔 상태였다. 다시 로그인하면 `applyUser` 가
-   * 서버 값을 적용해 되돌아가므로, **어느 쪽이 진짜인지 알 수 없는** 상태가 그때까지 이어졌다.
-   */
-  async function chooseTheme(next: Theme) {
-    const previous = theme
-    setTheme(next)
-    try {
-      const me = await updateTheme(next)
-      setUser(me)
-      flash('테마를 변경했습니다')
-    } catch (e) {
-      setTheme(previous)
       fail(e)
     }
   }
@@ -130,26 +101,6 @@ export default function MyPage() {
               >
                 비밀번호 변경
               </button>
-            </div>
-          </Card>
-
-          <Card title="테마">
-            {/* 세그먼트 컨트롤 - 선택된 칸만 떠 보이게 함 */}
-            <div className="flex gap-1 rounded-xl bg-surface p-1">
-              {THEMES.map((t) => (
-                <button
-                  key={t.value}
-                  onClick={() => chooseTheme(t.value)}
-                  className={
-                    'flex-1 rounded-lg px-3 py-2 text-sm transition duration-150 ease-[var(--ease-out-quint)] ' +
-                    (theme === t.value
-                      ? 'bg-raised font-medium text-ink shadow-[var(--shadow-ambient)]'
-                      : 'text-ink-muted hover:text-ink')
-                  }
-                >
-                  {t.label}
-                </button>
-              ))}
             </div>
           </Card>
 

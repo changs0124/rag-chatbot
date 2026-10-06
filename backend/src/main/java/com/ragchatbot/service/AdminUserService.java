@@ -65,7 +65,7 @@ public class AdminUserService {
 		String temporary = temporaryPasswords.generate();
 		String role = adminEmails.contains(email) ? "admin" : "user";
 		userRepository.insert(new User(UUID.randomUUID(), email, passwordEncoder.encode(temporary),
-				req.name(), "system", role, null, null));
+				req.name(), role, null, null));
 		return temporary;
 	}
 

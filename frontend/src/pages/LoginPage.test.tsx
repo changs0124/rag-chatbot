@@ -2,17 +2,14 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
-import { ThemeProvider } from '../theme/ThemeContext'
 import LoginPage from './LoginPage'
 
 function renderLogin() {
   render(
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <LoginPage />
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <LoginPage />
+      </AuthProvider>
     </BrowserRouter>,
   )
 }

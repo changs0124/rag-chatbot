@@ -11,7 +11,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | `frontend/src/components/` | 재사용 컴포넌트. 기능이 커지면 `components/chat/` 처럼 하위 폴더 |
 | `frontend/src/hooks/` | 도메인 훅 — 현재 `useChat.ts` 하나 |
 | `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) |
-| `frontend/src/auth/` · `frontend/src/theme/` | Context Provider |
+| `frontend/src/auth/` | Context Provider |
 | `frontend/src/test/` | Vitest 셋업 |
 
 ## 라우팅
@@ -32,19 +32,18 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ## 상태관리
 
 **외부 상태 라이브러리를 쓰지 않는다.** 서버 캐시 라이브러리(react-query 등)도 없다.
-화면 사이를 건너다니는 상태가 **Context 둘**(`AuthContext` · `ThemeContext`)뿐이고 나머지는 쓰는 쪽이
-들고 있어서, 라이브러리 도입이 이득보다 크지 않다고 봤다. 아래 표의 넷 중 뒤의 둘은 Context 가 아니다 —
+화면 사이를 건너다니는 상태가 **Context 하나**(`AuthContext`)뿐이고 나머지는 쓰는 쪽이
+들고 있어서, 라이브러리 도입이 이득보다 크지 않다고 봤다. 아래 표의 셋 중 뒤의 둘은 Context 가 아니다 —
 `useChat` 은 쓰는 훅이, 토큰은 모듈 변수가 보유한다.
 
 | 상태 | 보유자 | 비고 |
 |------|--------|------|
 | 로그인 사용자 | `frontend/src/auth/AuthContext.tsx` | 기동 시 `/api/auth/me` 로 토큰 유효성 확인. 실패하면 토큰 폐기 |
-| 테마 | `frontend/src/theme/ThemeContext.tsx` | `localStorage` + 계정 설정. `system` 이면 `prefers-color-scheme` 변화를 구독 |
 | 대화·메시지·스트리밍 | `frontend/src/hooks/useChat.ts` | 대화 목록, 활성 대화, 메시지 배열, 스트리밍 여부, 진행 단계, 오류를 한 훅이 보유 |
 | 인증 토큰 | `frontend/src/lib/api.ts` 모듈 변수 + `localStorage` | React 상태가 아님 — 렌더링과 무관하게 요청 시점에 읽혀야 함 |
 
-로그인·테마 순서가 얽혀 있다 : `AuthProvider` 가 `useTheme()` 을 쓰므로 `ThemeProvider` 가 바깥에 있어야 한다
-(`frontend/src/main.tsx`). 계정에 저장된 테마를 로그인 직후 적용하기 위한 배치다.
+테마 상태는 없다 — **화면은 라이트 하나다**(#191, 2026-10-06). 종전의 `ThemeContext`(라이트·다크·시스템, 계정에 저장)는
+회사 홈페이지가 테마를 걷은 것에 맞춰 화면·API·컬럼까지 함께 걷었다.
 
 ## API 통신
 
@@ -125,7 +124,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   비활성인지**를 함께 말한다 — 이유 없는 회색 버튼은 고장으로 읽힌다.
 - **비동기 실패는 반드시 화면에 드러낸다**(#77·#78). 프라미스를 버리면 실패가 조용히 사라져
   「눌렀는데 아무 일도 안 일어난다」가 된다 — 삭제·이름 변경이 그랬다. **낙관적으로 먼저 적용한
-  것은 실패 시 되돌린다** — 테마가 그랬는데, 되돌리지 않으면 화면과 서버가 갈린 채
+  것은 실패 시 되돌린다** — 테마 선택(#191 에서 제거)이 그랬는데, 되돌리지 않으면 화면과 서버가 갈린 채
   다시 로그인할 때까지 어느 쪽이 진짜인지 알 수 없다.
 - **비동기 자원은 「떠났는지」를 표시로 들고 정리한다**(#75). 정리 함수가 `.then` 보다 먼저 돌면
   변수에 아직 아무것도 담겨 있지 않아 **정리할 대상을 못 본다** — 카메라 트랙이 그랬고, 표시등이
@@ -149,24 +148,23 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   이미지에 `touch-action: none` 을 주지 않으면 브라우저 기본 제스처가 먼저 먹어 핀치 이벤트가 오지 않는다.
 - **드래그 오버레이는 진입/이탈을 센다.** `dragleave` 만 보고 걷으면 자식 요소를 지날 때마다 깜빡인다.
 
-## 스타일·테마
+## 스타일
 
 - Tailwind 유틸리티 클래스만 쓴다. CSS 모듈·CSS-in-JS 없음. 전역 CSS 는 `frontend/src/index.css` 뿐이다.
-- 다크 모드는 `html[data-theme="dark"]` 기준 커스텀 variant 다. `prefers-color-scheme` 을 직접 참조하지 않는다 —
-  시스템 설정 해석은 `ThemeProvider` 가 단독으로 한다.
-- **색은 토큰으로만 쓰고, 색에는 `dark:` 를 쓰지 않는다.** 토큰 값은 `index.css` 의 `:root` ·
-  `[data-theme="dark"]` 에 CSS 변수로 두고 `@theme inline` 이 그 변수를 가리킨다. 그래서 `bg-surface` 한 번이면
-  두 테마가 다 된다. `bg-white dark:bg-zinc-950` 처럼 짝으로 적으면 한쪽만 고쳐져 테마가 갈린다.
+- **다크 모드가 없다**(#191). OS 설정과 무관하게 라이트로 뜬다(`index.css` 의 `color-scheme: light`).
+  **`dark:` · `data-theme` · `prefers-color-scheme` 을 쓰지 않는다** — Tailwind 4 의 `dark:` 기본값은
+  `prefers-color-scheme` 미디어쿼리라, 하나라도 다시 들어오면 **OS 가 다크인 사용자에게만** 화면이 갈린다.
+  `src/theme-tokens.test.ts` 가 소스를 훑어 막는다.
+- **색은 토큰으로만 쓴다.** 토큰 값은 `index.css` 의 `:root` 에 CSS 변수로 두고 `@theme inline` 이 그 변수를
+  가리킨다. 화면 코드에 hex 를 박으면 토큰을 고쳐도 따라오지 않는다.
   - 면 : `canvas`(바탕) · `surface`(가라앉음) · `raised`(카드·입력창) · `line`(구분선)
   - 글 : `ink` · `ink-muted`
   - 강조 : `accent` · `accent-ink` · `accent-soft`
   - 주의 : `highlight` · `highlight-ink` — **배경 전용**이다. 로고 오렌지라 글자로 쓰면 어떤 밝은 배경에서도 AA 에 못 미친다
   - 경고 : `danger` · `danger-ink` · `danger-soft`
   - **14종이고 값의 정본은 [design-system.md](./design-system.md) 「색 — 토큰으로만 쓴다」다.** 여기에는 이름만 둔다
-  - `dark:` 는 색이 아닌 것(반투명 겹침 세기 등)에만 남긴다 — 현재 사용 0건이지만 variant 선언은 남겨 둔다.
-    Tailwind 4 에는 `data-theme` 에 묶인 내장 dark 가 없어, 지우면 앞으로 `dark:` 를 써도 조용히 아무 일도 일어나지 않는다
   - **예외** : 회사 CI 색(`components/Logo.tsx`)은 토큰이 아니다.
-    로고는 테마를 타면 안 되기 때문이다 — 아래 「색 리터럴이 허용되는 자리」 참고
+    로고는 CI 원색 그대로여야 하기 때문이다 — 아래 「색 리터럴이 허용되는 자리」 참고
 - **모션은 이징 하나로 통일한다** — `--ease-out-quint`(`cubic-bezier(0.16,1,0.3,1)`). `linear` · `ease-in-out` 을 쓰지 않고,
   값이 매 프레임 바뀌는 동작(사이드바 폭 드래그)에는 트랜지션을 걸지 않는다 — 손보다 늦게 따라와 고무줄처럼 보인다.
   `prefers-reduced-motion: reduce` 는 전역 CSS 가 받아 트랜지션을 1ms 로 줄인다.

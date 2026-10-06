@@ -46,7 +46,7 @@ flowchart LR
 |------|------|------|
 | `/login` | `LoginPage` — 로그인 | 공개 |
 | `/` | `ChatPage` — 사이드바 + 메시지 목록 + 입력창 | `ProtectedRoute` (인증 필요) |
-| `/me` | `MyPage` — 이름·비밀번호·테마 변경 | `ProtectedRoute` (인증 필요) |
+| `/me` | `MyPage` — 이름·비밀번호 변경 | `ProtectedRoute` (인증 필요) |
 | `/admin` | 문서 관리 · 사용자 관리 | `ProtectedRoute` + **관리자만**(아니면 `/` 로 되돌림) |
 | 그 외 | `/`로 리다이렉트 | 해당 없음 |
 

@@ -53,13 +53,13 @@ public class AuthService {
 		}
 		User user = found.get();
 		return new AuthResponse(jwtService.issue(user.id(), user.email()),
-				new MeResponse(user.id(), user.email(), user.name(), user.theme(), user.role()));
+				new MeResponse(user.id(), user.email(), user.name(), user.role()));
 	}
 
 	public MeResponse me(UUID userId) {
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new NotFoundException("사용자 없음"));
-		return new MeResponse(user.id(), user.email(), user.name(), user.theme(), user.role());
+		return new MeResponse(user.id(), user.email(), user.name(), user.role());
 	}
 
 	private static String normalizeEmail(String email) {

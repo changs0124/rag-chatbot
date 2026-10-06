@@ -1,10 +1,7 @@
-export type Theme = 'light' | 'dark' | 'system'
-
 export interface Me {
   id: string
   email: string
   name: string
-  theme: Theme
   // 관리 메뉴를 **보여줄지 말지**만 정하는 값. 접근 제어가 아니다 —
   // URL 로 직접 들어오는 경로는 서버가 404 로 막는다(FEAT-ADMIN-001)
   role: 'user' | 'admin'

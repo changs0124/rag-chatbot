@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
-import { ThemeProvider } from '../theme/ThemeContext'
 import { setToken } from '../lib/api'
 import AdminPage from './AdminPage'
 import type { RagDocument } from '../lib/types'
@@ -26,7 +25,7 @@ vi.mock('../lib/api', async (importOriginal) => {
     api: {
       ...actual.api,
       get: vi.fn(() =>
-        Promise.resolve({ id: 'u1', email: 'a@b.com', name: '관리자', theme: 'system', role: currentRole }),
+        Promise.resolve({ id: 'u1', email: 'a@b.com', name: '관리자', role: currentRole }),
       ),
     },
   }
@@ -50,11 +49,9 @@ function doc(over: Partial<RagDocument> = {}): RagDocument {
 function renderPage() {
   return render(
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <AdminPage />
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <AdminPage />
+      </AuthProvider>
     </BrowserRouter>,
   )
 }
