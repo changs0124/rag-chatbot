@@ -1,0 +1,59 @@
+{
+  "initial": {
+    "headerTop": 0,
+    "winScrollY": 0,
+    "docScrollH": 844,
+    "innerH": 844,
+    "htmlOverflow": "hidden",
+    "bodyOverflow": "visible",
+    "bodyOverscroll": "auto",
+    "htmlOverscroll": "none",
+    "viewportMeta": "width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
+  },
+  "afterOverscrollDown": {
+    "headerTop": 0,
+    "winScrollY": 0,
+    "docScrollH": 844,
+    "innerH": 844,
+    "htmlOverflow": "hidden",
+    "bodyOverflow": "visible",
+    "bodyOverscroll": "auto",
+    "htmlOverscroll": "none",
+    "viewportMeta": "width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
+  },
+  "afterWindowScrollTo": {
+    "headerTop": 0,
+    "winScrollY": 0,
+    "docScrollH": 844,
+    "innerH": 844,
+    "htmlOverflow": "hidden",
+    "bodyOverflow": "visible",
+    "bodyOverscroll": "auto",
+    "htmlOverscroll": "none",
+    "viewportMeta": "width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
+  },
+  "afterFocusScrollIntoView": {
+    "headerTop": 0,
+    "winScrollY": 0,
+    "docScrollH": 844,
+    "innerH": 844,
+    "htmlOverflow": "hidden",
+    "bodyOverflow": "visible",
+    "bodyOverscroll": "auto",
+    "htmlOverscroll": "none",
+    "viewportMeta": "width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
+  },
+  "keyboardSim500": {
+    "headerTop": 0,
+    "winScrollY": 0,
+    "docScrollH": 500,
+    "innerH": 500,
+    "htmlOverflow": "hidden",
+    "bodyOverflow": "visible",
+    "bodyOverscroll": "auto",
+    "htmlOverscroll": "none",
+    "viewportMeta": "width=device-width, initial-scale=1.0, interactive-widget=resizes-content",
+    "rootH": 500,
+    "composerBottom": 488
+  }
+}
