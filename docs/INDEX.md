@@ -33,18 +33,18 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 
 ## 배포 준비 상태
 
-코드는 **키·Vector Store·서버만 준비하면 도는 상태**로 맞춰져 있다.
+**2026-10-06 런칭했다 — 운영 중이다.** 아래 표는 그 배포가 무엇으로 이뤄져 있는지와, 다시 배포할 때 무엇을 보면 되는지다.
 
 | 준비물 | 상태 |
 |--------|------|
-| 프론트 배포 | `frontend/vercel.json` (SPA 리라이트 포함). 환경변수 `VITE_API_BASE_URL` 외에 **저장소 연결과 Root Directory 지정이 남아 있다** — 절차 정본은 [frontend](./02_architecture/frontend.md) 「배포 (Vercel)」 |
+| 프론트 배포 | `frontend/vercel.json` (SPA 리라이트 포함). 저장소 연결 · Root Directory · `VITE_API_BASE_URL` 설정까지 끝났다(2026-10-06) — 절차 정본은 [frontend](./02_architecture/frontend.md) 「배포 (Vercel)」 |
 | 백엔드 배포 | `docker-compose.yml` (앱 · Postgres · cloudflared). 인바운드 포트를 열지 않는 터널 방식. **서버는 빌드하지 않는다** — `bash scripts/deploy.sh` 가 로컬에서 빌드해 `docker save`/`load` 로 서버에 넣는다(레지스트리 없음). 대상은 GCE e2-micro 라 compose 에 메모리 상한이 걸려 있다 |
 | 환경변수 | `backend/.env.example`(앱) · `.env.example`(compose) · `frontend/.env.example` 에 전량 + 빠뜨렸을 때의 증상까지 기재 |
 | DB 스키마 | 기동 시 Flyway 자동 적용 |
 | OpenAI 키 없이 | `APP_MODE=mock` 으로 전 경로가 목업으로 동작 |
 | Vector Store 없이 | `live` 라도 기동·응답은 되며, 출처가 0건이라 전부 "자료 없음"으로 표시됨 |
 
-런칭까지 정해야 할 것과 남은 준비물 · 순서는 [current-sprint](./04_tasks/current-sprint.md) 「진행 중」의 런칭 항목에 있다.
+런칭 경위는 [CHANGELOG](./06_changelog/CHANGELOG.md) 에 있다.
 계층별 배포 절차는 [backend](./02_architecture/backend.md) · [frontend](./02_architecture/frontend.md) 참고.
 
 ## Docs 구조

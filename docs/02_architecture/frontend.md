@@ -193,20 +193,20 @@ Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts
 
 ## 배포 (Vercel)
 
-**UI 미리보기(백엔드 미연결)** : https://rag-chatbot-jade-pi.vercel.app (Vercel 프로젝트명 `rag-chatbot`)
+**운영 중** : https://rag-chatbot-jade-pi.vercel.app (Vercel 프로젝트명 `rag-chatbot`)
 
-「배포 완료」가 아니다. Vercel 에 `VITE_API_BASE_URL` 을 아직 넣지 않아 **번들에 `http://localhost:8080`
-이 박혀 있고**(2026-09-11 실측, 3곳), 화면은 뜨지만 로그인부터 실패한다. 저장소가 공개라 이 주소를
-따라오는 사람이 있으므로 상태를 명시한다. 런칭 때 그 값을 넣고 **재배포**하면 풀린다 —
-빌드 시점에 박히는 값이라 설정만 바꾸고 재배포하지 않으면 그대로다.
+2026-10-06 런칭 때 `VITE_API_BASE_URL` 을 터널 도메인으로 넣고(production · preview) 재배포해 백엔드와
+붙었다. 그 전에는 번들에 `http://localhost:8080` 이 박혀 로그인부터 실패했다(2026-09-11 실측) —
+빌드 시점에 박히는 값이라 **설정만 바꾸고 재배포하지 않으면 그대로**라는 점은 지금도 같다.
+preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막힌다.
 
 `frontend/vercel.json` 이 빌드 명령·출력 디렉터리와 **SPA 리라이트**를 고정한다. 리라이트가 없으면
 `/me` 를 직접 열거나 새로고침할 때 404 가 난다 — 라우팅을 `BrowserRouter` 가 하기 때문이다.
 
-### GitHub 연동은 아직 수동 단계가 남아 있음
+### GitHub 연동
 
-첫 배포는 파일을 직접 올려 만들었다. **저장소가 연결돼 있지 않아 푸시해도 자동 배포되지 않는다.**
-연결하려면 Vercel 대시보드에서 :
+첫 배포는 파일을 직접 올려 만들었고, 지금은 저장소가 연결돼 `main` 푸시가 자동 배포된다.
+새로 연결해야 할 때(프로젝트를 다시 만드는 경우 등) Vercel 대시보드에서 :
 
 1. 프로젝트 → Settings → Git → Connect Git Repository → `changs0124/rag-chatbot`
    (공개 저장소라 별도 접근 승인은 필요 없다. 처음 연결하는 계정이면 Vercel GitHub App 설치는
