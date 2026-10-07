@@ -1,0 +1,41 @@
+변경 후 — db145b1
+
+ .../com/ragchatbot/controller/AuthController.java  |  8 ++++--
+ .../com/ragchatbot/openai/OpenAiRealService.java   |  5 +++-
+ .../java/com/ragchatbot/service/AuthService.java   |  8 ------
+ .../controller/AdminDocumentFlowTest.java          | 12 ---------
+ .../controller/AdminDocumentSyncFlowTest.java      | 11 --------
+ .../ragchatbot/controller/AdminUserFlowTest.java   | 11 --------
+ .../controller/ChatBackPressureTest.java           |  7 -----
+ .../com/ragchatbot/controller/ChatFlowTest.java    |  7 -----
+ .../controller/ChatRejectionCounterTest.java       |  7 -----
+ .../controller/ChatStageHonestyTest.java           |  7 -----
+ .../controller/ChatStreamContractTest.java         |  7 -----
+ .../controller/ConversationCrossAccessTest.java    |  8 ------
+ .../ragchatbot/controller/UploadRateLimitTest.java |  1 -
+ .../support/AbstractPgIntegrationTest.java         | 21 +++++++++++++++
+ docs/06_changelog/CHANGELOG.md                     | 12 +++++++++
+ frontend/src/auth/AuthContext.tsx                  |  1 -
+ .../src/components/chat/CameraCapture.test.tsx     |  6 ++---
+ frontend/src/components/chat/Composer.test.tsx     |  5 +---
+ .../src/components/chat/ImageLightbox.test.tsx     |  7 ++---
+ frontend/src/components/chat/MessageList.test.tsx  |  7 ++---
+ .../src/components/chat/ResizableSidebar.test.tsx  |  6 ++---
+ frontend/src/lib/api.ts                            | 30 ++++++++++++++--------
+ frontend/src/lib/endpoints.ts                      | 15 +++--------
+ frontend/src/pages/AdminPage.tsx                   |  4 +--
+ frontend/src/pages/ChatPage.test.tsx               |  4 +--
+ frontend/src/pages/LoginPage.test.tsx              |  7 ++---
+ frontend/src/test/setup.ts                         |  6 +++++
+ 27 files changed, 85 insertions(+), 145 deletions(-)
+
+검증
+  백엔드 ./mvnw clean test : total=241 failures=0 (변경 전과 같음)
+  프론트 lint 0 · vitest 122 통과 · build 0 · oxlint --report-unused-disable-directives 경고 0
+  게이트 : merge-markers · doc-refs · doc-sections · doc-versions · response-contract · shell-syntax 통과, 케이스 하한 backend 241/241 · frontend 122/122
+
+남은 대상 확인
+  handleUnauthorized 직접 호출 (api.ts 밖 프로덕션 코드) : 0건
+  afterEach(cleanup) 파일별 사본 : 0건 (setup.ts 1곳)
+  private createConversation/createAdminUser : 0건
+  AuthService.me : 0건
