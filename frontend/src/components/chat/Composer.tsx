@@ -309,8 +309,9 @@ export default function Composer({
             rows={1}
             placeholder="메시지를 입력하세요"
             // 한 줄 높이를 버튼과 정확히 맞춤 : 24 + 20 = 44(모바일 h-11), 24 + 16 = 40(md h-10).
-            // leading-relaxed(24.375) 였을 때는 md 에서 버튼이 2.2px 아래로 처졌다(#218)
-            className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2.5 text-[15px] leading-6 text-ink md:py-2 outline-none placeholder:text-ink-muted"
+            // leading-relaxed(24.375) 였을 때는 md 에서 버튼이 2.2px 아래로 처졌다(#218).
+            // 모바일 글자는 16px - iOS 는 16px 미만 입력에 포커스하면 화면을 확대해 버린다(#221)
+            className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2.5 text-base leading-6 text-ink md:py-2 md:text-[15px] outline-none placeholder:text-ink-muted"
           />
 
           {streaming ? (
