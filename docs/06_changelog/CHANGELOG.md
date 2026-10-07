@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+### Changed
+- **런칭 이후 사실로 문서를 고쳤다(#213).** 2026-10-06 런칭했는데 README 는 「데모는 아직 백엔드가 연결되지 않았음 —
+  로그인부터 실패」라고 적고 있었다. 저장소가 공개라 이 문장을 보고 데모를 포기하는 사람이 생긴다. 런칭은 저장소 밖
+  작업(VM · 터널 · Vercel 설정)이라 코드 PR 이 없었고, 그래서 문서를 같이 고칠 계기가 없었다 — 이 항목이 런칭 자체의 기록도 겸한다.
+  - **런칭에서 한 일** : GCE e2-micro 에 `deploy.sh` 첫 완주 · Cloudflare 터널 4연결 · `APP_MODE=live`(로컬 실연동과 같은 모델 ·
+    스토어) · Vercel `VITE_API_BASE_URL` 설정 후 재배포 · CORS 는 Vercel 출처만 허용 · e2e(로그인 → 질문 → 출처 달린 응답) 통과.
+    대기하던 #130 · #132 는 이어서 닫혔다(아래 각 항목)
+  - `README.md` · `docs/INDEX.md` 「배포 준비 상태」 · `frontend.md` 「배포 (Vercel)」 : 미연결 서술을 운영 중으로.
+    가입 화면이 없어 계정 없이는 로그인 화면까지만 보인다는 점을 README 에 적었다
+  - `current-sprint.md` 의 런칭 항목과 블로커 서술을 걷어냈다. 이 항목을 가리키던 `backend.md` · `live-integration.md` ·
+    `requirements.md`(Phase 9 완료) · `backlog.md`(런칭 · 실연동 · 스토어 3항목 완료) 를 함께 고쳤다
+
 ### Added
 - **병합 충돌 표시를 게이트가 잡는다(#210).** `overview.md` 에 `<<<<<<<` · `=======` · `>>>>>>>` 가 약 3주 동안
   main 에 커밋돼 있었는데(#207 로 제거) `check-all.sh docs` 와 CI `static` 잡은 매번 통과했다 — 어떤 검사도

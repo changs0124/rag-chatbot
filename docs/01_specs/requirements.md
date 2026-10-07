@@ -158,6 +158,6 @@
 | Phase 6 | 첨부 미리보기 + 전 화면 재디자인 | 완료 |
 | Phase 7 | 운영 보강 (OPS-001 · OPS-002 · AUTH-005) | **완료** |
 | Phase 8 | 관리자 문서 관리 (ADMIN 전체 + AUTH-006) | **완료** |
-| Phase 9 | 실 연동 투입 (REQ-RAG-005) | 로컬 완료(2026-09-22) · 배포 환경은 런칭과 함께 |
+| Phase 9 | 실 연동 투입 (REQ-RAG-005) | **완료** — 로컬 2026-09-22 · 운영 2026-10-06(런칭) |
 
-Phase 9는 로컬에서 실응답 대조까지 끝났다. 배포 서버에 같은 값을 넣는 일은 `docs/04_tasks/current-sprint.md` 「진행 중」의 런칭 항목에 있고, 절차는 `docs/01_specs/live-integration.md`.
+Phase 9는 로컬 실응답 대조(2026-09-22)에 이어 2026-10-06 런칭으로 운영 서버 투입까지 끝났다. 절차는 `docs/01_specs/live-integration.md`.

@@ -56,8 +56,8 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 (문서 2건) · `gpt-5.6-terra` 로 2절의 2-1 ~ 2-6 을 밟았고, 3절의 가정은 전부 확인됐다(F 는 틀렸지만 무해).
 관측 원본은 `.issue/184/evidence/` 에 있다.
 
-**아직 하지 않은 것은 배포 환경 투입이다.** 같은 절차를 배포 서버의 `backend/.env` 로 한 번 더 밟아야 하며,
-그 순서는 [current-sprint](../04_tasks/current-sprint.md) 「진행 중」의 런칭 항목이 정본이다. 그래서 이 문서는 절차와
+**배포 환경 투입도 끝났다(2026-10-06 런칭).** 같은 값을 운영 서버의 `backend/.env` 에 넣고 e2e 로 출처가
+달린 응답을 확인했다 — 경위는 [CHANGELOG](../06_changelog/CHANGELOG.md). 그래도 이 문서는 절차와
 3절의 **증상 → 원인** 표를 진단용으로 남긴다 — 모델이나 API 가 바뀌면 같은 자리에서 다시 어긋날 수 있다.
 
 ## 1. 준비물
