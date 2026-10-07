@@ -1,0 +1,52 @@
+# after — 작업 트리 (2026-10-07 14:46:15)
+$ grep -n TUNNEL_TOKEN scripts/deploy.sh docs/02_architecture/backend.md docs/04_tasks/current-sprint.md
+scripts/deploy.sh:110:# .env 에 옛 TUNNEL_TOKEN 값이 남아 있으면 경고만 한다 - 지우는 것은 사람이 확인하고 한다
+scripts/deploy.sh:124:if grep -q '^TUNNEL_TOKEN=..*' \"$REMOTE_DIR/.env\" 2>/dev/null; then
+scripts/deploy.sh:125:  echo '  경고: .env 에 TUNNEL_TOKEN 값이 남아 있다 - 이제 쓰이지 않는다. 확인 후 그 줄을 지울 것'
+docs/02_architecture/backend.md:551:700 으로 고정하며, `.env` 에 옛 `TUNNEL_TOKEN` 값이 남아 있으면 경고한다. 파일이 없으면 compose 가 기동 전에 멈춘다.
+docs/02_architecture/backend.md:557:grep '^TUNNEL_TOKEN=' .env | cut -d= -f2- | tr -d '\n' > secrets/tunnel_token && chmod 644 secrets/tunnel_token
+docs/02_architecture/backend.md:558:# 새 compose 로 cloudflared 를 다시 만든 뒤 터널이 붙는 것을 보고 나서 .env 의 TUNNEL_TOKEN 줄을 지운다
+
+$ git diff
+diff --git a/docs/02_architecture/backend.md b/docs/02_architecture/backend.md
+index bd6a0b8..33476ec 100644
+--- a/docs/02_architecture/backend.md
++++ b/docs/02_architecture/backend.md
+@@ -529,7 +529,8 @@ chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 
+ 태그지만 이번 범위가 아니다 — 별도로 판단할 것.)
+ 
+ **서버의 `.env` 권한은 `deploy.sh` 가 600 으로 고정한다(#130).** 이 파일들에는 `JWT_SECRET` ·
+-`OPENAI_API_KEY` · `DB_PASSWORD` · `TUNNEL_TOKEN` 이 평문으로 있고, 기본 umask 로 만들면 644 가
++`OPENAI_API_KEY` · `DB_PASSWORD` 가 평문으로 있고(터널 토큰은 #203 에서 `secrets/` 파일로 옮겼다 — 아래),
++기본 umask 로 만들면 644 가
+ 되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
+ 프리플라이트에서 확인하고 고치며, 무엇을 바꿨는지 출력한다.
+ 
+diff --git a/docs/04_tasks/current-sprint.md b/docs/04_tasks/current-sprint.md
+index 15ef126..ec5eef8 100644
+--- a/docs/04_tasks/current-sprint.md
++++ b/docs/04_tasks/current-sprint.md
+@@ -15,7 +15,8 @@
+   (`us-west1-b`)이 현재 `TERMINATED`. 재개는 **켜고 `bash scripts/deploy.sh`** 다.
+ 
+   저장소 밖 준비물 :
+-  - `TUNNEL_TOKEN`(Cloudflare 터널 생성) 확보
++  - 터널 토큰(Cloudflare 터널 생성) 확보 — `.env` 가 아니라 서버 `secrets/tunnel_token`(파일 644 · 디렉터리 700)에 둔다(#203).
++    옮기는 절차는 [backend](../02_architecture/backend.md) 「배포」
+   - `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` — **로컬 실연동용으로는 확보됐다**(테스트 프로젝트, 2026-09-22, #184).
+     배포에 같은 키·스토어를 쓸지, 운영용을 따로 만들지는 정하지 않았다. 스토어를 새로 만들면 문서를 `/admin` 으로 다시 올린다
+   - `bash scripts/deploy.sh` 로 실배포 — **이 스크립트는 통짜로 실행된 적이 없다.** `--dry-run` 을 먼저 볼 것
+diff --git a/scripts/deploy.sh b/scripts/deploy.sh
+index a9d083a..b2d4f5c 100644
+--- a/scripts/deploy.sh
++++ b/scripts/deploy.sh
+@@ -74,7 +74,8 @@ preflight() {
+ }
+ 
+ # **서버의 .env 권한을 600 으로 고정한다(#130).** 이 파일들에는 JWT_SECRET · OPENAI_API_KEY ·
+-# DB_PASSWORD · TUNNEL_TOKEN 이 평문으로 있다. 기본 umask 로 만들면 644 가 되어 **서버에 셸이
++# DB_PASSWORD 가 평문으로 있다(터널 토큰은 #203 에서 secrets/ 파일로 옮겼다 - 아래 터널 절).
++# 기본 umask 로 만들면 644 가 되어 **서버에 셸이
+ # 닿는 누구나 읽는다** - 단일 VM 에 전부 모으는 구성이라 "호스트 셸 하나 = 전 비밀" 이 된다.
+ #
+ # **여기서 고친다.** 런북에만 적으면 사람이 기억해야만 지켜지고, 이번처럼 잊힌다.

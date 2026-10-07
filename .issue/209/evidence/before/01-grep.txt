@@ -1,0 +1,11 @@
+# before — 622ac88 (2026-10-07 14:45:39    )
+$ grep -n TUNNEL_TOKEN scripts/deploy.sh docs/02_architecture/backend.md docs/04_tasks/current-sprint.md
+scripts/deploy.sh:77:# DB_PASSWORD · TUNNEL_TOKEN 이 평문으로 있다. 기본 umask 로 만들면 644 가 되어 **서버에 셸이
+scripts/deploy.sh:109:# .env 에 옛 TUNNEL_TOKEN 값이 남아 있으면 경고만 한다 - 지우는 것은 사람이 확인하고 한다
+scripts/deploy.sh:123:if grep -q '^TUNNEL_TOKEN=..*' \"$REMOTE_DIR/.env\" 2>/dev/null; then
+scripts/deploy.sh:124:  echo '  경고: .env 에 TUNNEL_TOKEN 값이 남아 있다 - 이제 쓰이지 않는다. 확인 후 그 줄을 지울 것'
+docs/02_architecture/backend.md:532:`OPENAI_API_KEY` · `DB_PASSWORD` · `TUNNEL_TOKEN` 이 평문으로 있고, 기본 umask 로 만들면 644 가
+docs/02_architecture/backend.md:550:700 으로 고정하며, `.env` 에 옛 `TUNNEL_TOKEN` 값이 남아 있으면 경고한다. 파일이 없으면 compose 가 기동 전에 멈춘다.
+docs/02_architecture/backend.md:556:grep '^TUNNEL_TOKEN=' .env | cut -d= -f2- | tr -d '\n' > secrets/tunnel_token && chmod 644 secrets/tunnel_token
+docs/02_architecture/backend.md:557:# 새 compose 로 cloudflared 를 다시 만든 뒤 터널이 붙는 것을 보고 나서 .env 의 TUNNEL_TOKEN 줄을 지운다
+docs/04_tasks/current-sprint.md:18:  - `TUNNEL_TOKEN`(Cloudflare 터널 생성) 확보
