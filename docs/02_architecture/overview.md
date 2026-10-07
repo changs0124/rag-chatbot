@@ -1,7 +1,7 @@
 # Architecture Overview
 
-> 구조가 바뀌면 이 문서를 함께 갱신한다. 최종 갱신 2026-09-08 — 관리자 기능(V5·V6) · 자체 호스팅 결정 ·
-> Spring Boot 4.1 전환(#48)까지 반영돼 있다.
+> 구조가 바뀌면 이 문서를 함께 갱신한다. 최종 갱신 2026-10-07 — 관리자 기능(V5·V6) · 자체 호스팅 결정 ·
+> Spring Boot 4.1 전환(#48) · 런칭(2026-10-06) 이후 백업 · 모델 표기(#220)까지 반영돼 있다.
 
 계층별 상세는 [frontend](./frontend.md) · [backend](./backend.md) 에 있다. 이 문서는 둘을 가로지르는 지도다.
 
@@ -13,7 +13,7 @@ flowchart LR
   A["Spring Boot 4.1<br/>:8080"]
   D[("PostgreSQL<br/>Flyway")]
   F[("로컬 디스크<br/>FILE_STORAGE_ROOT")]
-  O["OpenAI<br/>GPT-4o + Vector Store + Files"]
+  O["OpenAI<br/>Responses API + Vector Store + Files"]
 
   B -- "REST + JWT(Bearer)" --> A
   B -- "SSE (fetch + ReadableStream)" --> A
@@ -40,15 +40,7 @@ flowchart LR
 
 ## 페이지 URL 맵
 
-`frontend/src/App.tsx` (React Router 8) 기준.
-
-| 경로 | 화면 | 접근 |
-|------|------|------|
-| `/login` | `LoginPage` — 로그인 | 공개 |
-| `/` | `ChatPage` — 사이드바 + 메시지 목록 + 입력창 | `ProtectedRoute` (인증 필요) |
-| `/me` | `MyPage` — 이름·비밀번호 변경 | `ProtectedRoute` (인증 필요) |
-| `/admin` | 문서 관리 · 사용자 관리 | `ProtectedRoute` + **관리자만**(아니면 `/` 로 되돌림) |
-| 그 외 | `/`로 리다이렉트 | 해당 없음 |
+경로 · 화면 · 보호 조건은 [frontend](./frontend.md) 「라우팅」이 정본이다(`frontend/src/App.tsx` 기준).
 
 ## API 엔드포인트 맵
 
@@ -124,7 +116,7 @@ sequenceDiagram
 
 | 대상 | 용도 | 비고 |
 |------|------|------|
-| OpenAI Chat (`gpt-4o`) | 답변 생성 · 이미지(비전) 입력 | `OPENAI_MODEL`로 교체 가능 |
+| OpenAI 모델(`OPENAI_MODEL`, 기본 `gpt-4o` · 운영 `gpt-5.6-terra`) | 답변 생성 · 이미지(비전) 입력 | env 로 교체 가능 |
 | OpenAI Vector Store | RAG 검색 + 관리자 문서 등록 | `OPENAI_VECTOR_STORE_ID` — 대화별이 아닌 **공용 스토어**. 미설정이면 검색이 없고 문서 업로드도 400 |
 | OpenAI Files | 관리자 문서 업로드 | 채팅 첨부와 별개 경로(문서만 받음) |
 | 로컬 디스크 | 첨부 저장 | `FileStorage` 구현만 갈아끼우면 S3로 이동 가능 |
@@ -134,23 +126,11 @@ sequenceDiagram
 
 ## 운영 파라미터
 
-`backend/src/main/resources/application.yml` 기준 기본값.
+환경변수 전량 · 기본값 · 빠뜨렸을 때의 증상은 **`backend/.env.example` 이 정본**이다(기본값은
+`backend/src/main/resources/application.yml`). 여기에 표로 옮기면 두 곳이 갈리므로 두지 않는다.
 
-| 항목 | 환경변수 | 기본값 |
-|------|----------|--------|
-| 실행 모드 | `APP_MODE` | 없음(필수) |
-| JWT 시크릿 / 만료 | `JWT_SECRET` · `JWT_EXPIRATION_MINUTES` | 없음(필수) / 120분 |
-| 슬라이딩 재발급 임계 | `JWT_REFRESH_THRESHOLD_MINUTES` | 30분 (**0이면 기능 끔**) |
-| 관리자 이메일 명단 | `ADMIN_EMAILS` | 없음(관리자 0명). 명단에서 빠지면 다음 기동에 강등 |
-| 계정 허용 도메인 | `ALLOWED_EMAIL_DOMAINS` | 없음. **`live` 에서는 필수** — 비우면 기동 실패 |
-| SSE 타임아웃 | `SSE_TIMEOUT_MS` | 600000 |
-| 동시 스트림 상한 / 사용자별 | `CHAT_MAX_CONCURRENT_STREAMS` · `CHAT_MAX_CONCURRENT_PER_USER` | 8 / 1 |
-| 채팅·로그인 분당 상한 | `RATELIMIT_CHAT_PER_MINUTE` · `RATELIMIT_LOGIN_PER_MINUTE` | 20 / 10 |
-| 레이트리밋 키 총량 | `RATELIMIT_MAX_KEYS` | 10000 (초과 시 LRU 축출 = 카운터 리셋) |
-| 첨부 저장 루트 | `FILE_STORAGE_ROOT` | `./uploads` |
-| 고아 첨부 회수 | `ORPHAN_TTL_MINUTES` · `ORPHAN_CLEANUP_CRON` | 60분 / 매시 정각 |
-| 업로드 하드 한도 | 해당 없음 — yml 고정값 | 파일 26MB · 요청 31MB (타입별 상한 이미지 10MB · 문서 25MB 는 코드가 400으로 선검사) |
-| CORS 허용 출처 | `ALLOWED_ORIGINS` | `http://localhost:5173` |
+env 로 빠지지 않은 값 하나만 적는다 — **업로드 하드 한도**는 yml 고정값으로 파일 26MB · 요청 31MB 이고,
+타입별 상한(이미지 10MB · 문서 25MB)은 코드가 400 으로 선검사한다.
 
 ## 알려진 제약
 
@@ -178,10 +158,11 @@ sequenceDiagram
   깨지므로 감수한 트레이드오프다. 근거는 [backend](./backend.md) 「인증」에 있다.
 - **관리자 명단 변경에 재기동이 필요하다.** 앱에 권한 상승 API 를 두지 않은 대가다.
 - **사용량 집계 화면이 없다.** `messages` 에 기록만 하며 조회는 DB 직접 질의뿐이다.
-- **첨부는 로컬 디스크에 있다.** compose 의 `uploads` 볼륨이 받으며, 볼륨을 떼면 그대로 소실된다.
-- **자체 호스팅이라 전원 · 네트워크 · OS 를 직접 진다.** 서버가 꺼지면 서비스가 멈추고, 백업은
-  `pg_dump` 를 정기 실행해야 생긴다. 전환 조건은 [backend](./backend.md) 「배포」에 있다.
+- **첨부는 로컬 디스크에 있다.** compose 의 `uploads` 볼륨이 받으며, 볼륨을 떼거나 디스크를 잃으면 마지막 백업(아래, 매일) 이후 분은 소실된다.
+- **자체 호스팅이라 전원 · 네트워크 · OS 를 직접 진다.** 서버가 꺼지면 서비스가 멈춘다. 백업은
+  서버 cron 이 `scripts/backup.sh` 로 DB 와 첨부를 매일 GCS 에 올린다(#132). 백업 · 복구 절차와 전환 조건은
+  [backend](./backend.md) 「배포」에 있다.
 - **관측 도구가 없다.** 장애 재현 근거가 상관 ID(REQ-OPS-002) 뿐이며 도구 도입은 별건이다.
 - **OpenAI Vector Store 는 저장 용량 비례 과금**이라 문서가 늘면 월 비용이 선형으로 는다.
-- **`gpt-4o` 는 노후 라인**이라 예고 없이 deprecation 공지가 날 수 있다. `OPENAI_MODEL` 이 env 로
+- **기본값 `gpt-4o` 는 노후 라인**이라 예고 없이 deprecation 공지가 날 수 있다. `OPENAI_MODEL` 이 env 로
   빠져 있어 코드 변경 없이 교체할 수 있다.

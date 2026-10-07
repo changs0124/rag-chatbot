@@ -146,7 +146,7 @@
   `overview.md` 등)을 `pom.xml` · `frontend/package.json` · Spring Boot BOM 의 실제 값과 대조한다.
   문서 값이 실제의 **접두**면 통과한다 — 문서는 메이저만 적기도 하기 때문이다(`React 19` ↔ `19.2.7`).
   **`backend` 잡에서 돈다** : JUnit 은 `pom.xml` 에 없고 Boot BOM 이 관리해서 `./mvnw verify` 로 m2 가
-  채워진 뒤에만 읽을 수 있다. checkout 과 bash 뿐인 `docs` 잡에 붙였으면 정작 잡아야 할 것을 못 잡았다.
+  채워진 뒤에만 읽을 수 있다. checkout 과 bash 뿐인 `static` 잡에 붙였으면 정작 잡아야 할 것을 못 잡았다.
   **못 잡는 것** : 스크립트 안의 표에 없는 라이브러리, 이름 없이 숫자만 적힌 서술, `docs/06_changelog/**`(이력이라
   당시 값이 맞아 일부러 제외), 그리고 **버전이 아닌 목록형 서술**(CI 잡 목록·이 게이트 목록 자체가 그렇다).
 - `scripts/check-response-contract.sh` 가 `AdminDtos.DocumentResponse` · `summaryResult` 의 `<arg>` · 프론트 `RagDocument` ·

@@ -1,6 +1,6 @@
 # rag-chatbot
 
-> OpenAI API(GPT-4o) + OpenAI 플랫폼 Vector Store 기반 RAG 챗봇. 답변에 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론한다.
+> OpenAI API(모델은 `OPENAI_MODEL` — 기본 `gpt-4o` · 운영 `gpt-5.6-terra`) + OpenAI 플랫폼 Vector Store 기반 RAG 챗봇. 답변에 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론한다.
 
 모노레포 : `frontend/` (React + Vite) · `backend/` (Spring Boot + MyBatis) · `docs/` (이 폴더)
 
@@ -11,7 +11,7 @@
 | Frontend | React 19 · TypeScript 6 · Vite 8 · React Router 8 · Tailwind CSS 4 |
 | Backend | Java 17 · Spring Boot 4.1.1 · Spring Security · MyBatis 4.1.0 · Maven Wrapper |
 | Database | PostgreSQL (Flyway 마이그레이션, `backend/src/main/resources/db/migration/`) |
-| 외부 연동 | OpenAI Chat(GPT-4o) + Vector Store — `APP_MODE=mock\|live`로 전환 |
+| 외부 연동 | OpenAI 모델(`OPENAI_MODEL`, 기본 `gpt-4o` · 운영 `gpt-5.6-terra`) + Vector Store — `APP_MODE=mock\|live`로 전환 |
 | 저장소 | 로컬 디스크(`FILE_STORAGE_ROOT`) — `FileStorage` 인터페이스로 S3 교체 가능 |
 | 테스트 | 백엔드 JUnit 6 + Testcontainers(실 PostgreSQL) · 프론트 Vitest + Testing Library |
 | Lint | oxlint (프론트) |
