@@ -1,0 +1,158 @@
+{
+  "desktop-single": {
+    "row": {
+      "cy": 858.81,
+      "h": 58.38
+    },
+    "textarea": {
+      "cy": 858.81,
+      "h": 44.38
+    },
+    "plus": {
+      "cy": 861,
+      "h": 40
+    },
+    "send": {
+      "cy": 861,
+      "h": 40
+    },
+    "plusOffset": 2.19,
+    "sendOffset": 2.19,
+    "plusVsRow": 2.19,
+    "sendVsRow": 2.19,
+    "coarse": false,
+    "menuItems": [],
+    "accept": "image/*"
+  },
+  "desktop-multiline": {
+    "row": {
+      "cy": 858.81,
+      "h": 58.38
+    },
+    "textarea": {
+      "cy": 858.81,
+      "h": 44.38
+    },
+    "plus": {
+      "cy": 861,
+      "h": 40
+    },
+    "send": {
+      "cy": 861,
+      "h": 40
+    },
+    "plusOffset": 2.19,
+    "sendOffset": 2.19,
+    "plusVsRow": 2.19,
+    "sendVsRow": 2.19,
+    "coarse": false,
+    "menuItems": [],
+    "accept": "image/*"
+  },
+  "desktop-menu": {
+    "row": {
+      "cy": 858.81,
+      "h": 58.38
+    },
+    "textarea": {
+      "cy": 858.81,
+      "h": 44.38
+    },
+    "plus": {
+      "cy": 861,
+      "h": 40
+    },
+    "send": {
+      "cy": 861,
+      "h": 40
+    },
+    "plusOffset": 2.19,
+    "sendOffset": 2.19,
+    "plusVsRow": 2.19,
+    "sendVsRow": 2.19,
+    "coarse": false,
+    "menuItems": [
+      "사진",
+      "카메라"
+    ],
+    "accept": "image/*"
+  },
+  "mobile-single": {
+    "row": {
+      "cy": 802.81,
+      "h": 58.38
+    },
+    "textarea": {
+      "cy": 802.81,
+      "h": 44.38
+    },
+    "plus": {
+      "cy": 803,
+      "h": 44
+    },
+    "send": {
+      "cy": 803,
+      "h": 44
+    },
+    "plusOffset": 0.19,
+    "sendOffset": 0.19,
+    "plusVsRow": 0.19,
+    "sendVsRow": 0.19,
+    "coarse": true,
+    "menuItems": [],
+    "accept": "image/*"
+  },
+  "mobile-multiline": {
+    "row": {
+      "cy": 802.81,
+      "h": 58.38
+    },
+    "textarea": {
+      "cy": 802.81,
+      "h": 44.38
+    },
+    "plus": {
+      "cy": 803,
+      "h": 44
+    },
+    "send": {
+      "cy": 803,
+      "h": 44
+    },
+    "plusOffset": 0.19,
+    "sendOffset": 0.19,
+    "plusVsRow": 0.19,
+    "sendVsRow": 0.19,
+    "coarse": true,
+    "menuItems": [],
+    "accept": "image/*"
+  },
+  "mobile-menu": {
+    "row": {
+      "cy": 802.81,
+      "h": 58.38
+    },
+    "textarea": {
+      "cy": 802.81,
+      "h": 44.38
+    },
+    "plus": {
+      "cy": 803,
+      "h": 44
+    },
+    "send": {
+      "cy": 803,
+      "h": 44
+    },
+    "plusOffset": 0.19,
+    "sendOffset": 0.19,
+    "plusVsRow": 0.19,
+    "sendVsRow": 0.19,
+    "coarse": true,
+    "menuItems": [
+      "사진",
+      "카메라"
+    ],
+    "accept": "image/*"
+  }
+}
