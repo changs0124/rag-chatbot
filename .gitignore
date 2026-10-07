@@ -77,3 +77,6 @@ frontend/vitest-report.json
 !.issue/*/evidence/**
 .issue/**/.auth.json
 .issue/**/storage-state.json
+
+# 터널 토큰 등 compose secrets 파일 - 저장소에 두지 않는다(#203)
+secrets/
