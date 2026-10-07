@@ -1,0 +1,144 @@
+변경 후 — b871db1
+
+ .env.example                          |  2 +-
+ README.md                             |  6 ++---
+ docs/01_specs/api.md                  |  6 ++---
+ docs/01_specs/erd.md                  |  4 +--
+ docs/01_specs/features.md             |  4 +--
+ docs/01_specs/live-integration.md     |  4 +--
+ docs/01_specs/requirements.md         |  4 +--
+ docs/02_architecture/design-system.md | 14 +++++-----
+ docs/02_architecture/overview.md      | 49 +++++++++++------------------------
+ docs/04_tasks/backlog.md              |  2 +-
+ docs/04_tasks/current-sprint.md       |  5 ----
+ docs/06_changelog/CHANGELOG.md        | 13 ++++++++++
+ docs/CONVENTIONS.md                   |  2 +-
+ docs/INDEX.md                         |  4 +--
+ frontend/.env.example                 |  2 +-
+ frontend/src/index.css                |  3 ++-
+ scripts/check-doc-versions.sh         |  2 +-
+ 17 files changed, 57 insertions(+), 69 deletions(-)
+
+게이트 : merge-markers · doc-refs · doc-sections · doc-versions · response-contract · shell-syntax 통과
+
+## 대조 (변경 전 원문은 before/원문.txt)
+
++++ b/.env.example
+-# 이 파일은 컨테이너 바깥 배선(DB 비밀번호 · 터널 토큰)만 담는다.
++# 이 파일은 컨테이너 바깥 배선 중 DB 자격(POSTGRES_*)만 담는다. 터널 토큰은 secrets/ 파일에 둔다(아래 #203).
++++ b/README.md
+-> OpenAI API(GPT-4o) + OpenAI 플랫폼 Store(VectorDB) 기반 RAG 챗봇. 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론함.
++> OpenAI API(모델은 `OPENAI_MODEL` — 기본 `gpt-4o` · 운영 `gpt-5.6-terra`) + OpenAI 플랫폼 Store(VectorDB) 기반 RAG 챗봇. 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론함.
++++ b/docs/01_specs/api.md
+-| 최종 수정일 | 2026-09-08 |
++| 최종 수정일 | 2026-10-07 |
+-| 상태 | `초안` |
++| 상태 | `반영됨` (2026-10-06 런칭) |
+-{ "temporaryPassword": "Xk7-mQ2p-9Vr4" }
++{ "temporaryPassword": "Xk7m-Qp29-Vr4t" }
++++ b/docs/01_specs/erd.md
+-| 최종 수정일 | 2026-09-07 |
++| 최종 수정일 | 2026-10-07 |
+-| 상태 | `초안` |
++| 상태 | `반영됨` (2026-10-06 런칭) |
++++ b/docs/01_specs/features.md
+-| 최종 수정일 | 2026-09-10 |
++| 최종 수정일 | 2026-10-07 |
+-| 상태 | `초안` |
++| 상태 | `반영됨` (2026-10-06 런칭) |
++++ b/docs/01_specs/live-integration.md
+-| 최종 수정일 | 2026-09-22 |
++| 최종 수정일 | 2026-10-07 |
+-| 상태 | `초안` |
++| 상태 | `반영됨` (2026-10-06 런칭) |
++++ b/docs/01_specs/requirements.md
+-| 최종 수정일 | 2026-09-22 |
++| 최종 수정일 | 2026-10-07 |
+-| 상태 | `초안` |
++| 상태 | `반영됨` (2026-10-06 런칭) |
++++ b/docs/02_architecture/design-system.md
+-| `highlight` · `highlight-ink` | `chat/MessageList.tsx:181` 「자료 없음」 배지 | 각 1회 (같은 줄) |
++| `highlight` · `highlight-ink` | `chat/MessageList.tsx` 「자료 없음」 배지 | 각 1회 (같은 줄) |
+-| `danger-ink` | `ConfirmModal.tsx:42` 삭제 확인 버튼 | 1회 — `bg-danger` 가 있는 유일한 자리다 |
+-| `danger-soft` | `pages/AdminPage.tsx:166` 관리자 오류 배너 | 1회 |
++| `danger-ink` | `ConfirmModal.tsx` 삭제 확인 버튼 | 1회 — `bg-danger` 가 있는 유일한 자리다 |
++| `danger-soft` | `pages/AdminPage.tsx` 관리자 오류 배너 | 1회 |
+-`dark:` 는 색이 아닌 것(그림자 세기, 반투명 겹침 등)에만 남긴다.
+-| `chat/MessageList.tsx:181` | `accent-soft`/`accent` → `highlight`/`highlight-ink` | **의미가 틀렸던 토큰** — 동작색을 주의에 쓰고 있었다 |
+-| `pages/AdminPage.tsx:166` | `bg-accent-soft` → `bg-danger-soft` | **재도색이 드러낸 것** — 종전엔 accent(테라코타)와 danger(붉은)가 같은 계열이라 우연히 어울렸다 |
+-| `components/ConfirmModal.tsx:42` | `text-white` → `text-danger-ink` | **재도색이 강제한 것** — 다크 danger 가 바뀌며 흰 글자가 2.89:1 이 됐다 |
++| `chat/MessageList.tsx` | `accent-soft`/`accent` → `highlight`/`highlight-ink` | **의미가 틀렸던 토큰** — 동작색을 주의에 쓰고 있었다 |
++| `pages/AdminPage.tsx` | `bg-accent-soft` → `bg-danger-soft` | **재도색이 드러낸 것** — 종전엔 accent(테라코타)와 danger(붉은)가 같은 계열이라 우연히 어울렸다 |
++| `components/ConfirmModal.tsx` | `text-white` → `text-danger-ink` | **재도색이 강제한 것** — 다크 danger 가 바뀌며 흰 글자가 2.89:1 이 됐다 |
++++ b/docs/02_architecture/overview.md
+-> 구조가 바뀌면 이 문서를 함께 갱신한다. 최종 갱신 2026-09-08 — 관리자 기능(V5·V6) · 자체 호스팅 결정 ·
+-> Spring Boot 4.1 전환(#48)까지 반영돼 있다.
++> 구조가 바뀌면 이 문서를 함께 갱신한다. 최종 갱신 2026-10-07 — 관리자 기능(V5·V6) · 자체 호스팅 결정 ·
++> Spring Boot 4.1 전환(#48) · 런칭(2026-10-06) 이후 백업 · 모델 표기(#220)까지 반영돼 있다.
+-  O["OpenAI<br/>GPT-4o + Vector Store + Files"]
++  O["OpenAI<br/>Responses API + Vector Store + Files"]
+-`frontend/src/App.tsx` (React Router 8) 기준.
+-| 경로 | 화면 | 접근 |
+-|------|------|------|
+-| `/login` | `LoginPage` — 로그인 | 공개 |
+-| `/` | `ChatPage` — 사이드바 + 메시지 목록 + 입력창 | `ProtectedRoute` (인증 필요) |
+-| `/me` | `MyPage` — 이름·비밀번호 변경 | `ProtectedRoute` (인증 필요) |
+-| `/admin` | 문서 관리 · 사용자 관리 | `ProtectedRoute` + **관리자만**(아니면 `/` 로 되돌림) |
+-| 그 외 | `/`로 리다이렉트 | 해당 없음 |
++경로 · 화면 · 보호 조건은 [frontend](./frontend.md) 「라우팅」이 정본이다(`frontend/src/App.tsx` 기준).
+-| OpenAI Chat (`gpt-4o`) | 답변 생성 · 이미지(비전) 입력 | `OPENAI_MODEL`로 교체 가능 |
++| OpenAI 모델(`OPENAI_MODEL`, 기본 `gpt-4o` · 운영 `gpt-5.6-terra`) | 답변 생성 · 이미지(비전) 입력 | env 로 교체 가능 |
+-`backend/src/main/resources/application.yml` 기준 기본값.
+-| 항목 | 환경변수 | 기본값 |
+-|------|----------|--------|
+-| 실행 모드 | `APP_MODE` | 없음(필수) |
+-| JWT 시크릿 / 만료 | `JWT_SECRET` · `JWT_EXPIRATION_MINUTES` | 없음(필수) / 120분 |
+-| 슬라이딩 재발급 임계 | `JWT_REFRESH_THRESHOLD_MINUTES` | 30분 (**0이면 기능 끔**) |
+-| 관리자 이메일 명단 | `ADMIN_EMAILS` | 없음(관리자 0명). 명단에서 빠지면 다음 기동에 강등 |
+-| 계정 허용 도메인 | `ALLOWED_EMAIL_DOMAINS` | 없음. **`live` 에서는 필수** — 비우면 기동 실패 |
+-| SSE 타임아웃 | `SSE_TIMEOUT_MS` | 600000 |
+-| 동시 스트림 상한 / 사용자별 | `CHAT_MAX_CONCURRENT_STREAMS` · `CHAT_MAX_CONCURRENT_PER_USER` | 8 / 1 |
+-| 채팅·로그인 분당 상한 | `RATELIMIT_CHAT_PER_MINUTE` · `RATELIMIT_LOGIN_PER_MINUTE` | 20 / 10 |
+-| 레이트리밋 키 총량 | `RATELIMIT_MAX_KEYS` | 10000 (초과 시 LRU 축출 = 카운터 리셋) |
+-| 첨부 저장 루트 | `FILE_STORAGE_ROOT` | `./uploads` |
+-| 고아 첨부 회수 | `ORPHAN_TTL_MINUTES` · `ORPHAN_CLEANUP_CRON` | 60분 / 매시 정각 |
+-| 업로드 하드 한도 | 해당 없음 — yml 고정값 | 파일 26MB · 요청 31MB (타입별 상한 이미지 10MB · 문서 25MB 는 코드가 400으로 선검사) |
+-| CORS 허용 출처 | `ALLOWED_ORIGINS` | `http://localhost:5173` |
++환경변수 전량 · 기본값 · 빠뜨렸을 때의 증상은 **`backend/.env.example` 이 정본**이다(기본값은
++`backend/src/main/resources/application.yml`). 여기에 표로 옮기면 두 곳이 갈리므로 두지 않는다.
++env 로 빠지지 않은 값 하나만 적는다 — **업로드 하드 한도**는 yml 고정값으로 파일 26MB · 요청 31MB 이고,
++타입별 상한(이미지 10MB · 문서 25MB)은 코드가 400 으로 선검사한다.
+-  `pg_dump` 를 정기 실행해야 생긴다. 전환 조건은 [backend](./backend.md) 「배포」에 있다.
++  서버 cron 이 `scripts/backup.sh` 로 DB 와 첨부를 매일 GCS 에 올린다(#132). 백업 · 복구 절차와 전환 조건은
++  [backend](./backend.md) 「배포」에 있다.
++++ b/docs/04_tasks/backlog.md
+-| 첨부 영속성 | 로컬 디스크. 볼륨 없으면 재시작마다 소실 | "어제 올린 사진이 사라졌어요" | 호스트 볼륨 vs `FileStorage` S3 구현 |
++| 첨부 영속성 | 로컬 디스크(compose `uploads` 볼륨)라 재시작에는 남고, 매일 GCS 로 백업한다(#132). **디스크·VM 을 잃으면 마지막 백업 이후분은 소실** | "어제 올린 사진이 사라졌어요" | 다중 인스턴스로 갈 때 `FileStorage` S3 구현 |
++++ b/docs/04_tasks/current-sprint.md
+-**GitHub Actions 한도 문제는 해소됐다**(2026-09-11 공개 전환). 공개 저장소는 standard runner
+-분이 무료다. PR #134 에서 7잡 중 코드 4잡이 정상 완주하는 것을 확인했고, #135 로 `secrets`·`deps`
+-3잡도 변경마다 돌도록 되돌렸다. 로컬 예행(`bash scripts/check-all.sh`)은 **왕복 시간을 아끼는
+-용도로** 그대로 유용하다.
++++ b/docs/CONVENTIONS.md
+-  채워진 뒤에만 읽을 수 있다. checkout 과 bash 뿐인 `docs` 잡에 붙였으면 정작 잡아야 할 것을 못 잡았다.
++  채워진 뒤에만 읽을 수 있다. checkout 과 bash 뿐인 `static` 잡에 붙였으면 정작 잡아야 할 것을 못 잡았다.
++++ b/docs/INDEX.md
+-> OpenAI API(GPT-4o) + OpenAI 플랫폼 Vector Store 기반 RAG 챗봇. 답변에 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론한다.
++> OpenAI API(모델은 `OPENAI_MODEL` — 기본 `gpt-4o` · 운영 `gpt-5.6-terra`) + OpenAI 플랫폼 Vector Store 기반 RAG 챗봇. 답변에 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론한다.
+-| 외부 연동 | OpenAI Chat(GPT-4o) + Vector Store — `APP_MODE=mock\|live`로 전환 |
++| 외부 연동 | OpenAI 모델(`OPENAI_MODEL`, 기본 `gpt-4o` · 운영 `gpt-5.6-terra`) + Vector Store — `APP_MODE=mock\|live`로 전환 |
++++ b/frontend/.env.example
+-#          (빌드가 이 경우를 경고로 알림 - src/lib/api.ts)
++#          (빌드는 경고하지 않음. 프로덕션 번들이 실행될 때 브라우저 콘솔에 오류를 남김 - src/lib/api.ts)
++++ b/frontend/src/index.css
+- * highlight 는 무채색이다 - 홈페이지가 칩·배지를 무채색으로 내렸다. 배경 칠로만 쓴다(그 위 글자는 highlight-ink).
++ * highlight 는 무채색이다 - 홈페이지가 칩·배지를 무채색으로 내렸다. 밝은 면에서는 배경 칠로만 쓰고(그 위 글자는
++ * highlight-ink), 글자·아이콘색으로는 어두운 고정 스크림 위(Composer 첨부 실패 아이콘)에만 쓴다.
++++ b/scripts/check-doc-versions.sh
+-# 로컬 m2 저장소가 채워져 있어야 하므로 `./mvnw verify` 뒤에 돌려야 한다. `docs` 잡은 checkout 과 bash
++# 로컬 m2 저장소가 채워져 있어야 하므로 `./mvnw verify` 뒤에 돌려야 한다. `static` 잡은 checkout 과 bash
+
+## CHANGELOG 구획
+5:## [Unreleased]
+135:## [2026-10-06]
+2024:## [2026-08-19]
