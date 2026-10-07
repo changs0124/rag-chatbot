@@ -97,6 +97,9 @@ if command -v shellcheck >/dev/null 2>&1; then
 else
 	skip "셸 정적 분석" "shellcheck 없음 - CI 러너에는 기본 설치돼 있다"
 fi
+# **충돌 표시는 문서 검사보다 앞에 본다(#210).** 표시가 남은 문서는 참조 · 섹션 검사가 통과해도
+# 깨진 문서다 - overview.md 가 실제로 3주 동안 그 상태로 초록불을 받았다
+run "병합 충돌 표시"        bash scripts/check-merge-markers.sh
 run "문서 참조 실재"        bash scripts/check-doc-refs.sh
 run "문서 섹션 이름 대조"    bash scripts/check-doc-sections.sh
 
