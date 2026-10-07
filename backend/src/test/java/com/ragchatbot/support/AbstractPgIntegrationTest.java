@@ -1,5 +1,7 @@
 package com.ragchatbot.support;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +14,7 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRe
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -127,11 +130,15 @@ public abstract class AbstractPgIntegrationTest {
 		return token;
 	}
 
-	/** 대화를 하나 만들고 ID 를 돌려준다. 제목은 어느 케이스도 보지 않는다 */
+	/**
+	 * 대화를 하나 만들고 ID 를 돌려준다. 제목은 어느 케이스도 보지 않는다.
+	 * 상태를 여기서 단언한다 - 만들기가 실패하면 뒤에서 null 본문 NPE 로 터져 원인과 멀어진다
+	 */
 	@SuppressWarnings("rawtypes")
 	protected String createConversation(String token) {
 		var res = rest.exchange("/api/conversations", HttpMethod.POST,
 				new HttpEntity<>(Map.of("title", "대화"), bearer(token)), Map.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
 		return (String) res.getBody().get("id");
 	}
 
