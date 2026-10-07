@@ -182,6 +182,9 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   이동해 헤더가 화면 밖으로 밀려 나갔다. 그래서 채팅 화면은 ① 떠 있는 동안 `html` 의 스크롤과 튕김(`overscroll-behavior`)을
   끄고 ② `visualViewport` 가 바뀔 때마다 루트 높이를 그 높이로 맞추고 문서 스크롤을 0 으로 되돌린다(`ChatPage.tsx`).
   Android Chrome 은 `index.html` viewport 의 `interactive-widget=resizes-content` 로 레이아웃 자체가 줄어든다.
+  **이 메타는 전 페이지에 걸린다** — Chrome 108 전의 기본 동작과 같다. 로그인·관리·마이 페이지는 `min-h-[100dvh]` +
+  문서 스크롤이라 키보드가 열리면 최소 높이만 줄고 내용은 그대로 스크롤된다.
+  `scrollTo(0, 0)` 은 데스크톱 창 크기 변경에도 불리지만 채팅 화면은 문서가 스크롤되지 않아(목록만 스크롤) 잃는 위치가 없다.
   **헤드리스 브라우저는 가상 키보드와 iOS 튕김을 재현하지 못한다** — 이 부분은 실기기로만 확인된다.
 - 답변에는 배경을 깔지 않는다(ChatGPT · Claude 공통). 사용자 메시지만 `raised` 카드다 —
   긴 답변에 큰 색면이 깔리면 읽는 흐름이 끊긴다.
