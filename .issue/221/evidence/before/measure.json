@@ -1,0 +1,46 @@
+{
+  "initial": {
+    "headerTop": 0,
+    "winScrollY": 0,
+    "docScrollH": 844,
+    "innerH": 844,
+    "htmlOverflow": "visible",
+    "bodyOverflow": "visible",
+    "bodyOverscroll": "auto",
+    "htmlOverscroll": "auto",
+    "viewportMeta": "width=device-width, initial-scale=1.0"
+  },
+  "afterOverscrollDown": {
+    "headerTop": 0,
+    "winScrollY": 0,
+    "docScrollH": 844,
+    "innerH": 844,
+    "htmlOverflow": "visible",
+    "bodyOverflow": "visible",
+    "bodyOverscroll": "auto",
+    "htmlOverscroll": "auto",
+    "viewportMeta": "width=device-width, initial-scale=1.0"
+  },
+  "afterWindowScrollTo": {
+    "headerTop": 0,
+    "winScrollY": 0,
+    "docScrollH": 844,
+    "innerH": 844,
+    "htmlOverflow": "visible",
+    "bodyOverflow": "visible",
+    "bodyOverscroll": "auto",
+    "htmlOverscroll": "auto",
+    "viewportMeta": "width=device-width, initial-scale=1.0"
+  },
+  "afterFocusScrollIntoView": {
+    "headerTop": 0,
+    "winScrollY": 0,
+    "docScrollH": 844,
+    "innerH": 844,
+    "htmlOverflow": "visible",
+    "bodyOverflow": "visible",
+    "bodyOverscroll": "auto",
+    "htmlOverscroll": "auto",
+    "viewportMeta": "width=device-width, initial-scale=1.0"
+  }
+}
