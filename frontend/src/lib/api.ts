@@ -59,6 +59,24 @@ export function adoptRefreshedToken(res: Response): void {
   if (next) setToken(next)
 }
 
+/**
+ * 실패 응답 → ApiError. 401 이면 만료 처리까지 건다.
+ *
+ * 이 래퍼와 채팅 스트림(`endpoints.ts`) 두 곳이 쓴다 - 따로 두면 한쪽만 고쳐 스트림과 나머지 API 의
+ * 에러 표시가 조용히 갈린다(#219).
+ */
+export async function toApiError(res: Response, path: string): Promise<ApiError> {
+  if (res.status === 401) handleUnauthorized(path)
+  let message = `요청 실패 (${res.status})`
+  try {
+    const data = await res.json()
+    if (data?.message) message = data.message
+  } catch {
+    // 본문 없음
+  }
+  return new ApiError(res.status, message)
+}
+
 export class ApiError extends Error {
   status: number
 
@@ -95,17 +113,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     signal: options.signal,
   })
   adoptRefreshedToken(res)
-  if (!res.ok) {
-    if (res.status === 401) handleUnauthorized(path)
-    let message = `요청 실패 (${res.status})`
-    try {
-      const data = await res.json()
-      if (data?.message) message = data.message
-    } catch {
-      // 본문 없음
-    }
-    throw new ApiError(res.status, message)
-  }
+  if (!res.ok) throw await toApiError(res, path)
   if (res.status === 204) return undefined as T
   const contentType = res.headers.get('content-type') ?? ''
   return (contentType.includes('application/json') ? await res.json() : await res.text()) as T

@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach, beforeEach } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import ResizableSidebar, {
   SIDEBAR_DEFAULT_WIDTH,
   SIDEBAR_MAX_WIDTH,
@@ -20,8 +20,6 @@ function drag(toX: number) {
 }
 
 describe('ResizableSidebar', () => {
-  // vitest globals 미사용이라 RTL 자동 정리가 안 걸림 - 렌더가 누적되지 않게 직접 정리함
-  afterEach(cleanup)
   beforeEach(() => localStorage.clear())
 
   const subject = <ResizableSidebar><div data-testid="panel">목록</div></ResizableSidebar>

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,7 +21,6 @@ import org.springframework.util.MultiValueMap;
 
 import com.ragchatbot.entity.RagDocument;
 import com.ragchatbot.repository.RagDocumentRepository;
-import com.ragchatbot.repository.UserRepository;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
@@ -34,18 +32,9 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
 class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 
 	@Autowired
-	private UserRepository userRepository;
-
-	@Autowired
 	private RagDocumentRepository documentRepository;
 
 	private static final byte[] PDF = "%PDF-1.4 동기화 본문".getBytes(StandardCharsets.UTF_8);
-
-	private String createAdminUser(String email) {
-		String token = createUser(email);
-		userRepository.promoteAdmins(List.of(email));
-		return token;
-	}
 
 	/** 업로드하고 그 문서의 OpenAI 파일 ID 를 돌려줌 */
 	@SuppressWarnings("rawtypes")

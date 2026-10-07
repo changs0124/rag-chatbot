@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import ImageLightbox from './ImageLightbox'
 
 const items = [
@@ -17,9 +17,6 @@ function pinch(target: HTMLElement, from: number, to: number) {
 }
 
 describe('ImageLightbox', () => {
-  // vitest globals 미사용이라 RTL 자동 정리가 안 걸림 - 렌더가 누적되지 않게 직접 정리함
-  afterEach(cleanup)
-
   it('두 손가락으로 벌리면 확대됨', () => {
     render(<ImageLightbox items={items} startIndex={0} onClose={vi.fn()} />)
     const img = screen.getByAltText('a.png')

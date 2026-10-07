@@ -1,4 +1,4 @@
-import { adoptRefreshedToken, api, API_BASE, ApiError, getToken, handleUnauthorized } from './api'
+import { adoptRefreshedToken, api, API_BASE, getToken, toApiError } from './api'
 import type {
   AdminUser,
   Attachment,
@@ -92,16 +92,9 @@ export async function streamChat(
   // 이 경로는 api 래퍼를 안 거치므로 토큰 갱신·만료 처리를 여기서 직접 물림
   adoptRefreshedToken(res)
   if (!res.ok || !res.body) {
-    if (res.status === 401) handleUnauthorized('/api/chat')
-    let message = `요청 실패 (${res.status})`
-    try {
-      const data = await res.json()
-      if (data?.message) message = data.message
-    } catch {
-      // 본문 없음
-    }
-    handlers.onError?.(message)
-    throw new ApiError(res.status, message)
+    const err = await toApiError(res, '/api/chat')
+    handlers.onError?.(err.message)
+    throw err
   }
 
   const reader = res.body.getReader()

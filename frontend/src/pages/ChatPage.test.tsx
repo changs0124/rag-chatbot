@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import ChatPage from './ChatPage'
 
@@ -52,8 +52,6 @@ function renderChatPage() {
     </BrowserRouter>,
   )
 }
-
-afterEach(cleanup)
 
 describe('ChatPage 모바일 헤더 로고', () => {
   it('드로어가 닫혀 있으면 헤더 로고가 이름을 읽어 준다', () => {
