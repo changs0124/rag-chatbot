@@ -17,14 +17,6 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  */
 class ConversationCrossAccessTest extends AbstractPgIntegrationTest {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private String createConversation(String token) {
-		var res = rest.exchange("/api/conversations", HttpMethod.POST,
-				new HttpEntity<>(Map.of("title", "A의 대화"), bearer(token)), Map.class);
-		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-		return (String) res.getBody().get("id");
-	}
-
 	@Test
 	void owner_can_access_stranger_gets_404() {
 		String tokenA = createUser("owner@b.com");

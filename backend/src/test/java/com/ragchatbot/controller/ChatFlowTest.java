@@ -31,13 +31,6 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	private static final byte[] PNG = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private String createConversation(String token) {
-		var res = rest.exchange("/api/conversations", HttpMethod.POST,
-				new HttpEntity<>(Map.of("title", "채팅"), bearer(token)), Map.class);
-		return (String) res.getBody().get("id");
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private String uploadImage(String token) {
 		var partHeaders = new HttpHeaders();
 		partHeaders.setContentType(MediaType.IMAGE_PNG);

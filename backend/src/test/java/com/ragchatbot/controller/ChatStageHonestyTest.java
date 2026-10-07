@@ -22,13 +22,6 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 	/** 라이브 전용 라벨 - 목업 응답에 이 문구가 섞이면 시연 관람자가 실 검색으로 오인함 */
 	private static final String LIVE_SEARCH_LABEL = "참조 문서 검색 중";
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private String createConversation(String token) {
-		var res = rest.exchange("/api/conversations", HttpMethod.POST,
-				new HttpEntity<>(Map.of("title", "단계"), bearer(token)), Map.class);
-		return (String) res.getBody().get("id");
-	}
-
 	private String chat(String token, String message) {
 		var res = rest.exchange("/api/chat", HttpMethod.POST,
 				new HttpEntity<>(Map.of("conversationId", createConversation(token), "message", message), bearer(token)),

@@ -10,6 +10,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -255,8 +256,10 @@ public class OpenAiRealService implements OpenAiService {
 		}
 	}
 
+	// FileService.ALLOWED 의 확장자 → 미디어 타입과 같은 표다. 합치지 않은 것은 openai 가 service 를 import 하면
+	// 패키지 순환(service → openai → service)이 생기기 때문이다 - 허용 형식을 늘리면 여기도 같이 고친다(#219)
 	private static String mimeFromPath(String path) {
-		String p = path.toLowerCase();
+		String p = path.toLowerCase(Locale.ROOT);
 		if (p.endsWith(".png")) return "image/png";
 		if (p.endsWith(".webp")) return "image/webp";
 		if (p.endsWith(".gif")) return "image/gif";

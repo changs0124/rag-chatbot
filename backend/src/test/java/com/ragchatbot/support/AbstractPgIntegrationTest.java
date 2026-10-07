@@ -1,5 +1,8 @@
 package com.ragchatbot.support;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +14,15 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRe
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+
+import com.ragchatbot.repository.UserRepository;
 
 /**
  * 통합 테스트 공통 베이스 - 실 PostgreSQL(Testcontainers) + 계정 발급 헬퍼. Docker 필요.
@@ -66,6 +72,9 @@ public abstract class AbstractPgIntegrationTest {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
+	@Autowired
+	private UserRepository userRepository;
+
 	/** 기동 러너가 만드는 뿌리 관리자. 계정 발급 API 를 부르려면 관리자 토큰이 먼저 있어야 한다 */
 	protected static final String ROOT_ADMIN = "root@rag.test";
 
@@ -112,6 +121,25 @@ public abstract class AbstractPgIntegrationTest {
 		jdbc.update("update users set password_hash = ?, role = 'admin' where email = ?",
 				passwordEncoder.encode(ROOT_PASSWORD), ROOT_ADMIN);
 		return login(ROOT_ADMIN, ROOT_PASSWORD);
+	}
+
+	/** 계정을 발급하고 관리자로 올린 뒤 토큰을 돌려준다. 승격은 기동 러너와 같은 저장소 경로를 탄다 */
+	protected String createAdminUser(String email) {
+		String token = createUser(email);
+		userRepository.promoteAdmins(List.of(email));
+		return token;
+	}
+
+	/**
+	 * 대화를 하나 만들고 ID 를 돌려준다. 제목은 어느 케이스도 보지 않는다.
+	 * 상태를 여기서 단언한다 - 만들기가 실패하면 뒤에서 null 본문 NPE 로 터져 원인과 멀어진다
+	 */
+	@SuppressWarnings("rawtypes")
+	protected String createConversation(String token) {
+		var res = rest.exchange("/api/conversations", HttpMethod.POST,
+				new HttpEntity<>(Map.of("title", "대화"), bearer(token)), Map.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		return (String) res.getBody().get("id");
 	}
 
 	protected HttpHeaders bearer(String token) {

@@ -20,13 +20,6 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  */
 class ChatStreamContractTest extends AbstractPgIntegrationTest {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private String createConversation(String token) {
-		var res = rest.exchange("/api/conversations", HttpMethod.POST,
-				new HttpEntity<>(Map.of("title", "계약"), bearer(token)), Map.class);
-		return (String) res.getBody().get("id");
-	}
-
 	private static List<String> eventNames(String sse) {
 		List<String> names = new ArrayList<>();
 		for (String line : sse.split("\n")) {

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
-import { cleanup, render, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, waitFor } from '@testing-library/react'
 import CameraCapture from './CameraCapture'
 
 /** 해소 시점을 테스트가 쥐는 promise - 「권한 대기 중」을 관측하려면 필요함 */
@@ -34,8 +34,6 @@ function stubGetUserMedia(promise: Promise<MediaStream>) {
  * 때까지 켜져 있다. 화면에 드러나지 않는 규칙이라 `stop()` 호출이 유일한 게이트다.
  */
 describe('CameraCapture 트랙 정리', () => {
-  afterEach(cleanup)
-
   /** 이 이슈의 핵심 - 권한 승인 전에 닫으면 뒤늦게 온 스트림도 멈춘다 */
   it('스트림이 도착하기 전에 닫아도 뒤늦게 온 트랙을 멈춤', async () => {
     const d = deferred<MediaStream>()

@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
 import LoginPage from './LoginPage'
@@ -15,9 +15,6 @@ function renderLogin() {
 }
 
 describe('LoginPage', () => {
-  // 자동 정리가 꺼져 있어 앞 케이스의 DOM 이 남는다 - 남으면 "없음" 단언이 앞 렌더를 보고 흔들린다
-  afterEach(cleanup)
-
   it('renders the login form with a submit button', () => {
     renderLogin()
     expect(screen.getByText('계속하려면 로그인하세요')).toBeInTheDocument()

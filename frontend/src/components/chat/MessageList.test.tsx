@@ -1,12 +1,9 @@
-import { describe, it, expect, afterEach } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import MessageList from './MessageList'
 import type { ChatMessage } from '../../lib/types'
 
 describe('MessageList', () => {
-  // vitest globals 미사용이라 RTL 자동 정리가 안 걸림 - 렌더가 누적되지 않게 직접 정리함
-  afterEach(cleanup)
-
   it('renders assistant content with its citations', () => {
     const messages: ChatMessage[] = [
       { id: 'u1', role: 'user', content: '환불 정책', status: 'complete', createdAt: '', citations: [] },

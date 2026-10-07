@@ -1,13 +1,11 @@
 package com.ragchatbot.service;
 
 import java.util.Locale;
-import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ragchatbot.entity.User;
-import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.exception.ApiExceptions.UnauthorizedException;
 import com.ragchatbot.repository.UserRepository;
 import com.ragchatbot.security.JwtService;
@@ -54,12 +52,6 @@ public class AuthService {
 		User user = found.get();
 		return new AuthResponse(jwtService.issue(user.id(), user.email()),
 				new MeResponse(user.id(), user.email(), user.name(), user.role()));
-	}
-
-	public MeResponse me(UUID userId) {
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new NotFoundException("사용자 없음"));
-		return new MeResponse(user.id(), user.email(), user.name(), user.role());
 	}
 
 	private static String normalizeEmail(String email) {
