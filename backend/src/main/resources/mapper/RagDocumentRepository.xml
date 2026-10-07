@@ -36,6 +36,19 @@
 			(#{id}, #{filename}, #{openaiFileId}, #{vectorStoreId}, #{byteSize}, #{status}, #{uploadedBy})
 	</insert>
 
+	<!-- 스토어 동기화(#193). 충돌 대상은 V9 부분 유니크 인덱스 - 조건(where)까지 맞춰 적어야 그 인덱스로 추론된다 -->
+	<insert id="insertIfAbsent" parameterType="com.ragchatbot.entity.RagDocument">
+		insert into rag_documents
+			(id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by)
+		values
+			(#{id}, #{filename}, #{openaiFileId}, #{vectorStoreId}, #{byteSize}, #{status}, #{uploadedBy})
+		on conflict (openai_file_id) where deleted_at is null do nothing
+	</insert>
+
+	<select id="findAliveOpenaiFileIds" resultType="java.lang.String">
+		select openai_file_id from rag_documents where deleted_at is null
+	</select>
+
 	<!-- 올린 사람 이름을 조인으로 함께 가져옴(N+1 방지). inner join 이어도 되는 이유는
 	     uploaded_by 가 on delete restrict 라 참조 대상이 사라지지 않기 때문임 -->
 	<select id="listAlive" resultMap="summaryResult">

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -479,12 +480,7 @@ public class OpenAiRealService implements OpenAiService {
 					.header("OpenAI-Beta", OPENAI_BETA_ASSISTANTS_V2)
 					.retrieve()
 					.body(JsonNode.class);
-			String status = node == null ? "" : node.path("status").asString("");
-			return switch (status) {
-				case "completed" -> "completed";
-				case "in_progress" -> "in_progress";
-				default -> "failed";
-			};
+			return narrowStatus(node == null ? "" : node.path("status").asString(""));
 		} catch (Exception e) {
 			// 조회 자체가 실패한 것은 "인덱싱 실패"와 **다르다**(#91). 종전에는 failed 를 돌려줬는데,
 			// 호출자가 그것을 DB 에 굳히면 그 행이 재조회 대상에서 빠져 다시는 묻지 않게 됨 -
@@ -492,6 +488,64 @@ public class OpenAiRealService implements OpenAiService {
 			// 「모름」이 「확정된 실패」가 됨. 모르면 null 을 돌려주고 판단은 호출자에게 맡김
 			log.warn("openai 문서 상태 조회 실패 {}: {}", openaiFileId, e.getMessage());
 			return null;
+		}
+	}
+
+	/** 스토어 파일 상태를 우리 어휘로 좁힘. 모르는 값(cancelled 등)은 completed 로 넘기지 않음 */
+	private static String narrowStatus(String status) {
+		return switch (status) {
+			case "completed" -> "completed";
+			case "in_progress" -> "in_progress";
+			default -> "failed";
+		};
+	}
+
+	/**
+	 * 공용 스토어 파일 전부(#193). 스토어 파일 목록은 페이지(최대 100개)로 오므로 {@code has_more} 가
+	 * 거짓이 될 때까지 {@code after} 로 이어 읽는다. 파일명·크기는 스토어 응답에 없어 {@code /files/{id}} 로 묻는다.
+	 *
+	 * <p>예외를 삼키지 않는다 - 일부만 돌려주면 동기화가 그것을 전부로 읽는다.
+	 */
+	@Override
+	public List<StoreFile> listStoreFiles(Predicate<String> needsDetail) {
+		List<StoreFile> files = new ArrayList<>();
+		String after = null;
+		while (true) {
+			String uri = "/vector_stores/" + sharedVectorStoreId + "/files?limit=100"
+					+ (after == null ? "" : "&after=" + after);
+			JsonNode page = client.get()
+					.uri(uri)
+					.header("OpenAI-Beta", OPENAI_BETA_ASSISTANTS_V2)
+					.retrieve()
+					.body(JsonNode.class);
+			if (page == null) {
+				throw new IllegalStateException("OpenAI 스토어 파일 목록 응답이 비어 있음");
+			}
+			for (JsonNode item : page.path("data")) {
+				String fileId = item.path("id").asString(null);
+				if (fileId == null || fileId.isBlank()) {
+					throw new IllegalStateException("OpenAI 스토어 파일 목록에 id 가 없는 항목이 있음");
+				}
+				String status = narrowStatus(item.path("status").asString(""));
+				if (!needsDetail.test(fileId)) {
+					files.add(new StoreFile(fileId, sharedVectorStoreId, null, 0, status));
+					continue;
+				}
+				JsonNode file = client.get().uri("/files/" + fileId).retrieve().body(JsonNode.class);
+				String filename = file == null ? null : file.path("filename").asString(null);
+				if (filename == null || filename.isBlank()) {
+					throw new IllegalStateException("OpenAI 파일 응답에 파일명이 없음: " + fileId);
+				}
+				files.add(new StoreFile(fileId, sharedVectorStoreId, filename, file.path("bytes").asLong(0), status));
+			}
+			if (!page.path("has_more").asBoolean(false)) {
+				return files;
+			}
+			after = page.path("last_id").asString(null);
+			if (after == null || after.isBlank()) {
+				// 다음 페이지가 있다는데 이어 읽을 기준이 없음 - 여기서 멈추면 일부만 돌려주게 된다
+				throw new IllegalStateException("OpenAI 스토어 파일 목록에 has_more 인데 last_id 가 없음");
+			}
 		}
 	}
 

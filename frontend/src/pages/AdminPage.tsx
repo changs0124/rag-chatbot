@@ -12,6 +12,7 @@ import {
   listAdminUsers,
   listDocuments,
   resetUserPassword,
+  syncDocuments,
   uploadDocument,
 } from '../lib/endpoints'
 import type { AdminUser, RagDocument } from '../lib/types'
@@ -57,6 +58,8 @@ export default function AdminPage() {
   const [documents, setDocuments] = useState<RagDocument[]>([])
   const [users, setUsers] = useState<AdminUser[]>([])
   const [uploading, setUploading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncNotice, setSyncNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<RagDocument | null>(null)
   // kind 로 갈리는 것은 안내 문구뿐이다 — 발급은 "새 계정"이고 초기화는 "기존 세션이 끊긴다"
@@ -114,6 +117,26 @@ export default function AdminPage() {
       setError(err instanceof ApiError ? err.message : '업로드하지 못했습니다')
     } finally {
       setUploading(false)
+    }
+  }
+
+  // 목록은 이 서버 DB 만 읽는다 — 다른 DB 를 거쳐 올린 문서는 검색에는 잡혀도 여기 안 보인다(#193)
+  async function onSync() {
+    setError(null)
+    setSyncNotice(null)
+    setSyncing(true)
+    try {
+      const res = await syncDocuments()
+      setSyncNotice(
+        res.added > 0
+          ? `스토어에서 ${res.added}건을 가져왔습니다`
+          : `이미 스토어와 맞습니다 (스토어 ${res.total}건)`,
+      )
+      await refresh()
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : '스토어와 동기화하지 못했습니다')
+    } finally {
+      setSyncing(false)
     }
   }
 
@@ -194,7 +217,17 @@ export default function AdminPage() {
         </section>
 
         <section className="mt-8">
-          <h2 className="text-sm font-medium text-ink-muted">문서 {documents.length}건</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-medium text-ink-muted">문서 {documents.length}건</h2>
+            <button
+              onClick={() => void onSync()}
+              disabled={syncing}
+              className="min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink disabled:opacity-60 md:min-h-0"
+            >
+              {syncing ? '맞추는 중…' : '스토어와 동기화'}
+            </button>
+          </div>
+          {syncNotice && <p className="mt-2 text-xs text-ink-muted">{syncNotice}</p>}
 
           {loaded && documents.length === 0 ? (
             <div className="mt-3 rounded-2xl bg-surface px-6 py-10 text-center">

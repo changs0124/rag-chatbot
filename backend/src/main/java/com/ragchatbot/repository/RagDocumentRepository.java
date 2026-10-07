@@ -23,6 +23,15 @@ public interface RagDocumentRepository {
 	void insert(RagDocument document);
 
 	/**
+	 * 같은 파일의 살아 있는 행이 없을 때만 넣음 - 스토어 동기화(#193). 넣었으면 1, 이미 있으면 0.
+	 * 동시 실행 경합은 V9 부분 유니크 인덱스가 받는다
+	 */
+	int insertIfAbsent(RagDocument document);
+
+	/** 살아 있는 행의 OpenAI 파일 ID 전부. 동기화가 어느 스토어 파일에 행이 없는지 가리는 데 씀 */
+	List<String> findAliveOpenaiFileIds();
+
+	/**
 	 * 살아 있는 문서만 최신순. 지워진 것(deleted_at not null)은 목록에 넣지 않음.
 	 *
 	 * <p>올린 사람 이름을 <b>조인으로 함께</b> 가져옴 - 문서마다 따로 조회하면 N+1 이 됨

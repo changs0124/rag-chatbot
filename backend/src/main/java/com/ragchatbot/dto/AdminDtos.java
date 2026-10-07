@@ -24,6 +24,10 @@ public final class AdminDtos {
 			String uploadedByName, OffsetDateTime createdAt) {
 	}
 
+	/** 스토어 동기화 결과(#193). {@code added} 는 이번에 새로 넣은 행 수, {@code total} 은 스토어의 파일 수 */
+	public record SyncResponse(int added, int total) {
+	}
+
 	/** 사용자 목록 항목. 초기화 대상을 고르는 용도라 여기서는 이메일이 필요함 */
 	public record AdminUserResponse(UUID id, String email, String name, String role,
 			OffsetDateTime createdAt) {

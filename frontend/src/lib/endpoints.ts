@@ -38,6 +38,9 @@ export const deleteAttachment = (id: string) => api.del<void>(`/api/files/${id}`
 // 관리자 (FEAT-ADMIN-002 · 003). 관리자가 아니면 서버가 404 를 준다 - 403 이 아니다
 export const listDocuments = () => api.get<RagDocument[]>('/api/admin/documents')
 export const deleteDocument = (id: string) => api.del<void>(`/api/admin/documents/${id}`)
+/** 스토어와 동기화(#193). added 는 새로 가져온 수, total 은 스토어의 파일 수 — 다시 불러도 결과가 같다 */
+export const syncDocuments = () =>
+  api.post<{ added: number; total: number }>('/api/admin/documents/sync')
 export const listAdminUsers = () => api.get<AdminUser[]>('/api/admin/users')
 
 /** 계정 발급. 임시 비밀번호는 이 응답에만 실려 오고 다시 조회할 수 없다 */

@@ -25,6 +25,7 @@ import com.ragchatbot.service.AdminUserService;
 import com.ragchatbot.dto.AdminDtos.AdminUserResponse;
 import com.ragchatbot.dto.AdminDtos.CreateUserRequest;
 import com.ragchatbot.dto.AdminDtos.DocumentResponse;
+import com.ragchatbot.dto.AdminDtos.SyncResponse;
 import com.ragchatbot.dto.AdminDtos.TemporaryPasswordResponse;
 
 /**
@@ -60,6 +61,14 @@ public class AdminController {
 		UUID adminId = CurrentUser.id();
 		guard.requireAdmin(adminId);
 		return documentService.upload(adminId, file);
+	}
+
+	/** 스토어와 동기화(#193). 공용 스토어에 있는데 살아 있는 행이 없는 파일을 행으로 넣는다 - 멱등 */
+	@PostMapping("/documents/sync")
+	public SyncResponse syncDocuments() {
+		UUID adminId = CurrentUser.id();
+		guard.requireAdmin(adminId);
+		return documentService.sync(adminId);
 	}
 
 	@DeleteMapping("/documents/{id}")
