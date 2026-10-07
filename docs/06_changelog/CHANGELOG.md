@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+### Fixed
+- **모바일에서 스크롤·키보드에 로고 헤더가 위로 밀려 올라가던 것을 막는다(#221).** 채팅 화면은 `100dvh` 인데 `dvh` 는
+  가상 키보드에 반응하지 않아, 키보드가 열리면 보이는 영역만 줄고 입력 쪽으로 이동해 헤더가 화면 밖으로 나갔다. iOS 는
+  문서가 스크롤되지 않아도 가장자리에서 페이지 전체를 튕겼다(`html` 의 `overscroll-behavior: auto`).
+  - `ChatPage` : 떠 있는 동안 `html` 에 `overflow: hidden` · `overscroll-behavior: none`(떠나면 복원), `visualViewport`
+    resize/scroll 마다 루트 높이 = 보이는 영역 높이 + `scrollTo(0, 0)`
+  - `index.html` viewport 에 `interactive-widget=resizes-content`(Android Chrome)
+  - 헤드리스 Chromium 모바일 에뮬레이션에서는 변경 전에도 재현되지 않았다(문서 높이 = 뷰포트). 실기기 확인 필요
+  - `ChatPage.test.tsx` 2건, 프론트 하한 120 → 122
+
 ### Changed
 - **메시지 입력 칸 : 버튼 세로 정렬 · 데스크탑 카메라 숨김 · 사진 선택 형식 좁히기(#218).**
   - 텍스트 영역 한 줄 높이가 `leading-relaxed`(24.375) + py 20 = 44.375px 라 바닥 정렬(`items-end`)된 버튼이
