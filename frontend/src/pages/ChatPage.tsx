@@ -33,7 +33,9 @@ export default function ChatPage() {
 
     const vv = window.visualViewport
     const sync = () => {
-      if (!vv) return
+      // 사용자가 손가락으로 확대한 동안은 손대지 않는다 - 확대된 보이는 영역 높이를 루트에 넣으면 화면이
+      // 짧아지고, 문서를 되돌리면 확대해서 보던 자리를 잃는다(#221). 입력 포커스 확대는 글자 16px 로 막았다
+      if (!vv || Math.abs(vv.scale - 1) > 0.01) return
       setViewportHeight(vv.height)
       window.scrollTo(0, 0)
     }
@@ -141,7 +143,7 @@ export default function ChatPage() {
                       setEditingTitle(false)
                     }
                   }}
-                  className="w-full max-w-xs rounded-lg border border-line bg-raised px-2.5 py-1.5 text-[15px] font-semibold text-ink outline-none focus:border-accent focus:shadow-[0_0_0_4px_var(--c-focus-ring)]"
+                  className="w-full max-w-xs rounded-lg border border-line bg-raised px-2.5 py-1.5 text-base font-semibold md:text-[15px] text-ink outline-none focus:border-accent focus:shadow-[0_0_0_4px_var(--c-focus-ring)]"
                 />
               ) : (
                 <button
