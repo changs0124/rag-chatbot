@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Changed
+- **메시지 입력 칸 : 버튼 세로 정렬 · 데스크탑 카메라 숨김 · 사진 선택 형식 좁히기(#218).**
+  - 텍스트 영역 한 줄 높이가 `leading-relaxed`(24.375) + py 20 = 44.375px 라 바닥 정렬(`items-end`)된 버튼이
+    md 이상(40px)에서 **2.19px 아래로 처졌다**(모바일 44px 은 0.19px). `leading-6` + `md:py-2` 로 44 / 40 에 정확히 맞춰 차이 0
+  - `+` 메뉴의 「카메라」는 터치 환경(`pointer: coarse`)에서만 렌더
+  - 사진 선택기 `accept` 를 `image/*` → `image/jpeg,image/png,image/webp,image/gif`(서버 허용 목록). iOS Safari 는 그래도
+    「사진 찍기」를 보여 주며 막을 수 없다 — `frontend.md` 「첨부 UI 계약」에 한계로 적었다
+  - `Composer.test.tsx` 3건 추가, 프론트 하한 117 → 120
+
 ### Fixed
 - **업로드 요청에 `file` 파트가 없거나 멀티파트가 아니면 500 이던 것을 400 으로 내린다(#217).** `POST /api/files` ·
   `POST /api/admin/documents` 의 `@RequestParam("file")` 가 비면 스프링이 `MissingServletRequestPartException`

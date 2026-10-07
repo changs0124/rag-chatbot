@@ -265,14 +265,18 @@ export default function Composer({
                       fileInputRef.current?.click()
                     }}
                   />
-                  <MenuItem
-                    icon={<IconCamera className="h-4 w-4" />}
-                    label="카메라"
-                    onClick={() => {
-                      setMenuOpen(false)
-                      setShowCamera(true)
-                    }}
-                  />
+                  {/* 마우스·트랙패드(정밀 포인터) 환경에는 내장 카메라가 있어도 찍을 일이 거의 없어 뺀다(#218).
+                      jsdom 처럼 matchMedia 가 없으면 숨김 쪽으로 둔다 */}
+                  {window.matchMedia?.('(pointer: coarse)').matches && (
+                    <MenuItem
+                      icon={<IconCamera className="h-4 w-4" />}
+                      label="카메라"
+                      onClick={() => {
+                        setMenuOpen(false)
+                        setShowCamera(true)
+                      }}
+                    />
+                  )}
                 </div>
               </>
             )}
@@ -281,7 +285,9 @@ export default function Composer({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            // image/* 가 아니라 서버 허용 목록 그대로 - 일부 모바일 선택기는 이때 「촬영」 항목을 뺀다.
+            // iOS Safari 는 이미지를 받는 한 항상 「사진 찍기」를 보여 줘 막을 수 없다(#218, WebKit 236981)
+            accept="image/jpeg,image/png,image/webp,image/gif"
             multiple
             className="hidden"
             onChange={(e) => {
@@ -302,7 +308,9 @@ export default function Composer({
             }}
             rows={1}
             placeholder="메시지를 입력하세요"
-            className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2.5 text-[15px] leading-relaxed text-ink outline-none placeholder:text-ink-muted"
+            // 한 줄 높이를 버튼과 정확히 맞춤 : 24 + 20 = 44(모바일 h-11), 24 + 16 = 40(md h-10).
+            // leading-relaxed(24.375) 였을 때는 md 에서 버튼이 2.2px 아래로 처졌다(#218)
+            className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2.5 text-[15px] leading-6 text-ink md:py-2 outline-none placeholder:text-ink-muted"
           />
 
           {streaming ? (
