@@ -484,8 +484,9 @@ Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip
 상한은 여기에 여유를 얹은 값이다. `app` 420m · `db` 160m · `cloudflared` 64m 이고,
 `app` 은 `MaxRAMPercentage=65` · `UseSerialGC` 로, `db` 는 `shared_buffers=48MB` ·
 `max_connections=20` 으로 묶었다. Hikari 풀은 `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5` 로
-줄였다 — `application.yml` 에 hikari 설정이 없어 기본값이 10 이다. `memswap_limit` 은 일부러
-비워 두었다. 미지정이면 Docker 가 `mem_limit` 만큼 스왑을 더 허용해(합계 2배) 기동 피크를 받아 준다.
+줄였다 — `application.yml` 에 hikari 설정이 없어 기본값이 10 이다. `memswap_limit` 은 이때
+일부러 비워 두었다(스왑을 `mem_limit` 만큼 더 허용해 기동 피크를 받으려는 의도). **#202 에서 `app` 만 `420m`
+(= `mem_limit`, 스왑 금지)으로 바꿨다** — 근거는 아래 「업로드 부하에서 스왑을 금지하기로 정했다」.
 **의존성 해석은 여전히 Central 을 타므로** 그쪽은 재시도 두 번으로 덮는다 — 없앤 것은 배포판이라는 한 홉이다.
 멀티스테이지라 최종 이미지는 `eclipse-temurin:17-jre-alpine` 그대로이며, 실측 크기 차이는 45바이트였다.
 
@@ -572,10 +573,17 @@ grep '^TUNNEL_TOKEN=' .env | cut -d= -f2- | tr -d '\n' > secrets/tunnel_token &&
 # 새 compose 로 cloudflared 를 다시 만든 뒤 터널이 붙는 것을 보고 나서 .env 의 TUNNEL_TOKEN 줄을 지운다
 ```
 
-**업로드 기반 DoS 와 스왑의 관계는 아직 정하지 않았다(#130).** `memswap_limit` 을 비워 스왑을
-`mem_limit` 만큼 더 허용한 것이 26MB 멀티파트 동시 업로드에서 **스왑 스래싱**으로 쓰일 수 있다 —
-`pd-standard` 30GB 는 쓰기 45 IOPS 라 이때 사실상 멎는다. 판단 근거가 그 IOPS 수치라
-개발 PC 에서는 재현할 수 없다. 운영 VM 에 부하를 걸어야 해 #202 로 나눴다(시간대와 방법을 먼저 정한다).
+**업로드 부하에서 스왑을 금지하기로 정했다(#202 — `memswap_limit: 420m` = `mem_limit`).**
+종전에는 `memswap_limit` 을 비워 스왑을 `mem_limit` 만큼 더 허용했고(#127, 기동 피크를 받으려는
+의도), 그것이 26MB 멀티파트 동시 업로드에서 **스왑 스래싱**으로 쓰일까 봐 #202 로 나눠 운영 VM 에서
+실측했다(2026-10-08 · 26MB·image/png 을 동시 1·2·4·8개로, 각 10MB 초과라 전부 400·저장 0).
+결과가 가설을 뒤집었다 : 두려워한 swap-**out** 은 최대 1페이지뿐이었고, 실제로 서비스를 멎게 한 것은
+swap-**in** 이었다. **유휴 중 JVM 힙이 스왑으로 밀려났다가, 한가하다 들어온 첫 업로드가 그 페이지를
+`pd-standard`(쓰기 ~45 IOPS)에서 도로 읽어오느라 39.1초가 걸렸다**(그 구간 swap-in 최대 3.8MB/s ·
+io-wait 72%). 페이지가 상주한 뒤로는 동시 8개도 2초대였다. 스왑을 끄면 상주 집합이 메모리에 남아 그
+지연이 사라진다. 피크가 269MB/420m 라 헤드룸이 넉넉해 OOM 위험은 낮고, 진짜로 한도를 넘기면 스왑으로
+디스크를 녹이는 대신 빨리 죽고 재시작한다. 기동 피크는 역사적으로 물리 메모리 안에서 끝났다(스왑 30MiB).
+원본 수치는 이슈 [#202](https://github.com/changs0124/rag-chatbot/issues/202) 코멘트에 있다.
 
 **DB 와 첨부를 매일 GCS 로 백업한다(#132).** 단일 VM · 단일 디스크라 `pgdata` · `uploads` · 이미지 · 로그가
 같은 30GB 에 있고, 무료 티어에는 스냅샷이 없다. 종전에는 어떤 디스크 사고에도 복구 수단이 없었다.
