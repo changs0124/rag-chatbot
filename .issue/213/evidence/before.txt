@@ -1,0 +1,16 @@
+$ grep -rn "아직 백엔드|백엔드 미연결|배포 완료.가 아니다|런칭 항목" README.md docs (06_changelog 제외)
+README.md:47:> **데모는 아직 백엔드가 연결되지 않았음** — https://rag-chatbot-jade-pi.vercel.app
+README.md:50:> 런칭 때 그 값을 넣고 재배포하면 풀림(남은 준비물과 순서는 `docs/04_tasks/current-sprint.md` 「진행 중」의 런칭 항목).
+docs/01_specs/live-integration.md:60:그 순서는 [current-sprint](../04_tasks/current-sprint.md) 「진행 중」의 런칭 항목이 정본이다. 그래서 이 문서는 절차와
+docs/01_specs/requirements.md:163:Phase 9는 로컬에서 실응답 대조까지 끝났다. 배포 서버에 같은 값을 넣는 일은 `docs/04_tasks/current-sprint.md` 「진행 중」의 런칭 항목에 있고, 절차는 `docs/01_specs/live-integration.md`.
+docs/02_architecture/backend.md:316:[current-sprint](../04_tasks/current-sprint.md) 「진행 중」의 런칭 항목이 정본이다(#174).
+docs/02_architecture/frontend.md:196:**UI 미리보기(백엔드 미연결)** : https://rag-chatbot-jade-pi.vercel.app (Vercel 프로젝트명 `rag-chatbot`)
+docs/04_tasks/backlog.md:25:- [ ] **런칭** — **정본은 [current-sprint](./current-sprint.md) 「진행 중」의 런칭 항목이다**(#174).
+docs/INDEX.md:47:런칭까지 정해야 할 것과 남은 준비물 · 순서는 [current-sprint](./04_tasks/current-sprint.md) 「진행 중」의 런칭 항목에 있다.
+
+$ grep -n "런칭" docs/04_tasks/current-sprint.md docs/04_tasks/backlog.md
+docs/04_tasks/current-sprint.md:10:- [ ] **런칭** — **여기가 런칭의 정본이다**(#174). `backlog.md` 는 이 항목을 가리키기만 한다.
+docs/04_tasks/current-sprint.md:27:  **이 런칭을 기다리는 열린 이슈가 둘이다.** 배포하는 날 이슈를 각각 열어 보지 않아도 되게 적어 둔다.
+docs/04_tasks/current-sprint.md:47:동시에 막고 있다 — 목록과 순서는 위 「런칭」 항목에 있다.
+docs/04_tasks/backlog.md:25:- [ ] **런칭** — **정본은 [current-sprint](./current-sprint.md) 「진행 중」의 런칭 항목이다**(#174).
+docs/04_tasks/backlog.md:28:  갈라졌다. 런칭은 *아직 착수하지 않은 것*이 아니라 **진행 중인 일**이라 스프린트 쪽이 맞다
