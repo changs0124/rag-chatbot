@@ -1,0 +1,18 @@
+변경 후 — 두 경우 모두 400 BAD_REQUEST, 폴백 ERROR 로그 없음
+
+변경 : GlobalExceptionHandler.handleBadUpload (MissingServletRequestPartException · MultipartException → 400)
+
+$ ./mvnw -q test   (백엔드 전체)
+total=241 failures=0 (변경 전 239 + TC-OPS-022/023)
+
+GlobalExceptionFallbackTest
+tests="14" errors="0" skipped="0" failures="0" 
+  통과 : testcase name="multipart_without_file_part_is_bad_request"
+  통과 : testcase name="non_multipart_upload_is_bad_request"
+
+413 회귀 확인 (MaxUploadSizeExceededException 은 MultipartException 하위 — 기존 핸들러가 그대로 받는가)
+  AdminDocumentFlowTest.java
+  AdminDocumentFlowTest : tests="21" errors="0" failures="0" 
+
+케이스 하한
+  OK

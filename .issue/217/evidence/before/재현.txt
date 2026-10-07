@@ -1,0 +1,12 @@
+변경 전 — 업로드 경로에 file 파트가 없거나 멀티파트가 아니면 500
+
+커밋 기준 : origin/main 796d164 · 프로덕션 코드 무수정, GlobalExceptionFallbackTest 에 TC-OPS-022/023 만 추가한 상태
+
+$ ./mvnw -q test -Dtest=GlobalExceptionFallbackTest
+Tests run: 14, Failures: 2, Errors: 0, Skipped: 0
+  TC-OPS-022 multipart_without_file_part_is_bad_request : expected 400 BAD_REQUEST but was 500 INTERNAL_SERVER_ERROR
+  TC-OPS-023 non_multipart_upload_is_bad_request       : expected 400 BAD_REQUEST but was 500 INTERNAL_SERVER_ERROR
+
+폴백(handleUnexpected)이 ERROR 로 기록한 예외
+  org.springframework.web.multipart.MultipartException: Current request is not a multipart request
+  org.springframework.web.multipart.support.MissingServletRequestPartException: Required part 'file' is not present.
