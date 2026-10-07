@@ -178,6 +178,11 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ### 화면 골격
 
 - 화면 높이는 `100dvh` 다. `h-screen` 은 iOS 주소창이 접힐 때 입력창을 화면 밖으로 밀어낸다.
+  **`dvh` 는 가상 키보드에 반응하지 않는다(#221).** 키보드가 열리면 보이는 영역(`visualViewport`)만 줄고 입력 쪽으로
+  이동해 헤더가 화면 밖으로 밀려 나갔다. 그래서 채팅 화면은 ① 떠 있는 동안 `html` 의 스크롤과 튕김(`overscroll-behavior`)을
+  끄고 ② `visualViewport` 가 바뀔 때마다 루트 높이를 그 높이로 맞추고 문서 스크롤을 0 으로 되돌린다(`ChatPage.tsx`).
+  Android Chrome 은 `index.html` viewport 의 `interactive-widget=resizes-content` 로 레이아웃 자체가 줄어든다.
+  **헤드리스 브라우저는 가상 키보드와 iOS 튕김을 재현하지 못한다** — 이 부분은 실기기로만 확인된다.
 - 답변에는 배경을 깔지 않는다(ChatGPT · Claude 공통). 사용자 메시지만 `raised` 카드다 —
   긴 답변에 큰 색면이 깔리면 읽는 흐름이 끊긴다.
 - 사이드바 폭은 `ResizableSidebar` 가 관장한다(200~420px, 기본 260px, `localStorage`).

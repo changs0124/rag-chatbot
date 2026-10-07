@@ -17,6 +17,36 @@ export default function ChatPage() {
 
   const activeTitle = chat.conversations.find((c) => c.id === chat.activeId)?.title
 
+  // 모바일에서 헤더가 밀려 올라가지 않게 함(#221). 실기기 브라우저 고유 동작 둘을 막는다 -
+  // ① iOS 는 문서가 스크롤되지 않아도 가장자리에서 페이지 전체를 고무줄처럼 튕긴다 → 채팅 화면이 떠 있는
+  //   동안만 문서 스크롤과 튕김을 끈다(관리·마이 페이지는 문서 스크롤을 그대로 쓴다).
+  // ② 키보드가 열리면 100dvh 는 그대로이고 보이는 영역(visualViewport)만 줄며 입력 쪽으로 이동한다 →
+  //   루트 높이를 보이는 영역에 맞추고 끌려 올라간 문서를 되돌린다. Android Chrome 은 index.html 의
+  //   interactive-widget=resizes-content 로 레이아웃 자체가 줄어 같은 결과가 된다.
+  // 헤드리스 브라우저는 가상 키보드와 튕김을 재현하지 못해 실기기로만 확인된다
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
+  useEffect(() => {
+    const html = document.documentElement
+    const prev = { overflow: html.style.overflow, overscroll: html.style.overscrollBehavior }
+    html.style.overflow = 'hidden'
+    html.style.overscrollBehavior = 'none'
+
+    const vv = window.visualViewport
+    const sync = () => {
+      if (!vv) return
+      setViewportHeight(vv.height)
+      window.scrollTo(0, 0)
+    }
+    vv?.addEventListener('resize', sync)
+    vv?.addEventListener('scroll', sync)
+    return () => {
+      html.style.overflow = prev.overflow
+      html.style.overscrollBehavior = prev.overscroll
+      vv?.removeEventListener('resize', sync)
+      vv?.removeEventListener('scroll', sync)
+    }
+  }, [])
+
   // 드로어가 열린 동안 뒤 화면이 같이 스크롤되면 어디를 보고 있었는지 잃는다
   useEffect(() => {
     if (!sidebarOpen) return
@@ -54,8 +84,12 @@ export default function ChatPage() {
   )
 
   return (
-    // h-screen 이 아니라 100dvh - iOS 주소창이 접힐 때 입력창이 화면 밖으로 밀리는 것을 막음
-    <div className="flex h-[100dvh] bg-canvas">
+    // h-screen 이 아니라 100dvh - iOS 주소창이 접힐 때 입력창이 화면 밖으로 밀리는 것을 막음.
+    // 키보드가 열려 보이는 영역이 바뀐 뒤에는 그 높이를 따른다(#221)
+    <div
+      className="flex h-[100dvh] bg-canvas"
+      style={viewportHeight === null ? undefined : { height: viewportHeight }}
+    >
       <div className="hidden md:block">
         <ResizableSidebar>{sidebar}</ResizableSidebar>
       </div>
