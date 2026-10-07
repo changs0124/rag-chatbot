@@ -80,8 +80,9 @@ describe('ChatPage 모바일 헤더 로고', () => {
 describe('ChatPage 모바일 뷰포트 (#221)', () => {
   /** jsdom 에 없는 visualViewport 를 이벤트만 쏠 수 있게 흉내 냄 */
   function fakeVisualViewport(height: number) {
-    const target = new EventTarget() as EventTarget & { height: number }
+    const target = new EventTarget() as EventTarget & { height: number; scale: number }
     target.height = height
+    target.scale = 1
     Object.defineProperty(window, 'visualViewport', { value: target, configurable: true })
     return target
   }
@@ -104,6 +105,23 @@ describe('ChatPage 모바일 뷰포트 (#221)', () => {
 
     expect(root.style.height).toBe('500px')
     expect(scrollTo).toHaveBeenCalledWith(0, 0)
+  })
+
+  it('사용자가 확대한 동안에는 루트 높이도 문서 스크롤도 건드리지 않는다', () => {
+    // 확대된 보이는 영역 높이를 루트에 넣으면 화면이 짧아져 입력 칸이 위로 솟는다(실기기 보고)
+    const vv = fakeVisualViewport(844)
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    renderChatPage()
+    const root = screen.getByRole('banner').closest('div.flex-col')!.parentElement as HTMLElement
+
+    vv.scale = 1.2
+    vv.height = 400
+    act(() => {
+      vv.dispatchEvent(new Event('resize'))
+    })
+
+    expect(root.style.height).toBe('')
+    expect(scrollTo).not.toHaveBeenCalled()
   })
 
   it('채팅 화면에 있는 동안만 문서 스크롤·튕김을 끄고, 떠나면 되돌린다', () => {
