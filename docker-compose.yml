@@ -136,6 +136,8 @@ services:
       DB_USERNAME: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       FILE_STORAGE_ROOT: /data/uploads
+      # 문서 그림(FEAT-CHAT-004). 아래 바인드 마운트와 짝이다
+      DOC_FIGURES_DIR: /data/doc-figures
       # **SerialGC 를 명시한다.** 공유 vCPU 한 자리 사양에서 G1 의 GC 스레드는 CPU 와 메모리를
       # 함께 낭비한다. 컨테이너 상한이 작아 JVM 이 알아서 고르기도 하지만, 상한을 올리는 날
       # 조용히 G1 으로 되돌아가는 것을 막으려고 박아 둔다.
@@ -148,6 +150,9 @@ services:
     volumes:
       # 첨부는 로컬 디스크에 쌓인다. 이 볼륨을 떼면 업로드된 이미지가 사라진다
       - uploads:/data/uploads
+      # 문서 그림은 배포자가 복사해 두는 파일이라 볼륨이 아니라 배포 디렉터리의 폴더를 붙인다.
+      # 앱은 읽기만 하므로 :ro. 폴더가 없으면 docker 가 빈 폴더를 만들고 그림 없이 텍스트만 나온다
+      - ./doc-figures:/data/doc-figures:ro
     networks:
       # app 만 두 네트워크에 걸친다 - db 와 말해야 하고(backend) 터널도 받아야 한다(edge).
       - backend

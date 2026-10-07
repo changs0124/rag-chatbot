@@ -98,6 +98,21 @@ class OpenAiRealInstructionsTest {
 	}
 
 	/**
+	 * 그림 표식을 그대로 옮기라는 지시가 실린다(FEAT-CHAT-004).
+	 *
+	 * <p>이 줄이 없으면 모델은 그림을 보여 달라는 질문에 표식 대신 기호로 그림을 흉내 낸다 -
+	 * 도입 전 실응답이 실제로 그랬다(#228 before 증거).
+	 */
+	@Test
+	void tells_model_to_copy_figure_markers_verbatim() {
+		chat("shared-store");
+
+		assertThat(bodies.get(0))
+				.contains("[[그림:키]]")
+				.contains("검색 결과에 없는 표식을 만들지 않고");
+	}
+
+	/**
 	 * 스토어가 없으면 지시를 싣지 않는다.
 	 *
 	 * <p>검색 도구가 없는데 "사내 문서를 먼저 찾아본다" 고 지시하면 <b>모델에게 없는 도구를 쓰라고

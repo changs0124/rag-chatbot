@@ -82,7 +82,10 @@ done <<< "$links"
 wiki="$(find "${paths[@]}" -name '*.md' 2>/dev/null | sort | while IFS= read -r f; do
   awk -v f="$f" '
     /^[[:space:]]*```/ { fence = !fence; next }
-    !fence && /\[\[[^] 	][^]]*\]\]/ { print f ":" NR ":" $0 }
+    # 그림 표식 [[그림:<key>]] 은 제품 문법이라 빼고 본다(FEAT-CHAT-004). 줄째 건너뛰지 않고 표식만 지워서,
+    # 같은 줄의 진짜 위키링크는 여전히 걸린다
+    !fence { line = $0; gsub(/\[\[그림:[a-z0-9<>-]*\]\]/, "", line) }
+    !fence && line ~ /\[\[[^] 	][^]]*\]\]/ { print f ":" NR ":" $0 }
   ' "$f"
 done)"
 if [ -n "$wiki" ]; then

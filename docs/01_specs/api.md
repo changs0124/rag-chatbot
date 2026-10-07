@@ -128,6 +128,7 @@
 | API-POST-004 | POST | `/api/files` | 첨부 업로드 (multipart) | USER | 구현됨 |
 | API-DELETE-002 | DELETE | `/api/files/{id}` | 첨부 삭제 | USER | 구현됨 |
 | API-GET-006 | GET | `/api/files/{id}?token=…` | 첨부 서빙 | **서명 토큰** | 구현됨 |
+| API-GET-009 | GET | `/api/doc-figures/{key}` | 문서 그림 서빙 (FEAT-CHAT-004) | USER | 구현됨 |
 | API-POST-005 | POST | `/api/chat` | 채팅 — **SSE 스트림** | USER | 구현됨 |
 | API-GET-007 | GET | `/api/admin/documents` | RAG 문서 목록 | ADMIN | 구현됨 |
 | API-POST-006 | POST | `/api/admin/documents` | RAG 문서 업로드 | ADMIN | 구현됨 |
@@ -270,6 +271,24 @@
 
 **알려진 약점** : 페이지를 오래 열어둔 뒤 새로 그려지는 이미지가 만료로 깨질 수 있다.
 백로그 「파일 URL 수명」 항목이다.
+
+### API-GET-009: 문서 그림 서빙
+
+**GET** `/api/doc-figures/{key}` — Bearer 필요
+
+답변 본문의 그림 표식 `[[그림:<key>]]` 이 가리키는 그림을 돌려준다(FEAT-CHAT-004).
+프론트는 `<img src>` 로 직접 걸지 않고 `fetch` 로 받아 `Blob` objectURL 로 그린다 — 그래서 첨부(API-GET-006)와 달리
+서명 쿼리 토큰이 필요 없다.
+
+| 상황 | 응답 |
+|------|------|
+| 성공 | 200 `image/png` · `Cache-Control: private, max-age=86400` |
+| key 가 `^[a-z0-9-]{1,64}$` 가 아님 | 404 — 형식 오류도 「없음」으로 답한다. 키 공간을 더듬어 볼 단서를 주지 않는다 |
+| 그런 그림이 없음 · `DOC_FIGURES_DIR` 미설정 | 404 |
+| 비로그인 · 만료 | 401 |
+
+**사용자 단위 권한이 없다.** 그림은 공용 Vector Store 문서에서 나왔고 그 문서는 로그인한 모든 사용자가 검색한다 —
+볼 수 있는 범위가 같다.
 
 ### API-GET-007 / API-POST-006 / API-DELETE-003 / API-POST-009: RAG 문서
 

@@ -1,4 +1,5 @@
 import type { Citation } from '../../lib/types'
+import { stripFigureMarkers } from '../../lib/docFigures'
 
 // 답변 하단 출처 목록(각주 번호 + 출처명 + 스니펫). R-4
 export default function Citations({ citations }: { citations: Citation[] }) {
@@ -11,7 +12,7 @@ export default function Citations({ citations }: { citations: Citation[] }) {
           <li key={c.seq} className="text-[13px] leading-relaxed text-ink-muted">
             <span className="mr-1 font-semibold text-accent">[{c.seq}]</span>
             <span className="text-ink">{c.sourceName}</span>
-            {c.snippet && <span> — {c.snippet}</span>}
+            {c.snippet && <span> — {stripFigureMarkers(c.snippet)}</span>}
           </li>
         ))}
       </ol>

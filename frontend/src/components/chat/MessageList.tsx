@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { API_BASE } from '../../lib/api'
 import type { ChatMessage } from '../../lib/types'
 import Citations from './Citations'
 import { nextStick } from './scroll'
 import ImageLightbox from './ImageLightbox'
 import { IconFile } from '../icons'
+import DocFigure from './DocFigure'
+import { splitFigures } from '../../lib/docFigures'
 
 /** 스크롤을 실제로 하는 조상. MessageList 는 컨테이너를 소유하지 않는다(ChatPage 가 가진다) */
 function findScrollParent(el: HTMLElement | null): HTMLElement | null {
@@ -140,6 +142,17 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   // 확대 보기는 그 말풍선의 이미지들을 한 묶음으로 넘김(좌우 이동 대상)
   const images = (message.attachments ?? []).filter((a) => a.fileType === 'image')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  // 문서 그림(FEAT-CHAT-004). 사용자 첨부와 묶음을 섞지 않는다 - 확대 화면의 좌우 이동은 같은 종류끼리다
+  const segments = message.content ? splitFigures(message.content, message.status === 'streaming') : []
+  const [figureSrc, setFigureSrc] = useState<Record<string, string>>({})
+  const [openFigure, setOpenFigure] = useState<string | null>(null)
+  const onFigureLoad = useCallback(
+    (key: string, src: string) => setFigureSrc((prev) => (prev[key] === src ? prev : { ...prev, [key]: src })),
+    [],
+  )
+  const figureKeys = [
+    ...new Set(segments.flatMap((s) => (s.type === 'figure' && figureSrc[s.key] ? [s.key] : []))),
+  ]
   return (
     <div className={isUser ? 'flex justify-end' : 'flex justify-start'}>
       {/* 답변에는 배경을 깔지 않음(ChatGPT · Claude 공통) - 긴 답변에 큰 색면이 깔리면 읽는 흐름이 끊김 */}
@@ -187,7 +200,15 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             자료 없음 - 관련 자료를 찾지 못해 추론으로 답변함
           </p>
         )}
-        {message.content && <p className="whitespace-pre-wrap break-words">{message.content}</p>}
+        {segments.map((s, i) =>
+          s.type === 'text' ? (
+            <p key={`t${i}`} className="whitespace-pre-wrap break-words">
+              {s.text}
+            </p>
+          ) : (
+            <DocFigure key={`f${i}-${s.key}`} figureKey={s.key} onLoad={onFigureLoad} onOpen={setOpenFigure} />
+          ),
+        )}
         {message.status === 'error' && (
           <p className="mt-1 text-[13px] text-danger">응답 중 오류가 발생했습니다</p>
         )}
@@ -199,6 +220,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           items={images.map((a) => ({ src: API_BASE + a.url }))}
           startIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
+        />
+      )}
+      {openFigure !== null && figureKeys.includes(openFigure) && (
+        <ImageLightbox
+          items={figureKeys.map((k) => ({ src: figureSrc[k], name: `${k}.png` }))}
+          startIndex={figureKeys.indexOf(openFigure)}
+          onClose={() => setOpenFigure(null)}
         />
       )}
     </div>
