@@ -1,0 +1,30 @@
+# after — 버킷 설정 · IAM (2026-10-06, 소유자 계정으로 조회)
+default_storage_class: STANDARD
+lifecycle_config:
+  rule:
+  - action:
+      type: Delete
+    condition:
+      age: 14
+location: US-WEST1
+public_access_prevention: enforced
+soft_delete_policy:
+  effectiveTime: '2026-10-06T10:05:42.995000+00:00'
+  retentionDurationSeconds: '604800'
+uniform_bucket_level_access: true
+
+## IAM
+roles/storage.legacyBucketOwner ['projectEditor:<프로젝트>', 'projectOwner:<프로젝트>']
+roles/storage.legacyBucketReader ['projectViewer:<프로젝트>']
+roles/storage.legacyObjectOwner ['projectEditor:<프로젝트>', 'projectOwner:<프로젝트>']
+roles/storage.legacyObjectReader ['projectViewer:<프로젝트>']
+roles/storage.objectCreator ['serviceAccount:rag-backup-writer@<프로젝트>.iam.gserviceaccount.com']
+
+## 객체
+gs://<버킷>/:
+
+gs://<버킷>/20261006T100953Z/:
+       193  2026-10-06T10:10:07Z  gs://<버킷>/20261006T100953Z/SHA256SUMS-20261006T100953Z
+     16256  2026-10-06T10:10:07Z  gs://<버킷>/20261006T100953Z/db-20261006T100953Z.dump
+       137  2026-10-06T10:10:08Z  gs://<버킷>/20261006T100953Z/uploads-20261006T100953Z.tar.gz
+TOTAL: 3 objects, 16586 bytes (16.20kiB)
