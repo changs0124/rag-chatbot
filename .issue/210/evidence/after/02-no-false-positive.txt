@@ -1,0 +1,13 @@
+# after — setext 밑줄(단독 =======) 오탐 확인 + 표시 없는 현재 트리
+$ cat docs/__setext.md
+  | Title
+  | =======
+$ bash scripts/check-merge-markers.sh
+Using Node v24.19.0
+충돌 표시 검사 통과 (파일 590개)
+exit=0
+
+$ bash scripts/check-merge-markers.sh   # 임시 파일 제거 후
+Using Node v24.19.0
+충돌 표시 검사 통과 (파일 589개)
+exit=0
