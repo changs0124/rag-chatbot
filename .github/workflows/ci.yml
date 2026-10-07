@@ -152,6 +152,10 @@ jobs:
         run: bash scripts/check-shell-lint.sh
       - name: DTO · resultMap · 프론트 타입의 필드 대조
         run: bash scripts/check-response-contract.sh
+      # 줄 맨 앞의 `<<<<<<< ` · `>>>>>>> ` 를 저장소 전체에서 찾는다(#210). overview.md 에 충돌 표시가
+      # 3주 동안 커밋돼 있었는데 이 잡의 다른 검사는 전부 통과했다
+      - name: 병합 충돌 표시
+        run: bash scripts/check-merge-markers.sh
       - name: 문서 참조 실재 + 위키링크 검사
         run: bash scripts/check-doc-refs.sh
       # 경로가 아니라 **섹션 이름**을 본다. 위 검사는 파일이 있으면 통과하므로 없는 섹션을 가리켜도
