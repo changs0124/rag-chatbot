@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Changed
+- **메시지 입력 칸 : 버튼 세로 정렬 · 데스크탑 카메라 숨김 · 사진 선택 형식 좁히기(#218).**
+  - 텍스트 영역 한 줄 높이가 `leading-relaxed`(24.375) + py 20 = 44.375px 라 바닥 정렬(`items-end`)된 버튼이
+    md 이상(40px)에서 **2.19px 아래로 처졌다**(모바일 44px 은 0.19px). `leading-6` + `md:py-2` 로 44 / 40 에 정확히 맞춰 차이 0
+  - `+` 메뉴의 「카메라」는 터치 환경(`pointer: coarse`)에서만 렌더
+  - 사진 선택기 `accept` 를 `image/*` → `image/jpeg,image/png,image/webp,image/gif`(서버 허용 목록). iOS Safari 는 그래도
+    「사진 찍기」를 보여 주며 막을 수 없다 — `frontend.md` 「첨부 UI 계약」에 한계로 적었다
+  - `Composer.test.tsx` 3건 추가, 프론트 하한 117 → 120
+
 ### Security
 - **cloudflared 고정 이미지를 2026.9.1 에서 2026.10.0 으로 올렸다(#215).** #130 에서 다이제스트로 고정했으므로
   저절로 바뀌지 않는다 — compose 주석의 절차대로 다이제스트를 바꾸는 커밋으로 올린다.
