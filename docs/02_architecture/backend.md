@@ -529,7 +529,8 @@ chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 �
 태그지만 이번 범위가 아니다 — 별도로 판단할 것.)
 
 **서버의 `.env` 권한은 `deploy.sh` 가 600 으로 고정한다(#130).** 이 파일들에는 `JWT_SECRET` ·
-`OPENAI_API_KEY` · `DB_PASSWORD` · `TUNNEL_TOKEN` 이 평문으로 있고, 기본 umask 로 만들면 644 가
+`OPENAI_API_KEY` · `DB_PASSWORD` 가 평문으로 있고(터널 토큰은 #203 에서 `secrets/` 파일로 옮겼다 — 아래),
+기본 umask 로 만들면 644 가
 되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
 프리플라이트에서 확인하고 고치며, 무엇을 바꿨는지 출력한다.
 

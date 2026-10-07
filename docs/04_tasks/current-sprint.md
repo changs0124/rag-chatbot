@@ -15,7 +15,8 @@
   (`us-west1-b`)이 현재 `TERMINATED`. 재개는 **켜고 `bash scripts/deploy.sh`** 다.
 
   저장소 밖 준비물 :
-  - `TUNNEL_TOKEN`(Cloudflare 터널 생성) 확보
+  - 터널 토큰(Cloudflare 터널 생성) 확보 — `.env` 가 아니라 서버 `secrets/tunnel_token`(파일 644 · 디렉터리 700)에 둔다(#203).
+    옮기는 절차는 [backend](../02_architecture/backend.md) 「배포」
   - `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` — **로컬 실연동용으로는 확보됐다**(테스트 프로젝트, 2026-09-22, #184).
     배포에 같은 키·스토어를 쓸지, 운영용을 따로 만들지는 정하지 않았다. 스토어를 새로 만들면 문서를 `/admin` 으로 다시 올린다
   - `bash scripts/deploy.sh` 로 실배포 — **이 스크립트는 통짜로 실행된 적이 없다.** `--dry-run` 을 먼저 볼 것
