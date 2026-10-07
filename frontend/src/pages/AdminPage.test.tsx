@@ -13,6 +13,7 @@ vi.mock('../lib/endpoints', () => ({
   deleteDocument: vi.fn(),
   resetUserPassword: vi.fn(),
   createAdminUser: vi.fn(),
+  syncDocuments: vi.fn(),
 }))
 
 /** AuthProvider 가 기동 시 /api/auth/me 를 부른다. 역할에 따라 화면이 갈리므로 여기서 정한다 */
@@ -31,8 +32,14 @@ vi.mock('../lib/api', async (importOriginal) => {
   }
 })
 
-const { listDocuments, listAdminUsers, deleteDocument, resetUserPassword, createAdminUser } =
-  await import('../lib/endpoints')
+const {
+  listDocuments,
+  listAdminUsers,
+  deleteDocument,
+  resetUserPassword,
+  createAdminUser,
+  syncDocuments,
+} = await import('../lib/endpoints')
 
 function doc(over: Partial<RagDocument> = {}): RagDocument {
   return {
@@ -143,6 +150,28 @@ describe('관리자 화면', () => {
     await vi.advanceTimersByTimeAsync(20000)
 
     expect(vi.mocked(listDocuments).mock.calls.length).toBe(before)
+  })
+
+  /** TC-ADMIN-053 : 스토어와 동기화하면 가져온 수를 알리고 목록을 다시 읽는다(#193) */
+  it('스토어와 동기화하면 가져온 수를 알리고 목록을 다시 읽는다', async () => {
+    vi.mocked(syncDocuments).mockResolvedValueOnce({ added: 2, total: 2 })
+    renderPage()
+    await screen.findByText('아직 문서가 없습니다')
+    vi.mocked(listDocuments).mockResolvedValue([doc({ filename: '필드클레임현황.md' })])
+
+    fireEvent.click(screen.getByRole('button', { name: '스토어와 동기화' }))
+
+    expect(await screen.findByText('스토어에서 2건을 가져왔습니다')).toBeInTheDocument()
+    expect(await screen.findByText('필드클레임현황.md')).toBeInTheDocument()
+  })
+
+  /** TC-ADMIN-054 : 더 가져올 것이 없으면 이미 맞다고 알린다 — 0건을 실패로 읽지 않게 */
+  it('가져올 것이 없으면 이미 맞다고 알린다', async () => {
+    vi.mocked(syncDocuments).mockResolvedValueOnce({ added: 0, total: 2 })
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: '스토어와 동기화' }))
+
+    expect(await screen.findByText('이미 스토어와 맞습니다 (스토어 2건)')).toBeInTheDocument()
   })
 
   /** 삭제 확인 문구가 "옛 답변의 각주는 남는다"를 알려야 한다 */

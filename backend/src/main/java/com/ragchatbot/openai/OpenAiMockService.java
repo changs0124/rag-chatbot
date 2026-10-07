@@ -2,12 +2,12 @@ package com.ragchatbot.openai;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -127,7 +127,8 @@ public class OpenAiMockService implements OpenAiService {
 	/** 목업 스토어 ID. 실 값과 구분되도록 접두를 붙임 */
 	static final String MOCK_STORE_ID = "mock-vector-store";
 
-	private final Set<String> mockDocuments = ConcurrentHashMap.newKeySet();
+	/** 목업 스토어 - file_id → (파일명, 크기). 동기화(#193)가 파일명·크기를 돌려줘야 해 집합이 아니라 맵이다 */
+	private final Map<String, StoreFile> mockDocuments = new ConcurrentHashMap<>();
 
 	@Override
 	public boolean hasSharedVectorStore() {
@@ -138,19 +139,25 @@ public class OpenAiMockService implements OpenAiService {
 	@Override
 	public UploadedDocument uploadDocument(String filename, byte[] content, String contentType) {
 		String fileId = "mock-file-" + UUID.randomUUID();
-		mockDocuments.add(fileId);
+		mockDocuments.put(fileId, new StoreFile(fileId, MOCK_STORE_ID, filename, content.length, "completed"));
 		return new UploadedDocument(fileId, MOCK_STORE_ID);
 	}
 
 	@Override
 	public String documentStatus(String vectorStoreId, String openaiFileId) {
 		// 목업은 인덱싱을 기다릴 것이 없으므로 곧바로 완료. 지워진 파일은 실패로 봄
-		return mockDocuments.contains(openaiFileId) ? "completed" : "failed";
+		return mockDocuments.containsKey(openaiFileId) ? "completed" : "failed";
 	}
 
 	@Override
 	public void deleteDocument(String vectorStoreId, String openaiFileId) {
 		mockDocuments.remove(openaiFileId);
+	}
+
+	/** 목업 스토어 기준. 인덱싱을 기다릴 것이 없으므로 전부 completed 다 */
+	@Override
+	public List<StoreFile> listStoreFiles(Predicate<String> needsDetail) {
+		return List.copyOf(mockDocuments.values());
 	}
 
 	public int deleteResourcesCalls() {

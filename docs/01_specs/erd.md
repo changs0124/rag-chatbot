@@ -229,6 +229,7 @@ erDiagram
 | attachments | `idx_attachments_message` | message_id | INDEX | 메시지별 첨부 |
 | attachments | `idx_attachments_user` | user_id | INDEX | 소유권 검증·고아 회수 |
 | rag_documents | `idx_rag_documents_alive` | (deleted_at, created_at desc) | INDEX | 살아 있는 문서 최신순(V6) |
+| rag_documents | `uq_rag_documents_alive_file` | openai_file_id `where deleted_at is null` | UNIQUE (부분) | 살아 있는 행끼리 같은 파일 금지 — 스토어 동기화 동시 실행 중복 차단(V9, #193). 지운 행은 이력이라 제외 |
 
 ## 4. 관계 정의
 
@@ -275,6 +276,7 @@ erDiagram
 | V6 | `rag_documents` 신설 — FEAT-ADMIN-002 |
 | V7 | `messages.timed_out` — 서버 타임아웃 표시(#84) |
 | V8 | `users.theme` 삭제 — 테마 전환 제거, 화면은 라이트 단일(#191) |
+| V9 | `rag_documents` 살아 있는 행의 `openai_file_id` 부분 유니크 — 스토어 동기화(#193) |
 
 **기존 마이그레이션을 수정하지 않는다.** 새 변경은 항상 새 파일로 추가한다.
 

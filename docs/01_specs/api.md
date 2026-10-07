@@ -132,6 +132,7 @@
 | API-GET-007 | GET | `/api/admin/documents` | RAG 문서 목록 | ADMIN | 구현됨 |
 | API-POST-006 | POST | `/api/admin/documents` | RAG 문서 업로드 | ADMIN | 구현됨 |
 | API-DELETE-003 | DELETE | `/api/admin/documents/{id}` | RAG 문서 삭제 | ADMIN | 구현됨 |
+| API-POST-009 | POST | `/api/admin/documents/sync` | **스토어와 동기화** | ADMIN | 구현됨 |
 | API-GET-008 | GET | `/api/admin/users` | 사용자 목록 | ADMIN | 구현됨 |
 | API-POST-007 | POST | `/api/admin/users/{id}/password-reset` | 임시 비밀번호 발급 | ADMIN | 구현됨 |
 | API-POST-008 | POST | `/api/admin/users` | **계정 발급** | ADMIN | 구현됨 |
@@ -270,7 +271,7 @@
 **알려진 약점** : 페이지를 오래 열어둔 뒤 새로 그려지는 이미지가 만료로 깨질 수 있다.
 백로그 「파일 URL 수명」 항목이다.
 
-### API-GET-007 / API-POST-006 / API-DELETE-003: RAG 문서
+### API-GET-007 / API-POST-006 / API-DELETE-003 / API-POST-009: RAG 문서
 
 **GET** `/api/admin/documents`
 
@@ -303,13 +304,24 @@
 
 **DELETE** `/api/admin/documents/{id}` → **204**. soft delete 이며 행은 남는다.
 
-**Error Cases (3종 공통):**
+**POST** `/api/admin/documents/sync` — 본문 없음. 공용 스토어에 있는데 살아 있는 행이 없는 파일을 행으로 넣는다(#193).
+
+**Response 200:**
+```json
+{ "added": 2, "total": 2 }
+```
+
+`added` 는 이번에 새로 넣은 행 수, `total` 은 스토어의 파일 수다. **멱등**이라 다시 부르면 `added` 가 0 이다.
+규칙(soft delete 된 파일의 재등록, `uploaded_by` 등)은 `features.md` FEAT-ADMIN-002 「스토어 동기화」.
+
+**Error Cases (4종 공통):**
 
 | code | HTTP | 상황 |
 |------|------|------|
 | `NOT_FOUND` | 404 | **비관리자 접근** · 없는 문서 |
 | `BAD_REQUEST` | 400 | 형식·크기·매직바이트 위반 |
 | `BAD_REQUEST` | 400 | **`OPENAI_VECTOR_STORE_ID` 미설정** — 행을 만들지 않는다 |
+| `INTERNAL_ERROR` | 500 | 동기화 중 OpenAI 조회 실패 — **행을 하나도 넣지 않는다** |
 | `INTERNAL_ERROR` | 500 | OpenAI 장애. 업스트림 실패에도 상관 ID 로 로그를 추적한다 |
 
 ### API-GET-008 / API-POST-007: 사용자 관리

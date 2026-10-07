@@ -267,6 +267,7 @@ docker compose logs app | grep -iE "openai|vector|관리자"
 | 업로드 | `POST /api/admin/documents` (multipart, 필드명 `file`). PDF · TXT · MD · DOCX, 최대 25MB |
 | 상태 확인 | `GET /api/admin/documents` — `status` 가 `completed` 여야 검색에 잡힘 |
 | 내리기 | `DELETE /api/admin/documents/{id}` |
+| 스토어와 맞추기 | `POST /api/admin/documents/sync` — 화면의 「스토어와 동기화」 버튼(#193) |
 
 **2-3(문서 1건)과 2-7(전량)을 이 경로로 하면 된다.** OpenAI 대시보드를 거치지 않아도 되고, 그렇게 해야
 기록이 남는다. 대시보드에서 직접 올린 문서는 검색에는 잡히지만 `rag_documents` 에 행이 없어
@@ -276,6 +277,11 @@ docker compose logs app | grep -iE "openai|vector|관리자"
 있냐」고 묻지 않기 때문**이다. 대시보드로 올린 파일은 채팅 검색에는 잡히지만 관리 화면에서는 처음부터
 없었던 것처럼 보이고, 지울 방법도 화면에는 없다. **에러가 나지 않아 고장으로 보이지도 않는다** —
 2-1 에서 스토어를 비워 만들라고 한 이유가 이것이다.
+
+**어긋났으면 「스토어와 동기화」로 메운다**(#193). 대시보드로 올린 파일, 또는 **다른 서버 DB 를 거쳐 올린 파일**
+(로컬 개발 DB 로 올리고 운영 DB 는 새로 만든 경우 — 2026-10-06 런칭 때 실제로 그랬다)이 대상이다. 스토어의
+파일 중 살아 있는 행이 없는 것만 행으로 넣고, 「올린 사람」은 동기화한 관리자로 남는다. 여러 번 눌러도 결과가 같다.
+그래도 기록(누가 올렸나)이 남는 경로는 업로드뿐이므로 **새 문서는 여전히 관리 화면으로 올린다.**
 
 채팅 첨부(`backend/src/main/java/com/ragchatbot/service/FileService.java`)는 여전히 이미지만 받는다.
 그쪽은 비전 입력용이고 이쪽은 색인용이라 허용 목록이 반대다.
