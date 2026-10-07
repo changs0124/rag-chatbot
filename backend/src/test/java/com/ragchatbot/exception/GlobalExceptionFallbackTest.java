@@ -13,6 +13,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -257,5 +259,41 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
 		assertThat(res.getBody().get("code")).isEqualTo("UNSUPPORTED_MEDIA_TYPE");
+	}
+
+	/**
+	 * TC-OPS-022 : 멀티파트인데 {@code file} 파트가 없으면 400 이다.
+	 *
+	 * <p>화면은 늘 파일을 실어 보내므로 API 를 직접 칠 때만 밟는다. 전용 핸들러가 없으면
+	 * {@code MissingServletRequestPartException} 이 폴백으로 떨어져 500 이 됐다(#217).
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void multipart_without_file_part_is_bad_request() {
+		String token = createUser("boom-nopart@b.com");
+		HttpHeaders headers = bearer(token);
+		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+		body.add("other", "x");
+		var res = rest.exchange("/api/files", HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
+	}
+
+	/**
+	 * TC-OPS-023 : 멀티파트가 아닌 요청을 업로드 경로로 보내도 400 이다.
+	 *
+	 * <p>라우트에 {@code consumes} 가 없어 415 협상 단계를 지나 파라미터 해석에서
+	 * {@code MultipartException} 이 난다. TC-OPS-022 와 같은 「업로드 형식이 틀림」 한 갈래다.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void non_multipart_upload_is_bad_request() {
+		String token = createUser("boom-notmultipart@b.com");
+		var res = postRaw(token, "/api/files", "{}");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(res.getBody().get("code")).isEqualTo("BAD_REQUEST");
 	}
 }
