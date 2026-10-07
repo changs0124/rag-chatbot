@@ -1,0 +1,32 @@
+# after — 운영 적용 (2026-10-06, 브랜치 security/203 의 compose, cloudflared 만 재생성)
+## 1. 토큰 파일 (디렉터리 700 · 파일 644)
+700 secrets
+644 secrets/tunnel_token
+길이 184
+## 2. compose 교체 (되돌리기용 사본)
+compose 문법 OK
+## 3. cloudflared 만 재생성
+ Container deploy-cloudflared-1  Starting
+ Container deploy-cloudflared-1  Started
+새 컨테이너 연결 수: 4
+api health 200
+## 4. app·db 는 재생성되지 않았다
+app Up 57 minutes (healthy)
+cloudflared Up 7 seconds
+db Up 3 hours (healthy)
+## 5. inspect
+PATH=<가림 60자>
+SSL_CERT_FILE=<가림 34자>
+config.v2.json 안 토큰 일치 줄 수: 0
+Cmd=["tunnel","--no-autoupdate","run","--token-file","/run/secrets/tunnel_token"]
+bind /home/User/deploy/secrets/tunnel_token -> /run/secrets/tunnel_token rw=false
+
+## 6. .env 에서 옛 줄 제거 (사본 600)
+.env 의 TUNNEL_TOKEN 줄: 0
+600 .env
+600 .env.bak-203
+exit=0
+
+## deploy.sh tunnel_secret 프리플라이트 (함수만 떼어 운영에 실행)
+  secrets/ 권한 700 (정상)
+exit=0

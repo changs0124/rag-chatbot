@@ -1,0 +1,20 @@
+# before — 2026-10-06 (main 기준, 백업 도입 전)
+
+$ gcloud storage buckets list --project <프로젝트>
+(버킷 0개)
+
+## VM
+$ crontab -l
+no crontab for User
+
+$ ls ~/deploy
+backend
+docker-compose.yml
+
+기본 SA scope 중 storage :
+https://www.googleapis.com/auth/devstorage.read_only
+
+## backend.md
+541:**DB 백업은 자동이 아니다.** `pg_dump` 를 정기 실행하지 않으면 서버 디스크가 죽을 때 대화가 함께 사라진다.
+0
+(scripts/ 에 backup 스크립트 0개)

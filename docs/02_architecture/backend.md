@@ -404,7 +404,8 @@ SSH 를 완전히 닫으려면 `gcloud compute ssh --tunnel-through-iap` 로 바
 1. 서버에 Docker 와 compose 플러그인을 설치한다
 2. `backend/.env` 를 만든다(정본 `backend/.env.example`). **`DB_URL` · `DB_USERNAME` · `DB_PASSWORD` 는
    넣어도 무시된다** — compose 가 덮어쓴다
-3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD` · `TUNNEL_TOKEN`
+3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD`. **터널 토큰은 `.env` 가 아니라
+   `secrets/tunnel_token` 파일**에 넣는다(#203, 디렉터리 700 · 파일 644 — 이유는 아래 「터널 토큰은 파일로 넘긴다」)
 4. Cloudflare 대시보드에서 터널을 만들고 공개 호스트명을 **`http://app:8080`** 에 매핑한다.
    `localhost` 가 아니다 - cloudflared 는 별도 컨테이너라 compose 네트워크 이름으로 찾아간다
 5. 개발 PC 에서 `bash scripts/deploy.sh` — 빌드 · 전송 · 기동 · 헬스체크까지 한 번에 한다.
@@ -503,16 +504,23 @@ chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 �
 **`scripts/deploy.sh` 가 저장소의 `docker-compose.yml` 을 그대로 서버로 올려** 로컬과 운영이
 같은 파일을 쓰기 때문이다.
 
+**운영 VM 에서도 같은 값을 실측했다(2026-10-06).** 로컬 확인은 커널이 달라(Docker Desktop ↔ Ubuntu) 대체에
+그쳤는데, 런칭 첫 배포가 **빈 볼륨**이라 위의 「거짓 통과」 걱정 없이 postgres 초기화 경로가 Ubuntu 커널
+(`7.0.0-1011-gcp`, Docker 29.1.3)에서 실제로 탔고 권한 오류 없이 `init process complete` 까지 갔다.
+커널이 들고 있는 값(`/proc/1/status`)이 로컬과 같다 — `CapBnd` db `00000000000000ca` · app · cloudflared
+`0`, `NoNewPrivs` 셋 다 1. `app` 의 `/data/uploads` · `/tmp` 쓰기는 되고 `/app` 은 `Read-only file system`,
+`edge` 에서 `db` 는 이름 해석부터 실패하고 `app:8080` 은 닿는다. 로그 회전 · `pids_limit` · 다이제스트도
+설정대로이고 재시작 0회다. 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
+
 **네트워크를 둘로 나눴다.** `backend`(db↔app)와 `edge`(app↔cloudflared)다. 터널 컨테이너는
 바깥과 말하는 유일한 컨테이너라 침해 표면이 가장 넓은데, 그쪽에서 DB 포트가 보일 이유가 없다.
 확인은 `edge` 에만 붙인 임시 컨테이너에서 `db` 가 **이름 해석조차 되지 않는** 것으로 했다.
 `backend` 를 `internal: true` 로 만들지는 않았다 — db 의 아웃바운드까지 끊는 것은 이 이슈가
 요구한 분리를 넘어서고 새 실패 모드를 들인다.
 
-**`cloudflared` 는 「설정이 걸렸다」까지만 확인했다.** `.env` 의 `TUNNEL_TOKEN` 이 아직
-자리표시자라 `Provided Tunnel token is not valid` 로 crash-loop 한다. 확인한 것은 (1) 설정이
-런타임에 실제로 걸렸는가, (2) 실패 원인이 capability 가 아니라 여전히 토큰인가 **둘뿐**이다.
-토큰을 넣은 뒤 터널이 정상 동작하는지 한 번 더 봐야 한다.
+**`cloudflared` 는 capability 0개로 정상 동작한다.** 하드닝 당시에는 토큰이 자리표시자라 「설정이
+걸렸다」까지만 확인했는데, 운영에 실제 토큰을 넣은 뒤(2026-10-06) **터널 4연결**이 붙고
+`https://api.chseong.fyi/api/health` 가 200 이다.
 
 **`cloudflared` 이미지를 다이제스트로 고정했다(#130).** 이 저장소는 서드파티 액션을 커밋 SHA 로
 고정할 만큼 공급망을 신경 쓰는데 컨테이너 이미지만 `latest` 였다. 표류는 가설이 아니다 —
@@ -530,15 +538,90 @@ chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 �
 `Config.Env` 에 전부 남는다. 사람은 보통 `State` 나 `Mounts` 를 보려고 전체를 복사하는데
 그 JSON 안에 비밀이 같이 있다 — 한 번에 JWT 서명키(전 사용자 위장) · OpenAI 키(과금) ·
 터널 토큰(도메인 트래픽 탈취)이 함께 나간다. 필요한 필드만 `--format` 으로 뽑아 쓴다.
-**이 노출 자체는 아직 열린 문제다** — `TUNNEL_TOKEN` 을 Docker secret 이나 credentials 파일로
-옮기는 일은 Cloudflare 쪽 자료가 필요해 #130 에서 처리하지 않았다.
+터널 토큰은 #203 에서 이 경로에서 뺐다(아래). **JWT 서명키 · OpenAI 키 · DB 비밀번호는 여전히 env 로 들어가
+노출된다** — 앱이 환경변수로 읽는 구조라 별도 판단 대상이다.
+
+**터널 토큰은 파일로 넘긴다(#203).** `cloudflared tunnel run --token-file /run/secrets/tunnel_token` 에
+compose `secrets`(파일)로 마운트한다. 고정한 이미지(2026.9.1)가 `--token-file` 을 지원한다.
+**권한 조합이 일반적인 비밀 파일과 다르다** — swarm 이 아닌 compose 의 secrets 는 바인드 마운트라 `uid`·`mode`
+지정이 먹지 않고 호스트 권한이 그대로 보인다. cloudflared 는 65532 로 돌아 **파일이 600 이면 못 읽는다**
+(`permission denied`, 운영 VM 에서 음성 대조로 확인). 그래서 파일은 644, 대신 **디렉터리 `secrets/` 를 700** 으로
+막아 호스트의 다른 사용자는 경로부터 들어오지 못한다. `deploy.sh` 프리플라이트가 파일이 있는지 보고 디렉터리를
+700 으로 고정하며, `.env` 에 옛 `TUNNEL_TOKEN` 값이 남아 있으면 경고한다. 파일이 없으면 compose 가 기동 전에 멈춘다.
+
+옛 방식에서 옮길 때(서버에서, 한 번) :
+
+```bash
+install -d -m 700 secrets
+grep '^TUNNEL_TOKEN=' .env | cut -d= -f2- | tr -d '\n' > secrets/tunnel_token && chmod 644 secrets/tunnel_token
+# 새 compose 로 cloudflared 를 다시 만든 뒤 터널이 붙는 것을 보고 나서 .env 의 TUNNEL_TOKEN 줄을 지운다
+```
 
 **업로드 기반 DoS 와 스왑의 관계는 아직 정하지 않았다(#130).** `memswap_limit` 을 비워 스왑을
 `mem_limit` 만큼 더 허용한 것이 26MB 멀티파트 동시 업로드에서 **스왑 스래싱**으로 쓰일 수 있다 —
 `pd-standard` 30GB 는 쓰기 45 IOPS 라 이때 사실상 멎는다. 판단 근거가 그 IOPS 수치라
-개발 PC 에서는 재현할 수 없다. **배포 후 부하를 걸어 보고 정할 것.**
+개발 PC 에서는 재현할 수 없다. 운영 VM 에 부하를 걸어야 해 #202 로 나눴다(시간대와 방법을 먼저 정한다).
 
-**DB 백업은 자동이 아니다.** `pg_dump` 를 정기 실행하지 않으면 서버 디스크가 죽을 때 대화가 함께 사라진다.
+**DB 와 첨부를 매일 GCS 로 백업한다(#132).** 단일 VM · 단일 디스크라 `pgdata` · `uploads` · 이미지 · 로그가
+같은 30GB 에 있고, 무료 티어에는 스냅샷이 없다. 종전에는 어떤 디스크 사고에도 복구 수단이 없었다.
+
+| 결정 | 값 | 근거 |
+|------|-----|------|
+| 무엇을 | `pg_dump -Fc` + `uploads` 볼륨 tar.gz + `SHA256SUMS` | 첨부는 DB 밖에 있어 덤프만으로는 반쪽이다 |
+| 어디에 | **GCS 버킷(`us-west1`, STANDARD)** | 같은 VM 의 다른 경로는 디스크 사고에 무용하다. 무료 5GB 이고 같은 리전이라 전송비가 없다. 버킷 이름은 저장소에 두지 않는다(#133) — 서버의 `backup/backup.env` |
+| 얼마나 | **매일 04:00(서버 시간대 KST) · 14일** | 2026-10-06 기준 1회분이 약 16KB 라 한도와 거리가 멀다. 14일이 지나면 **버킷 수명주기 규칙이 지운다** |
+| 무엇이 돌리나 | **서버의 cron**(`backup.sh --install-cron`) | CI 는 후보가 아니고(유료 한도), 개발 PC 는 꺼져 있으면 돌지 않고 PC 가 새 유출 지점이 된다 |
+| 복구 | 아래 절차 — **2026-10-06 실제로 한 번 했다** | 복구해 본 적 없는 백업은 백업이 아니다 |
+
+**전용 키를 쓰는 이유.** VM 기본 서비스 계정의 저장소 권한(scope)이 **읽기 전용**이다. 바꾸려면 VM 을 멈춰야
+하는데, 2026-09-30 이 존에서 자원 부족으로 재기동이 12회 연속 실패했다 — 운영이 다시 못 뜰 수 있다. 그래서
+**그 버킷 하나에 `roles/storage.objectCreator` 만 가진** 서비스 계정(`rag-backup-writer`)의 키를 서버
+`backup/sa-key.json`(600, 디렉터리 700)에 둔다. 키가 새도 **목록 · 읽기 · 삭제 · 덮어쓰기 · 버킷 설정 읽기가
+전부 403** 이다(2026-10-06 실측). 즉 유출돼도 할 수 있는 일은 「쓰레기 객체를 올리는 것」뿐이고, 그것도
+수명주기가 14일 뒤 지운다. `backup.sh` 는 키 권한이 600 이 아니면 **고치지 않고 멈춘다** — 사람이 넣은
+파일이 넓어졌다면 누가 읽었을 수 있다는 사실을 조용히 덮지 않기 위해서다.
+
+**`gcloud storage cp` 를 쓰지 않는다.** 올리기 전에 대상 객체를 읽어 보는데(`objects.get`) 쓰기 전용 키에는 그
+권한이 없어, 어떤 플래그(`--no-clobber` · `--if-generation-match=0`)를 줘도 403 으로 멎고 **아무것도 올라가지
+않는다**(실측). JSON API 로 직접 올린다(`curl` · `ifGenerationMatch=0`). gcloud 는 토큰을 얻는 데만 쓰고,
+설정 디렉터리를 `backup/.gcloud` 로 격리해 서버의 기본 계정을 건드리지 않는다.
+
+**보관 · 권한 · 수명주기**
+
+- 버킷 : 균일 접근(uniform) · 공개 접근 차단(enforced). 읽기는 프로젝트 소유자 · 편집자(VM 기본 서비스 계정 포함)뿐
+- 수명주기 : 생성 14일 뒤 삭제. GCS 기본 **soft delete 7일**이 켜져 있어 지워진 객체가 7일 더 과금된다(용량이 작아 무시할 수준)
+- 산출물에는 **사용자 이메일 · BCrypt 해시 · 전체 대화**가 들어 있다. 받은 덤프는 쓰고 나서 지운다
+
+**처음 설정(서버, 한 번)** — 버킷 · 서비스 계정 · 키는 위 결정대로 만든 뒤 :
+
+```bash
+# 서버의 배포 디렉터리에서. backup.sh 는 deploy.sh 가 같이 보낸다
+install -d -m 700 backup                                   # 키는 개발 PC 에서 scp 로 넣고 로컬 사본은 지운다
+chmod 600 backup/sa-key.json
+umask 077; echo 'BACKUP_BUCKET=gs://<버킷>' > backup/backup.env
+bash backup.sh                 # 한 번 돌려 확인
+bash backup.sh --install-cron  # 매일 04:00. 여러 번 불러도 한 줄
+```
+
+실행 기록은 `backup/backup.log` 에 쌓인다(하루 4줄 남짓).
+
+**복구 절차** — 2026-10-06 리허설 그대로다. 운영 DB 는 건드리지 않고 임시 컨테이너에 먼저 복구해 확인한다 :
+
+```bash
+B=gs://<버킷>; S=<시각 폴더, 예: 20261006T100953Z>
+R=$(mktemp -d); gcloud storage cp "$B/$S/*" "$R/"           # VM 기본 서비스 계정으로 읽힌다
+( cd "$R" && sha256sum -c SHA256SUMS-* )
+docker run -d --name restore --network none --tmpfs /var/lib/postgresql/data -e POSTGRES_PASSWORD=x postgres:16-alpine
+docker exec restore createdb -U postgres restored
+docker exec -i restore pg_restore -U postgres -d restored --no-owner < "$R"/db-*.dump
+# 표별 행 수를 운영과 대조한 뒤, 실제 복구는 app 을 멈추고 운영 DB 에 같은 pg_restore(--clean)
+tar -xzf "$R"/uploads-*.tar.gz -C <uploads 볼륨 경로>
+docker rm -f restore; rm -rf "$R"
+```
+
+리허설 결과 : 체크섬 2건 OK · `pg_restore` 종료코드 0 · 표 7개 행 수 운영과 전부 일치. **다만 그날 운영 데이터가
+거의 비어 있었다**(사용자 1 · 대화 0 · 첨부 0) — 스키마와 계정이 돌아오는 것까지는 확인했지만 큰 데이터의 복구
+시간은 아직 모른다. 운영 DB 에 직접 덮는 단계(`--clean`)도 해 보지 않았다.
 
 ### 데모 - 로컬 + 터널
 

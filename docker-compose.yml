@@ -193,7 +193,13 @@ services:
     image: cloudflare/cloudflared@sha256:b269e8abd07a5bf6f3f4be65d5050b2174eca89c56a0241a8ff32a16aec454e4
     # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ http://app:8080 매핑은 Cloudflare 대시보드에 있다.
     # 터널 설정을 저장소에 두지 않는 대신, 토큰만 있으면 어느 서버에서든 같은 주소로 붙는다
-    command: tunnel --no-autoupdate run
+    #
+    # **토큰은 환경변수가 아니라 파일로 넘긴다(#203).** env 로 넘기면 `docker inspect` 의 `Config.Env` 와
+    # `/var/lib/docker/containers/<id>/config.v2.json` 에 평문으로 굳어, 장애 대응 중 inspect 출력을 붙여 넣는
+    # 순간 도메인 트래픽을 가로챌 수 있는 토큰이 같이 나간다. `--token-file` 은 고정한 이미지(2026.9.1)가 지원한다
+    command: tunnel --no-autoupdate run --token-file /run/secrets/tunnel_token
+    secrets:
+      - tunnel_token
     mem_limit: 64m
     security_opt:
       # app 과 같은 이유로 권한 상승 경로를 닫는다(#130).
@@ -203,8 +209,6 @@ services:
       - ALL
     # 터널 프로세스 하나와 그 고루틴뿐이다. 64 면 넉넉하다(#130).
     pids_limit: 64
-    environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN 을 .env 에 넣을 것}
     depends_on:
       - app
     networks:
@@ -233,3 +237,11 @@ networks:
 volumes:
   pgdata:
   uploads:
+
+# **compose secrets 는 swarm 이 아니면 바인드 마운트다(#203).** `uid`·`mode` 지정이 먹지 않고 호스트 파일의
+# 권한이 그대로 보인다. cloudflared 는 65532 로 돌므로 파일은 **644**(남이 읽을 수 있게) 여야 하고, 대신
+# **디렉터리 `secrets/` 를 700** 으로 막아 호스트의 다른 사용자는 경로부터 들어오지 못하게 한다.
+# 파일이 없으면 compose 가 기동 전에 멈춘다. 서버 쪽 권한은 deploy.sh 프리플라이트가 확인한다
+secrets:
+  tunnel_token:
+    file: ./secrets/tunnel_token

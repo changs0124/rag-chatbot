@@ -1,0 +1,66 @@
+# 2회차 after — 운영 VM 실측 (2026-10-06, free-vm us-west1-b, main 26a74ca 이미지 재배포 20분 후)
+# 측정 스크립트는 읽기 위주. 쓰기 확인은 임시 파일 생성·삭제뿐. 네트워크 확인용 alpine 이미지는 측정 후 VM 에서 삭제
+
+## 호스트
+7.0.0-1011-gcp
+Ubuntu 24.04.5 LTS
+Docker version 29.1.3, build 29.1.3-0ubuntu3~24.04.2
+
+## 컨테이너 상태
+app Up 20 minutes (healthy)
+cloudflared Up 2 hours
+db Up 2 hours (healthy)
+
+## db
+SecurityOpt=["no-new-privileges:true"] CapDrop=["ALL"] CapAdd=["CAP_DAC_OVERRIDE","CAP_FOWNER","CAP_SETGID","CAP_SETUID"] ReadonlyRootfs=false PidsLimit=128 Tmpfs=null Log={"Type":"json-file","Config":{"max-file":"3","max-size":"10m"}} Restarts=0 Image=postgres:16-alpine
+net=deploy_backend 
+CapBnd(pid1)=00000000000000ca
+NoNewPrivs(pid1)=1
+
+## app
+SecurityOpt=["no-new-privileges:true"] CapDrop=["ALL"] CapAdd=null ReadonlyRootfs=true PidsLimit=256 Tmpfs={"/tmp":"size=64m"} Log={"Type":"json-file","Config":{"max-file":"3","max-size":"10m"}} Restarts=0 Image=rag-chatbot-backend:latest
+net=deploy_backend net=deploy_edge 
+CapBnd(pid1)=0000000000000000
+NoNewPrivs(pid1)=1
+
+## cloudflared
+SecurityOpt=["no-new-privileges:true"] CapDrop=["ALL"] CapAdd=null ReadonlyRootfs=false PidsLimit=64 Tmpfs=null Log={"Type":"json-file","Config":{"max-file":"3","max-size":"10m"}} Restarts=0 Image=cloudflare/cloudflared@sha256:b269e8abd07a5bf6f3f4be65d5050b2174eca89c56a0241a8ff32a16aec454e4
+net=deploy_edge 
+CapBnd(pid1)=0000000000000000
+NoNewPrivs(pid1)=1
+
+## app read_only 쓰기 경로
+x
+uploads 쓰기 OK
+tmp 쓰기 OK
+/tmp/hsperfdata_app
+touch: cannot touch '/app/.p': Read-only file system
+tmpfs            64M   32K   64M   1% /tmp
+
+## 네트워크 분리 (edge 에서 db 안 보임 / app 보임)
+getent db exit=2
+nc: bad address 'db'
+nc db exit=1
+nc app:8080 exit=0
+
+## db 첫 기동(빈 볼륨) 초기화 로그 — 권한 오류 여부
+db-1  | initdb: warning: enabling "trust" authentication for local connections
+db-1  | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+db-1  | 2026-10-06 07:34:44.559 UTC [45] LOG:  database system is ready to accept connections
+db-1  | /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+db-1  | PostgreSQL init process complete; ready for start up.
+db-1  | 2026-10-06 07:34:45.177 UTC [1] LOG:  database system is ready to accept connections
+
+## cloudflared 연결
+4
+
+## .env 권한
+600 .env
+600 backend/.env
+
+## 메모리
+               total        used        free      shared  buff/cache   available
+Mem:             953         586          60           7         426         367
+deploy-app-1 161.8MiB / 420MiB
+deploy-cloudflared-1 14.48MiB / 64MiB
+deploy-db-1 33.54MiB / 160MiB

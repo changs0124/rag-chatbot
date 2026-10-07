@@ -70,6 +70,7 @@ preflight() {
 	# scp 는 대상 디렉터리를 만들어 주지 않는다. 없으면 전송 단계에서 실패한다
 	ssh_run "mkdir -p '$REMOTE_DIR'"
 	env_perms
+	tunnel_secret
 }
 
 # **서버의 .env 권한을 600 으로 고정한다(#130).** 이 파일들에는 JWT_SECRET · OPENAI_API_KEY ·
@@ -96,6 +97,32 @@ for f in .env backend/.env; do
     chmod 600 \"\$p\" && echo \"  \$f 권한 \$mode -> 600 으로 고쳤다\"
   fi
 done
+"
+}
+
+# **터널 토큰 파일을 확인한다(#203).** 토큰은 환경변수가 아니라 `secrets/tunnel_token` 으로 넘긴다 -
+# env 는 `docker inspect` 에 평문으로 남기 때문이다. 파일이 없으면 compose 가 기동 직전에 멈추는데,
+# 그때는 이미지 빌드·전송이 끝난 뒤라 늦고 비싸다. 여기서 먼저 막는다.
+#
+# 파일은 644 여야 한다(컨테이너 사용자 65532 가 읽는다 - compose 하단 주석). 그래서 **디렉터리를 700 으로**
+# 잠근다. 좁히는 방향이라 확인 없이 고치고 무엇을 바꿨는지 찍는다 - env_perms 와 같다.
+# .env 에 옛 TUNNEL_TOKEN 값이 남아 있으면 경고만 한다 - 지우는 것은 사람이 확인하고 한다
+tunnel_secret() {
+	ssh_run "
+d=\"$REMOTE_DIR/secrets\"; f=\"\$d/tunnel_token\"
+if [ ! -s \"\$f\" ]; then
+  echo '  secrets/tunnel_token 이 없거나 비어 있다 - 터널이 뜨지 않는다. .env.example 의 Cloudflare Tunnel 절 참고' >&2
+  exit 3
+fi
+mode=\$(stat -c '%a' \"\$d\")
+if [ \"\$mode\" = '700' ]; then
+  echo '  secrets/ 권한 700 (정상)'
+else
+  chmod 700 \"\$d\" && echo \"  secrets/ 권한 \$mode -> 700 으로 고쳤다\"
+fi
+if grep -q '^TUNNEL_TOKEN=..*' \"$REMOTE_DIR/.env\" 2>/dev/null; then
+  echo '  경고: .env 에 TUNNEL_TOKEN 값이 남아 있다 - 이제 쓰이지 않는다. 확인 후 그 줄을 지울 것'
+fi
 "
 }
 
@@ -140,6 +167,8 @@ ls -lh "$TMP/$TARBALL" | awk '{print "  크기: " $5}'
 say "서버로 전송"
 gcloud compute scp "$TMP/$TARBALL" "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
 gcloud compute scp docker-compose.yml "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
+# 백업 스크립트도 같은 이유로 같이 보낸다(#132). cron 이 서버의 사본을 부르므로 여기서 갱신해야 고친 것이 반영된다
+gcloud compute scp scripts/backup.sh "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
 
 # 4. 로드 + 기동 --------------------------------------------------------------
 # **실행 중인 컨테이너가 방금 넣은 이미지를 쓰는지 확인한다(#129).** `docker compose up -d` 는
