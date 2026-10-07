@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, describe, it, expect, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import MessageList from './MessageList'
 import type { ChatMessage } from '../../lib/types'
+import { resetFigureCache } from '../../lib/docFigures'
 
 describe('MessageList', () => {
   it('renders assistant content with its citations', () => {
@@ -185,5 +186,50 @@ describe('MessageList', () => {
     render(<MessageList messages={ended} stage={null} />)
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
     expect(screen.getByText(/응답 중 오류가 발생했습니다/)).toBeInTheDocument()
+  })
+
+  describe('문서 그림 표식 (FEAT-CHAT-004)', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      resetFigureCache()
+    })
+
+    const answer = (content: string): ChatMessage[] => [
+      {
+        id: 'a1',
+        role: 'assistant',
+        content,
+        status: 'complete',
+        createdAt: '',
+        citations: [{ seq: 1, sourceName: '매뉴얼', snippet: '', uri: '' }],
+      },
+    ]
+
+    it('draws the figure in place of its marker', async () => {
+      vi.stubGlobal('URL', { ...URL, createObjectURL: vi.fn(() => 'blob:fig') })
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new Blob(['png']), { status: 200 })))
+      render(<MessageList messages={answer('앞 문장\n[[그림:tm-p061-f1]]\n뒤 문장')} />)
+
+      const img = await screen.findByAltText('문서 그림')
+      expect(img).toHaveAttribute('src', 'blob:fig')
+      expect(screen.getByText('앞 문장')).toBeInTheDocument()
+      expect(screen.getByText('뒤 문장')).toBeInTheDocument()
+      expect(screen.queryByText(/\[\[그림:/)).not.toBeInTheDocument()
+
+      // 누르면 확대 보기로 연다
+      fireEvent.click(screen.getByLabelText('문서 그림 확대'))
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+    })
+
+    it('leaves nothing behind for a figure the server does not have', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 404 }))
+      vi.stubGlobal('fetch', fetchMock)
+      render(<MessageList messages={answer('설명\n[[그림:tm-p999-f9]]')} />)
+
+      await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+      expect(screen.queryByAltText('문서 그림')).not.toBeInTheDocument()
+      expect(screen.queryByRole('img')).not.toBeInTheDocument()
+      expect(screen.queryByText(/그림:/)).not.toBeInTheDocument()
+    })
   })
 })

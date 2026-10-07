@@ -34,6 +34,9 @@ pnpm-debug.log*
 uploads/
 backend/uploads/
 
+# === 문서 그림(FEAT-CHAT-004) - 매뉴얼에서 잘라 낸 그림. 저장소가 공개라 커밋 금지 ===
+/doc-figures/
+
 # === Java / Maven (backend) ===
 target/
 *.class

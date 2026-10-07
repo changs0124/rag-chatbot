@@ -110,6 +110,10 @@ app:
     # 고아(미연결) 첨부 회수 - 유예 시간과 주기. 유예보다 최근 것은 어떤 cutoff 로도 지우지 않음
     orphan-ttl-minutes: ${ORPHAN_TTL_MINUTES:60}
     orphan-cleanup-cron: ${ORPHAN_CLEANUP_CRON:0 0 * * * *}
+  doc-figures:
+    # 문서 그림 루트(FEAT-CHAT-004). 전처리가 만든 <key>.png 를 둠. 비면 live 는 그림이 전부 404 이고
+    # mock 은 classpath mock-figures/ 견본을 씀. 기동은 막지 않음 - 그림은 보조 정보다
+    dir: ${DOC_FIGURES_DIR:}
   jwt:
     # 서명 시크릿 - 값은 env로 주입(커밋 금지). 테스트는 test 프로퍼티로 주입
     secret: ${JWT_SECRET:}

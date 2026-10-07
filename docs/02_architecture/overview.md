@@ -55,6 +55,7 @@ flowchart LR
 | 대화·메시지 | `/api/conversations/**` | 필요 |
 | 첨부 | `/api/files/**` | 업로드·삭제는 Bearer, **서빙만 서명 쿼리 토큰** |
 | 채팅 | `/api/chat` | 필요 (SSE) |
+| 문서 그림 | `/api/doc-figures/**` | 필요 (Bearer 로 `fetch` → Blob) |
 | 관리자 | `/api/admin/**` | **관리자만** |
 
 인증 경계에서 구조적으로 짚을 것 둘 :

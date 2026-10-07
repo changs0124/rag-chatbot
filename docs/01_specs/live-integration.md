@@ -86,6 +86,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 | `OPENAI_VECTOR_STORE_ID` | 2-3 | 업로드가 400 `Vector Store 가 설정되지 않아 업로드할 수 없음` 으로 거부된다. 업로드를 건너뛰어도 `file_search` 툴이 아예 안 붙어 **출처가 늘 0건**이 된다 |
 | `ADMIN_EMAILS` | 2-3 | 관리자가 0명이라 **로그인할 계정 자체가 없다.** 스스로 가입하는 경로가 없어 되돌릴 방법이 재기동뿐이다 |
 | `OPENAI_MODEL` (비전 미지원으로 바꾼 경우) | 2-6 | 이미지 첨부만 답변이 어긋난다 |
+| `DOC_FIGURES_DIR` (또는 그 폴더를 비워 둠) | 5-1 | 답변에 그림 표식이 들어가도 **그림 자리가 비고 텍스트만 보인다.** 오류가 나지 않아 고장으로 보이지 않는다 |
 
 **`ADMIN_EMAILS` 의 주소는 `ALLOWED_EMAIL_DOMAINS` 밖이어도 된다.** 도메인 검사를 면제받으므로
 관리자 이메일이 사내 도메인이 아니어도 부트스트랩이 막히지 않는다.
@@ -285,6 +286,22 @@ docker compose logs app | grep -iE "openai|vector|관리자"
 
 채팅 첨부(`backend/src/main/java/com/ragchatbot/service/FileService.java`)는 여전히 이미지만 받는다.
 그쪽은 비전 입력용이고 이쪽은 색인용이라 허용 목록이 반대다.
+
+### 5-1. 그림이 있는 문서 넣기 (FEAT-CHAT-004)
+
+Vector Store 는 텍스트만 색인하므로 **그림은 따로 옮겨야 한다.** 원본 PDF 를 그대로 올리면 그림은 버려진다.
+
+1. 전처리 — `python scripts/doc-figures/preprocess.py <원본 PDF> <출력 폴더> --prefix tm`
+   (PyMuPDF 필요). 출력 폴더에 `<원본 이름>.md` · `figures/<key>.png` · `figures/manifest.json` 이 나온다
+2. Markdown 을 위 경로(관리 화면 업로드)로 올린다. **같은 문서의 이전 버전은 먼저 지운다** — 둘 다 남으면
+   표식 없는 옛 청크가 검색에 섞여 그림이 덜 나온다
+3. `figures/*.png` 를 서버의 배포 디렉터리 `doc-figures/` 에 복사한다(compose 가 `/data/doc-figures` 로 읽기 전용 마운트).
+   **저장소에 커밋하지 않는다** — 저장소가 공개다
+4. 확인 — 매니페스트에서 키 하나를 골라 로그인 토큰으로 `GET /api/doc-figures/<key>` 가 200 인지 본다.
+   404 면 파일 위치(`<루트>/<key>.png`)와 `DOC_FIGURES_DIR` 를 본다
+
+**키는 쪽 번호와 쪽 안 순번으로 정해진다.** 원본이 바뀌어 쪽이 밀리면 같은 키가 다른 그림을 가리키게 되어,
+지난 대화에 남은 표식이 엉뚱한 그림을 보인다. 원본을 바꿀 때는 `--prefix` 를 새로 정한다(예 : `tm2`).
 
 ## 6. 되돌리기
 
