@@ -31,6 +31,12 @@ public class OpenAiMockService implements OpenAiService {
 	private static final List<String> CORPUS_KEYWORDS = List.of("환불", "배송", "정책", "가격", "이용", "약관");
 
 	/**
+	 * 질문에 이 낱말이 있으면 답에 견본 그림 표식을 넣는다(FEAT-CHAT-004). 견본은 classpath
+	 * {@code mock-figures/mock-sample.png} 다. 표식도 8자씩 흘러가므로 덜 도착한 표식 처리가 목업에서도 재현된다
+	 */
+	private static final String FIGURE_KEYWORD = "그림";
+
+	/**
 	 * 목업 전용 단계 라벨(R-11 · P-10). 라이브 라벨을 그대로 쓰지 않음 - 목업의 "검색"은 사용자 문자열
 	 * 키워드 비교라 문서 검색이 아니므로, 화면 문구만 봐도 목 데이터임이 드러나야 함.
 	 */
@@ -73,13 +79,15 @@ public class OpenAiMockService implements OpenAiService {
 		String imagePrefix = hasImage ? "(첨부 이미지를 확인함) " : "";
 
 		String message = input.userMessage() == null ? "" : input.userMessage();
-		boolean matched = CORPUS_KEYWORDS.stream().anyMatch(message::contains);
+		boolean figure = message.contains(FIGURE_KEYWORD);
+		boolean matched = figure || CORPUS_KEYWORDS.stream().anyMatch(message::contains);
 
 		String fullText;
 		List<CitationData> citations;
 		boolean noSource;
 		if (matched) {
-			fullText = imagePrefix + "문의하신 내용에 대한 안내는 다음과 같음 [1][2].";
+			fullText = imagePrefix + "문의하신 내용에 대한 안내는 다음과 같음 [1][2]."
+					+ (figure ? "\n[[그림:mock-sample]]\n위 그림은 목업 견본임 [1]." : "");
 			citations = List.of(
 					new CitationData(1, "이용 정책 문서", "정책 관련 발췌 스니펫", "corpus://policy#1"),
 					new CitationData(2, "FAQ 문서", "자주 묻는 질문 발췌", "corpus://faq#2"));
@@ -99,7 +107,8 @@ public class OpenAiMockService implements OpenAiService {
 		// 토큰당 소량 지연으로 실제 스트리밍처럼 타이핑 효과를 냄
 		// 첫 토큰 직전이 생성 경계임. 체감 시간을 만들려고 여기에 인위 지연을 넣지 않음(P-10 · 이관-7)
 		onStage.accept(Stage.GENERATING, List.of());
-		for (String chunk : fullText.split("(?<=\\G.{8})")) {
+		// (?s) - 그림 답은 줄바꿈을 품는다. 없으면 `.` 이 줄바꿈에서 멈춰 그 뒤가 토큰 하나로 몰려 온다
+		for (String chunk : fullText.split("(?s)(?<=\\G.{8})")) {
 			onToken.accept(chunk);
 			if (tokenDelayMs > 0) {
 				try {
