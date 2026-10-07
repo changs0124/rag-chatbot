@@ -13,6 +13,15 @@
     「사진 찍기」를 보여 주며 막을 수 없다 — `frontend.md` 「첨부 UI 계약」에 한계로 적었다
   - `Composer.test.tsx` 3건 추가, 프론트 하한 117 → 120
 
+### Fixed
+- **업로드 요청에 `file` 파트가 없거나 멀티파트가 아니면 500 이던 것을 400 으로 내린다(#217).** `POST /api/files` ·
+  `POST /api/admin/documents` 의 `@RequestParam("file")` 가 비면 스프링이 `MissingServletRequestPartException`
+  (파트 없음) · `MultipartException`(멀티파트 아님)을 던지는데 전용 핸들러가 없어 폴백이 받아 ERROR 로그와 함께
+  500 이었다 — #38 · #45 와 같은 갈래다. 화면은 늘 파일을 실어 보내므로 API 를 직접 칠 때만 밟는다.
+  - `GlobalExceptionHandler.handleBadUpload` 가 둘을 400 `BAD_REQUEST` 로. 용량 초과(`MaxUploadSizeExceededException`,
+    `MultipartException` 의 하위)는 더 구체적인 기존 413 핸들러가 그대로 받는다
+  - `GlobalExceptionFallbackTest` TC-OPS-022~023 추가(변경 전 둘 다 500 으로 실패 확인), 백엔드 하한 239 → 241
+
 ### Security
 - **cloudflared 고정 이미지를 2026.9.1 에서 2026.10.0 으로 올렸다(#215).** #130 에서 다이제스트로 고정했으므로
   저절로 바뀌지 않는다 — compose 주석의 절차대로 다이제스트를 바꾸는 커밋으로 올린다.
