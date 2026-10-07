@@ -541,7 +541,7 @@ chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 �
 노출된다** — 앱이 환경변수로 읽는 구조라 별도 판단 대상이다.
 
 **터널 토큰은 파일로 넘긴다(#203).** `cloudflared tunnel run --token-file /run/secrets/tunnel_token` 에
-compose `secrets`(파일)로 마운트한다. 고정한 이미지(2026.9.1)가 `--token-file` 을 지원한다.
+compose `secrets`(파일)로 마운트한다. 고정한 이미지(2026.10.0)가 `--token-file` 을 지원한다.
 **권한 조합이 일반적인 비밀 파일과 다르다** — swarm 이 아닌 compose 의 secrets 는 바인드 마운트라 `uid`·`mode`
 지정이 먹지 않고 호스트 권한이 그대로 보인다. cloudflared 는 65532 로 돌아 **파일이 600 이면 못 읽는다**
 (`permission denied`, 운영 VM 에서 음성 대조로 확인). 그래서 파일은 644, 대신 **디렉터리 `secrets/` 를 700** 으로
