@@ -504,16 +504,23 @@ chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 �
 **`scripts/deploy.sh` 가 저장소의 `docker-compose.yml` 을 그대로 서버로 올려** 로컬과 운영이
 같은 파일을 쓰기 때문이다.
 
+**운영 VM 에서도 같은 값을 실측했다(2026-10-06).** 로컬 확인은 커널이 달라(Docker Desktop ↔ Ubuntu) 대체에
+그쳤는데, 런칭 첫 배포가 **빈 볼륨**이라 위의 「거짓 통과」 걱정 없이 postgres 초기화 경로가 Ubuntu 커널
+(`7.0.0-1011-gcp`, Docker 29.1.3)에서 실제로 탔고 권한 오류 없이 `init process complete` 까지 갔다.
+커널이 들고 있는 값(`/proc/1/status`)이 로컬과 같다 — `CapBnd` db `00000000000000ca` · app · cloudflared
+`0`, `NoNewPrivs` 셋 다 1. `app` 의 `/data/uploads` · `/tmp` 쓰기는 되고 `/app` 은 `Read-only file system`,
+`edge` 에서 `db` 는 이름 해석부터 실패하고 `app:8080` 은 닿는다. 로그 회전 · `pids_limit` · 다이제스트도
+설정대로이고 재시작 0회다. 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
+
 **네트워크를 둘로 나눴다.** `backend`(db↔app)와 `edge`(app↔cloudflared)다. 터널 컨테이너는
 바깥과 말하는 유일한 컨테이너라 침해 표면이 가장 넓은데, 그쪽에서 DB 포트가 보일 이유가 없다.
 확인은 `edge` 에만 붙인 임시 컨테이너에서 `db` 가 **이름 해석조차 되지 않는** 것으로 했다.
 `backend` 를 `internal: true` 로 만들지는 않았다 — db 의 아웃바운드까지 끊는 것은 이 이슈가
 요구한 분리를 넘어서고 새 실패 모드를 들인다.
 
-**`cloudflared` 는 「설정이 걸렸다」까지만 확인했다.** `.env` 의 `TUNNEL_TOKEN` 이 아직
-자리표시자라 `Provided Tunnel token is not valid` 로 crash-loop 한다. 확인한 것은 (1) 설정이
-런타임에 실제로 걸렸는가, (2) 실패 원인이 capability 가 아니라 여전히 토큰인가 **둘뿐**이다.
-토큰을 넣은 뒤 터널이 정상 동작하는지 한 번 더 봐야 한다.
+**`cloudflared` 는 capability 0개로 정상 동작한다.** 하드닝 당시에는 토큰이 자리표시자라 「설정이
+걸렸다」까지만 확인했는데, 운영에 실제 토큰을 넣은 뒤(2026-10-06) **터널 4연결**이 붙고
+`https://api.chseong.fyi/api/health` 가 200 이다.
 
 **`cloudflared` 이미지를 다이제스트로 고정했다(#130).** 이 저장소는 서드파티 액션을 커밋 SHA 로
 고정할 만큼 공급망을 신경 쓰는데 컨테이너 이미지만 `latest` 였다. 표류는 가설이 아니다 —
@@ -553,7 +560,7 @@ grep '^TUNNEL_TOKEN=' .env | cut -d= -f2- | tr -d '\n' > secrets/tunnel_token &&
 **업로드 기반 DoS 와 스왑의 관계는 아직 정하지 않았다(#130).** `memswap_limit` 을 비워 스왑을
 `mem_limit` 만큼 더 허용한 것이 26MB 멀티파트 동시 업로드에서 **스왑 스래싱**으로 쓰일 수 있다 —
 `pd-standard` 30GB 는 쓰기 45 IOPS 라 이때 사실상 멎는다. 판단 근거가 그 IOPS 수치라
-개발 PC 에서는 재현할 수 없다. **배포 후 부하를 걸어 보고 정할 것.**
+개발 PC 에서는 재현할 수 없다. 운영 VM 에 부하를 걸어야 해 #202 로 나눴다(시간대와 방법을 먼저 정한다).
 
 **DB 와 첨부를 매일 GCS 로 백업한다(#132).** 단일 VM · 단일 디스크라 `pgdata` · `uploads` · 이미지 · 로그가
 같은 30GB 에 있고, 무료 티어에는 스냅샷이 없다. 종전에는 어떤 디스크 사고에도 복구 수단이 없었다.
