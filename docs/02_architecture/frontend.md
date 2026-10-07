@@ -10,7 +10,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | `frontend/src/pages/` | 라우트 단위 화면 — `LoginPage` · `ChatPage` · `MyPage` · `AdminPage` |
 | `frontend/src/components/` | 재사용 컴포넌트. 기능이 커지면 `components/chat/` 처럼 하위 폴더 |
 | `frontend/src/hooks/` | 도메인 훅 — 현재 `useChat.ts` 하나 |
-| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) |
+| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `docFigures.ts`(그림 표식 파서) |
 | `frontend/src/auth/` | Context Provider |
 | `frontend/src/test/` | Vitest 셋업 |
 
@@ -100,6 +100,20 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   답변과 같은 모양**으로 보인다.
   **서버를 고쳐도 이 방어는 필요하다** — 종료 이벤트를 약속할 수 있는 것은 애플리케이션 계층뿐이고,
   이 프로젝트는 Cloudflare Tunnel 뒤로 배포되어 프록시가 한 겹 더 낀다.
+
+## 문서 그림 표식 렌더
+
+답변 본문의 `[[그림:<key>]]` 을 그림으로 바꾼다(FEAT-CHAT-004). 파서는 `frontend/src/lib/docFigures.ts`,
+그리는 쪽은 `frontend/src/components/chat/DocFigure.tsx` 다.
+
+- **본문은 여전히 평문이다.** 마크다운 렌더러를 들이지 않고, 표식만 잘라 그 자리에 그림을 끼운다.
+- **덜 도착한 표식은 숨긴다.** 스트리밍 중 본문 끝에 열린 `[[` 가 있으면 닫힐 때까지 그 조각을 그리지 않는다.
+- **Bearer 로 받아 objectURL 로 그린다.** 404 · 네트워크 오류면 아무것도 그리지 않는다
+  — 모델이 지어낸 키가 깨진 이미지 아이콘으로 남으면 안 된다.
+- **키별로 한 번만 받는다.** objectURL 과 404(`null`)를 모듈 캐시에 두고 회수하지 않는다 — 같은 그림이 대화 여러 곳·
+  재조회에서 다시 쓰이고, 개수는 원본 그림 수로 유계다. 네트워크 실패만 캐시하지 않아 다음 렌더가 다시 묻는다.
+- **출처 스니펫에서는 그리지 않는다.** 스니펫은 색인 본문 조각이라 표식이 섞여 오는데, 거기서는 `[그림]` 으로만 바꾼다.
+- 그림을 누르면 첨부와 같은 `ImageLightbox` 로 연다. 한 말풍선의 그림끼리 좌우로 넘긴다.
 
 ## 첨부 UI 계약
 
