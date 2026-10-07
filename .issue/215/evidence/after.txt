@@ -1,0 +1,19 @@
+# after (2026-10-07T06:43:47Z) — 커밋 c6bf95b
+$ grep -n "cloudflared@sha256\|2026.10.0" docker-compose.yml docs/02_architecture/backend.md
+docker-compose.yml:193:    image: cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
+docker-compose.yml:199:    # 순간 도메인 트래픽을 가로챌 수 있는 토큰이 같이 나간다. `--token-file` 은 고정한 이미지(2026.10.0)가 지원한다
+docs/02_architecture/backend.md:544:compose `secrets`(파일)로 마운트한다. 고정한 이미지(2026.10.0)가 `--token-file` 을 지원한다.
+
+$ grep -rn "2026.9.1\|b269e8ab" (CHANGELOG·.issue 제외)
+(0건)
+
+$ docker run --rm cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07 --version
+cloudflared version 2026.10.0 (built 2026-10-05-17:58 UTC)
+$ ... tunnel run --help | grep token-file
+  --token-file value                           Filepath at which to read the tunnel token. When provided along with credentials, this will take precedence. [$TUNNEL_TOKEN_FILE]
+$ docker image inspect (User) — 이전 / 새
+b269e8ab user=65532:65532
+9b49eed8 user=65532:65532
+
+$ docker compose config (예시 env) → exit 0, image 줄
+    image: cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
