@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Security
+- **터널 토큰을 환경변수 대신 파일로 넘긴다(#203).** env 로 넘기면 `docker inspect` 의 `Config.Env` 와
+  `config.v2.json` 에 평문으로 굳어, 장애 대응 중 inspect 출력을 붙여 넣는 순간 도메인 트래픽을 가로챌 수 있는 토큰이
+  같이 나갔다(운영에서 184자 평문 확인). `cloudflared --token-file` + compose `secrets` 로 바꿨다.
+  - compose secrets 는 swarm 이 아니면 바인드 마운트라 컨테이너 사용자(65532)가 읽으려면 **파일 644 · 디렉터리 700** 이다 —
+    600 이면 `permission denied` 인 것을 운영 VM 에서 음성 대조로 확인했다
+  - `deploy.sh` 프리플라이트 : 토큰 파일이 없으면 빌드 전에 멈춤 · 디렉터리 700 고정 · `.env` 에 옛 값이 남으면 경고
+  - `.env.example` 의 `TUNNEL_TOKEN` 줄을 파일 안내로 바꿨다. JWT · OpenAI · DB 비밀은 여전히 env 다(범위 밖)
+
 ### Changed
 - **모바일 레이아웃을 정리했다 — 터치 영역 · 로그인 · 상단 헤더 · 배지 글자(#198).** 360px 실측에서 누르는 영역이 44px 에
   못 미치는 곳이 **15곳**이었다(뒤로가기 링크 높이 16 · 대화 삭제 ✕ 24 · 대화 항목 36 · 관리자 「삭제」·「비밀번호 초기화」 28 ·
