@@ -13,6 +13,10 @@
 열린 이슈 중 할 일은 [#202](https://github.com/changs0124/rag-chatbot/issues/202)(업로드 부하에서 스왑 허용 여부 실측)
 하나다. 운영 VM 에 부하를 거는 일이라 **시간대와 방법을 먼저 정해야** 착수할 수 있다.
 
+## 완료
+
+이 파일에는 두지 않는다. 끝난 일은 [CHANGELOG](../06_changelog/CHANGELOG.md) 가 정본이다.
+
 ## 블로커
 
 없음.
