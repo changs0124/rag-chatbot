@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import Composer from './Composer'
 import { ApiError } from '../../lib/api'
 import { deleteAttachment, uploadFile } from '../../lib/endpoints'
@@ -30,9 +30,6 @@ function pick(file: File) {
 }
 
 describe('Composer', () => {
-  // vitest globals 미사용이라 RTL 자동 정리가 안 걸림 - 렌더가 누적되지 않게 직접 정리함
-  afterEach(cleanup)
-
   let createObjectURL: ReturnType<typeof vi.fn>
   let revokeObjectURL: ReturnType<typeof vi.fn>
 

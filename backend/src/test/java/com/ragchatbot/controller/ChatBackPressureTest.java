@@ -25,13 +25,6 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
 @TestPropertySource(properties = "app.chat.max-concurrent-per-user=0")
 class ChatBackPressureTest extends AbstractPgIntegrationTest {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private String createConversation(String token) {
-		var res = rest.exchange("/api/conversations", HttpMethod.POST,
-				new HttpEntity<>(Map.of("title", "대화"), bearer(token)), Map.class);
-		return (String) res.getBody().get("id");
-	}
-
 	@Test
 	void rejected_by_backpressure_returns_429() {
 		String token = createUser("bp-429@b.com");

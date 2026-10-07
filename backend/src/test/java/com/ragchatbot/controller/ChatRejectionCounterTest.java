@@ -33,13 +33,6 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
 		"app.chat.max-concurrent-per-user=0" })
 class ChatRejectionCounterTest extends AbstractPgIntegrationTest {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private String createConversation(String token) {
-		var res = rest.exchange("/api/conversations", HttpMethod.POST,
-				new HttpEntity<>(Map.of("title", "대화"), bearer(token)), Map.class);
-		return (String) res.getBody().get("id");
-	}
-
 	@SuppressWarnings("rawtypes")
 	private ResponseBodyAndStatus chat(String token, String convId) {
 		var res = rest.exchange("/api/chat", HttpMethod.POST,

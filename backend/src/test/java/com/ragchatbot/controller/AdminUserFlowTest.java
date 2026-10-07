@@ -7,28 +7,17 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import com.ragchatbot.repository.UserRepository;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
  * 관리자에 의한 사용자 관리 (FEAT-ADMIN-003 · TC-ADMIN-030~034 · 006).
  */
 class AdminUserFlowTest extends AbstractPgIntegrationTest {
-
-	@Autowired
-	private UserRepository userRepository;
-
-	private String createAdminUser(String email) {
-		String token = createUser(email);
-		userRepository.promoteAdmins(List.of(email));
-		return token;
-	}
 
 	private UUID idOf(String email) {
 		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);

@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -20,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import com.ragchatbot.repository.UserRepository;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
@@ -30,16 +28,6 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  * 외부 장애에 물리면 안 된다. 실 응답 대조는 `docs/01_specs/live-integration.md` 의 수동 절차다.
  */
 class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
-
-	@Autowired
-	private UserRepository userRepository;
-
-	/** 가입 후 그 계정을 관리자로 올리고 토큰을 돌려줌 */
-	private String createAdminUser(String email) {
-		String token = createUser(email);
-		userRepository.promoteAdmins(List.of(email));
-		return token;
-	}
 
 	private static HttpEntity<MultiValueMap<String, Object>> multipart(String token, String filename,
 			byte[] content, String contentType) {

@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+### Refactored
+- **죽은 코드와 복사본을 정리했다(#219).** 동작 변화 없음 — 백엔드 241 · 프론트 122 케이스가 그대로 통과한다.
+  - 프론트 : 401·에러 메시지 처리 복사본(`api.ts` 래퍼 · `endpoints.ts` 채팅 스트림)을 `toApiError` 하나로.
+    한쪽만 고치면 스트림과 나머지 API 의 에러 표시가 조용히 갈리던 구조다. 쓰이지 않던 `eslint-disable` 주석
+    (`AuthContext`) · 읽히지 않던 `fileInput` ref(`AdminPage`) 삭제. 테스트 7개 파일의 `afterEach(cleanup)` 를
+    `src/test/setup.ts` 한 곳으로(관리·마이 페이지 테스트는 정리 순서가 엮여 있어 그대로 둠)
+  - 백엔드 : 테스트 헬퍼 `createConversation` 6벌 · `createAdminUser` 3벌을 `AbstractPgIntegrationTest` 로.
+    `AuthService.me` 를 지우고 `AuthController.me` 가 `ProfileService.me` 를 쓴다. 쓰지 않던 import 정리
+  - **하지 않은 것** : 확장자→MIME 매핑 두 곳(`FileService` · `OpenAiRealService`)은 합치면 `openai` → `service`
+    패키지 순환이 생겨 그대로 두고 상호 참조 주석과 `Locale.ROOT` 만 넣었다. `check-all.sh` 의 「도달 불가 `exit`」
+    두 줄은 리뷰가 죽은 코드로 짚었지만 #145 가 남긴 **의도된 안전망**이라 손대지 않았다
+
 ### Fixed
 - **모바일에서 스크롤·키보드에 로고 헤더가 위로 밀려 올라가던 것을 막는다(#221).** 채팅 화면은 `100dvh` 인데 `dvh` 는
   가상 키보드에 반응하지 않아, 키보드가 열리면 보이는 영역만 줄고 입력 쪽으로 이동해 헤더가 화면 밖으로 나갔다. iOS 는

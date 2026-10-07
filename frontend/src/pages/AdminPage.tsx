@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
@@ -72,7 +72,6 @@ export default function AdminPage() {
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const fileInput = useRef<HTMLInputElement>(null)
 
   const isAdmin = user?.role === 'admin'
 
@@ -206,7 +205,6 @@ export default function AdminPage() {
             </span>
             <span className="text-xs text-ink-muted">PDF · TXT · MD · DOCX · 최대 25MB</span>
             <input
-              ref={fileInput}
               type="file"
               accept={ACCEPT}
               className="hidden"
