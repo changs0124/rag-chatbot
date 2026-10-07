@@ -1,0 +1,157 @@
+{
+  "desktop-single": {
+    "row": {
+      "cy": 861,
+      "h": 54
+    },
+    "textarea": {
+      "cy": 861,
+      "h": 40
+    },
+    "plus": {
+      "cy": 861,
+      "h": 40
+    },
+    "send": {
+      "cy": 861,
+      "h": 40
+    },
+    "plusOffset": 0,
+    "sendOffset": 0,
+    "plusVsRow": 0,
+    "sendVsRow": 0,
+    "coarse": false,
+    "menuItems": [],
+    "accept": "image/jpeg,image/png,image/webp,image/gif"
+  },
+  "desktop-multiline": {
+    "row": {
+      "cy": 861,
+      "h": 54
+    },
+    "textarea": {
+      "cy": 861,
+      "h": 40
+    },
+    "plus": {
+      "cy": 861,
+      "h": 40
+    },
+    "send": {
+      "cy": 861,
+      "h": 40
+    },
+    "plusOffset": 0,
+    "sendOffset": 0,
+    "plusVsRow": 0,
+    "sendVsRow": 0,
+    "coarse": false,
+    "menuItems": [],
+    "accept": "image/jpeg,image/png,image/webp,image/gif"
+  },
+  "desktop-menu": {
+    "row": {
+      "cy": 861,
+      "h": 54
+    },
+    "textarea": {
+      "cy": 861,
+      "h": 40
+    },
+    "plus": {
+      "cy": 861,
+      "h": 40
+    },
+    "send": {
+      "cy": 861,
+      "h": 40
+    },
+    "plusOffset": 0,
+    "sendOffset": 0,
+    "plusVsRow": 0,
+    "sendVsRow": 0,
+    "coarse": false,
+    "menuItems": [
+      "사진"
+    ],
+    "accept": "image/jpeg,image/png,image/webp,image/gif"
+  },
+  "mobile-single": {
+    "row": {
+      "cy": 803,
+      "h": 58
+    },
+    "textarea": {
+      "cy": 803,
+      "h": 44
+    },
+    "plus": {
+      "cy": 803,
+      "h": 44
+    },
+    "send": {
+      "cy": 803,
+      "h": 44
+    },
+    "plusOffset": 0,
+    "sendOffset": 0,
+    "plusVsRow": 0,
+    "sendVsRow": 0,
+    "coarse": true,
+    "menuItems": [],
+    "accept": "image/jpeg,image/png,image/webp,image/gif"
+  },
+  "mobile-multiline": {
+    "row": {
+      "cy": 803,
+      "h": 58
+    },
+    "textarea": {
+      "cy": 803,
+      "h": 44
+    },
+    "plus": {
+      "cy": 803,
+      "h": 44
+    },
+    "send": {
+      "cy": 803,
+      "h": 44
+    },
+    "plusOffset": 0,
+    "sendOffset": 0,
+    "plusVsRow": 0,
+    "sendVsRow": 0,
+    "coarse": true,
+    "menuItems": [],
+    "accept": "image/jpeg,image/png,image/webp,image/gif"
+  },
+  "mobile-menu": {
+    "row": {
+      "cy": 803,
+      "h": 58
+    },
+    "textarea": {
+      "cy": 803,
+      "h": 44
+    },
+    "plus": {
+      "cy": 803,
+      "h": 44
+    },
+    "send": {
+      "cy": 803,
+      "h": 44
+    },
+    "plusOffset": 0,
+    "sendOffset": 0,
+    "plusVsRow": 0,
+    "sendVsRow": 0,
+    "coarse": true,
+    "menuItems": [
+      "사진",
+      "카메라"
+    ],
+    "accept": "image/jpeg,image/png,image/webp,image/gif"
+  }
+}
