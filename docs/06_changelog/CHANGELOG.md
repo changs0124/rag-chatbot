@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+### Changed
+- **문서와 코드의 표류를 고쳤다(#220).** 2026-10-07 대조에서 게이트가 지키지 않는 서술 16곳이 어긋나 있었다.
+  - 거짓 진술 : README 「응답만 목업」(런칭 전 서술) · design-system 의 `dark:` 허용 문장(전면 금지와 모순) ·
+    design-system 표의 낡은 줄 번호 · api.md 임시 비밀번호 예시 형식(3-4-4 → 4-4-4) · overview 백업 서술(이제 매일 GCS) ·
+    CONVENTIONS · `check-doc-versions.sh` 의 CI 잡 이름(`docs` → `static`) · `.env.example` 터널 토큰 서술(#203 이후 secrets 파일) ·
+    `frontend/.env.example` 경고 주체(빌드가 아니라 런타임 콘솔) · backlog 첨부 영속성 · `index.css` highlight 주석
+  - 모델 표기 : 「GPT-4o」 고정 서술을 `OPENAI_MODEL`(기본 `gpt-4o` · 운영 `gpt-5.6-terra`)로
+  - 정본 중복 : overview 의 env 기본값 표(부분 사본) → `backend/.env.example` 링크, 페이지 URL 맵 → frontend 「라우팅」 링크
+  - 구조 : 이 파일에 `[2026-10-06]` 런칭 구획을 세웠다 — 10-06 까지 머지된 항목이 그 아래, 10-07 머지분이 `[Unreleased]`.
+    01_specs 다섯 문서 머리표의 수정일 · 상태(`초안` → `반영됨`), current-sprint 의 끝난 항목 제거
+
 ### Refactored
 - **죽은 코드와 복사본을 정리했다(#219).** 동작 변화 없음 — 백엔드 241 · 프론트 122 케이스가 그대로 통과한다.
   - 프론트 : 401·에러 메시지 처리 복사본(`api.ts` 래퍼 · `endpoints.ts` 채팅 스트림)을 `toApiError` 하나로.
@@ -120,6 +131,8 @@
 
   남아 있던 두 항목은 운영에 부하를 걸거나 터널을 재기동해야 해 이슈를 나눴다 —
   **#202** `memswap_limit`·스왑 실측 · **#203** 터널 토큰을 환경변수 대신 파일로.
+
+## [2026-10-06]
 
 ### Changed
 - **모바일 레이아웃을 정리했다 — 터치 영역 · 로그인 · 상단 헤더 · 배지 글자(#198).** 360px 실측에서 누르는 영역이 44px 에
