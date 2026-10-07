@@ -164,16 +164,14 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 
 | 토큰 | 자리 | 사용 |
 |------|------|------|
-| `highlight` · `highlight-ink` | `chat/MessageList.tsx:181` 「자료 없음」 배지 | 각 1회 (같은 줄) |
+| `highlight` · `highlight-ink` | `chat/MessageList.tsx` 「자료 없음」 배지 | 각 1회 (같은 줄) |
 | `highlight` | `chat/Composer.tsx` 첨부 실패 아이콘 — **#155** | 1회. 어두운 고정 스크림 위라 밝은 면 기준 토큰을 못 쓴다 |
-| `danger-ink` | `ConfirmModal.tsx:42` 삭제 확인 버튼 | 1회 — `bg-danger` 가 있는 유일한 자리다 |
-| `danger-soft` | `pages/AdminPage.tsx:166` 관리자 오류 배너 | 1회 |
+| `danger-ink` | `ConfirmModal.tsx` 삭제 확인 버튼 | 1회 — `bg-danger` 가 있는 유일한 자리다 |
+| `danger-soft` | `pages/AdminPage.tsx` 관리자 오류 배너 | 1회 |
 | `danger-soft` | `pages/MyPage.tsx` 오류 배너 — **#155** | 1회. 관리자 쪽과 같은 모양인데 #151 이 한쪽만 고쳤다 |
 
 쓰이지 않는 토큰은 다음 사람이 아무 데나 갖다 쓰는 근거가 된다.
 **#155 에서 `highlight` 와 `danger-soft` 가 각각 한 자리씩 늘어 지금은 둘 다 두 곳이다.**
-
-`dark:` 는 색이 아닌 것(그림자 세기, 반투명 겹침 등)에만 남긴다.
 
 ## 2. 타이포
 
@@ -415,9 +413,9 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 
 | 파일 | 바뀐 것 | 성격 |
 |------|---------|------|
-| `chat/MessageList.tsx:181` | `accent-soft`/`accent` → `highlight`/`highlight-ink` | **의미가 틀렸던 토큰** — 동작색을 주의에 쓰고 있었다 |
-| `pages/AdminPage.tsx:166` | `bg-accent-soft` → `bg-danger-soft` | **재도색이 드러낸 것** — 종전엔 accent(테라코타)와 danger(붉은)가 같은 계열이라 우연히 어울렸다 |
-| `components/ConfirmModal.tsx:42` | `text-white` → `text-danger-ink` | **재도색이 강제한 것** — 다크 danger 가 바뀌며 흰 글자가 2.89:1 이 됐다 |
+| `chat/MessageList.tsx` | `accent-soft`/`accent` → `highlight`/`highlight-ink` | **의미가 틀렸던 토큰** — 동작색을 주의에 쓰고 있었다 |
+| `pages/AdminPage.tsx` | `bg-accent-soft` → `bg-danger-soft` | **재도색이 드러낸 것** — 종전엔 accent(테라코타)와 danger(붉은)가 같은 계열이라 우연히 어울렸다 |
+| `components/ConfirmModal.tsx` | `text-white` → `text-danger-ink` | **재도색이 강제한 것** — 다크 danger 가 바뀌며 흰 글자가 2.89:1 이 됐다 |
 
 ### 색 값을 들고 있는 파일 — 셋이다
 

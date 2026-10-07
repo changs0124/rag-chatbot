@@ -14,7 +14,7 @@
 #   - 버전을 아예 안 적은 서술("Spring Boot + Java 17" 의 Spring Boot). 없는 주장은 틀릴 수 없다
 #
 # 왜 backend CI 잡에 붙나 : JUnit 은 `pom.xml` 에 없고 **Spring Boot BOM 이 관리**한다. BOM 을 읽으려면
-# 로컬 m2 저장소가 채워져 있어야 하므로 `./mvnw verify` 뒤에 돌려야 한다. `docs` 잡은 checkout 과 bash
+# 로컬 m2 저장소가 채워져 있어야 하므로 `./mvnw verify` 뒤에 돌려야 한다. `static` 잡은 checkout 과 bash
 # 뿐이라 여기 붙이면 정작 잡아야 할 것을 못 잡는다.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
