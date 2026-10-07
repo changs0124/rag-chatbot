@@ -87,6 +87,8 @@ exception/    ApiExceptions + GlobalExceptionHandler
   폴백으로 떨어져 500 이었고, 지금은 전용 핸들러가 400 으로 내린다(TC-OPS-014~018).
   **라우팅 쪽**(#45) — 없는 URL · 미지원 메서드 · 미지원 미디어 타입도 실측해 보니 셋 다 500 이었고,
   지금은 각각 404 · 405 · 415 로 내린다(TC-OPS-019~021).
+  **업로드 쪽**(#217) — 멀티파트인데 `file` 파트가 없거나 멀티파트가 아닌 요청도 500 이었고,
+  지금은 400 으로 내린다(TC-OPS-022~023). 용량 초과 413 은 더 구체적인 핸들러가 그대로 받는다.
 - **`ResponseEntityExceptionHandler` 를 상속하지 않는 것은 의도된 선택이다.** 상속하면 그쪽 기본 구현이
   Spring 6 의 `ProblemDetail`(RFC 7807 — `type`·`title`·`status`·`detail`·`instance`) 본문을 만들어
   **`{code, message}` 응답 계약이 그 경로에서만 깨진다.** 대신 요청 잘못으로 분류되는 예외를 발견할

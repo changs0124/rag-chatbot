@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -100,6 +102,22 @@ public class GlobalExceptionHandler {
 		log.warn("요청 본문을 읽지 못함: {}", ex.getMostSpecificCause().getMessage());
 		return ResponseEntity.badRequest()
 				.body(new ApiError("BAD_REQUEST", "요청 본문을 읽을 수 없음 (JSON 형식과 인코딩을 확인할 것)"));
+	}
+
+	/**
+	 * 업로드 요청의 형식이 틀림 - 멀티파트인데 {@code file} 파트가 없거나, 멀티파트가 아님.
+	 *
+	 * <p>화면은 늘 파일을 실어 보내므로 API 를 직접 칠 때만 밟는다. 핸들러가 없던 동안에는 폴백이
+	 * 받아 500 이었다(#217, TC-OPS-022~023).
+	 *
+	 * <p><b>용량 초과(413)는 여기 오지 않는다.</b> {@code MaxUploadSizeExceededException} 도
+	 * {@code MultipartException} 의 하위지만 스프링이 더 구체적인 {@link #handleTooLarge} 를 고른다.
+	 * 예외 메시지는 싣지 않음 - 파트 이름 외에 내부 클래스 이름이 섞여 나올 수 있어서다.
+	 */
+	@ExceptionHandler({ MissingServletRequestPartException.class, MultipartException.class })
+	public ResponseEntity<ApiError> handleBadUpload(Exception ex) {
+		return ResponseEntity.badRequest()
+				.body(new ApiError("BAD_REQUEST", "업로드 요청 형식이 올바르지 않음 (multipart/form-data 의 file 파트가 필요함)"));
 	}
 
 	/**
