@@ -1,0 +1,65 @@
+변경 전 — 정리 대상 실측 (origin/main 393dd73)
+
+## 1. 401·에러 처리 복사본
+frontend/src/lib/api.ts:43:export function handleUnauthorized(path: string): void {
+frontend/src/lib/api.ts:99:    if (res.status === 401) handleUnauthorized(path)
+frontend/src/lib/api.ts:100:    let message = `요청 실패 (${res.status})`
+frontend/src/lib/endpoints.ts:1:import { adoptRefreshedToken, api, API_BASE, ApiError, getToken, handleUnauthorized } from './api'
+frontend/src/lib/endpoints.ts:95:    if (res.status === 401) handleUnauthorized('/api/chat')
+frontend/src/lib/endpoints.ts:96:    let message = `요청 실패 (${res.status})`
+
+## 2. 쓰이지 않는 eslint-disable
+39:    // eslint-disable-next-line react-hooks/exhaustive-deps
+60:// eslint-disable-next-line react-refresh/only-export-components
+
+## 3. fileInput ref
+75:  const fileInput = useRef<HTMLInputElement>(null)
+209:              ref={fileInput}
+
+## 4. afterEach(cleanup) 복사본
+frontend/src/components/chat/CameraCapture.test.tsx
+frontend/src/components/chat/Composer.test.tsx
+frontend/src/components/chat/ImageLightbox.test.tsx
+frontend/src/components/chat/MessageList.test.tsx
+frontend/src/components/chat/ResizableSidebar.test.tsx
+frontend/src/pages/AdminPage.test.tsx
+frontend/src/pages/ChatPage.test.tsx
+frontend/src/pages/LoginPage.test.tsx
+frontend/src/pages/MyPage.test.tsx
+
+## 5. 백엔드 테스트 헬퍼 복사본
+controller/AdminDocumentFlowTest.java:38:	private String createAdminUser(String email) {
+controller/AdminDocumentSyncFlowTest.java:44:	private String createAdminUser(String email) {
+controller/AdminUserFlowTest.java:27:	private String createAdminUser(String email) {
+controller/ChatBackPressureTest.java:29:	private String createConversation(String token) {
+controller/ChatFlowTest.java:34:	private String createConversation(String token) {
+controller/ChatRejectionCounterTest.java:37:	private String createConversation(String token) {
+controller/ChatStageHonestyTest.java:26:	private String createConversation(String token) {
+controller/ChatStreamContractTest.java:24:	private String createConversation(String token) {
+controller/ConversationCrossAccessTest.java:21:	private String createConversation(String token) {
+
+## 6. me() 중복
+backend/src/main/java/com/ragchatbot/service/AuthService.java:59:	public MeResponse me(UUID userId) {
+backend/src/main/java/com/ragchatbot/service/ProfileService.java:34:	public MeResponse me(UUID userId) {
+backend/src/main/java/com/ragchatbot/controller/AuthController.java:35:		return authService.me(CurrentUser.id());
+backend/src/main/java/com/ragchatbot/controller/ProfileController.java:33:		return profileService.me(CurrentUser.id());
+
+## 7. 확장자→MIME 매핑 두 곳
+251:			return "data:" + mimeFromPath(img.storagePath()) + ";base64,"
+258:	private static String mimeFromPath(String path) {
+259:		String p = path.toLowerCase();
+
+## 8. 쓰지 않는 import
+5:import java.nio.charset.StandardCharsets;
+
+## 9. 도달 불가 exit
+33:# docker/gitleaks/trivy 가 셋 다 없어도 **"전부 통과" + exit 0** 이 나왔다.
+59:summary() {
+82:	exit "$fail"
+93:# 이 검사는 shellcheck 가 없으면 exit 0 으로 빠진다. 그때는 "통과"가 아니라 "모름"이므로
+108:	# **summary() 가 스스로 exit 하므로 여기는 도달하지 않는다(#145).** 지우지 않고 남기는 것은
+109:	# summary 가 exit 를 잃는 날 조기 종료가 조용히 전체 실행으로 바뀌는 것을 막는 안전망이기
+112:	exit "$fail"
+124:	exit "$fail"
+181:	run "백엔드 의존성 스캔"  trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --list-all-pkgs backend
+188:summary
