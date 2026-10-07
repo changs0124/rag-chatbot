@@ -1,0 +1,20 @@
+{
+  "mobile390-login": [
+    "16px",
+    "16px"
+  ],
+  "mobile390-composer": {
+    "font": "16px",
+    "h": 44
+  },
+  "mobile390-title": "16px",
+  "desktop1440-login": [
+    "15px",
+    "15px"
+  ],
+  "desktop1440-composer": {
+    "font": "15px",
+    "h": 40
+  },
+  "desktop1440-title": "15px"
+}
