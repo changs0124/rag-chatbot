@@ -16,7 +16,7 @@ import com.ragchatbot.security.JwtAuthenticationFilter;
 
 /**
  * 자체 이메일/비밀번호 + JWT stateless 인증.
- * permitAll : 로그인/헬스. 그 외 /api/** 는 인증 필요(미인증 401).
+ * permitAll : 로그인/헬스, 파일 서빙(GET /api/files/** - 서명 토큰으로 검증). 그 외 /api/** 는 인증 필요(미인증 401).
  * P-3 소유권은 컨트롤러/서비스 코드가 별도 검증함.
  */
 @Configuration

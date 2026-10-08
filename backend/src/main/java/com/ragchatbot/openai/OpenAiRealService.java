@@ -187,7 +187,7 @@ public class OpenAiRealService implements OpenAiService {
 		body.put("model", model);
 		body.put("input", buildInput(input));
 		body.put("stream", true);
-		// 공용 Store 미설정이면 file_search 없이 일반 응답(출처 빈 리스트 → 무자료 접두)
+		// 공용 Store 미설정이면 file_search 없이 일반 응답(출처 빈 리스트 → noSource=true)
 		if (storeId != null && !storeId.isBlank()) {
 			body.put("tools", List.of(Map.of(
 					"type", "file_search",
