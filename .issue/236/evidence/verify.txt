@@ -1,0 +1,32 @@
+# #236 주석 정리 검증 (커밋 13170f4)
+
+## 바뀐 줄 중 주석이 아닌 줄
+0 (git diff -U0 HEAD~1 -- ':!docs' 에서 *, /**, //, # 로 시작하지 않는 +/- 줄 수)
+
+## 파일별 변경
+ backend/Dockerfile                                                  | 4 ++--
+ backend/src/main/java/com/ragchatbot/config/SecurityConfig.java     | 2 +-
+ backend/src/main/java/com/ragchatbot/dto/ChatDtos.java              | 2 +-
+ backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java  | 2 +-
+ backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java  | 2 +-
+ backend/src/main/java/com/ragchatbot/openai/OpenAiService.java      | 4 ++--
+ backend/src/main/java/com/ragchatbot/security/JwtSecretPolicy.java  | 4 ++--
+ .../src/main/java/com/ragchatbot/service/AdminDocumentService.java  | 2 +-
+ .../main/java/com/ragchatbot/service/ChatConcurrencyLimiter.java    | 2 +-
+ backend/src/main/java/com/ragchatbot/service/ChatService.java       | 2 +-
+ .../java/com/ragchatbot/service/ChatConcurrencyLimiterTest.java     | 2 +-
+ docker-compose.yml                                                  | 5 +++--
+ docs/06_changelog/CHANGELOG.md                                      | 4 ++++
+ frontend/src/components/TextInput.tsx                               | 2 +-
+ frontend/src/components/chat/ImageLightbox.tsx                      | 4 ++--
+ frontend/src/lib/api.ts                                             | 6 +++---
+ scripts/check-all.sh                                                | 6 +++---
+ scripts/check-shell-syntax.sh                                       | 4 ++--
+ scripts/deploy.sh                                                   | 6 +++---
+ 19 files changed, 35 insertions(+), 30 deletions(-)
+
+## 검사
+- backend ./mvnw test-compile exit 0
+- frontend lint · tsc -b · vitest 140 passed
+- bash -n deploy.sh check-all.sh check-shell-syntax.sh ok
+- check-all.sh docs 전부 통과
