@@ -49,11 +49,13 @@ export default function Sidebar({
 
   return (
     <aside className="flex h-full w-full flex-col bg-surface">
-      {/* 락업은 h-7 에서 121px 이고 사이드바 최소 폭이 200px(패딩 빼고 168px)이라 늘 들어간다 -
+      {/* h-9 는 2줄째 글자(1줄의 0.55배)를 읽히게 하려는 값이다 - h-7 에서는 한글 몸통이 약 8px 였다(#233).
+          락업은 h-9 에서 149px 이고 사이드바 최소 폭 200px 에서 px-6 을 빼면 152px 라 늘 들어간다(여유 3px,
+          h-10 이면 166px 로 넘친다) -
           좁아질 때 마크로 줄이는 분기는 두지 않았다 */}
       {/* px-6 은 바로 아래 「새 대화」 버튼의 내용 시작(p-3 + px-3 = 24px)에 맞춘 값이다 */}
       <div className="px-6 pt-4 pb-1">
-        <Logo className="h-7 w-auto text-ink" />
+        <Logo className="h-9 w-auto text-ink" />
       </div>
       <div className="p-3">
         <button
