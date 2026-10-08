@@ -51,7 +51,7 @@ class ChatConcurrencyLimiterTest {
 
 	@Test
 	void counters_do_not_accumulate_keys() {
-		// 미결 「레이트리밋 카운터 회수」와 같은 부채를 만들지 않으려고 계수 0이면 항목을 지움
+		// 키가 쌓이지 않게 계수 0이면 항목을 지움(RateLimiterService 는 스윕 + 키 상한으로 막는 같은 문제)
 		var l = limiter(8, 1);
 		for (int i = 0; i < 50; i++) {
 			UUID user = UUID.randomUUID();

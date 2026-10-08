@@ -11,7 +11,7 @@ import java.util.function.Predicate;
  */
 public interface OpenAiService {
 
-	/** 첨부 참조 (비전 이미지 / RAG 문서) */
+	/** 첨부 참조 - 비전 이미지(첨부는 이미지뿐이다, R-2) */
 	record AttachmentRef(String fileType, String storagePath, String openaiFileId) {
 	}
 
@@ -36,7 +36,7 @@ public interface OpenAiService {
 	}
 
 	/**
-	 * 채팅 결과. noSource=true면 무자료(citations 비어 있고 응답에 규정 접두, P-8).
+	 * 채팅 결과. noSource=true면 무자료(citations 가 비어 있음, P-8). 응답 텍스트에 접두를 붙이지 않는다 - 표시는 플래그로 한다.
 	 *
 	 * <p>{@code inputTokens}·{@code outputTokens} 는 이 턴이 실제로 쓴 토큰 수임(FEAT-OPS-001).
 	 * <b>모르면 null</b> - 목업 · usage 필드가 없는 응답 · 중단으로 완료 이벤트 전에 끝난 턴이 그렇다.

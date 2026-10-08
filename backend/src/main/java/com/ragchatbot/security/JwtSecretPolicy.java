@@ -11,14 +11,14 @@ import java.nio.charset.StandardCharsets;
  * 한쪽만 올렸을 때 둘이 조용히 갈리는데, <b>약한 쪽이 곧 전체의 실효 강도</b>다 -
  * 두 토큰이 같은 키로 서명되므로 어느 쪽을 깨든 나머지 하나도 함께 위조된다.
  *
- * <p><b>32바이트인 이유</b> - HS256 의 HMAC 블록이 256비트다. 그보다 짧은 시크릿은 키 공간이
+ * <p><b>32바이트인 이유</b> - HS256 의 해시(SHA-256) 출력이 256비트다(RFC 7518 의 HS256 최소 키 길이도 같다). 그보다 짧은 시크릿은 키 공간이
  * 해시 출력보다 작아, 토큰 하나만 있으면 오프라인에서 시크릿 자체를 되찾는 쪽이 더 싸진다.
  * 특히 {@code /api/files/**} 는 {@code permitAll} 이라(SecurityConfig) 파일 토큰의 서명이
  * 그 경로의 <b>유일한</b> 경계다.
  */
 final class JwtSecretPolicy {
 
-	/** HS256 블록 크기와 같은 값. 바이트 수로 재며, 멀티바이트 문자는 UTF-8 인코딩 길이로 셈 */
+	/** HS256 해시 출력 크기와 같은 값. 바이트 수로 재며, 멀티바이트 문자는 UTF-8 인코딩 길이로 셈 */
 	static final int MIN_BYTES = 32;
 
 	private JwtSecretPolicy() {

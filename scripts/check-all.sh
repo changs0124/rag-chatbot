@@ -129,8 +129,8 @@ fi
 #
 # **`clean` 을 붙인다.** 원격 CI 는 매번 빈 러너라 필요 없었지만, 로컬은 `target/` 이 남아
 # **지운 테스트 클래스의 surefire XML 이 계속 계수된다.** 2026-07-28 에 실제로 이 때문에 로컬
-# 실측이 6건 부풀려져 하한을 잘못 올렸고 원격 CI 가 잡아냈다 — 이제 그 원격이 없으므로
-# 여기서 막아야 한다(`check-case-floor.sh` 머리주석 참고)
+# 실측이 6건 부풀려져 하한을 잘못 올렸고 원격 CI 가 잡아냈다 — 푸시 전에 여기서 먼저
+# 막는다(`check-case-floor.sh` 머리주석 참고)
 run "백엔드 clean verify"    bash -c 'cd backend && ./mvnw -B clean verify'
 run "백엔드 케이스 수 하한"   bash scripts/check-case-floor.sh backend
 run "문서 버전 주장 대조"     bash scripts/check-doc-versions.sh
@@ -145,7 +145,7 @@ run "프론트 lint"            bash -c 'cd frontend && npm run lint'
 # **낡은 리포트를 먼저 지우고 json 리포터로 돈다.** `check-case-floor.sh` 는 리포트를 읽기만 하고
 # 만들지 않아서, 그냥 `npm test` 를 돌리면 **이전 실행의 케이스 수가 그대로 남는다** - 테스트를
 # 지워도 낡은(더 큰) 수로 게이트가 통과해, 이 게이트가 막으려던 상황을 그대로 놓친다.
-# 원격 CI 는 클린 체크아웃이라 겪지 않던 구멍이고, 로컬로 옮긴 지금은 여기가 유일한 방어선이다
+# 원격 CI 는 클린 체크아웃이라 겪지 않는 구멍이라, 로컬에서는 여기가 푸시 전 방어선이다
 run "프론트 test"            bash -c 'cd frontend && rm -f vitest-report.json && npm test -- --reporter=json --outputFile=vitest-report.json'
 run "프론트 build"           bash -c 'cd frontend && npm run build'
 run "프론트 케이스 수 하한"   bash scripts/check-case-floor.sh frontend

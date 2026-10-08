@@ -22,7 +22,7 @@ import com.ragchatbot.exception.ApiExceptions.RateLimitException;
  *
  * <p>맵 전체를 {@code synchronized} 로 감쌈 - 규모가 단일 인스턴스라 경합이 없고, 레이트리밋에서
  * 겪은 <b>락 밖 읽기의 가시성 문제와 check-then-act 경합</b>을 구조적으로 만들지 않으려는 것임.
- * 계수가 0이 되면 항목을 지우므로 <b>키가 누적되지 않음</b>(미결 「레이트리밋 카운터 회수」와 다름).
+ * 계수가 0이 되면 항목을 지우므로 <b>키가 누적되지 않음</b>(RateLimiterService 는 스윕 + 키 총량 상한으로 같은 문제를 막는다).
  *
  * <p><b>단일 인스턴스 전제</b>임 - 인스턴스가 늘면 상한이 인스턴스별로 갈려 실효 한도가 곱해짐(R-6, 미결).
  */

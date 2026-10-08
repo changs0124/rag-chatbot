@@ -25,7 +25,7 @@ import com.ragchatbot.dto.AdminDtos.DocumentResponse;
 import com.ragchatbot.dto.AdminDtos.SyncResponse;
 
 /**
- * RAG 문서 관리(FEAT-ADMIN-002). 업로드 · 목록 · 삭제.
+ * RAG 문서 관리(FEAT-ADMIN-002). 업로드 · 목록 · 삭제 · 스토어 동기화(#193).
  *
  * <p>권한 검사는 {@link AdminAccessGuard} 가 컨트롤러 앞에서 하므로 여기서는 다루지 않는다.
  *

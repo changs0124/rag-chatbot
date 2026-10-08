@@ -189,7 +189,7 @@ public class ChatService {
 	public void stream(UUID userId, PreparedChat prepared, SseEmitter emitter) {
 		UUID asstMsgId = UUID.randomUUID();
 		StringBuilder buffer = new StringBuilder();
-		// 첫 토큰 이후에는 단계를 보내지 않음(R-11 전송 규칙). 스트림 스레드 단독 사용이라 plain boolean으로 충분하지 않음 - 배열로 캡처
+		// 첫 토큰 이후에는 단계를 보내지 않음(R-11 전송 규칙). 람다 안에서 값을 바꿔야 해 지역 boolean 대신 배열로 캡처(스트림 스레드 단독 사용이라 동기화는 필요 없음)
 		boolean[] firstTokenSeen = { false };
 		boolean saved = false;
 		// 타임아웃 사실을 저장에 남기기 위한 표시(#84). **컨테이너 스레드가 세우고 스트림 스레드가

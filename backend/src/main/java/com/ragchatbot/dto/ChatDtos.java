@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 채팅 요청 DTO. 응답은 SSE(meta→token→citations→done) 스트림.
+ * 채팅 요청 DTO. 응답은 SSE(meta→stage→token→citations→done) 스트림.
  */
 public final class ChatDtos {
 
