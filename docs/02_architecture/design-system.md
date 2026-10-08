@@ -381,7 +381,7 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 
 | 자리 | variant | 크기 |
 |------|---------|------|
-| `LoginPage` 좌측 상단 | full | `h-10` |
+| `LoginPage` 좌측 상단 | full | `h-8 md:h-10` |
 | `Sidebar` 최상단 | full | `h-9` |
 | `ChatPage` 모바일 헤더 | mark | `h-7 w-7` (`md:hidden`) |
 

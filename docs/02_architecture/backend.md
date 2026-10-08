@@ -484,9 +484,9 @@ Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip
 상한은 여기에 여유를 얹은 값이다. `app` 420m · `db` 160m · `cloudflared` 64m 이고,
 `app` 은 `MaxRAMPercentage=65` · `UseSerialGC` 로, `db` 는 `shared_buffers=48MB` ·
 `max_connections=20` 으로 묶었다. Hikari 풀은 `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5` 로
-줄였다 — `application.yml` 에 hikari 설정이 없어 기본값이 10 이다. `memswap_limit` 은 이때
-일부러 비워 두었다(스왑을 `mem_limit` 만큼 더 허용해 기동 피크를 받으려는 의도). **#202 에서 `app` 만 `420m`
-(= `mem_limit`, 스왑 금지)으로 바꿨다** — 근거는 아래 「업로드 부하에서 스왑을 금지하기로 정했다」.
+줄였다 — `application.yml` 에 hikari 설정이 없어 기본값이 10 이다. `memswap_limit` 은 종전(#127)에는
+기동 피크를 받으려고 비워 두었으나, **#202 에서 `app` 만 `420m`(= `mem_limit`, 스왑 금지)으로 바꿨다** — 근거는
+아래 「업로드 부하에서 스왑을 금지하기로 정했다」.
 **의존성 해석은 여전히 Central 을 타므로** 그쪽은 재시도 두 번으로 덮는다 — 없앤 것은 배포판이라는 한 홉이다.
 멀티스테이지라 최종 이미지는 `eclipse-temurin:17-jre-alpine` 그대로이며, 실측 크기 차이는 45바이트였다.
 

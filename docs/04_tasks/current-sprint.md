@@ -1,6 +1,6 @@
 # Current Sprint
 
-> 마지막 업데이트 : 2026-10-07
+> 마지막 업데이트 : 2026-10-08
 
 여기에는 **아직 안 끝난 것만** 둔다. 끝난 일의 경위는 [CHANGELOG](../06_changelog/CHANGELOG.md) 가 정본이다.
 아직 착수하지 않은 항목은 [backlog.md](./backlog.md) 에 있다.
@@ -10,8 +10,9 @@
 없음. **런칭은 2026-10-06 에 끝났다** — 이 파일에 있던 런칭 항목(준비물 · 대기 이슈 #130 · #132 · 순서)은
 전부 처리됐고, 경위는 [CHANGELOG](../06_changelog/CHANGELOG.md) 가 정본이다.
 
-열린 이슈 중 할 일은 [#202](https://github.com/changs0124/rag-chatbot/issues/202)(업로드 부하에서 스왑 허용 여부 실측)
-하나다. 운영 VM 에 부하를 거는 일이라 **시간대와 방법을 먼저 정해야** 착수할 수 있다.
+열린 이슈 중 할 일은 [#235](https://github.com/changs0124/rag-chatbot/issues/235)(모바일 헤더의 D 마크 제거 · 모바일 화면 점검)
+하나다. 등록만 했고 착수 전이다. [#105](https://github.com/changs0124/rag-chatbot/issues/105) 는 할 일이 아니라
+「고치지 않기로 한 리뷰 항목」의 영구 기록(`wontfix`)이다.
 
 ## 완료
 
