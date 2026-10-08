@@ -10,8 +10,8 @@
 없음. **런칭은 2026-10-06 에 끝났다** — 이 파일에 있던 런칭 항목(준비물 · 대기 이슈 #130 · #132 · 순서)은
 전부 처리됐고, 경위는 [CHANGELOG](../06_changelog/CHANGELOG.md) 가 정본이다.
 
-열린 이슈 중 할 일은 [#235](https://github.com/changs0124/rag-chatbot/issues/235)(모바일 헤더의 D 마크 제거 · 모바일 화면 점검)
-하나다. 등록만 했고 착수 전이다. [#105](https://github.com/changs0124/rag-chatbot/issues/105) 는 할 일이 아니라
+열린 이슈 중 할 일은 없다 — 마지막 할 일이던 [#235](https://github.com/changs0124/rag-chatbot/issues/235)(모바일 헤더의 D 마크 제거 ·
+모바일 화면 점검)가 이 문장과 함께 merge 된다. [#105](https://github.com/changs0124/rag-chatbot/issues/105) 는 할 일이 아니라
 「고치지 않기로 한 리뷰 항목」의 영구 기록(`wontfix`)이다.
 
 ## 완료

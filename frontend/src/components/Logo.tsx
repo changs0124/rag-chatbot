@@ -45,8 +45,6 @@ const FOLD_STOPS = [
 interface LogoProps {
   /** `full` 은 마크 + 텍스트 2줄, `mark` 는 D 마크만 (좁은 폭·파비콘용) */
   variant?: 'full' | 'mark'
-  /** 같은 화면에 이름을 읽어 주는 로고가 이미 있을 때. 스크린리더에서 숨긴다 */
-  decorative?: boolean
   /**
    * 필수다. 기본값을 두면 호출부가 넘긴 값이 병합이 아니라 **교체**라,
    * 크기 없는 className 하나에 `h-`/`w-` 가 통째로 사라진다 -
@@ -55,8 +53,8 @@ interface LogoProps {
   className: string
 }
 
-export default function Logo({ variant = 'full', decorative = false, className }: LogoProps) {
-  // 사이드바(full)와 모바일 헤더(mark)가 **동시에 DOM 에 있다**(한쪽은 CSS 로만 숨김).
+export default function Logo({ variant = 'full', className }: LogoProps) {
+  // 데스크톱 사이드바와 모바일 드로어의 사이드바가 **동시에 DOM 에 있을 수 있다**(데스크톱 쪽은 CSS 로만 숨김).
   // 그라데이션 id 를 고정하면 문서에 중복 id 가 생기므로 인스턴스마다 다르게 만든다
   const foldId = useId()
   const mark = variant === 'mark'
@@ -67,9 +65,8 @@ export default function Logo({ variant = 'full', decorative = false, className }
       className={className}
       // 「(주)」 괄호가 D 아래끝보다 조금 내려간다(머리 주석). 잘리지 않게 상자 밖 그리기를 허용한다
       overflow="visible"
-      role={decorative ? undefined : 'img'}
-      aria-label={decorative ? undefined : mark ? '디인사이트' : '디인사이트 대영산전(주) 창원공장'}
-      aria-hidden={decorative || undefined}
+      role="img"
+      aria-label={mark ? '디인사이트' : '디인사이트 대영산전(주) 창원공장'}
     >
       <defs>
         <linearGradient id={foldId} x1="18.779" y1="0" x2="35" y2="0" gradientUnits="userSpaceOnUse">
