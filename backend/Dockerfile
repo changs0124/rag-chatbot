@@ -1,5 +1,5 @@
-# 백엔드 컨테이너 - 호스트 미정이라 특정 PaaS 형식(Procfile · fly.toml 등) 대신
-# 어디서나 받는 컨테이너 하나로 둠. 리슨 포트는 PORT 환경변수를 따름(application.yml).
+# 백엔드 컨테이너 - 특정 PaaS 형식(Procfile · fly.toml 등) 대신 어디서나 받는 컨테이너 하나로 둠
+# (운영은 GCE + docker compose, scripts/deploy.sh). 리슨 포트는 PORT 환경변수를 따름(application.yml).
 
 # --- 빌드 ---------------------------------------------------------------
 # **Maven 이 들어 있는 이미지를 쓴다.** 종전에는 JDK 이미지에서 `./mvnw` 를 불렀는데, 그 베이스에는

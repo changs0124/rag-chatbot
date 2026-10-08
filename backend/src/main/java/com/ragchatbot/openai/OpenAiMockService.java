@@ -14,7 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 /**
- * 목업 OpenAI (APP_MODE=mock 기본). 실 API/키 없이 전 경로가 동작함(P-2, AC-5).
+ * 목업 OpenAI (APP_MODE=mock). 모드에 기본값은 없다 - 지정하지 않으면 기동이 멈춘다(AppModeGuard). 실 API/키 없이 전 경로가 동작함(P-2, AC-5).
  * 고정 코퍼스 키워드에 매칭되면 출처 포함 답변, 아니면 무자료 플래그(noSource, P-8 · AC-6).
  * 호출을 기록해 AC-12·AC-14 검증을 가능케 함.
  */

@@ -15,8 +15,8 @@ export interface LightboxItem {
 }
 
 /**
- * 첨부 이미지 확대 보기. 전송 전 카드와 전송 후 말풍선이 같은 모달을 쓴다
- * (src 가 로컬 objectURL 이냐 서명 URL 이냐만 다름).
+ * 이미지 확대 보기. 전송 전 카드와 전송 후 말풍선이 같은 모달을 쓴다
+ * (src 가 로컬 objectURL 이냐 서명 URL 이냐만 다름). 답변 속 문서 그림(`MessageList`)도 이 모달로 연다.
  *
  * 키 처리·배경 클릭·role 은 ConfirmModal 의 패턴을 그대로 따름 - 모달 규칙을 두 벌로 두지 않기 위함.
  */
