@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # 백엔드 이미지를 로컬에서 빌드해 서버로 옮기고 다시 띄운다(#127).
 #
-# **왜 레지스트리를 쓰지 않나** : 배포 서버가 1GB 급(GCP e2-micro)이라 거기서 빌드할 수 없고,
-# 압축 후 90MB 남짓이라 그냥 넘기는 편이 단순하다. GCP 인바운드 전송은 무료다.
+# **왜 레지스트리를 쓰지 않나** : 운영 서버에서는 빌드하지 않고(compose 본체에 build 키가 없다 -
+# 1GB 급 GCP e2-micro 시절에 정한 구조이고, 4GB Lightsail 로 옮긴 뒤에도(#243) 운영 서버에 빌드 도구를
+# 들이지 않는다), 압축 후 90MB 남짓이라 그냥 넘기는 편이 단순하다. 플랜 전송량(월 4TB) 안이다.
 # 레지스트리를 끼우면 인증·태그 관리·정리 정책이 따라오는데, 서버가 하나뿐이라 그 값을 못 한다.
 #
 # **한도 근거는 이제 없다(#137).** 종전 주석은 "패키지 저장 500MB ·
@@ -14,8 +15,10 @@
 #   bash scripts/deploy.sh --skip-build    # 이미 빌드된 이미지로 전송만
 #   bash scripts/deploy.sh --dry-run       # 무엇을 할지만 출력
 #
-# 서버 접속은 gcloud 를 쓴다. 접속 대상 셋은 **환경변수로 반드시 지정한다**(#133) :
-#   DEPLOY_HOST · DEPLOY_ZONE · DEPLOY_PROJECT (필수) · DEPLOY_DIR (선택)
+# 서버 접속은 일반 ssh/scp 를 쓴다(#243 - GCP 에서 Lightsail 로 옮기며 gcloud 를 걷어냈다).
+# 접속 대상은 **환경변수로 반드시 지정한다**(#133) :
+#   DEPLOY_HOST (필수 - `~/.ssh/config` 의 Host 별칭) · DEPLOY_DIR (선택)
+# IP · 사용자 · 키 경로는 별칭 쪽(`~/.ssh/config`)에만 둔다 - 저장소에도 명령줄에도 남기지 않는다.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -23,10 +26,8 @@ cd "$(git rev-parse --show-toplevel)"
 # 적어 두는 것과 같다. 빈 값으로 받아 아래에서 한 번에 검사한다 - `set -u` 아래에서
 # `${DEPLOY_HOST}` 로 두면 여기서 `unbound variable` 로 **안내 없이** 죽는다
 HOST="${DEPLOY_HOST:-}"
-ZONE="${DEPLOY_ZONE:-}"
-PROJECT="${DEPLOY_PROJECT:-}"
 # **홈 상대 경로로 둔다(#129).** `/home/User/deploy` 는 Windows 사용자명 `User` 에 우연히
-# 맞았던 값이다. gcloud 가 OS Login 을 쓰면 원격 사용자가 로컬 사용자명과 달라져
+# 맞았던 값이다. 원격 사용자가 바뀌면(GCP OS Login 의 계정 → Lightsail 의 `ubuntu`)
 # 경로가 통째로 어긋난다. 상대 경로면 어느 계정으로 붙든 그 홈 아래를 가리킨다
 REMOTE_DIR="${DEPLOY_DIR:-deploy}"
 IMAGE="rag-chatbot-backend:latest"
@@ -46,15 +47,10 @@ done
 # 아래 `--dry-run` 분기가 `preflight` 보다 먼저 `exit 0` 하므로 그 경로가 검사를 통째로
 # 비껴가고, 빈 계획(`호스트   ( / )`)을 출력하며 정상 종료한다. 처음 배포하는 사람은
 # 「`--dry-run` 을 먼저 본다」가 자연스러운 첫 동작이라, 가장 먼저 밟는 경로가 정확히 그 사각지대다.
-# 빠진 것을 **한 번에 모아** 알린다 - 하나씩 알리면 세 번 돌려야 한다
-missing_vars=()
-[ -n "$HOST" ]    || missing_vars+=("DEPLOY_HOST(인스턴스 이름)")
-[ -n "$ZONE" ]    || missing_vars+=("DEPLOY_ZONE(영역)")
-[ -n "$PROJECT" ] || missing_vars+=("DEPLOY_PROJECT(GCP 프로젝트)")
-if [ "${#missing_vars[@]}" -ne 0 ]; then
+if [ -z "$HOST" ]; then
 	echo "배포 대상이 지정되지 않았다. 아래 환경변수를 넣고 다시 실행할 것 :" >&2
-	for v in "${missing_vars[@]}"; do echo "  - $v" >&2; done
-	echo "  예) DEPLOY_HOST=… DEPLOY_ZONE=… DEPLOY_PROJECT=… bash scripts/deploy.sh --dry-run" >&2
+	echo "  - DEPLOY_HOST(~/.ssh/config 의 Host 별칭)" >&2
+	echo "  예) DEPLOY_HOST=… bash scripts/deploy.sh --dry-run" >&2
 	exit 2
 fi
 
@@ -62,7 +58,7 @@ fi
 # 늦고 비싼 실패를 앞으로 당긴다
 preflight() {
 	local missing=0
-	for c in docker gcloud gzip; do
+	for c in docker ssh scp gzip; do
 		command -v "$c" >/dev/null 2>&1 || { echo "필요한 명령이 없다: $c" >&2; missing=1; }
 	done
 	[ "$missing" -eq 0 ] || exit 2
@@ -127,11 +123,11 @@ fi
 }
 
 say() { printf '\n\033[1m▶ %s\033[0m\n' "$1"; }
-ssh_run() { gcloud compute ssh "$HOST" --zone="$ZONE" --project="$PROJECT" --quiet --command="$1"; }
+ssh_run() { ssh "$HOST" "$1"; }
 
 if [ "$DRY" = 1 ]; then
 	cat <<EOF
-호스트   $HOST ($ZONE / $PROJECT)
+호스트   $HOST
 원격 경로 $REMOTE_DIR
 이미지   $IMAGE
 단계     $([ "$SKIP_BUILD" = 1 ] && echo '전송 → 로드 → 기동' || echo '빌드 → 저장 → 전송 → 로드 → 기동')
@@ -165,10 +161,7 @@ ls -lh "$TMP/$TARBALL" | awk '{print "  크기: " $5}'
 # compose 파일도 같이 보낸다 - 서버의 것이 저장소보다 뒤처져 조용히 다른 설정으로 도는 사고를 막는다.
 # .env 두 개는 **보내지 않는다.** 비밀이 로컬에 있을 이유가 없고, 서버에 이미 있다
 say "서버로 전송"
-gcloud compute scp "$TMP/$TARBALL" "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
-gcloud compute scp docker-compose.yml "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
-# 백업 스크립트도 같은 이유로 같이 보낸다(#132). cron 이 서버의 사본을 부르므로 여기서 갱신해야 고친 것이 반영된다
-gcloud compute scp scripts/backup.sh "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
+scp -q "$TMP/$TARBALL" docker-compose.yml "$HOST:$REMOTE_DIR/"
 
 # 4. 로드 + 기동 --------------------------------------------------------------
 # **실행 중인 컨테이너가 방금 넣은 이미지를 쓰는지 확인한다(#129).** `docker compose up -d` 는
@@ -183,8 +176,8 @@ gcloud compute scp scripts/backup.sh "$HOST:$REMOTE_DIR/" --zone="$ZONE" --proje
 # 것은 태그를 잃고 dangling 이 된다. 헬스체크 실패 시 되돌릴 유일한 자산인데 이름이 없으면
 # 사람이 찾아 쓰기 어렵다 - 레지스트리를 안 쓰기로 한 설계의 대가다.
 #
-# **원격 명령 문자열 안에는 `#` 주석을 쓰지 않는다(#129).** gcloud 가 Windows 에서 개행을
-# 어떻게 넘기는지 이 환경에서 측정하지 못했는데, 만약 한 줄로 합쳐지면 `#` 뒤가 전부 주석이
+# **원격 명령 문자열 안에는 `#` 주석을 쓰지 않는다(#129).** 원격 셸이 Windows 에서 넘긴 개행을
+# 어떻게 받는지 매번 보장할 수 없는데(gcloud 시절 측정 못 했고, ssh 로 바꾼 #243 에서도 그대로 둔다), 만약 한 줄로 합쳐지면 `#` 뒤가 전부 주석이
 # 되어 **배포가 아무것도 하지 않고 성공을 반환한다.** 각 줄을 `;` 로 끝내 개행이 사라져도
 # 같은 뜻이 되게 하고, 설명은 전부 이 바깥에 둔다.
 say "서버에서 로드 후 재기동"

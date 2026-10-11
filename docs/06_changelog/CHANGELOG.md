@@ -22,6 +22,18 @@
     (먼저 바꾸면 운영 답에 표식 글자가 그대로 보인다)
 
 ### Changed
+- **백엔드 호스팅을 GCP e2-micro 에서 AWS Lightsail 서울로 옮긴다(#243, 2026-10-12 결정 · 코드/문서 선반영, 전환은 별도).**
+  메모리 953Mi · `pd-standard` 45 IOPS 한계가 #127 · #202 에서 반복해 발목을 잡았다. 월 $24 · 2 vCPU(기준 20%) · 4GB · 80GB SSD ·
+  전송 4TB · Ubuntu 24.04 · 고정 IP · 방화벽 22 만. Cloudflare Tunnel 은 그대로다.
+  - `scripts/deploy.sh` : `gcloud compute ssh/scp` → 일반 `ssh`/`scp`. 필수 변수는 `DEPLOY_HOST`(`~/.ssh/config` 별칭) 하나이고
+    `DEPLOY_ZONE` · `DEPLOY_PROJECT` 는 없앴다. `backup.sh` 는 더 이상 보내지 않는다. 사전 도구는 docker · ssh · scp · gzip
+  - `docker-compose.yml` : `app` `mem_limit`/`memswap_limit` 420m → 1g(스왑 금지 #202 유지) · `db` 160m → 512m. `cloudflared` 64m 와
+    Postgres 튜닝은 그대로
+  - 백업 : GCS cron(`scripts/backup.sh`, #132)을 지우고 Lightsail 자동 일일 스냅샷(최근 7개)으로 바꿨다. **약점을 감수한다** —
+    디스크 통째로만 복구(표 단위 `pg_restore` 불가) · 같은 공급자(오프사이트 아님) · crash-consistent(Postgres 는 WAL 로 복구)
+  - 문서 : `backend.md` 배포 · 메모리 · 백업, `overview.md` · `backlog.md` · `INDEX.md`. 서버 첫 준비 목록과 전환 순서를 적었다 —
+    **같은 터널을 두 서버에 올리면 DB 가 갈라지므로 GCP 의 app · cloudflared 를 먼저 멈춘 뒤 Lightsail 을 띄운다.**
+    GCP 시절 실측(953Mi · 420m · 45 IOPS)은 이력으로 남겼다. 전환 후 `README.md` · `INDEX.md` 의 운영 상태 문구를 바꿀 것
 - **모바일 헤더의 D 마크를 뺐다(#235).** 드로어를 열면 사이드바 로고가 나오므로 겹치는 표식이었다. 드로어가 닫힌 동안 화면에 브랜드
   이름이 남지 않는 것은 받아들였다. 마크를 숨기려고 두었던 `Logo` 의 `decorative` 속성(#154)은 쓰는 곳이 없어져 지웠다.
   `variant="mark"` 는 파비콘의 벡터 정본이라 남긴다. 헤더 로고 테스트 2건은 새 동작 2건으로 바꿔 케이스 수는 140 그대로다.
