@@ -1,0 +1,20 @@
+# after — (54a4604)
+356:      {issued && (
+357-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true">
+358-          <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
+359-            <div className="rounded-[1.375rem] bg-raised p-6">
+103:  // 일회용 비밀번호 창은 Esc 와 「닫기」로만 닫는다(#253). 배경 클릭으로 닫히면 「지금만 볼 수 있는」 값이
+104-  // 한 번의 헛클릭에 사라져 비밀번호를 다시 초기화해야 한다 - 그래서 이 창만 배경 닫기를 두지 않는다
+105-  useEffect(() => {
+106-    if (!issued) return
+107-    const onKey = (e: KeyboardEvent) => {
+108-      if (e.key === 'Escape') setIssued(null)
+109-    }
+110-    window.addEventListener('keydown', onKey)
+111-    return () => window.removeEventListener('keydown', onKey)
+112-  }, [issued])
+
+$ npx vitest run src/pages/AdminPage.test.tsx → Tests 13 passed (새 1개: 배경 클릭으로 안 닫힘 · Esc · 닫기)
+$ npm run lint → 0 · npx vitest run → Test Files 21 · Tests 144 · npm run build → OK
+
+캡처 대신 동작 테스트(사용자 결정 2026-10-12) — 창 모양은 그대로이고 클릭했을 때의 동작만 바뀌어 정지 화면 차이가 없다

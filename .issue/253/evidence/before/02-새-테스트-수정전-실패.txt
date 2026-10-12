@@ -1,0 +1,5 @@
+# before — 새 테스트를 수정 전 AdminPage.tsx 로 돌린 결과 (배경 클릭에 창이 닫혀 값을 못 찾음)
+     × 일회용 비밀번호 창은 배경 클릭으로 닫히지 않고 Esc · 닫기로 닫힌다 39ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+TestingLibraryElementError: Unable to find an element with the text: Xk7m-Qp29-Vr4t. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+      Tests  1 failed | 12 passed (13)

@@ -1,0 +1,8 @@
+# before — 일회용 비밀번호 창 (7f88839)
+345:      {issued && (
+346-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true">
+347-          <div className="absolute inset-0" onClick={() => setIssued(null)} aria-hidden="true" />
+348-          <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
+
+→ 배경(absolute inset-0) 클릭이 setIssued(null) — 한 번 바깥을 누르면 「지금만 볼 수 있는」 값이 사라진다.
+→ Esc 처리 없음(ConfirmModal 은 있음).
