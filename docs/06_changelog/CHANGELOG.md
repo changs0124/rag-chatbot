@@ -63,6 +63,9 @@
   웹폰트가 늦게 오면 대체 글꼴로 그려져 높이가 어긋나기 때문이다. 모바일 헤더의 D 마크(`variant="mark"`)는 그대로다.
 
 ### Fixed
+- **보낸 메시지의 첨부는 `DELETE /api/files/{id}` 로 지우지 못한다(#249 — 409).** 종전에는 `message_id` 를 보지 않아 204 로 지워져
+  대화 기록의 이미지와 「(이미지 첨부)」 표식이 사라졌고, 파일을 먼저 · 행을 나중에 지워 행 삭제가 실패하면 없는 파일을 가리켰다.
+  이제 행(`message_id is null` 조건) → 파일 순서이고, 프론트는 초안 카드에만 이 API 를 쓰므로 화면 동작은 그대로다. 케이스 +1
 - **`APP_MODE` 를 한 규칙으로 읽는다(#248).** 가드만 앞뒤 공백 제거 · 소문자로 읽고 `EmailDomainPolicy` · `DocFigureService` 는
   원문을 비교해, `APP_MODE=LIVE` 면 가드와 Real 빈은 live 인데 **「live 는 허용 도메인 필수」 검사만 빠져 경계가 조용히 꺼졌다.**
   `AppModeGuard.normalize` 를 두고 네 곳이 모두 거치게 했다. 구현 선택은 `@ConditionalOnExpression` 으로 같은 규칙을 쓰고,
