@@ -1,0 +1,20 @@
+$ bash scripts/deploy.sh --dry-run   (접속 대상 미지정)
+배포 대상이 지정되지 않았다. 아래 환경변수를 넣고 다시 실행할 것 :
+  - DEPLOY_HOST(인스턴스 이름)
+  - DEPLOY_ZONE(영역)
+  - DEPLOY_PROJECT(GCP 프로젝트)
+  예) DEPLOY_HOST=… DEPLOY_ZONE=… DEPLOY_PROJECT=… bash scripts/deploy.sh --dry-run
+exit=2
+
+$ grep -n "gcloud\|mem_limit\|memswap_limit" scripts/deploy.sh docker-compose.yml
+scripts/deploy.sh:130:ssh_run() { gcloud compute ssh "$HOST" --zone="$ZONE" --project="$PROJECT" --quiet --command="$1"; }
+scripts/deploy.sh:168:gcloud compute scp "$TMP/$TARBALL" "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
+scripts/deploy.sh:169:gcloud compute scp docker-compose.yml "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
+scripts/deploy.sh:171:gcloud compute scp scripts/backup.sh "$HOST:$REMOTE_DIR/" --zone="$ZONE" --project="$PROJECT" --quiet
+docker-compose.yml:38:    mem_limit: 160m
+docker-compose.yml:103:    mem_limit: 420m
+docker-compose.yml:113:    memswap_limit: 420m
+docker-compose.yml:220:    mem_limit: 64m
+
+$ ls scripts/backup.sh
+scripts/backup.sh*

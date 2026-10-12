@@ -1,0 +1,23 @@
+$ bash scripts/deploy.sh --dry-run   (접속 대상 미지정)
+배포 대상이 지정되지 않았다. 아래 환경변수를 넣고 다시 실행할 것 :
+  - DEPLOY_HOST(~/.ssh/config 의 Host 별칭)
+  예) DEPLOY_HOST=… bash scripts/deploy.sh --dry-run
+exit=2
+
+$ DEPLOY_HOST=<별칭> bash scripts/deploy.sh --dry-run
+호스트   <별칭>
+원격 경로 deploy
+이미지   rag-chatbot-backend:latest
+단계     빌드 → 저장 → 전송 → 로드 → 기동
+
+$ grep -n "gcloud compute\|mem_limit:\|memswap_limit:" scripts/deploy.sh docker-compose.yml
+docker-compose.yml:39:    mem_limit: 512m
+docker-compose.yml:105:    mem_limit: 1g
+docker-compose.yml:115:    memswap_limit: 1g
+docker-compose.yml:222:    mem_limit: 64m
+
+$ ls scripts/backup.sh
+ls: cannot access 'scripts/backup.sh': No such file or directory
+
+$ shellcheck scripts/deploy.sh (koalaman/shellcheck:stable)
+OK (경고 0)

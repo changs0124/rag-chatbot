@@ -1,0 +1,12 @@
+# before — 운영(GCP e2-micro, us-west1-b) 2026-10-12 09:03:03    
+health 200 total=1.680752s
+health 200 total=0.515117s
+health 200 total=0.661154s
+health 200 total=0.727081s
+health 200 total=0.627804s
+               total        used        free      shared  buff/cache   available
+Mem:           953Mi       664Mi       110Mi       2.8Mi       293Mi       289Mi
+NAME                   MEM USAGE / LIMIT
+deploy-app-1           270.5MiB / 420MiB
+deploy-cloudflared-1   32.8MiB / 64MiB
+deploy-db-1            19.57MiB / 160MiB
