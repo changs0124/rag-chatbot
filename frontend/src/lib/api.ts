@@ -86,6 +86,11 @@ export class ApiError extends Error {
   }
 }
 
+/** 응답이 온 실패는 서버 message, 그 밖은 화면 문구 (#254) */
+export function errorMessage(e: unknown, fallback: string): string {
+  return e instanceof ApiError ? e.message : fallback
+}
+
 interface RequestOptions {
   method?: string
   body?: unknown

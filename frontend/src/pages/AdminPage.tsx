@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import ConfirmModal from '../components/ConfirmModal'
 import TextInput from '../components/TextInput'
 import { IconAlert, IconCheck, IconChevronLeft, IconClock } from '../components/icons'
-import { ApiError } from '../lib/api'
+import { errorMessage } from '../lib/api'
 import {
   createAdminUser,
   deleteDocument,
@@ -81,7 +81,7 @@ export default function AdminPage() {
       setDocuments(docs)
       setUsers(people)
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : '목록을 불러오지 못했습니다')
+      setError(errorMessage(e, '목록을 불러오지 못했습니다'))
     } finally {
       setLoaded(true)
     }
@@ -124,7 +124,7 @@ export default function AdminPage() {
       await uploadDocument(file)
       await refresh()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '업로드하지 못했습니다')
+      setError(errorMessage(err, '업로드하지 못했습니다'))
     } finally {
       setUploading(false)
     }
@@ -144,7 +144,7 @@ export default function AdminPage() {
       )
       await refresh()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : '스토어와 동기화하지 못했습니다')
+      setError(errorMessage(e, '스토어와 동기화하지 못했습니다'))
     } finally {
       setSyncing(false)
     }
@@ -158,7 +158,7 @@ export default function AdminPage() {
       await deleteDocument(target.id)
       await refresh()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : '삭제하지 못했습니다')
+      setError(errorMessage(e, '삭제하지 못했습니다'))
     }
   }
 
@@ -168,7 +168,7 @@ export default function AdminPage() {
       const res = await resetUserPassword(target.id)
       setIssued({ kind: 'reset', name: target.name, password: res.temporaryPassword })
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : '초기화하지 못했습니다')
+      setError(errorMessage(e, '초기화하지 못했습니다'))
     }
   }
 
@@ -183,7 +183,7 @@ export default function AdminPage() {
       setNewName('')
       await refresh()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : '계정을 만들지 못했습니다')
+      setError(errorMessage(e, '계정을 만들지 못했습니다'))
     } finally {
       setCreating(false)
     }

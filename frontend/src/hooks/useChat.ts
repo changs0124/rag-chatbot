@@ -7,7 +7,7 @@ import {
   renameConversation as apiRename,
   streamChat,
 } from '../lib/endpoints'
-import { ApiError } from '../lib/api'
+import { errorMessage } from '../lib/api'
 import type { Attachment, ChatMessage, Conversation } from '../lib/types'
 
 /**
@@ -138,7 +138,7 @@ export function useChat() {
       try {
         await apiDelete(id)
       } catch (e) {
-        setError(e instanceof ApiError ? e.message : '대화를 삭제하지 못했습니다')
+        setError(errorMessage(e, '대화를 삭제하지 못했습니다'))
         return
       }
       setConversations((prev) => prev.filter((c) => c.id !== id))
@@ -163,7 +163,7 @@ export function useChat() {
       const updated = await apiRename(id, trimmed)
       setConversations((prev) => prev.map((c) => (c.id === id ? updated : c)))
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : '대화 이름을 바꾸지 못했습니다')
+      setError(errorMessage(e, '대화 이름을 바꾸지 못했습니다'))
     }
   }, [])
 
@@ -196,7 +196,7 @@ export function useChat() {
           convId = conv.id
         } catch (e) {
           if (generation.current !== mine) return
-          setError(e instanceof ApiError ? e.message : '대화를 만들 수 없습니다')
+          setError(errorMessage(e, '대화를 만들 수 없습니다'))
           return
         } finally {
           creatingRef.current = false

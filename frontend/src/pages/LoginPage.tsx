@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import Logo from '../components/Logo'
 import TextInput from '../components/TextInput'
-import { ApiError } from '../lib/api'
+import { errorMessage } from '../lib/api'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -22,7 +22,7 @@ export default function LoginPage() {
       await login(email, password)
       navigate('/', { replace: true })
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '요청 중 오류가 발생했습니다')
+      setError(errorMessage(err, '요청 중 오류가 발생했습니다'))
     } finally {
       setBusy(false)
     }

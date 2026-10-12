@@ -82,7 +82,7 @@ class ChatStreamAbortTest {
 		}
 
 		@Override
-		public UploadedDocument uploadDocument(String filename, byte[] content, String contentType) {
+		public UploadedDocument uploadDocument(String filename, byte[] content) {
 			throw new UnsupportedOperationException("채팅 전용 대역");
 		}
 

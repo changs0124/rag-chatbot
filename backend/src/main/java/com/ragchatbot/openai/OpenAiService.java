@@ -102,7 +102,7 @@ public interface OpenAiService {
 	 * 그것도 실패하면 경고 로그에 file_id 를 남김. 어느 경우에도 예외를 던져 호출자가
 	 * DB 행을 만들지 않게 함.
 	 */
-	UploadedDocument uploadDocument(String filename, byte[] content, String contentType);
+	UploadedDocument uploadDocument(String filename, byte[] content);
 
 	/**
 	 * 인덱싱 상태 조회 - {@code in_progress} | {@code completed} | {@code failed} 중 하나를 돌려줌.

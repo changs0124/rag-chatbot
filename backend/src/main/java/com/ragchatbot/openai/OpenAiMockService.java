@@ -147,7 +147,7 @@ public class OpenAiMockService implements OpenAiService {
 	}
 
 	@Override
-	public UploadedDocument uploadDocument(String filename, byte[] content, String contentType) {
+	public UploadedDocument uploadDocument(String filename, byte[] content) {
 		String fileId = "mock-file-" + UUID.randomUUID();
 		mockDocuments.put(fileId, new StoreFile(fileId, MOCK_STORE_ID, filename, content.length, "completed"));
 		return new UploadedDocument(fileId, MOCK_STORE_ID);

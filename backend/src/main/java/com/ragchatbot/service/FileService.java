@@ -85,7 +85,7 @@ public class FileService {
 		if (bytes.length > type.maxSize()) {
 			throw new BadRequestException("용량 초과(" + type.fileType() + " 최대 " + (type.maxSize() / MB) + "MB)");
 		}
-		if (!startsWith(bytes, type.magic())) {
+		if (!regionEquals(bytes, 0, type.magic())) {
 			throw new BadRequestException("파일 내용이 형식과 일치하지 않음");
 		}
 		// webp는 RIFF(0~3) 뒤 오프셋 8의 "WEBP"까지 확인 - 임의 RIFF 컨테이너 우회 차단
@@ -96,7 +96,7 @@ public class FileService {
 		String storagePath = fileStorage.store(userId, type.extension(), bytes);
 		UUID id = UUID.randomUUID();
 		attachmentRepository.insert(new Attachment(id, null, userId, storagePath, type.fileType(), null, null));
-		return new AttachmentResponse(id, type.fileType(), buildUrl(id, userId));
+		return new AttachmentResponse(id, type.fileType(), issueUrl(id, userId));
 	}
 
 	/** 서빙 - 서명 토큰 검증 후 소유자 첨부만. 실패는 전부 404(존재 은닉, P-3). */
@@ -143,8 +143,7 @@ public class FileService {
 	 * 사라지는 경로를 남기지 않음(2026-07-28 결정).
 	 */
 	public int cleanupOrphans(OffsetDateTime cutoff) {
-		OffsetDateTime floor = OffsetDateTime.now().minusMinutes(MIN_ORPHAN_AGE_MINUTES);
-		OffsetDateTime effective = cutoff.isAfter(floor) ? floor : cutoff;
+		OffsetDateTime effective = clampCutoff(cutoff);
 		var orphans = attachmentRepository.findOrphans(effective);
 		for (Attachment a : orphans) {
 			fileStorage.delete(a.storagePath());
@@ -167,8 +166,7 @@ public class FileService {
 	 * 경로별 존재 질의나 페이지 단위로 바꿔야 함(R-6과 같은 갈래).
 	 */
 	public int cleanupUnreferencedFiles(OffsetDateTime cutoff) {
-		OffsetDateTime floor = OffsetDateTime.now().minusMinutes(MIN_ORPHAN_AGE_MINUTES);
-		Instant effective = (cutoff.isAfter(floor) ? floor : cutoff).toInstant();
+		Instant effective = clampCutoff(cutoff).toInstant();
 
 		Set<String> referenced = new HashSet<>(attachmentRepository.findAllStoragePaths());
 		int removed = 0;
@@ -182,20 +180,15 @@ public class FileService {
 		return removed;
 	}
 
+	/** cutoff 가 최소 유예보다 최근이면 그 경계로 되돌림 */
+	private static OffsetDateTime clampCutoff(OffsetDateTime cutoff) {
+		OffsetDateTime floor = OffsetDateTime.now().minusMinutes(MIN_ORPHAN_AGE_MINUTES);
+		return cutoff.isAfter(floor) ? floor : cutoff;
+	}
+
 	/** 재조회 응답용 - 조회 시점에 새 서명 URL 을 발급함(저장된 URL 재사용 금지, TTL 15분) */
 	public String issueUrl(UUID fileId, UUID userId) {
-		return buildUrl(fileId, userId);
-	}
-
-	private String buildUrl(UUID fileId, UUID userId) {
 		return "/api/files/" + fileId + "?token=" + fileTokenService.issue(fileId, userId);
-	}
-
-	private static boolean startsWith(byte[] data, byte[] prefix) {
-		if (data.length < prefix.length) {
-			return false;
-		}
-		return Arrays.equals(data, 0, prefix.length, prefix, 0, prefix.length);
 	}
 
 	private static boolean regionEquals(byte[] data, int offset, byte[] marker) {

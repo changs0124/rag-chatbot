@@ -9,7 +9,7 @@ import { API_BASE, adoptRefreshedToken, getToken, toApiError } from './api'
 const MARKER = /\[\[그림:([a-z0-9-]{1,64})\]\]/g
 const OPEN = '[[그림:'
 
-export type Segment = { type: 'text'; text: string } | { type: 'figure'; key: string }
+type Segment = { type: 'text'; text: string } | { type: 'figure'; key: string }
 
 /**
  * 스트리밍 중 본문 끝에 덜 도착한 표식(`[[그림:tm-p0`)이 있으면 그 조각을 잘라 낸다.

@@ -163,7 +163,7 @@ public class AdminDocumentService {
 		}
 
 		String filename = file.getOriginalFilename() == null ? "문서." + extension : file.getOriginalFilename();
-		UploadedDocument uploaded = openAiService.uploadDocument(filename, bytes, file.getContentType());
+		UploadedDocument uploaded = openAiService.uploadDocument(filename, bytes);
 
 		UUID id = UUID.randomUUID();
 		try {

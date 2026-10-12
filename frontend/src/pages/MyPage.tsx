@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import TextInput from '../components/TextInput'
 import { IconChevronLeft, IconChevronRight, IconFile } from '../components/icons'
-import { ApiError, setToken } from '../lib/api'
+import { errorMessage, setToken } from '../lib/api'
 import { updateName, updatePassword } from '../lib/endpoints'
 
 export default function MyPage() {
@@ -21,7 +21,7 @@ export default function MyPage() {
   }
   function fail(e: unknown) {
     setNotice(null)
-    setError(e instanceof ApiError ? e.message : '요청 중 오류가 발생했습니다')
+    setError(errorMessage(e, '요청 중 오류가 발생했습니다'))
   }
 
   async function saveName() {

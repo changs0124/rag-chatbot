@@ -22,6 +22,9 @@
     (먼저 바꾸면 운영 답에 표식 글자가 그대로 보인다)
 
 ### Changed
+- **동작을 바꾸지 않는 중복을 정리했다(#254).** 프론트 오류 문구 식 12곳 → `errorMessage(e, fallback)` · 안 쓰는 export 2개(`Segment` ·
+  `LightboxItem`), 백엔드 `uploadDocument` 의 안 쓰는 `contentType` · `FileService` 의 `startsWith`(→ `regionEquals`) · 고아 정리 cutoff 사본 ·
+  `issueUrl`→`buildUrl` 위임. 대화별 Vector Store 경로(#124)는 유지하기로 했다(2026-10-12)
 - **`backend.md` 「배포」에서 GCP 시절 이력을 걷었다(#247).** 무료 티어 조건 · 953Mi 제약표 · 전환 실측 · GCP 커널 실측 · 스왑 IOPS 세부 · GCS 백업 설계를
   지우고 현재 절차와 설정만 남겼다. 이력은 이 CHANGELOG(#127 · #243)에 있고, 서버 이전 순서는 특정 공급자 없이 일반화했다
 - **백엔드 호스팅을 GCP e2-micro 에서 AWS Lightsail 서울로 옮겼다(#243, 2026-10-12 전환 · 중단 약 3분).**

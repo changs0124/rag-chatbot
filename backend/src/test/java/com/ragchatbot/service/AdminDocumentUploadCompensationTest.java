@@ -41,7 +41,7 @@ class AdminDocumentUploadCompensationTest {
 	private static OpenAiService openAiStub() {
 		OpenAiService openAi = mock(OpenAiService.class);
 		when(openAi.hasSharedVectorStore()).thenReturn(true);
-		when(openAi.uploadDocument(anyString(), any(), anyString()))
+		when(openAi.uploadDocument(anyString(), any()))
 				.thenReturn(new UploadedDocument(FILE_ID, STORE_ID));
 		return openAi;
 	}
