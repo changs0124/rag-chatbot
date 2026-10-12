@@ -1,0 +1,35 @@
+# before — 중복 (f160047)
+## 프론트 'e instanceof ApiError ? e.message : 대체' : 12곳
+components/chat/Composer.tsx:75:              ? { ...d, status: 'error', message: e instanceof ApiError ? e.message : '업로드 실패' }
+hooks/useChat.ts:141:        setError(e instanceof ApiError ? e.message : '대화를 삭제하지 못했습니다')
+hooks/useChat.ts:166:      setError(e instanceof ApiError ? e.message : '대화 이름을 바꾸지 못했습니다')
+hooks/useChat.ts:199:          setError(e instanceof ApiError ? e.message : '대화를 만들 수 없습니다')
+pages/AdminPage.tsx:84:      setError(e instanceof ApiError ? e.message : '목록을 불러오지 못했습니다')
+pages/AdminPage.tsx:127:      setError(err instanceof ApiError ? err.message : '업로드하지 못했습니다')
+pages/AdminPage.tsx:147:      setError(e instanceof ApiError ? e.message : '스토어와 동기화하지 못했습니다')
+pages/AdminPage.tsx:161:      setError(e instanceof ApiError ? e.message : '삭제하지 못했습니다')
+pages/AdminPage.tsx:171:      setError(e instanceof ApiError ? e.message : '초기화하지 못했습니다')
+pages/AdminPage.tsx:186:      setError(e instanceof ApiError ? e.message : '계정을 만들지 못했습니다')
+pages/LoginPage.tsx:25:      setError(err instanceof ApiError ? err.message : '요청 중 오류가 발생했습니다')
+pages/MyPage.tsx:24:    setError(e instanceof ApiError ? e.message : '요청 중 오류가 발생했습니다')
+
+## 안 쓰는 export
+frontend/src/components/chat/ImageLightbox.tsx:12:export interface LightboxItem {
+frontend/src/lib/docFigures.ts:12:export type Segment = { type: 'text'; text: string } | { type: 'figure'; key: string }
+
+## 백엔드 uploadDocument 의 contentType 파라미터 / 같은 startsWith / cutoff 사본 / issueUrl 위임
+backend/src/main/java/com/ragchatbot/controller/AdminController.java:60:	public DocumentResponse uploadDocument(@RequestParam("file") MultipartFile file) {
+backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java:150:	public UploadedDocument uploadDocument(String filename, byte[] content, String contentType) {
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:441:	public UploadedDocument uploadDocument(String filename, byte[] content, String contentType) {
+backend/src/main/java/com/ragchatbot/openai/OpenAiService.java:105:	UploadedDocument uploadDocument(String filename, byte[] content, String contentType);
+backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java:166:		UploadedDocument uploaded = openAiService.uploadDocument(filename, bytes, file.getContentType());
+backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java:256:	private static boolean startsWith(byte[] data, byte[] prefix) {
+backend/src/main/java/com/ragchatbot/service/FileService.java:194:	private static boolean startsWith(byte[] data, byte[] prefix) {
+backend/src/main/java/com/ragchatbot/service/FileService.java:146:		OffsetDateTime floor = OffsetDateTime.now().minusMinutes(MIN_ORPHAN_AGE_MINUTES);
+backend/src/main/java/com/ragchatbot/service/FileService.java:170:		OffsetDateTime floor = OffsetDateTime.now().minusMinutes(MIN_ORPHAN_AGE_MINUTES);
+backend/src/main/java/com/ragchatbot/service/FileService.java:99:		return new AttachmentResponse(id, type.fileType(), buildUrl(id, userId));
+backend/src/main/java/com/ragchatbot/service/FileService.java:186:	public String issueUrl(UUID fileId, UUID userId) {
+backend/src/main/java/com/ragchatbot/service/FileService.java:187:		return buildUrl(fileId, userId);
+backend/src/main/java/com/ragchatbot/service/FileService.java:190:	private String buildUrl(UUID fileId, UUID userId) {
+
+## diff stat 기준점 : f160047
