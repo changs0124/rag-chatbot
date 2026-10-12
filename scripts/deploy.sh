@@ -173,6 +173,11 @@ scp -q "$TMP/$TARBALL" docker-compose.yml "$HOST:$REMOTE_DIR/"
 #
 # 옛 이미지 정리(prune)는 여기서 하지 않는다 - 헬스체크를 통과한 뒤로 미룬다(6단계 주석 참고).
 #
+# **컨테이너 ID 는 `ps -a` 로 찾는다(#252).** `ps -q` 는 실행 중인 것만 보여 주므로 새 app 이 기동 직후
+# 죽으면 빈 값이 되고, `docker inspect` 가 인자 없음으로 실패해 `set -e` 로 여기서 멈춘다 - 정작 필요한
+# 헬스체크 실패 출력(로그 · OOM · `:previous` 되돌리기 안내)을 못 본다. 죽은 컨테이너도 이미지 ID 는 대조되고
+# 이후 헬스체크가 실패를 제대로 보고한다.
+#
 # **load 전에 `:previous` 태그로 롤백 지점을 만든다.** 새 이미지가 latest 를 가져가면 이전
 # 것은 태그를 잃고 dangling 이 된다. 헬스체크 실패 시 되돌릴 유일한 자산인데 이름이 없으면
 # 사람이 찾아 쓰기 어렵다 - 레지스트리를 안 쓰기로 한 설계의 대가다.
@@ -189,7 +194,7 @@ sudo docker load -i '$TARBALL';
 rm -f '$TARBALL';
 want=\$(sudo docker image inspect -f '{{.Id}}' '$IMAGE');
 sudo docker compose up -d;
-got=\$(sudo docker inspect -f '{{.Image}}' \$(sudo docker compose ps -q app));
+got=\$(sudo docker inspect -f '{{.Image}}' \$(sudo docker compose ps -a -q app));
 if [ \"\$want\" != \"\$got\" ]; then echo '경고: app 이 방금 넣은 이미지로 갈리지 않았다 - force-recreate 한다'; sudo docker compose up -d --force-recreate app; fi;
 echo '--- 상태 ---';
 sudo docker compose ps;
