@@ -38,7 +38,7 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 | 준비물 | 상태 |
 |--------|------|
 | 프론트 배포 | `frontend/vercel.json` (SPA 리라이트 포함). 저장소 연결 · Root Directory · `VITE_API_BASE_URL` 설정까지 끝났다(2026-10-06) — 절차 정본은 [frontend](./02_architecture/frontend.md) 「배포 (Vercel)」 |
-| 백엔드 배포 | `docker-compose.yml` (앱 · Postgres · cloudflared). 인바운드 포트를 열지 않는 터널 방식. **서버는 빌드하지 않는다** — `bash scripts/deploy.sh` 가 로컬에서 빌드해 `docker save`/`load` 로 서버에 넣는다(레지스트리 없음). 대상은 AWS Lightsail 서울(4GB, #243 — 종전 GCE e2-micro)이며 compose 에 메모리 상한이 걸려 있다. 접속은 `~/.ssh/config` 별칭(`DEPLOY_HOST`) |
+| 백엔드 배포 | `docker-compose.yml` (앱 · Postgres · cloudflared). 인바운드 포트를 열지 않는 터널 방식. **서버는 빌드하지 않는다** — `bash scripts/deploy.sh` 가 로컬에서 빌드해 `docker save`/`load` 로 서버에 넣는다(레지스트리 없음). 운영 서버는 AWS Lightsail 서울(4GB, 2026-10-12 이전 · #243 — 종전 GCE e2-micro)이며 compose 에 메모리 상한이 걸려 있다. 접속은 `~/.ssh/config` 별칭(`DEPLOY_HOST`) |
 | 환경변수 | `backend/.env.example`(앱) · `.env.example`(compose) · `frontend/.env.example` 에 전량 + 빠뜨렸을 때의 증상까지 기재 |
 | DB 스키마 | 기동 시 Flyway 자동 적용 |
 | OpenAI 키 없이 | `APP_MODE=mock` 으로 전 경로가 목업으로 동작 |

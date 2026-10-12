@@ -123,6 +123,8 @@ fi
 }
 
 say() { printf '\n\033[1m▶ %s\033[0m\n' "$1"; }
+# 명령 문자열은 **로컬에서 펼쳐 넘기는 것이 의도다** - `$REMOTE_DIR` 등은 여기서, 원격 변수는 `\$` 로 넘긴다(env_perms 주석)
+# shellcheck disable=SC2029
 ssh_run() { ssh "$HOST" "$1"; }
 
 if [ "$DRY" = 1 ]; then
