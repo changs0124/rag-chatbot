@@ -8,3 +8,6 @@ backend/.env
 # vitest 케이스 수 리포트 - .gitignore 대상인 측정 산출물. 매 실행마다 새로 만들어지므로
 # 저장소에 없는 것이 정상이고, 커밋되면 STALE로 빨간불이 됨(낡은 수가 게이트에 남는 것을 막음)
 frontend/vitest-report.json
+
+# 삭제된 GCS 백업 스크립트(#243) - 변경 이력(CHANGELOG)과 backend.md 가 "지웠다"는 사실을 적으므로 참조가 남는다
+scripts/backup.sh
