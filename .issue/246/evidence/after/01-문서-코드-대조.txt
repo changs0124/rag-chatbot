@@ -1,0 +1,26 @@
+# after — 문서 문장 vs 코드 (38f2870)
+
+## 매퍼 개수 : 문서
+31:- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 7 · `<update>` 9 · `<delete>` 3.
+32:  소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다. **`entity` 를 통째로 받는 것은 등록
+- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 7 · `<update>` 9 · `<delete>` 3.
+  소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다. **`entity` 를 통째로 받는 것은 등록
+  7건뿐이고**, **수정·삭제 12건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
+
+## 예외 표
+70:| `MissingServletRequestPartException` · `MultipartException` | 400 | `BAD_REQUEST` |
+
+## 직접 fetch · 토큰 교체
+docs/CONVENTIONS.md:72:  부르는 곳은 셋** — 채팅 스트림(아래, `endpoints.ts`), 문서 그림 로드(`docFigures.ts` — blob 을 objectURL 로), 첨부 저장(`ImageLightbox.download()`이 blob으로 받아야 해서). 앞의 둘은 컴포넌트가 아니라 `lib/`에 있다.
+docs/02_architecture/frontend.md:51:  **래퍼 밖에서 `fetch` 를 직접 부르는 곳은 셋** — 채팅 스트림(아래, `endpoints.ts`), 문서 그림 로드
+docs/02_architecture/frontend.md:62:  교체는 **세 곳에서** 일어나야 한다 — `api.ts` 의 fetch 래퍼, `endpoints.ts` 의 채팅 스트림, `docFigures.ts` 의 그림 로드
+
+## 남은 거짓·낡은 문장 (0 이어야 함)
+0
+0
+
+## 날짜
+3:> 마지막 업데이트 : 2026-10-12
+3:> 구조가 바뀌면 이 문서를 함께 갱신한다. 최종 갱신 2026-10-12 — 관리자 기능(V5·V6) · 자체 호스팅 결정 · Lightsail 이전(#243) ·
+
+check-all.sh docs : 통과
