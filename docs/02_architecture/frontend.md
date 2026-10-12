@@ -38,7 +38,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 | 상태 | 보유자 | 비고 |
 |------|--------|------|
-| 로그인 사용자 | `frontend/src/auth/AuthContext.tsx` | 기동 시 `/api/auth/me` 로 토큰 유효성 확인. 실패하면 토큰 폐기 |
+| 로그인 사용자 | `frontend/src/auth/AuthContext.tsx` | 기동 시 `/api/auth/me` 로 토큰 유효성 확인. **401 일 때만 토큰 폐기** — 네트워크 · 5xx 면 토큰을 두고 3초 간격으로 최대 10회 다시 묻는다(#250, 배포 · 재기동 중 새로고침) |
 | 대화·메시지·스트리밍 | `frontend/src/hooks/useChat.ts` | 대화 목록, 활성 대화, 메시지 배열, 스트리밍 여부, 진행 단계, 오류를 한 훅이 보유 |
 | 인증 토큰 | `frontend/src/lib/api.ts` 모듈 변수 + `localStorage` | React 상태가 아님 — 렌더링과 무관하게 요청 시점에 읽혀야 함 |
 
