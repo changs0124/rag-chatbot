@@ -1,0 +1,18 @@
+# after — (d4b3ab7)
+## 프론트 처리식 : 1곳 (lib/api.ts 의 errorMessage 정의 1곳뿐)
+frontend/src/lib/api.ts:91:  return e instanceof ApiError ? e.message : fallback
+errorMessage 호출 : 12곳 · 대체 문구 12개는 diff 대조로 바이트 동일
+
+## 백엔드
+backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java:150:	public UploadedDocument uploadDocument(String filename, byte[] content) {
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:441:	public UploadedDocument uploadDocument(String filename, byte[] content) {
+backend/src/main/java/com/ragchatbot/openai/OpenAiService.java:105:	UploadedDocument uploadDocument(String filename, byte[] content);
+backend/src/main/java/com/ragchatbot/service/FileService.java:146:		OffsetDateTime effective = clampCutoff(cutoff);
+backend/src/main/java/com/ragchatbot/service/FileService.java:169:		Instant effective = clampCutoff(cutoff).toInstant();
+backend/src/main/java/com/ragchatbot/service/FileService.java:184:	private static OffsetDateTime clampCutoff(OffsetDateTime cutoff) {
+backend/src/main/java/com/ragchatbot/service/FileService.java:190:	public String issueUrl(UUID fileId, UUID userId) {
+
+$ git diff f160047 --stat (코드)
+ 18 files changed, 45 insertions(+), 44 deletions(-)
+
+프론트 lint 0 · vitest 146 · build OK / 백엔드 259 · 실패 0 / check-all quick 통과
