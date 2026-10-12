@@ -1,0 +1,16 @@
+$ git grep -niE "gcp|gce|gcloud|e2-micro|pd-standard|\bgcs\b|os login|표준 영구 디스크|공유 vCPU" -- . ":!docs" ":!.issue" | wc -l
+0
+
+$ git diff main --stat
+ .linkignore              |  2 +-
+ README.md                |  2 +-
+ backend/Dockerfile       |  2 +-
+ docker-compose.build.yml |  5 ++---
+ docker-compose.yml       | 25 ++++++++++++-------------
+ scripts/deploy.sh        |  9 ++++-----
+ 6 files changed, 21 insertions(+), 24 deletions(-)
+
+$ 값 변경 없음 확인 (주석이 아닌 줄의 diff)
+0
+
+shellcheck scripts/deploy.sh : OK · docker compose config -q : OK · check-all quick : 통과

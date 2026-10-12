@@ -1,0 +1,18 @@
+$ git grep -niE "gcp|gce|gcloud|e2-micro|pd-standard|\bgcs\b|os login|표준 영구 디스크|공유 vCPU" -- . ":!docs" ":!.issue"
+.linkignore:12:# 삭제된 GCS 백업 스크립트(#243) - 변경 이력(CHANGELOG)과 backend.md 가 "지웠다"는 사실을 적으므로 참조가 남는다
+README.md:48:**2026-10-06 런칭함 — 운영 중.** 프론트는 Vercel, 백엔드는 자체 호스팅(AWS Lightsail 서울 — 2026-10-12 GCE e2-micro 에서 이전, #243) + Cloudflare Tunnel 이고
+backend/Dockerfile:2:# (운영은 GCE + docker compose, scripts/deploy.sh). 리슨 포트는 PORT 환경변수를 따름(application.yml).
+docker-compose.build.yml:5:# **왜 본체가 아니라 여기 있나** - 1GB 급 GCP e2-micro 시절에 정했다(4GB Lightsail 로 옮긴 #243 뒤에도 유지) - 거기서 이미지를 빌드하면
+docker-compose.build.yml:6:# build 스테이지의 Maven JVM 하나로 물리 메모리를 넘긴다. 스왑으로 버텨도 표준 영구 디스크의
+docker-compose.yml:12:# **여기에 build 가 없는 것은 의도다(#127).** 1GB 급 GCP 시절에는 이미지 빌드가 물리 메모리를
+docker-compose.yml:29:    # 1GB 급 GCP 시절에 줄인 값이다 - shared_buffers 128MB 를 그대로 두면 app 의 JVM 과 물리 메모리를
+docker-compose.yml:38:    # 512m(#243) - 4GB Lightsail 로 옮기며 올렸다. GCP 1GB 시절 값은 160m(실측 36MiB)
+docker-compose.yml:104:    # 1g(#243) - 4GB Lightsail 로 옮기며 올렸다. GCP 1GB 시절 값은 420m
+docker-compose.yml:109:    # 첫 업로드가 그 페이지를 `pd-standard`(쓰기 ~45 IOPS)에서 도로 읽어오느라 **39초**가 걸린다
+docker-compose.yml:136:    # 폭주만 막는다. (GCP 시절 mem_limit 420m 에서는 -Xss512k 와 겹쳐 200 스레드에 닿기 전에
+docker-compose.yml:155:      # **SerialGC 를 명시한다.** 2 vCPU · 기준 성능 20% 버스트 사양(#243, 종전 공유 vCPU)에서 G1 의 GC 스레드는 CPU 와 메모리를
+scripts/deploy.sh:5:# 1GB 급 GCP e2-micro 시절에 정한 구조이고, 4GB Lightsail 로 옮긴 뒤에도(#243) 운영 서버에 빌드 도구를
+scripts/deploy.sh:18:# 서버 접속은 일반 ssh/scp 를 쓴다(#243 - GCP 에서 Lightsail 로 옮기며 gcloud 를 걷어냈다).
+scripts/deploy.sh:30:# 맞았던 값이다. 원격 사용자가 바뀌면(GCP OS Login 의 계정 → Lightsail 의 `ubuntu`)
+scripts/deploy.sh:182:# 어떻게 받는지 매번 보장할 수 없는데(gcloud 시절 측정 못 했고, ssh 로 바꾼 #243 에서도 그대로 둔다), 만약 한 줄로 합쳐지면 `#` 뒤가 전부 주석이
+count=16
