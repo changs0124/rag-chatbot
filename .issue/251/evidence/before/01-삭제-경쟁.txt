@@ -1,0 +1,24 @@
+# before — deleteConversation (474d6a9)
+133:  const deleteConversation = useCallback(
+134-    async (id: string) => {
+135-      try {
+136-        await apiDelete(id)
+137-      } catch (e) {
+138-        setError(e instanceof ApiError ? e.message : '대화를 삭제하지 못했습니다')
+139-        return
+140-      }
+141-      setConversations((prev) => prev.filter((c) => c.id !== id))
+142-      if (activeId === id) {
+143-        // 지운 대화를 떠나는 것도 전환임 - 안 끊으면 사라진 대화에 대고 스트림이 계속 돎
+144-        abortActiveStream()
+145-        generation.current++
+146-        setActiveId(null)
+147-        setMessages([])
+148-      }
+149-    },
+150-    [activeId, abortActiveStream],
+151-  )
+152-
+
+→ await apiDelete 뒤 activeId === id 를 삭제 시작 때 잡은 값으로 비교. 확인 창은 즉시 닫혀(Sidebar) 그 사이 B 를 고를 수 있다.
+  응답이 오면 B 의 스트림을 끊고 generation 을 올려 B 의 메시지 로드를 버리고 빈 화면이 된다.
