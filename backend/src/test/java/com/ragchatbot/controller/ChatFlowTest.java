@@ -207,6 +207,25 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		assertThat(String.valueOf(atts.get(0).get("url"))).contains("/api/files/" + attId + "?token=");
 	}
 
+	/**
+	 * #249 : 이미 보낸 메시지의 첨부는 {@code DELETE /api/files/{id}} 로 지우지 못한다(409).
+	 * 종전에는 204 로 지워져 대화 기록에서 이미지가 사라졌다
+	 */
+	@Test
+	void sent_attachment_cannot_be_deleted_409() {
+		String token = createUser("chat-sent-att@b.com");
+		String convId = createConversation(token);
+		String attId = uploadImage(token);
+		chat(token, Map.of("conversationId", convId, "message", "이 이미지", "attachmentIds", List.of(attId)));
+
+		var del = rest.exchange("/api/files/" + attId, HttpMethod.DELETE, new HttpEntity<>(bearer(token)), Map.class);
+		assertThat(del.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+
+		var res = rest.exchange("/api/conversations/" + convId + "/messages", HttpMethod.GET,
+				new HttpEntity<>(bearer(token)), List.class);
+		assertThat(res.getBody().toString()).contains(attId);
+	}
+
 	@Test
 	void delete_conversation_calls_openai_cleanup() {
 		String token = createUser("chat-del@b.com");

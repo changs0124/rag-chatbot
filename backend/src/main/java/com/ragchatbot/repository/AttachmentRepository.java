@@ -23,7 +23,8 @@ public interface AttachmentRepository {
 	/** 첨부를 메시지에 연결(채팅 전송 시). 소유자 것만 */
 	int linkToMessage(@Param("id") UUID id, @Param("messageId") UUID messageId, @Param("userId") UUID userId);
 
-	int deleteByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
+	/** 보내기 전(message_id 없음) 첨부만 지운다(#249). 지운 행 수 */
+	int deleteDraftByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
 
 	/** 대화에 속한 첨부(파일 삭제용 - 메시지 조인) */
 	List<Attachment> findByConversation(@Param("conversationId") UUID conversationId);
