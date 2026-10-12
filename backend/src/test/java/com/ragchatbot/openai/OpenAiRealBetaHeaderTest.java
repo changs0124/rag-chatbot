@@ -90,7 +90,7 @@ class OpenAiRealBetaHeaderTest {
 	/** vector store 를 건드리는 네 경로를 모두 태움 */
 	private void exerciseAllVectorStoreCalls() {
 		var service = service();
-		service.uploadDocument("a.pdf", new byte[] { 1 }, "application/pdf"); // POST /vector_stores/{id}/files
+		service.uploadDocument("a.pdf", new byte[] { 1 }); // POST /vector_stores/{id}/files
 		service.documentStatus("shared-store", "file-1"); // GET  /vector_stores/{id}/files/{fid}
 		service.deleteDocument("shared-store", "file-1"); // DEL  /vector_stores/{id}/files/{fid}
 		service.deleteResources("conversation-store", List.of()); // DEL  /vector_stores/{id}

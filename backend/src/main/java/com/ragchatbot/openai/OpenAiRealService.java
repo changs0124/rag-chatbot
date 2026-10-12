@@ -438,7 +438,7 @@ public class OpenAiRealService implements OpenAiService {
 	 * 뜨는 상태가 가장 나쁨(화면에 보이는데 검색에는 안 잡히고 지울 수도 없음).
 	 */
 	@Override
-	public UploadedDocument uploadDocument(String filename, byte[] content, String contentType) {
+	public UploadedDocument uploadDocument(String filename, byte[] content) {
 		MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
 		form.add("purpose", "assistants");
 		form.add("file", new NamedByteArrayResource(content, filename));

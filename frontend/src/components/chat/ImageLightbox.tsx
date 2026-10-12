@@ -9,7 +9,7 @@ function pointerDistance(points: Map<number, { x: number; y: number }>) {
   return Math.hypot(a.x - b.x, a.y - b.y)
 }
 
-export interface LightboxItem {
+interface LightboxItem {
   src: string
   name?: string
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ClipboardEvent, FormEvent, ReactNode } from 'react'
 import CameraCapture from './CameraCapture'
 import ImageLightbox from './ImageLightbox'
-import { ApiError } from '../../lib/api'
+import { errorMessage } from '../../lib/api'
 import { deleteAttachment, uploadFile } from '../../lib/endpoints'
 import type { Attachment } from '../../lib/types'
 import {
@@ -72,7 +72,7 @@ export default function Composer({
         setDrafts((prev) =>
           prev.map((d) =>
             d.key === draft.key
-              ? { ...d, status: 'error', message: e instanceof ApiError ? e.message : '업로드 실패' }
+              ? { ...d, status: 'error', message: errorMessage(e, '업로드 실패') }
               : d,
           ),
         )
