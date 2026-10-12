@@ -9,8 +9,8 @@
 #   .env         - compose 전용 변수(DB 자격 · POSTGRES_*). 정본은 .env.example
 #                  터널 토큰은 여기 두지 않는다 - secrets/tunnel_token 파일이다(#203, 아래 cloudflared)
 #
-# **여기에 build 가 없는 것은 의도다(#127).** 배포 서버가 1GB 급이라 이미지 빌드가 물리 메모리를
-# 넘긴다 - build 스테이지의 Maven JVM 하나로 넘긴다. 이미지는 로컬에서 빌드해
+# **여기에 build 가 없는 것은 의도다(#127).** 1GB 급 GCP 시절에는 이미지 빌드가 물리 메모리를
+# 넘겼다 - build 스테이지의 Maven JVM 하나로 넘겼다. 4GB Lightsail(#243)에서도 서버에 빌드 도구를 들이지 않으려 유지한다. 이미지는 로컬에서 빌드해
 # `scripts/deploy.sh` 가 서버로 옮긴다(docker save → scp → docker load).
 # 로컬에서 빌드해 띄우려면 override 를 겹친다 :
 #   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app
@@ -26,8 +26,8 @@
 services:
   db:
     image: postgres:16-alpine
-    # 기본값은 이 사양에 과하다 - shared_buffers 128MB 를 그대로 두면 app 의 JVM 과 물리 메모리를
-    # 두고 다툰다. 동시 접속이 한 자리인 개인 규모라 max_connections 도 100 이 필요 없다
+    # 1GB 급 GCP 시절에 줄인 값이다 - shared_buffers 128MB 를 그대로 두면 app 의 JVM 과 물리 메모리를
+    # 두고 다퉜다. 4GB Lightsail(#243)에서도 데이터가 작아 키울 이유가 없어 그대로 둔다. 동시 접속이 한 자리인 개인 규모라 max_connections 도 100 이 필요 없다
     # (커넥션 하나가 수 MB 다). app 쪽 Hikari 풀을 5 로 묶어 두었으므로 20 이면 여유가 있다
     command: >
       postgres
@@ -152,7 +152,7 @@ services:
       FILE_STORAGE_ROOT: /data/uploads
       # 문서 그림(FEAT-CHAT-004). 아래 바인드 마운트와 짝이다
       DOC_FIGURES_DIR: /data/doc-figures
-      # **SerialGC 를 명시한다.** 공유 vCPU 한 자리 사양에서 G1 의 GC 스레드는 CPU 와 메모리를
+      # **SerialGC 를 명시한다.** 2 vCPU · 기준 성능 20% 버스트 사양(#243, 종전 공유 vCPU)에서 G1 의 GC 스레드는 CPU 와 메모리를
       # 함께 낭비한다. 컨테이너 상한이 작아 JVM 이 알아서 고르기도 하지만, 상한을 올리는 날
       # 조용히 G1 으로 되돌아가는 것을 막으려고 박아 둔다.
       # MaxRAMPercentage 는 mem_limit(1g) 기준이다 - 힙 밖(메타스페이스 · 스레드 스택 · 코드
