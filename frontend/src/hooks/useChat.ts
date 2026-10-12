@@ -132,6 +132,9 @@ export function useChat() {
    */
   const deleteConversation = useCallback(
     async (id: string) => {
+      // 확인 창은 바로 닫히므로 DELETE 가 도는 사이 다른 대화로 옮길 수 있다(#251).
+      // 그때 잡아 둔 activeId 는 낡은 값이라, 응답 뒤에 그것만 보면 옮겨 간 대화를 끊고 비운다
+      const mine = generation.current
       try {
         await apiDelete(id)
       } catch (e) {
@@ -139,15 +142,12 @@ export function useChat() {
         return
       }
       setConversations((prev) => prev.filter((c) => c.id !== id))
-      if (activeId === id) {
+      if (activeId === id && generation.current === mine) {
         // 지운 대화를 떠나는 것도 전환임 - 안 끊으면 사라진 대화에 대고 스트림이 계속 돎
-        abortActiveStream()
-        generation.current++
-        setActiveId(null)
-        setMessages([])
+        newConversation()
       }
     },
-    [activeId, abortActiveStream],
+    [activeId, newConversation],
   )
 
   /**

@@ -202,6 +202,53 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
   })
 
   /** 반대편 - 성공하면 오류가 뜨지 않고 목록에서 빠진다 */
+  /**
+   * #251 — 지금 보던 A 를 지우는 사이 B 로 옮기면, 삭제 응답이 B 를 끊고 비우지 않는다.
+   * 고치기 전에는 삭제를 시작할 때 잡은 activeId(A)로 비교해 B 의 메시지 로드를 버리고 빈 화면이 됐다.
+   */
+  it('삭제 응답 전에 다른 대화로 옮기면 그 대화를 비우지 않는다', async () => {
+    vi.mocked(getMessages).mockImplementation(async (id: string) => [msg(`${id}-1`)])
+    const deleted = deferred<void>()
+    vi.mocked(deleteConversation).mockReturnValue(deleted.promise)
+
+    const { result } = renderHook(() => useChat())
+    await act(async () => {
+      await result.current.selectConversation('A')
+    })
+
+    let pending!: Promise<void>
+    act(() => {
+      pending = result.current.deleteConversation('A')
+    })
+    await act(async () => {
+      await result.current.selectConversation('B')
+    })
+    await act(async () => {
+      deleted.resolve(undefined)
+      await pending
+    })
+
+    expect(result.current.activeId).toBe('B')
+    expect(result.current.messages.map((m) => m.id)).toEqual(['B-1'])
+  })
+
+  /** 반대편 - 옮기지 않았으면 지운 대화를 떠나 새 대화 화면이 된다 */
+  it('보던 대화를 지우면 새 대화 화면이 된다', async () => {
+    vi.mocked(getMessages).mockResolvedValue([msg('a-1')])
+    vi.mocked(deleteConversation).mockResolvedValue(undefined)
+
+    const { result } = renderHook(() => useChat())
+    await act(async () => {
+      await result.current.selectConversation('A')
+    })
+    await act(async () => {
+      await result.current.deleteConversation('A')
+    })
+
+    expect(result.current.activeId).toBeNull()
+    expect(result.current.messages).toEqual([])
+  })
+
   it('삭제가 성공하면 오류 없이 목록에서 빠진다', async () => {
     vi.mocked(deleteConversation).mockResolvedValue(undefined)
     const { result } = renderHook(() => useChat())
