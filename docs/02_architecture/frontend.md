@@ -48,8 +48,9 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ## API 통신
 
 - API 호출은 `frontend/src/lib/api.ts` 의 `api.get/post/patch/del/postForm` 을 통한다.
-  **래퍼 밖에서 `fetch` 를 직접 부르는 곳은 둘** — 채팅 스트림(아래, `endpoints.ts`)과 첨부 저장
-  (`ImageLightbox.download()` 이 blob 으로 받아야 해서). 앞의 것은 컴포넌트가 아니라 `lib/` 에 있다.
+  **래퍼 밖에서 `fetch` 를 직접 부르는 곳은 셋** — 채팅 스트림(아래, `endpoints.ts`), 문서 그림 로드
+  (`docFigures.ts` — blob 을 objectURL 로), 첨부 저장(`ImageLightbox.download()` 이 blob 으로 받아야 해서).
+  앞의 둘은 컴포넌트가 아니라 `lib/` 에 있다.
 - 엔드포인트 함수는 `frontend/src/lib/endpoints.ts` 에 둔다. **대부분은 `api.*` 를 한 줄로 감싼 것**이고,
   래퍼로 안 되는 것만 함수로 편다 — 멀티파트 업로드 둘(`uploadFile` · `uploadDocument`)과 채팅 스트림이다.
   **`AuthContext` 는 예외로 `/api/auth/me` 와 `/api/auth/login` 을 직접 부른다** — 세션 수명을 그 안에서
@@ -58,8 +59,8 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 - 비밀번호 변경 응답의 **새 토큰으로 반드시 교체**해야 한다. 서버가 변경 시각 이전 토큰을 전부 무효화하므로,
   교체하지 않으면 "변경했습니다"를 띄운 직후부터 모든 요청이 401 이 된다.
 - **응답 헤더 `X-Refresh-Token` 이 오면 토큰을 교체한다**(FEAT-OPS-003). 만료가 임박했을 때만 온다.
-  교체는 **두 곳에서** 일어나야 한다 — `api.ts` 의 fetch 래퍼와 `endpoints.ts` 의 채팅 스트림.
-  스트림은 래퍼를 거치지 않으므로 한쪽만 하면 **채팅만 쓰는 사용자는 갱신을 못 받고** 두 시간마다 튕긴다.
+  교체는 **세 곳에서** 일어나야 한다 — `api.ts` 의 fetch 래퍼, `endpoints.ts` 의 채팅 스트림, `docFigures.ts` 의 그림 로드
+  (셋 다 `adoptRefreshedToken` 을 쓴다). 스트림은 래퍼를 거치지 않으므로 한쪽만 하면 **채팅만 쓰는 사용자는 갱신을 못 받고** 두 시간마다 튕긴다.
   헤더가 없으면 기존 토큰을 그대로 둔다 — 서버가 CORS 노출 헤더 등록을 빠뜨리면 `null` 이 오는데,
   그때 토큰을 지우면 멀쩡한 세션이 날아간다.
 

@@ -28,9 +28,9 @@ exception/    ApiExceptions + GlobalExceptionHandler
   같은 모양의 타입을 하나 더 두고 서비스에서 옮겨 담는 편이 나아 보일 수 있으나, 그 변환은 필드 복사일 뿐이라
   실수할 자리만 늘린다. 직결된 만큼 **이름과 값을 따로 고정한다** — `scripts/check-response-contract.sh` 가 필드 이름을,
   `AdminDocumentFlowTest` 의 목록 한 행 단언이 값의 출처를 본다.
-- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 6 · `<update>` 10 · `<delete>` 3.
+- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 7 · `<update>` 9 · `<delete>` 3.
   소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다. **`entity` 를 통째로 받는 것은 등록
-  6건뿐이고**, **수정·삭제 13건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
+  7건뿐이고**, **수정·삭제 12건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
 
 ## API 설계 원칙
 
@@ -40,7 +40,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   `authenticationEntryPoint` 가 `sendError`, Spring 기본 오류 본문에 `message` 없음) · CORS 403(Spring
   `CorsFilter` 가 평문). 어느 쪽도 `ApiError` 가 아니다.
 - **성공 상태는 컨트롤러가 정한다** — `@ResponseStatus(CREATED)`(201) 가 둘(문서 업로드 · 계정 발급), 삭제 3곳이
-  `ResponseEntity.noContent()`(204), 파일 서빙이 `ResponseEntity.ok()`(200 + Content-Type).
+  `ResponseEntity.noContent()`(204), 파일 · 문서 그림 서빙이 `ResponseEntity.ok()`(200 + Content-Type).
   그 밖의 핸들러는 반환값을 그대로 돌려주고 상태를 지정하지 않는다. 채팅만 `SseEmitter`(text/event-stream) 다.
 - **소유권 위반은 403 이 아니라 404 로 은닉한다.** 남의 리소스는 "없는 것"으로 보인다.
   검증은 조회 단계에서 `findByIdAndUser(...)` 형태로 막는다 — DB RLS 가 없으므로 애플리케이션 코드가 유일한 관문이다.
@@ -67,6 +67,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
 | `NoResourceFoundException` | 404 | `NOT_FOUND` |
 | `HttpRequestMethodNotSupportedException` | 405 | `METHOD_NOT_ALLOWED` |
 | `HttpMediaTypeNotSupportedException` | 415 | `UNSUPPORTED_MEDIA_TYPE` |
+| `MissingServletRequestPartException` · `MultipartException` | 400 | `BAD_REQUEST` |
 | **그 밖의 모든 예외** | 500 | `INTERNAL_ERROR` |
 
 마지막 줄이 **최종 폴백**이다(FEAT-OPS-002). 이것이 없던 동안에는 예상 못 한 예외만 Spring 기본
@@ -465,7 +466,8 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 - Docker 와 compose 플러그인 설치, `ubuntu` 를 `docker` 그룹에 추가
 - 홈에 `deploy/` — `.env` · `backend/.env` 는 **600**. 정본은 각각 `.env.example` · `backend/.env.example`
 - `deploy/secrets/` 디렉터리 **700**, `tunnel_token` 파일 **644**(이유는 아래 「터널 토큰은 파일로 넘긴다」)
-- `deploy/doc-figures/` — 매뉴얼 그림. 저장소에 없어 기존 서버에서 복사한다(#228)
+- `deploy/doc-figures/` — 매뉴얼 그림. 저장소에 없다(#228) — 운영 서버(또는 그 스냅샷)에서 복사하거나 `scripts/doc-figures/preprocess.py` 로
+  원본 매뉴얼에서 다시 만든다. **그림 사본은 운영 디스크와 그 스냅샷뿐이다**(GCP 서버는 #243 에서 지웠다)
 - 방화벽은 **22 만**, 고정 IP 를 붙인다
 - 콘솔에서 **자동 스냅샷을 켠다**(아래 「백업」)
 
@@ -474,8 +476,8 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 옮겨 복원한 **뒤에** Lightsail 을 띄운다. 헬스체크와 e2e 를 확인하기 전에는 GCP 를 지우지 않는다(되돌릴 길이다).
 
 **서버는 이미지를 빌드하지 않는다(#127).** `docker-compose.yml` 의 `app` 에 `build` 가 없고
-`image: rag-chatbot-backend:latest` 만 있다. 배포 서버가 1GB 급(GCP 시절)이라 build 스테이지의 Maven JVM
-하나로 물리 메모리를 넘기기 때문이다. 4GB Lightsail 로 옮긴 뒤(#243)에도 서버에 빌드 도구를 들이지 않으려 구조를 유지한다. **절차로 막지 않고 키를 없앴다** — 본체에 `build` 를 남겨
+`image: rag-chatbot-backend:latest` 만 있다. 처음(1GB 서버)에는 build 스테이지의 Maven JVM
+하나로 물리 메모리를 넘겼고, 4GB 로 옮긴 뒤(#243)에도 서버에 빌드 도구를 들이지 않으려 구조를 유지한다. **절차로 막지 않고 키를 없앴다** — 본체에 `build` 를 남겨
 두면 이미지를 못 찾았을 때 `up` 이 조용히 빌드로 빠지는 경로가 남는다.
 
 **이미지는 레지스트리를 거치지 않는다.** `scripts/deploy.sh` 가 로컬에서 빌드해
@@ -484,7 +486,7 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 
 **왜 GHCR 이 아닌가** — 처음에는 CI 가 GHCR 에 미는 안으로 갔으나 접었다. 직접 전송은 **토큰도
 정리 정책도 필요 없고**, 서버가 하나뿐이라 레지스트리가 주는 이점(여러 대에 같은 이미지를 뿌리는
-것)을 쓸 데가 없다. 압축 98MB 를 `scp` 로 한 번 넘기는 편이 단순하다.
+것)을 쓸 데가 없다. 압축 90MB 남짓을 `scp` 로 한 번 넘기는 편이 단순하다.
 
 **한도 근거는 이제 없다(#137).** 당시 판단의 큰 축은 "GHCR 도 **저장 500MB ·
 전송 1GB/월** 한도가 걸린다" 였다. 실제로 같은 성격의 한도(Actions 분)가 소진되어 CI 가 통째로 멎은
@@ -495,9 +497,9 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 **CI 는 이미지를 만들지 않는다.** `docker` 잡은 종전대로 **빌드만 하고 버린다** — 배포 산출물이
 조용히 썩는 것을 막는 검증이다. 배포본을 만드는 것은 `scripts/deploy.sh` 뿐이다.
 
-**감수하는 약점** : 레지스트리에 이미지 이력이 남지 않아 **이전 버전으로 되돌리려면 그 커밋을
-다시 빌드해야 한다.** 배포가 잦지 않은 단일 서버 전제에서 감수한다. 저장소를 공개로 바꾸거나
-유료 한도를 열면 GHCR 안으로 되돌아갈 수 있고, 그때 바뀌는 것은 `image:` 한 줄과 이 문단뿐이다.
+**감수하는 약점** : 레지스트리에 이미지 이력이 남지 않는다. 헬스체크가 실패하면 `deploy.sh` 가 남겨 둔
+`rag-chatbot-backend:previous` 로 **바로** 되돌리지만, 그보다 이전 버전은 **그 커밋을 다시 빌드해야 한다.**
+배포가 잦지 않은 단일 서버 전제에서 감수한다. GHCR 안으로 되돌아가면 바뀌는 것은 `image:` 한 줄과 이 문단뿐이다.
 
 로컬에서 직접 빌드해 띄우려면 override 를 겹친다 :
 
@@ -511,6 +513,8 @@ Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip
 버전은 wrapper 가 쓰던 3.9.16 과 같게 고정했고, `mvnw` 자체는 로컬·CI 용으로 그대로 남는다.
 **이 근거가 지켜 주는 자리는 CI 와 개발 PC 다** — 서버는 빌드하지 않는다. CI 의 `docker` 잡이
 이미지가 여전히 빌드되는지만 보고, 실제 배포본은 `scripts/deploy.sh` 가 로컬에서 만든다.
+**의존성 해석은 여전히 Central 을 타므로** 그쪽은 재시도 두 번으로 덮는다 — 없앤 것은 배포판이라는 한 홉이다.
+멀티스테이지라 최종 이미지는 `eclipse-temurin:17-jre-alpine` 그대로이며, 실측 크기 차이는 45바이트였다.
 
 **메모리 상한을 셋 다 걸어 두었다(#127).** GCP 시절 실측은 `app` 164MiB / 420m · `db` 36MiB / 160m 이고
 시스템 전체가 573Mi / 953Mi 였다(`APP_MODE=mock` · 요청 0건 · cloudflared 제외 · 기동 직후).
@@ -522,8 +526,6 @@ Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip
 줄였다 — `application.yml` 에 hikari 설정이 없어 기본값이 10 이다. `memswap_limit` 은 종전(#127)에는
 기동 피크를 받으려고 비워 두었으나, **#202 에서 `app` 만 `mem_limit` 과 같게(스왑 금지) 바꿨다**(당시 420m, 지금 1g) — 근거는
 아래 「업로드 부하에서 스왑을 금지하기로 정했다」.
-**의존성 해석은 여전히 Central 을 타므로** 그쪽은 재시도 두 번으로 덮는다 — 없앤 것은 배포판이라는 한 홉이다.
-멀티스테이지라 최종 이미지는 `eclipse-temurin:17-jre-alpine` 그대로이며, 실측 크기 차이는 45바이트였다.
 
 **첨부 파일은 로컬 디스크에 저장한다.** compose 의 `uploads` 볼륨이 `/data/uploads` 를 받으며,
 이 볼륨을 떼면 업로드된 이미지가 사라진다. 볼륨을 쓸 수 없는 환경이면 `FileStorage` 구현을
@@ -639,8 +641,7 @@ GB-월 과금)을 켜고, `pg_dump` + 첨부 tar 를 GCS 로 올리던 `scripts/
 산출물에는 **사용자 이메일 · BCrypt 해시 · 전체 대화**가 들어 있어 스냅샷 공유 · 복사 권한을 열지 않는다.
 
 > 종전 GCS 백업의 설계(전용 쓰기 전용 서비스 계정 · `ifGenerationMatch=0` 직접 업로드 · 14일 수명주기)와 2026-10-06 복구 리허설
-> (체크섬 2건 OK · 표 7개 행 수 일치)는 이슈 #132 와 이 문서의 git 이력에 있다. **스냅샷 복구는 아직 리허설하지 않았다** —
-> 전환 직후 한 번 해 볼 것.
+> (체크섬 2건 OK · 표 7개 행 수 일치)는 이슈 #132 와 이 문서의 git 이력에 있다. 스냅샷 복구 리허설은 [#255](https://github.com/changs0124/rag-chatbot/issues/255) 에서 한다.
 
 ### 데모 - 로컬 + 터널
 
