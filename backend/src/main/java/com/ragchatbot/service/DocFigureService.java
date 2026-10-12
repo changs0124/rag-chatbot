@@ -10,6 +10,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+import com.ragchatbot.config.AppModeGuard;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 
 /**
@@ -40,7 +41,7 @@ public class DocFigureService {
 			@Value("${app.doc-figures.dir:}") String dir,
 			@Value("${app.mode:}") String mode) {
 		this.root = dir == null || dir.isBlank() ? null : Path.of(dir).toAbsolutePath().normalize();
-		this.mock = "mock".equals(mode);
+		this.mock = "mock".equals(AppModeGuard.normalize(mode));
 	}
 
 	public Resource load(String key) {

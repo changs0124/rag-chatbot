@@ -19,7 +19,7 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -45,7 +45,8 @@ import com.ragchatbot.storage.FileStorage;
  * 가정별 관측과 날짜는 {@code docs/01_specs/live-integration.md} 3절이 정본임(#184).
  */
 @Service
-@ConditionalOnProperty(prefix = "app", name = "mode", havingValue = "live")
+// 판정은 AppModeGuard.normalize 하나로(#248) - Mock 쪽 주석 참고
+@ConditionalOnExpression("T(com.ragchatbot.config.AppModeGuard).normalize('${app.mode:}') == 'live'")
 public class OpenAiRealService implements OpenAiService {
 
 	private static final Logger log = LoggerFactory.getLogger(OpenAiRealService.class);

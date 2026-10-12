@@ -80,6 +80,17 @@ class EmailDomainPolicyTest {
 				.hasMessageContaining("ALLOWED_EMAIL_DOMAINS");
 	}
 
+	/**
+	 * #248 : 가드가 받아 주는 표기(대소문자 · 앞뒤 공백)면 이 검사도 live 로 봐야 한다.
+	 * 종전에는 원문 비교라 {@code LIVE} 에서 이 검사만 빠져 허용 도메인 경계가 조용히 꺼졌다
+	 */
+	@Test
+	void empty_list_in_live_fails_fast_regardless_of_case_and_spaces() {
+		assertThatThrownBy(() -> policy(" LIVE ", "", ""))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("ALLOWED_EMAIL_DOMAINS");
+	}
+
 	@Test
 	void live_with_domains_starts() {
 		assertThat(policy("live", "company.com", "").isAllowed("hong@company.com")).isTrue();
