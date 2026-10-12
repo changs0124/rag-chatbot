@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.ragchatbot.entity.Attachment;
 import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.exception.ApiExceptions.ConflictException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.repository.AttachmentRepository;
 import com.ragchatbot.security.FileAccessTokenService;
@@ -116,11 +117,21 @@ public class FileService {
 		return new ServedFile(fileStorage.load(att.storagePath()), mediaType);
 	}
 
+	/**
+	 * 보내기 전(초안) 첨부만 지운다(#249). 프론트가 이 API 를 쓰는 것은 입력창의 카드를 지울 때뿐이다 -
+	 * 이미 보낸 메시지의 첨부를 지우면 대화 기록의 이미지와 「(이미지 첨부)」 표식이 함께 사라지므로 409 로 막는다.
+	 *
+	 * <p><b>행을 먼저, 파일을 나중에</b> 지운다({@code ConversationService.delete} 와 같은 순서). 행 삭제는 SQL 에서도
+	 * {@code message_id is null} 을 걸어, 확인과 삭제 사이에 전송으로 연결돼도 지우지 않는다. 파일 삭제가 실패하면
+	 * 행 없는 파일만 남고 그것은 고아 회수가 가져간다 - 반대 순서는 없는 파일을 가리키는 행을 남긴다.
+	 */
 	public void delete(UUID userId, UUID fileId) {
 		Attachment att = attachmentRepository.findByIdAndUser(fileId, userId)
 				.orElseThrow(() -> new NotFoundException("파일 없음"));
+		if (att.messageId() != null || attachmentRepository.deleteDraftByIdAndUser(fileId, userId) == 0) {
+			throw new ConflictException("이미 보낸 메시지의 첨부는 지울 수 없음");
+		}
 		fileStorage.delete(att.storagePath());
-		attachmentRepository.deleteByIdAndUser(fileId, userId);
 	}
 
 	/**
