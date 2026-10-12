@@ -1,0 +1,9 @@
+# after — (faa2746)
+$ npx vitest run src/auth
+  ✓ 네트워크 실패면 토큰을 지키고 다시 물어 회복한다
+  ✓ 끝내 실패해도 토큰은 남긴다(다음 새로고침에서 회복)
+  ✓ 401 이면 바로 토큰을 지운다(기존 동작)
+
+$ npm run lint → 0 · npx vitest run → Test Files 21 · Tests 143 passed · npm run build → OK
+
+화면 변화 : 재기동 중 새로고침 시 「로그인 화면으로 이동」 → 「불러오는 중」 유지 후 회복. 정적 화면 차이가 없어 캡처 대신 테스트로 남긴다

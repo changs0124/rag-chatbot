@@ -1,0 +1,7 @@
+# before — 새 테스트를 수정 전 AuthContext.tsx 로 돌린 결과 (401 케이스는 기존 동작이라 통과가 정상)
+     × 네트워크 실패면 토큰을 지키고 다시 물어 회복한다 32ms
+     × 끝내 실패해도 토큰은 남긴다(다음 새로고침에서 회복) 6ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/auth/AuthContext.test.tsx > AuthProvider /me 실패 처리 > 네트워크 실패면 토큰을 지키고 다시 물어 회복한다
+ FAIL  src/auth/AuthContext.test.tsx > AuthProvider /me 실패 처리 > 끝내 실패해도 토큰은 남긴다(다음 새로고침에서 회복)
+      Tests  2 failed | 1 passed (3)
