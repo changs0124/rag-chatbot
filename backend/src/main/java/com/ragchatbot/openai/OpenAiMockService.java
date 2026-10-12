@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Service;
 
 /**
@@ -19,7 +19,8 @@ import org.springframework.stereotype.Service;
  * 호출을 기록해 AC-12·AC-14 검증을 가능케 함.
  */
 @Service
-@ConditionalOnProperty(prefix = "app", name = "mode", havingValue = "mock", matchIfMissing = true)
+// 판정은 AppModeGuard.normalize 하나로(#248) - 가드가 받아 준 표기면 구현 선택도 같은 값을 본다
+@ConditionalOnExpression("T(com.ragchatbot.config.AppModeGuard).normalize('${app.mode:}') == 'mock'")
 public class OpenAiMockService implements OpenAiService {
 
 	// 무자료는 **텍스트 접두가 아니라 플래그**로 알림(2026-07-28 결정).

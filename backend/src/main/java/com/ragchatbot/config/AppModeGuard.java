@@ -28,8 +28,17 @@ public class AppModeGuard {
 
 	private static final Set<String> MODES = Set.of("mock", "live");
 
+	/**
+	 * 모드 문자열을 읽는 <b>유일한 규칙</b>(#248) - 앞뒤 공백을 걷고 소문자로. {@code app.mode} 를 읽는 곳은
+	 * 전부 이것을 거친다. 종전에는 이 가드만 정규화하고 나머지는 원문을 비교해, {@code APP_MODE=LIVE} 면
+	 * 가드와 Real 빈은 live 로 보면서 {@link EmailDomainPolicy} 의 live 검사만 빠졌다(허용 도메인 경계가 조용히 꺼짐).
+	 */
+	public static String normalize(String appMode) {
+		return appMode == null ? "" : appMode.trim().toLowerCase(Locale.ROOT);
+	}
+
 	public AppModeGuard(@Value("${app.mode:}") String appMode, Environment environment) {
-		String mode = appMode == null ? "" : appMode.trim().toLowerCase(Locale.ROOT);
+		String mode = normalize(appMode);
 		if (mode.isEmpty()) {
 			throw new IllegalStateException(
 					"APP_MODE 미설정 - 실행 모드를 명시해야 기동함 (AC-18). "

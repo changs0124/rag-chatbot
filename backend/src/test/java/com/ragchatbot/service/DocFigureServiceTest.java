@@ -31,6 +31,12 @@ class DocFigureServiceTest {
 				.isInstanceOf(NotFoundException.class);
 	}
 
+	/** #248 : 모드 표기가 달라도(대소문자 · 공백) 목업이면 견본을 낸다 - 가드와 같은 규칙 */
+	@Test
+	void mock_sample_is_served_regardless_of_case_and_spaces() {
+		assertThat(new DocFigureService("", " MOCK ").load("mock-sample").exists()).isTrue();
+	}
+
 	@Test
 	void live_without_root_has_no_figures() {
 		assertThatThrownBy(() -> new DocFigureService("", "live").load("mock-sample"))

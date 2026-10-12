@@ -304,7 +304,9 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 ## 실행 모드
 
 `app.mode` 는 **기본값이 없다.** 미설정이면 `AppModeGuard` 가 기동을 막는다 — 목업이 우연히 켜지는 경로를 없앴다.
-`mock` 과 `live` 는 `@ConditionalOnProperty` 로 `OpenAiService` 구현 하나만 로드한다.
+`mock` 과 `live` 는 `@ConditionalOnExpression` 으로 `OpenAiService` 구현 하나만 로드한다. **모드를 읽는 규칙은
+`AppModeGuard.normalize`(앞뒤 공백 제거 · 소문자) 하나다(#248)** — 가드 · 구현 선택 · `EmailDomainPolicy` 의 live 검사 ·
+`DocFigureService` 의 견본 그림이 모두 이것을 거친다. 종전에는 가드만 정규화해 `APP_MODE=LIVE` 에서 허용 도메인 검사가 빠졌다.
 `prod` 프로필 + `mock` 조합도 거부한다.
 
 설정값은 `backend/src/main/resources/application.yml` 에 `${ENV:기본값}` 으로 두고, 위험한 값

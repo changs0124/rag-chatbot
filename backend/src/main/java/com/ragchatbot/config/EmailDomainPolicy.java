@@ -32,7 +32,7 @@ public class EmailDomainPolicy {
 			@Value("${app.admin.emails:}") String adminEmails) {
 		this.allowedDomains = parseDomains(allowedDomains);
 		this.adminEmails = AdminRoleSynchronizer.parse(adminEmails);
-		if ("live".equals(mode) && this.allowedDomains.isEmpty()) {
+		if ("live".equals(AppModeGuard.normalize(mode)) && this.allowedDomains.isEmpty()) {
 			throw new IllegalStateException(
 					"APP_MODE=live 인데 ALLOWED_EMAIL_DOMAINS 가 비어 있음. 계정 허용 도메인을 env로 주입할 것");
 		}
