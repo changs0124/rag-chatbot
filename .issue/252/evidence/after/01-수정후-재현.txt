@@ -1,0 +1,7 @@
+# after — 같은 재현에서 고친 192행(ps -a -q) 이 하는 일 (cccbf61 와 같은 줄)
+$ set -e; want=$(docker image inspect -f "{{.Id}}" alpine:3.20); got=$(docker inspect -f "{{.Image}}" $(docker compose ps -a -q app)); echo 다음-단계
+이미지 일치 · 다음 단계(상태 · 메모리 · 헬스체크)로 넘어감
+→ 헬스체크가 90초 뒤 실패를 보고하며 로그 · 되돌리기 안내를 출력한다(deploy.sh 5단계)
+exit=0
+
+shellcheck scripts/deploy.sh : OK · bash -n : OK
