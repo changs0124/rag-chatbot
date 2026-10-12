@@ -1,0 +1,13 @@
+# after — AWS CLI 확인 (프로필 rag-lightsail) 2026-10-12 09:22:38    
+$ aws sts get-caller-identity
+arn:aws:iam::<계정>:user/claude-code-lightsail
+$ aws lightsail get-instances
+chseong_seoul_01	running	medium_3_0	ubuntu_24_04	ap-northeast-2a	True
+$ aws lightsail get-instance-port-states   (80 은 10-12 close-instance-public-ports 로 닫음)
+tcp	22	22	open
+$ aws lightsail get-instance (addOns)
+AutoSnapshot	Enabled	19:00
+--- 거부되어야 하는 호출 ---
+iam list-users            : AccessDenied
+download-default-key-pair : AccessDeniedException
+ce get-cost-and-usage     : AccessDeniedException
