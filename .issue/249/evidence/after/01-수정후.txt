@@ -1,0 +1,16 @@
+# after — (49c250d)
+128:	public void delete(UUID userId, UUID fileId) {
+129-		Attachment att = attachmentRepository.findByIdAndUser(fileId, userId)
+130-				.orElseThrow(() -> new NotFoundException("파일 없음"));
+131-		if (att.messageId() != null || attachmentRepository.deleteDraftByIdAndUser(fileId, userId) == 0) {
+132-			throw new ConflictException("이미 보낸 메시지의 첨부는 지울 수 없음");
+133-		}
+134-		fileStorage.delete(att.storagePath());
+135-	}
+34:	<delete id="deleteDraftByIdAndUser">
+35-		delete from attachments where id = #{id} and user_id = #{userId} and message_id is null
+36-	</delete>
+
+$ ./mvnw -q -Dtest=ChatFlowTest#sent_attachment_cannot_be_deleted_409 test → 통과 (409 · 대화에 첨부 그대로)
+$ ./mvnw -q test → Tests run: 254, Failures: 0, Errors: 0
+check-all.sh docs : 통과 · api.md API-DELETE-002 절 추가
