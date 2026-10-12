@@ -1,0 +1,11 @@
+# before — APP_MODE 를 읽는 4곳의 규칙 (1cae218)
+config/AppModeGuard.java:32:		String mode = appMode == null ? "" : appMode.trim().toLowerCase(Locale.ROOT);
+config/AppModeGuard.java:42:		if ("mock".equals(mode) && environment.acceptsProfiles(Profiles.of("prod"))) {
+config/EmailDomainPolicy.java:35:		if ("live".equals(mode) && this.allowedDomains.isEmpty()) {
+openai/OpenAiMockService.java:22:@ConditionalOnProperty(prefix = "app", name = "mode", havingValue = "mock", matchIfMissing = true)
+openai/OpenAiRealService.java:48:@ConditionalOnProperty(prefix = "app", name = "mode", havingValue = "live")
+service/DocFigureService.java:43:		this.mock = "mock".equals(mode);
+
+→ AppModeGuard 만 trim+소문자. EmailDomainPolicy · DocFigureService 는 원문 비교, @ConditionalOnProperty 는 대소문자 무시·trim 없음.
+  APP_MODE=LIVE : 가드 통과 · Real 빈 로드 · EmailDomainPolicy 의 live 검사 건너뜀(허용 도메인 비어도 기동 → 전원 허용)
+  APP_MODE=' live' : 가드 통과 · OpenAiService 빈 없음 → 알기 어려운 기동 실패
