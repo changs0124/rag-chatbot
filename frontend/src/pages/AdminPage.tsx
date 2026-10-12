@@ -100,6 +100,17 @@ export default function AdminPage() {
     return () => clearInterval(timer)
   }, [isAdmin, documents, refresh])
 
+  // 일회용 비밀번호 창은 Esc 와 「닫기」로만 닫는다(#253). 배경 클릭으로 닫히면 「지금만 볼 수 있는」 값이
+  // 한 번의 헛클릭에 사라져 비밀번호를 다시 초기화해야 한다 - 그래서 이 창만 배경 닫기를 두지 않는다
+  useEffect(() => {
+    if (!issued) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIssued(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [issued])
+
   // 프론트 가드는 편의다. 유일한 방어선은 서버의 404 이며, 여기서는 없는 화면을 보여주지 않을 뿐이다
   if (user && !isAdmin) return <Navigate to="/" replace />
 
@@ -344,7 +355,6 @@ export default function AdminPage() {
 
       {issued && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true">
-          <div className="absolute inset-0" onClick={() => setIssued(null)} aria-hidden="true" />
           <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
             <div className="rounded-[1.375rem] bg-raised p-6">
               <h2 className="text-base font-semibold text-ink">

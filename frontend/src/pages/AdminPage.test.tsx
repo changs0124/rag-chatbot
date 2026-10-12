@@ -202,6 +202,31 @@ describe('관리자 화면', () => {
     expect(screen.getByText(/기존 로그인은 모두 해제되었습니다/)).toBeInTheDocument()
   })
 
+  /**
+   * #253 : 일회용 비밀번호 창은 배경 클릭으로 닫히지 않는다 — 한 번 헛클릭하면 값을 다시 볼 수 없다.
+   * Esc 와 「닫기」로는 닫힌다
+   */
+  it('일회용 비밀번호 창은 배경 클릭으로 닫히지 않고 Esc · 닫기로 닫힌다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user', createdAt: '2026-08-19T00:00:00Z' },
+    ])
+    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+    const dialog = await screen.findByRole('dialog')
+    // 배경 요소가 있으면 그것을, 없으면 덮개 자체를 누른다 - 어느 쪽이든 「창 바깥」 클릭이다
+    fireEvent.click(dialog.querySelector('[aria-hidden="true"]') ?? dialog)
+    expect(screen.getByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByText('Xk7m-Qp29-Vr4t')).not.toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: '비밀번호 초기화' }))
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '닫기' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
   /** 자기 자신에게는 초기화 버튼을 띄우지 않는다 */
   it('자기 자신에게는 초기화 버튼이 없다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
