@@ -1,0 +1,23 @@
+# after — docs 의 GCP 언급 (b4f72cd)
+$ git grep -ciE "gcp|gce|gcloud|e2-micro|pd-standard|\bgcs\b|os login|us-west1|cloud nat|iap" -- docs README.md
+docs/02_architecture/backend.md:6
+docs/06_changelog/CHANGELOG.md:26
+
+backend.md 「배포」 절 줄 수 : 315
+
+## backend.md 에 남은 GCP 언급(이력 요약·포인터)
+docs/02_architecture/backend.md:363:| GCE e2-micro | 2026-09-10 채택 → 2026-10-12 이전(#243, 아래), 메모리 1GB 한계 |
+docs/02_architecture/backend.md:372:**GCE e2-micro(2026-09-10~10-12)의 제약**은 메모리 953Mi · 디스크 쓰기 ~45 IOPS · 아웃바운드 1GB/월이었다.
+docs/02_architecture/backend.md:375:**GCE 에서 AWS Lightsail 서울로 옮겼다(#243, 2026-10-12 전환).** 무료 한도를 버리고 메모리를 샀다.
+docs/02_architecture/backend.md:417:   접속은 일반 `ssh` · `scp` 다(#243 — `gcloud` 를 걷어냈다). 대상은 환경변수로 지정한다.
+docs/02_architecture/backend.md:595:GB-월 과금)을 켜고, 종전 GCS 백업 스크립트는 삭제했다.
+docs/02_architecture/backend.md:608:> 종전 GCS 백업 설계와 복구 리허설은 #132 · CHANGELOG 에 있다. 스냅샷 복구 리허설은 [#255](https://github.com/changs0124/rag-chatbot/issues/255) 에서 한다.
+
+$ git diff main --stat
+ docs/02_architecture/backend.md  | 96 +++++++++++++---------------------------
+ docs/02_architecture/overview.md |  2 +-
+ docs/06_changelog/CHANGELOG.md   |  2 +
+ docs/INDEX.md                    |  4 +-
+ 4 files changed, 35 insertions(+), 69 deletions(-)
+
+check-all.sh docs : 통과
