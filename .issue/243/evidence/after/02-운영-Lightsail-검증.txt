@@ -1,0 +1,32 @@
+# after — 운영(Lightsail 서울) 2026-10-12 09:06:25    
+health 200 total=0.275683s
+health 200 total=0.399806s
+health 200 total=0.398032s
+health 200 total=0.285172s
+health 200 total=0.291881s
+CORS 허용 출처 : 200
+CORS 타 출처   : 403
+--- 서버 ---
+doc-figures (app 컨테이너에서 보이는 수) : 295
+deploy-app-1 Up 42 seconds (healthy)
+deploy-cloudflared-1 Up 42 seconds
+deploy-db-1 Up About a minute (healthy)
+               total        used        free      shared  buff/cache   available
+Mem:           3.7Gi       825Mi       1.2Gi        12Mi       2.0Gi       2.9Gi
+NAME                   MEM USAGE / LIMIT
+deploy-cloudflared-1   17.29MiB / 64MiB
+deploy-app-1           151.5MiB / 1GiB
+deploy-db-1            27.44MiB / 512MiB
+TUNNEL env 수 : 0
+터널 connIndex=0 location=icn07
+터널 connIndex=1 location=icn06
+터널 connIndex=2 location=icn06
+터널 connIndex=3 location=icn05
+--- 행 수 (GCP 덤프 직전 vs Lightsail 복원 후) ---
+attachments=0|attachments=0
+citations=3|citations=3
+conversations=2|conversations=2
+flyway=9 max=9|flyway=9 max=9
+messages=6|messages=6
+rag_documents=4|rag_documents=4
+users=1|users=1

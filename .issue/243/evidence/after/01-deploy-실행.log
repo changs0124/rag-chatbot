@@ -1,0 +1,119 @@
+
+[1m▶ 사전 확인[0m
+  .env 권한 600 (정상)
+  backend/.env 권한 600 (정상)
+  secrets/ 권한 700 (정상)
+
+[1m▶ 이미지 저장 (gzip)[0m
+  크기: 95M
+
+[1m▶ 서버로 전송[0m
+
+[1m▶ 서버에서 로드 후 재기동[0m
+Loaded image: rag-chatbot-backend:latest
+ Image cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07 Pulling 
+ 6bc08bd6b7d1 Pulling fs layer 0B
+ 2cc7ee286bf3 Pulling fs layer 0B
+ c172f21841df Pulling fs layer 0B
+ 218cf840d0d9 Pulling fs layer 0B
+ f6069939f718 Pulling fs layer 0B
+ d6b1b89eccac Pulling fs layer 0B
+ ebddc55facdc Pulling fs layer 0B
+ 2780920e5dbf Pulling fs layer 0B
+ 58c0c263dc73 Pulling fs layer 0B
+ 7c12895b777b Pulling fs layer 0B
+ bd8962e29291 Pulling fs layer 0B
+ 3214acf345c0 Pulling fs layer 0B
+ cac2ae0193cb Pulling fs layer 0B
+ 52630fc75a18 Pulling fs layer 0B
+ b839dfae01f6 Pulling fs layer 0B
+ dd64bf2dd177 Pulling fs layer 0B
+ c4bc6f35ff5e Pulling fs layer 0B
+ b96fe2995f90 Pulling fs layer 0B
+ b96fe2995f90 Downloading 5.079MB
+ b96fe2995f90 Download complete 0B
+ 2780920e5dbf Download complete 0B
+ 2cc7ee286bf3 Download complete 0B
+ c172f21841df Download complete 0B
+ 6bc08bd6b7d1 Downloading 7.34MB
+ 2cc7ee286bf3 Pull complete 0B
+ 6bc08bd6b7d1 Downloading 19.48MB
+ c172f21841df Pull complete 0B
+ f6069939f718 Download complete 0B
+ 6bc08bd6b7d1 Download complete 0B
+ 218cf840d0d9 Download complete 0B
+ 218cf840d0d9 Extracting 1B
+ d6b1b89eccac Download complete 0B
+ f6069939f718 Extracting 1B
+ 218cf840d0d9 Pull complete 0B
+ ebddc55facdc Download complete 0B
+ cac2ae0193cb Download complete 0B
+ 2780920e5dbf Pull complete 0B
+ f6069939f718 Pull complete 0B
+ d6b1b89eccac Pull complete 0B
+ 58c0c263dc73 Downloading 3.073MB
+ bd8962e29291 Download complete 0B
+ 58c0c263dc73 Download complete 0B
+ 7c12895b777b Download complete 0B
+ 7c12895b777b Pull complete 0B
+ b839dfae01f6 Download complete 0B
+ 3214acf345c0 Download complete 0B
+ 52630fc75a18 Download complete 0B
+ 3214acf345c0 Pull complete 0B
+ 52630fc75a18 Pull complete 0B
+ dd64bf2dd177 Download complete 0B
+ c4bc6f35ff5e Download complete 0B
+ b839dfae01f6 Pull complete 0B
+ dd64bf2dd177 Pull complete 0B
+ b96fe2995f90 Extracting 1B
+ ebddc55facdc Pull complete 0B
+ c4bc6f35ff5e Pull complete 0B
+ b96fe2995f90 Extracting 1B
+ b96fe2995f90 Pull complete 0B
+ 6bc08bd6b7d1 Extracting 1B
+ cac2ae0193cb Pull complete 0B
+ bd8962e29291 Pull complete 0B
+ 58c0c263dc73 Pull complete 0B
+ 6bc08bd6b7d1 Extracting 1B
+ 6bc08bd6b7d1 Extracting 1B
+ 6bc08bd6b7d1 Pull complete 0B
+ Image cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07 Pulled 
+ Container deploy-db-1 Running 
+ Network deploy_edge Creating 
+ Network deploy_edge Creating 
+ Volume deploy_uploads Creating 
+ Volume deploy_uploads Creating 
+ Volume deploy_uploads Created 
+ Volume deploy_uploads Created 
+ Network deploy_edge Created 
+ Network deploy_edge Created 
+ Container deploy-app-1 Creating 
+ Container deploy-app-1 Created 
+ Container deploy-cloudflared-1 Creating 
+ Container deploy-cloudflared-1 Created 
+ Container deploy-db-1 Waiting 
+ Container deploy-db-1 Healthy 
+ Container deploy-app-1 Starting 
+ Container deploy-app-1 Started 
+ Container deploy-cloudflared-1 Starting 
+ Container deploy-cloudflared-1 Started 
+--- 상태 ---
+NAME                   IMAGE                                                                                            COMMAND                  SERVICE       CREATED          STATUS                           PORTS
+deploy-app-1           rag-chatbot-backend:latest                                                                       "java -jar /app/app.…"   app           3 seconds ago    Up 1 second (health: starting)   127.0.0.1:8080->8080/tcp
+deploy-cloudflared-1   cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07   "cloudflared --no-au…"   cloudflared   2 seconds ago    Up Less than a second            
+deploy-db-1            postgres:16-alpine                                                                               "docker-entrypoint.s…"   db            28 seconds ago   Up 25 seconds (healthy)          5432/tcp
+--- 메모리 ---
+NAME                   MEM USAGE / LIMIT   MEM %
+deploy-cloudflared-1   16.27MiB / 64MiB    25.43%
+deploy-app-1           56.29MiB / 1GiB     5.50%
+deploy-db-1            17.29MiB / 512MiB   3.38%
+               total        used        free      shared  buff/cache   available
+Mem:           3.7Gi       768Mi       1.2Gi        10Mi       2.0Gi       3.0Gi
+
+[1m▶ 헬스체크 (최대 90초)[0m
+OK (10초 경과)
+
+[1m▶ 옛 이미지 정리[0m
+Total reclaimed space: 0B
+
+[1m▶ 배포 완료[0m
