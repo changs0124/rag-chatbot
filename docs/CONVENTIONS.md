@@ -69,7 +69,7 @@
 
 ### API 통신
 - API 호출은 `lib/api.ts`의 `api.get/post/patch/del/postForm`을 통한다. **래퍼 밖에서 `fetch`를 직접
-  부르는 곳은 둘** — 채팅 스트림(아래, `endpoints.ts`)과 첨부 저장(`ImageLightbox.download()`이 blob으로 받아야 해서). 앞의 것은 컴포넌트가 아니라 `lib/`에 있다.
+  부르는 곳은 셋** — 채팅 스트림(아래, `endpoints.ts`), 문서 그림 로드(`docFigures.ts` — blob 을 objectURL 로), 첨부 저장(`ImageLightbox.download()`이 blob으로 받아야 해서). 앞의 둘은 컴포넌트가 아니라 `lib/`에 있다.
 - 엔드포인트 함수는 `lib/endpoints.ts`에 둔다. **대부분은 `api.*`를 한 줄로 감싼 것**이고, 래퍼로 안 되는 것만 함수로 편다 — 멀티파트 업로드 둘(`uploadFile`·`uploadDocument`)과 채팅 스트림이다. **`AuthContext`는 예외로 `/api/auth/me`와 `/api/auth/login`을 직접 부른다.**
 - **응답이 도착한** 실패는 `ApiError(status, message)`로 통일. 서버가 `message`를 주면 그대로 보여주고, 없으면 `요청 실패 (n)`로 떨어진다. 네트워크 단계 실패(CORS 거절·오프라인·중단)는 `fetch` 또는 본문 읽기가 reject 되어 이 경로를 타지 않는다.
 - 채팅 스트림은 `EventSource`가 아니라 **fetch + ReadableStream** 이다. `EventSource`는 Authorization 헤더를 못 싣는다.
