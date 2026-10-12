@@ -1,0 +1,6 @@
+# before — 새 테스트를 수정 전 코드(src/main 만 되돌림)에 돌린 결과
+$ ./mvnw -q -Dtest=ChatFlowTest#sent_attachment_cannot_be_deleted_409 test
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 13.22 s <<< FAILURE! -- in com.ragchatbot.controller.ChatFlowTest
+expected: 409 CONFLICT
+ but was: 204 NO_CONTENT
+expected: 409 CONFLICT

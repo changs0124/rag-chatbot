@@ -1,0 +1,15 @@
+# before — DELETE /api/files/{id} 경로 (8877d88)
+## FileService.delete
+119:	public void delete(UUID userId, UUID fileId) {
+120-		Attachment att = attachmentRepository.findByIdAndUser(fileId, userId)
+121-				.orElseThrow(() -> new NotFoundException("파일 없음"));
+122-		fileStorage.delete(att.storagePath());
+123-		attachmentRepository.deleteByIdAndUser(fileId, userId);
+124-	}
+## AttachmentRepository.xml deleteByIdAndUser
+34:	<delete id="deleteByIdAndUser">
+35-		delete from attachments where id = #{id} and user_id = #{userId}
+36-	</delete>
+
+→ message_id 를 보지 않아 이미 보낸 메시지의 첨부도 204 로 지워진다(대화 기록의 이미지 · 「(이미지 첨부)」 표식 소실).
+→ 파일을 먼저 지우고 행을 나중에 지워, 행 삭제가 실패하면 행이 없는 파일을 가리킨다.
