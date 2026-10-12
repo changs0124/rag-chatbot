@@ -2,9 +2,8 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app
 #
-# **왜 본체가 아니라 여기 있나** - 1GB 급 GCP e2-micro 시절에 정했다(4GB Lightsail 로 옮긴 #243 뒤에도 유지) - 거기서 이미지를 빌드하면
-# build 스테이지의 Maven JVM 하나로 물리 메모리를 넘긴다. 스왑으로 버텨도 표준 영구 디스크의
-# 쓰기 성능에서 스래싱이 걸려 사실상 끝나지 않는다. 본체에 build 를 남겨 두면 `docker compose up`
+# **왜 본체가 아니라 여기 있나** - 운영 서버는 이미지를 빌드하지 않는다(#127). build 스테이지의
+# Maven JVM 이 앱과 메모리를 다투기 때문이다. 본체에 build 를 남겨 두면 `docker compose up`
 # 이 이미지를 못 찾았을 때 **서버에서 조용히 빌드로 빠지는 경로**가 남는다 - 그 경로를 없앴다.
 #
 # 서버는 이 파일을 쓰지 않는다. 절차는 docs/02_architecture/backend.md 「배포」 참고.

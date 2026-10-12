@@ -45,7 +45,7 @@
 
 ## 배포 준비 상태
 
-**2026-10-06 런칭함 — 운영 중.** 프론트는 Vercel, 백엔드는 자체 호스팅(AWS Lightsail 서울 — 2026-10-12 GCE e2-micro 에서 이전, #243) + Cloudflare Tunnel 이고
+**2026-10-06 런칭함 — 운영 중.** 프론트는 Vercel, 백엔드는 자체 호스팅(AWS Lightsail 서울, #243) + Cloudflare Tunnel 이고
 `APP_MODE=live` 로 실제 응답과 출처를 돌려줌.
 
 > **데모** — https://rag-chatbot-jade-pi.vercel.app
