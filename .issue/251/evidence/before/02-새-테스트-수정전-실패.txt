@@ -1,0 +1,7 @@
+# before — 새 테스트를 수정 전 useChat.ts 로 돌린 결과
+     × 삭제 응답 전에 다른 대화로 옮기면 그 대화를 비우지 않는다 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/hooks/useChatRace.test.ts > useChat 대화 컨텍스트 경쟁 > 삭제 응답 전에 다른 대화로 옮기면 그 대화를 비우지 않는다
+- Expected:
++ Received:
+      Tests  1 failed | 9 passed (10)

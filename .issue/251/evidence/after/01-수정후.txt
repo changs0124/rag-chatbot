@@ -1,0 +1,22 @@
+# after — (c286d10)
+133:  const deleteConversation = useCallback(
+134-    async (id: string) => {
+135-      // 확인 창은 바로 닫히므로 DELETE 가 도는 사이 다른 대화로 옮길 수 있다(#251).
+136-      // 그때 잡아 둔 activeId 는 낡은 값이라, 응답 뒤에 그것만 보면 옮겨 간 대화를 끊고 비운다
+137-      const mine = generation.current
+138-      try {
+139-        await apiDelete(id)
+140-      } catch (e) {
+141-        setError(e instanceof ApiError ? e.message : '대화를 삭제하지 못했습니다')
+142-        return
+143-      }
+144-      setConversations((prev) => prev.filter((c) => c.id !== id))
+145-      if (activeId === id && generation.current === mine) {
+146-        // 지운 대화를 떠나는 것도 전환임 - 안 끊으면 사라진 대화에 대고 스트림이 계속 돎
+147-        newConversation()
+148-      }
+149-    },
+150-    [activeId, newConversation],
+
+$ npx vitest run src/hooks/useChatRace.test.ts → Tests 10 passed (새 2개 포함)
+$ npm run lint → 0 · npx vitest run → Test Files 20 · Tests 142 · npm run build → OK
