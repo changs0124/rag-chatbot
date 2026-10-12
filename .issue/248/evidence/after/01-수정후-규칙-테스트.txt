@@ -1,0 +1,16 @@
+# after — 수정 후 (a9ef757)
+$ git grep -n "normalize(" backend/src/main
+config/AppModeGuard.java:36:	public static String normalize(String appMode) {
+config/AppModeGuard.java:41:		String mode = normalize(appMode);
+config/EmailDomainPolicy.java:35:		if ("live".equals(AppModeGuard.normalize(mode)) && this.allowedDomains.isEmpty()) {
+openai/OpenAiMockService.java:23:@ConditionalOnExpression("T(com.ragchatbot.config.AppModeGuard).normalize('${app.mode:}') == 'mock'")
+openai/OpenAiRealService.java:49:@ConditionalOnExpression("T(com.ragchatbot.config.AppModeGuard).normalize('${app.mode:}') == 'live'")
+service/DocFigureService.java:43:		this.root = dir == null || dir.isBlank() ? null : Path.of(dir).toAbsolutePath().normalize();
+service/DocFigureService.java:44:		this.mock = "mock".equals(AppModeGuard.normalize(mode));
+storage/LocalFileStorage.java:26:		this.root = Path.of(storageRoot).toAbsolutePath().normalize();
+storage/LocalFileStorage.java:83:		Path resolved = root.resolve(relative).normalize();
+
+$ ./mvnw -q test  (백엔드 전체)
+Tests run: 258, Failures: 0, Errors: 0, Skipped: 0 (surefire 보고서 49개 합산)
+
+check-all.sh docs : 통과

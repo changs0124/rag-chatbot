@@ -1,0 +1,7 @@
+# before — 새 테스트를 수정 전 main 코드(src/main 만 되돌림)에 돌린 결과 (2026-10-12)
+$ ./mvnw -q -Dtest='EmailDomainPolicyTest,DocFigureServiceTest,OpenAiServiceModeSelectionTest' test
+[ERROR] EmailDomainPolicyTest.empty_list_in_live_fails_fast_regardless_of_case_and_spaces — Expecting code to raise a throwable.
+        → policy(" LIVE ", "", "") 가 예외 없이 생성됨 = live 인데 허용 도메인 검사 빠짐
+[ERROR] DocFigureServiceTest.mock_sample_is_served_regardless_of_case_and_spaces — (Error) " MOCK " 이 목업으로 인식되지 않아 견본 대신 NotFound
+[ERROR] OpenAiServiceModeSelectionTest.missing_mode_selects_neither — 모드가 없는데 Mock 빈이 올라옴(matchIfMissing = true)
+[ERROR] Tests run: 21, Failures: 2, Errors: 1, Skipped: 0
