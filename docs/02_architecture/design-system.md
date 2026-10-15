@@ -166,7 +166,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
   `LoginPage` 24px → md 이상 36px(`text-2xl md:text-4xl`). **답변 문단**은 14px 보다 작게 두지 않는다
   (`Markdown.tsx` 의 코드 블록 13px · 표 14px 는 이 규칙 밖이다).
 - **한국어 규칙**
-  - 모든 한국어 블록에 `break-keep` — 조사 앞에서 줄이 갈리면 읽는 속도가 눈에 띄게 떨어진다
+  - `body` 에 전역 `word-break: keep-all`(`index.css`), 한국어 블록에는 `break-keep` 도 — 조사 앞에서 줄이 갈리면 읽는 속도가 눈에 띄게 떨어진다
   - 본문 `leading-relaxed`, 제목 `leading-snug`. 한국어는 라틴보다 행간이 더 필요하다
 
 ## 3. 형태 · 그림자
