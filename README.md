@@ -1,6 +1,6 @@
 # rag-chatbot
 
-> OpenAI API(모델은 `OPENAI_MODEL` — 기본 `gpt-4o` · 운영 `gpt-5.6-terra`) + OpenAI 플랫폼 Vector Store 기반 RAG 챗봇. 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론함.
+> OpenAI API(모델은 `OPENAI_MODEL` — 기본 `gpt-4o` · 운영 `gpt-6-sol`) + OpenAI 플랫폼 Vector Store 기반 RAG 챗봇. 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론함.
 
 **유형** : 신규 · **규모** : 정식(1주~1개월) · **착수일** : 2026-07-24
 

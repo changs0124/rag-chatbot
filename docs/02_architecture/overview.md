@@ -117,7 +117,7 @@ sequenceDiagram
 
 | 대상 | 용도 | 비고 |
 |------|------|------|
-| OpenAI 모델(`OPENAI_MODEL`, 기본 `gpt-4o` · 운영 `gpt-5.6-terra`) | 답변 생성 · 이미지(비전) 입력 | env 로 교체 가능 |
+| OpenAI 모델(`OPENAI_MODEL`, 기본 `gpt-4o` · 운영 `gpt-6-sol`) | 답변 생성 · 이미지(비전) 입력 | env 로 교체 가능 |
 | OpenAI Vector Store | RAG 검색 + 관리자 문서 등록 | `OPENAI_VECTOR_STORE_ID` — 대화별이 아닌 **공용 스토어**. 미설정이면 검색이 없고 문서 업로드도 400 |
 | OpenAI Files | 관리자 문서 업로드 | 채팅 첨부와 별개 경로(문서만 받음) |
 | 로컬 디스크 | 첨부 저장 | `FileStorage` 구현만 갈아끼우면 S3로 이동 가능 |
