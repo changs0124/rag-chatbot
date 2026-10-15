@@ -1,0 +1,5 @@
+       × 선택창은 image/* 로 연다 - 형식을 좁히면 Android 가 카메라 없이 보관함으로 바로 들어간다 (#289) 28ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+Expected: "image/*"
+Received: "image/jpeg,image/png,image/webp,image/gif"
+      Tests  1 failed | 23 skipped (24)
