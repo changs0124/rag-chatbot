@@ -113,3 +113,15 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * 스크롤바 숨김(#274). 스크롤 동작(휠 · 터치 · 키보드 포커스 따라가기)은 그대로 두고 막대만 그리지 않는다.
+ * Windows 기본 스크롤바는 위아래 화살표가 달린 15px 회색 막대라 사이드바 면 위에서 튀었다.
+ * Firefox 는 scrollbar-width, Chromium · Safari 는 ::-webkit-scrollbar 를 본다 - 둘 다 둬야 한다
+ */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
