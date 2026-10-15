@@ -1,0 +1,14 @@
+   429 docs/01_specs/api.md
+   313 docs/01_specs/erd.md
+   647 docs/01_specs/features.md
+   362 docs/01_specs/live-integration.md
+   164 docs/01_specs/requirements.md
+   694 docs/02_architecture/backend.md
+   449 docs/02_architecture/design-system.md
+   280 docs/02_architecture/frontend.md
+   169 docs/02_architecture/overview.md
+   265 docs/CONVENTIONS.md
+    96 docs/INDEX.md
+    38 docs/04_tasks/backlog.md
+    29 docs/04_tasks/current-sprint.md
+  3935 total
