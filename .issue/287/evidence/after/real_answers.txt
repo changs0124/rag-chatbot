@@ -1,0 +1,3 @@
+sol QA 답 37개를 실제 렌더러(react-markdown + remark-gfm)로 그린 뒤 화면 글자에 ** 가 남은 답 수
+before : 12/37 (strong 182)
+after  : 0/37 (strong 196)

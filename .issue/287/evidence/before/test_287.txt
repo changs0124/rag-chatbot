@@ -1,0 +1,4 @@
+       × 문장부호로 끝나는 굵게 뒤에 조사가 붙어도 굵게로 그린다 (#287) 58ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+TestingLibraryElementError: Unable to find an element with the text: 설계불량(부품선정오류). This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+      Tests  1 failed | 18 skipped (19)
