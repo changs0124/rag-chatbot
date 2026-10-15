@@ -212,6 +212,9 @@
 일반 JSON 응답이 아니라 **`text/event-stream`** 이다. `EventSource` 는 Authorization 헤더를 실을 수
 없어 프론트가 `fetch` + `ReadableStream` 으로 직접 파싱한다.
 
+**스트림을 열기 전의 거절(400 · 404 · 429 · 500)은 JSON 이다.** `Accept: text/event-stream` 으로 불러도
+마찬가지다. 상태 코드와 `{ "code", "message" }` 를 보고 갈라야 한다(#279). 전에는 SSE Accept 에서 빈 본문 500 이었다.
+
 **Request Body:**
 ```json
 { "conversationId": "…", "message": "취업규칙 알려줘", "attachmentIds": ["…"] }

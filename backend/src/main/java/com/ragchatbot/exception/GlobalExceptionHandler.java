@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -41,6 +42,17 @@ public class GlobalExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+	/**
+	 * 오류 응답은 요청의 Accept 와 상관없이 JSON 으로 나감(#279).
+	 *
+	 * <p>Content-Type 을 정해 두지 않으면 Spring 이 Accept 로 협상하는데, 채팅을
+	 * {@code Accept: text/event-stream} 으로 부르면 ApiError 를 쓸 변환기가 없어 핸들러가 실패하고
+	 * <b>빈 본문 500</b> 이 나갔음(429 · 400 · 404 모두). 미리 정해 두면 협상을 건너뜀.
+	 */
+	private static ResponseEntity.BodyBuilder json(HttpStatus status) {
+		return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON);
+	}
+
 	public record ApiError(String code, String message) {
 	}
 
@@ -50,27 +62,27 @@ public class GlobalExceptionHandler {
 				.findFirst()
 				.map(fe -> fe.getField() + " " + fe.getDefaultMessage())
 				.orElse("잘못된 요청");
-		return ResponseEntity.badRequest().body(new ApiError("BAD_REQUEST", msg));
+		return json(HttpStatus.BAD_REQUEST).body(new ApiError("BAD_REQUEST", msg));
 	}
 
 	@ExceptionHandler(ConflictException.class)
 	public ResponseEntity<ApiError> handleConflict(ConflictException ex) {
-		return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError("CONFLICT", ex.getMessage()));
+		return json(HttpStatus.CONFLICT).body(new ApiError("CONFLICT", ex.getMessage()));
 	}
 
 	@ExceptionHandler(UnauthorizedException.class)
 	public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException ex) {
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError("UNAUTHORIZED", ex.getMessage()));
+		return json(HttpStatus.UNAUTHORIZED).body(new ApiError("UNAUTHORIZED", ex.getMessage()));
 	}
 
 	@ExceptionHandler(NotFoundException.class)
 	public ResponseEntity<ApiError> handleNotFound(NotFoundException ex) {
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("NOT_FOUND", ex.getMessage()));
+		return json(HttpStatus.NOT_FOUND).body(new ApiError("NOT_FOUND", ex.getMessage()));
 	}
 
 	@ExceptionHandler(BadRequestException.class)
 	public ResponseEntity<ApiError> handleBadRequest(BadRequestException ex) {
-		return ResponseEntity.badRequest().body(new ApiError("BAD_REQUEST", ex.getMessage()));
+		return json(HttpStatus.BAD_REQUEST).body(new ApiError("BAD_REQUEST", ex.getMessage()));
 	}
 
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
@@ -78,13 +90,13 @@ public class GlobalExceptionHandler {
 		// 상수 이름만 바뀌었음(Spring 7 에서 PAYLOAD_TOO_LARGE deprecated). 둘 다 413 이다.
 		// **응답 code 문자열은 PAYLOAD_TOO_LARGE 그대로 둔다** - api.md 오류 코드 표의 계약이라
 		// 바꾸면 프론트와 문서가 함께 깨진다(#64)
-		return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
+		return json(HttpStatus.CONTENT_TOO_LARGE)
 				.body(new ApiError("PAYLOAD_TOO_LARGE", "업로드 용량 한도 초과"));
 	}
 
 	@ExceptionHandler(RateLimitException.class)
 	public ResponseEntity<ApiError> handleRateLimit(RateLimitException ex) {
-		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ApiError("RATE_LIMIT", ex.getMessage()));
+		return json(HttpStatus.TOO_MANY_REQUESTS).body(new ApiError("RATE_LIMIT", ex.getMessage()));
 	}
 
 	/**
@@ -100,7 +112,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public ResponseEntity<ApiError> handleUnreadableBody(HttpMessageNotReadableException ex) {
 		log.warn("요청 본문을 읽지 못함: {}", ex.getMostSpecificCause().getMessage());
-		return ResponseEntity.badRequest()
+		return json(HttpStatus.BAD_REQUEST)
 				.body(new ApiError("BAD_REQUEST", "요청 본문을 읽을 수 없음 (JSON 형식과 인코딩을 확인할 것)"));
 	}
 
@@ -116,7 +128,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler({ MissingServletRequestPartException.class, MultipartException.class })
 	public ResponseEntity<ApiError> handleBadUpload(Exception ex) {
-		return ResponseEntity.badRequest()
+		return json(HttpStatus.BAD_REQUEST)
 				.body(new ApiError("BAD_REQUEST", "업로드 요청 형식이 올바르지 않음 (multipart/form-data 의 file 파트가 필요함)"));
 	}
 
@@ -128,7 +140,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
 	public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-		return ResponseEntity.badRequest()
+		return json(HttpStatus.BAD_REQUEST)
 				.body(new ApiError("BAD_REQUEST", "요청 값의 형식이 올바르지 않음: " + ex.getName()));
 	}
 
@@ -144,7 +156,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(NoResourceFoundException.class)
 	public ResponseEntity<ApiError> handleNoResource(NoResourceFoundException ex) {
-		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+		return json(HttpStatus.NOT_FOUND)
 				.body(new ApiError("NOT_FOUND", "요청한 경로가 없음"));
 	}
 
@@ -158,7 +170,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
 	public ResponseEntity<ApiError> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
-		var builder = ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED);
+		var builder = json(HttpStatus.METHOD_NOT_ALLOWED);
 		Set<HttpMethod> allowed = ex.getSupportedHttpMethods();
 		if (allowed != null && !allowed.isEmpty()) {
 			builder.allow(allowed.toArray(new HttpMethod[0]));
@@ -175,7 +187,7 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(HttpMediaTypeNotSupportedException.class)
 	public ResponseEntity<ApiError> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
-		return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+		return json(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
 				.body(new ApiError("UNSUPPORTED_MEDIA_TYPE", "지원하지 않는 Content-Type"));
 	}
 
@@ -201,7 +213,7 @@ public class GlobalExceptionHandler {
 		// 8자리면 로그에서 찾기 충분하고 사용자가 읽어 옮기기도 부담이 없음(UUID 전체는 36자)
 		String traceId = UUID.randomUUID().toString().substring(0, 8);
 		log.error("처리되지 않은 예외 [{}] {} {}", traceId, request.getMethod(), request.getRequestURI(), ex);
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		return json(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(new ApiError("INTERNAL_ERROR", "처리 중 오류가 발생했습니다 (오류 번호: " + traceId + ")"));
 	}
 }
