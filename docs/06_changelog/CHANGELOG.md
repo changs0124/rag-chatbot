@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Removed
+- **쓰이지 않는 `GET /api/profile` 을 지웠다(#303).** `GET /api/auth/me` 와 같은 `profileService.me()` 를 부르는 두 번째 경로였고
+  화면은 `/api/auth/me` 만 쓴다. #105 §6 은 「`ProfileFlowTest` 가 비밀번호 변경 뒤 새 토큰 검증에 쓴다」며 남겼는데, 그 검증을
+  같은 처리인 `/api/auth/me` 로 옮겨 근거가 사라졌다(2026-10-15 사용자 결정으로 판정 뒤집음).
+  - 테스트 : 호출 3곳을 `/api/auth/me` 로, 「`GET /api/profile` → 404」 1건 추가. **백엔드 하한 286 → 287**(실측)
+  - `api.md` API-GET-003 은 ID 를 남기고 「제거됨」(API-PATCH-003 과 같은 표기)
+
 ### Fixed
 - **compose 가 app 에 `prod` 프로필을 켜, 운영에서 목업 기동을 실제로 막는다(#305).** `AppModeGuard` 의 prod + `APP_MODE=mock` 거부는
   운영 서버 · compose · `.env` 어디에서도 프로필을 켜지 않아 테스트에서만 돌았다(2026-10-15 서버 확인).

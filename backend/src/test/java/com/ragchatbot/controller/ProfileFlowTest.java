@@ -29,7 +29,7 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(res.getBody().get("name")).isEqualTo("새이름");
 
-		var me = rest.exchange("/api/profile", HttpMethod.GET, new HttpEntity<>(bearer(token)), Map.class);
+		var me = rest.exchange("/api/auth/me", HttpMethod.GET, new HttpEntity<>(bearer(token)), Map.class);
 		assertThat(me.getBody().get("name")).isEqualTo("새이름");
 	}
 
@@ -71,7 +71,7 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 		String newToken = (String) changed.getBody().get("token");
 		assertThat(newToken).isNotBlank();
 
-		var withNew = rest.exchange("/api/profile", HttpMethod.GET, new HttpEntity<>(bearer(newToken)), Map.class);
+		var withNew = rest.exchange("/api/auth/me", HttpMethod.GET, new HttpEntity<>(bearer(newToken)), Map.class);
 		assertThat(withNew.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(withNew.getBody().get("email")).isEqualTo("prof-pw3@b.com");
 	}
@@ -95,10 +95,18 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 		var gone = patch(token, "/api/profile/theme", Map.of("theme", "dark"), Map.class);
 		assertThat(gone.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
-		var profile = rest.exchange("/api/profile", HttpMethod.GET, new HttpEntity<>(bearer(token)), Map.class);
-		assertThat(profile.getBody()).doesNotContainKey("theme").containsKey("role");
-
 		var me = rest.exchange("/api/auth/me", HttpMethod.GET, new HttpEntity<>(bearer(token)), Map.class);
-		assertThat(me.getBody()).doesNotContainKey("theme");
+		assertThat(me.getBody()).doesNotContainKey("theme").containsKey("role");
+	}
+
+	/**
+	 * 프로필 조회는 {@code GET /api/auth/me} 하나다(#303). {@code GET /api/profile} 은 같은 처리를 부르는
+	 * 두 번째 경로였고 화면이 쓰지 않았다 - 되살아나면 같은 계약을 두 곳에서 지켜야 한다.
+	 */
+	@Test
+	void get_profile_route_is_gone() {
+		String token = createUser("prof-get@b.com");
+		var res = rest.exchange("/api/profile", HttpMethod.GET, new HttpEntity<>(bearer(token)), Map.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 }

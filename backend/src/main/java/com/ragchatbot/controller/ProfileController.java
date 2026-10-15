@@ -1,6 +1,5 @@
 package com.ragchatbot.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,11 +25,6 @@ public class ProfileController {
 	public ProfileController(ProfileService profileService, RateLimiterService rateLimiter) {
 		this.profileService = profileService;
 		this.rateLimiter = rateLimiter;
-	}
-
-	@GetMapping
-	public MeResponse me() {
-		return profileService.me(CurrentUser.id());
 	}
 
 	@PatchMapping("/name")
