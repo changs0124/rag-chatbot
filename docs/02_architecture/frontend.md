@@ -107,7 +107,10 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 답변 본문의 `[[그림:<key>]]` 을 그림으로 바꾼다(FEAT-CHAT-004). 파서는 `frontend/src/lib/docFigures.ts`,
 그리는 쪽은 `frontend/src/components/chat/DocFigure.tsx` 다.
 
-- **본문은 여전히 평문이다.** 마크다운 렌더러를 들이지 않고, 표식만 잘라 그 자리에 그림을 끼운다.
+- **답변 본문은 마크다운으로 그린다(#270).** 모델이 굵게 · 목록 · 표로 답하는데 평문으로 그리면 `**` · `|---|` 가 글자 그대로 보였다.
+  표식으로 먼저 자르고, 표식 사이의 글만 `components/chat/Markdown.tsx`(react-markdown + remark-gfm)로 그린다.
+  **원시 HTML 은 그리지 않는다**(react-markdown 기본, rehype-raw 없음) · 위험한 링크 스킴은 기본 urlTransform 이 지운다 ·
+  표는 가로 스크롤 상자 안. **사용자 메시지와 출처 스니펫은 평문 그대로**다. 번들 gzip +48KB(92.7 → 140.4KB)
 - **덜 도착한 표식은 숨긴다.** 스트리밍 중 본문 끝에 열린 `[[` 가 있으면 닫힐 때까지 그 조각을 그리지 않는다.
 - **Bearer 로 받아 objectURL 로 그린다.** 404 · 네트워크 오류면 아무것도 그리지 않는다
   — 모델이 지어낸 키가 깨진 이미지 아이콘으로 남으면 안 된다.
