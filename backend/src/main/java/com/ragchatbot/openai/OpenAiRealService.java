@@ -26,6 +26,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import tools.jackson.databind.JsonNode;
@@ -538,7 +539,15 @@ public class OpenAiRealService implements OpenAiService {
 					files.add(new StoreFile(fileId, sharedVectorStoreId, null, 0, status));
 					continue;
 				}
-				JsonNode file = client.get().uri("/files/" + fileId).retrieve().body(JsonNode.class);
+				JsonNode file;
+				try {
+					file = client.get().uri("/files/" + fileId).retrieve().body(JsonNode.class);
+				} catch (HttpClientErrorException.NotFound e) {
+					// File 은 지워졌는데 스토어 연결만 남았다(#271) - 검색에는 잡히므로 숨기지 말고 알린다.
+					// 던지면 고아 하나가 동기화 전체를 멈춰 그것을 정리할 길도 막힌다. 404 가 아닌 실패는 아래처럼 던진다
+					files.add(new StoreFile(fileId, sharedVectorStoreId, null, 0, StoreFile.MISSING));
+					continue;
+				}
 				String filename = file == null ? null : file.path("filename").asString(null);
 				if (filename == null || filename.isBlank()) {
 					throw new IllegalStateException("OpenAI 파일 응답에 파일명이 없음: " + fileId);
@@ -556,11 +565,21 @@ public class OpenAiRealService implements OpenAiService {
 		}
 	}
 
-	/** 연결 해제 후 파일 삭제. 둘 다 실패해도 던지지 않음 - 호출자는 삭제 표시를 계속 진행함 */
+	/**
+	 * 연결 해제 후 파일 삭제. 둘 다 실패해도 던지지 않음 - 호출자는 삭제 표시를 계속 진행함.
+	 *
+	 * <p><b>연결 해제가 실패하면 File 을 지우지 않는다</b>(#271). File 만 지워지면 스토어에 이름 없는 연결이 남아
+	 * 검색에는 계속 잡히는데, 관리 화면에도 동기화에도 다시 지울 손잡이가 없다. File 이 남아 있으면 동기화가
+	 * 행을 되살려(soft delete 된 행은 살아 있는 행으로 치지 않음) 관리자가 다시 지울 수 있다.
+	 */
 	@Override
 	public void deleteDocument(String vectorStoreId, String openaiFileId) {
-		deleteQuietly("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId,
+		boolean detached = deleteQuietly("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId,
 				"vector_store_file", openaiFileId);
+		if (!detached) {
+			log.warn("스토어 연결 해제 실패로 file {} 은 지우지 않음 - 동기화하면 목록에 다시 보여 다시 지울 수 있음", openaiFileId);
+			return;
+		}
 		deleteQuietly("/files/" + openaiFileId, "file", openaiFileId);
 	}
 
@@ -579,19 +598,28 @@ public class OpenAiRealService implements OpenAiService {
 		}
 	}
 
-	private void deleteQuietly(String path, String kind, String id) {
+	/** 지워졌거나 이미 없으면(404) 참. 그 밖의 실패는 경고만 남기고 거짓 - 정리 실패는 삭제 흐름을 막지 않음 */
+	private boolean deleteQuietly(String path, String kind, String id) {
 		try {
 			// 상대 경로여야 빌더의 baseUrl 이 적용됨 - 절대 URL 을 박으면 app.openai.base-url 이
 			// 이 경로에서만 죽어, 스파이크·대체 엔드포인트로 돌려도 삭제만 실 API 로 나감
-			var request = client.delete().uri(path);
+			var request = client.delete().uri(path)
+					// **본문이 없어도 JSON 을 명시한다**(#271). JDK HttpURLConnection 은 DELETE 에 출력 스트림을 열면서
+					// 기본 Content-Type(application/x-www-form-urlencoded)을 붙이는데, 스토어 연결 해제는 그것을
+					// 400 unsupported_content_type 으로 거절한다. 그 400 을 아래에서 삼켜, 지운 문서가 계속 검색됐다
+					.header("Content-Type", MediaType.APPLICATION_JSON_VALUE);
 			// 이 메서드는 /files 삭제와 공유됨 - 베타 헤더는 vector store 쪽에만 붙임
 			if (path.startsWith("/vector_stores")) {
 				request = request.header("OpenAI-Beta", OPENAI_BETA_ASSISTANTS_V2);
 			}
 			request.retrieve().toBodilessEntity();
+			return true;
+		} catch (HttpClientErrorException.NotFound e) {
+			// 이미 없음 - 지우려던 상태와 같다
+			return true;
 		} catch (Exception e) {
-			// 정리 실패는 삭제 흐름을 막지 않음(고아 리소스는 별도 정리)
 			log.warn("openai {} 삭제 실패 {}: {}", kind, id, e.getMessage());
+			return false;
 		}
 	}
 }

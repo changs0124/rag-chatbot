@@ -170,6 +170,11 @@ public class OpenAiMockService implements OpenAiService {
 		return List.copyOf(mockDocuments.values());
 	}
 
+	/** File 은 지워지고 스토어 연결만 남은 상태(#271) - 실 API 에서 `GET /files/{id}` 가 404 인 경우와 같은 모양 */
+	public void simulateFileGone(String fileId) {
+		mockDocuments.computeIfPresent(fileId, (id, f) -> new StoreFile(id, f.vectorStoreId(), null, 0, StoreFile.MISSING));
+	}
+
 	public int deleteResourcesCalls() {
 		return deleteResourcesCalls.get();
 	}

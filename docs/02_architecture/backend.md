@@ -319,6 +319,13 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 `softDelete` 가 앞이다 — `deleteDocument` 는 `deleteQuietly` 기반이라 **절대 던지지 않는다.**
 두 경로의 순서가 달라 보이는 이유가 이것이다.
 
+**던지지 않는 대신 순서로 막는다(#271).** `deleteDocument` 는 스토어 연결 해제가 성공(또는 이미 없음 404)했을 때만
+File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이름 없는 연결이 남아 **검색에는 계속 잡히는데 다시 지울
+손잡이가 없다** — 실제로 그랬다. 해제 요청이 JDK 기본 Content-Type(form)으로 나가 400 으로 거절됐고 `deleteQuietly` 가
+그것을 삼켰다. 지금은 DELETE 에 `Content-Type: application/json` 을 명시한다. File 이 남아 있으면 「스토어와 동기화」가
+행을 되살려 관리자가 다시 지울 수 있다. 이미 생긴 고아 연결(File 404)은 동기화가 `missing` 으로 받아 연결을 끊는다 —
+종전에는 그 404 하나로 동기화 전체가 500 이었다.
+
 `app.jwt.secret` 은 비어 있는지만이 아니라 **길이도 본다** — 32바이트 미만이면 `JwtSecretPolicy` 가
 기동을 막는다. 하한을 한 곳에 둔 이유는 이 키를 `JwtService`(aud=auth)와
 `FileAccessTokenService`(aud=file) 둘이 공유하기 때문이다. 각자 들고 있으면 한쪽만 올렸을 때
