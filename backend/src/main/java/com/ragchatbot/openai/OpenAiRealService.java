@@ -8,13 +8,17 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -322,7 +326,7 @@ public class OpenAiRealService implements OpenAiService {
 					searchingSent = true;
 				} else if ("response.completed".equals(type)) {
 					JsonNode response = ev.path("response");
-					citations = extractCitations(response, markup.fileRefs());
+					citations = extractCitations(response, markup.fileRefs(), buffer.toString());
 					inputTokens = intOrNull(response.path("usage"), "input_tokens");
 					outputTokens = intOrNull(response.path("usage"), "output_tokens");
 					completed = true;
@@ -363,9 +367,12 @@ public class OpenAiRealService implements OpenAiService {
 	 * <p>annotation 이 0건이면 본문 인용 표기의 {@code turnNfileM} 으로 복원함(#281). gpt-6-sol 은 근거 답에도
 	 * annotation 을 빠뜨릴 때가 있어, 그대로 두면 「자료 없음」이 본문과 반대로 뜸. 대응 규칙(N번째
 	 * file_search_call 의 results[M], 둘 다 0-base)은 2026-10-15 실측(live-integration.md 3-1). 범위 밖 참조는 버림.
+	 *
+	 * <p>스니펫은 그 파일의 검색 결과 중 답이 실제로 쓴 청크를 고름({@link #pickSnippet}, #268).
 	 */
-	private List<CitationData> extractCitations(JsonNode response, List<CitationMarkupFilter.FileRef> markupRefs) {
-		Map<String, String> snippetByFile = new HashMap<>();
+	private List<CitationData> extractCitations(JsonNode response, List<CitationMarkupFilter.FileRef> markupRefs,
+			String answer) {
+		Map<String, List<String>> chunksByFile = new HashMap<>(); // 파일별 결과 본문, 검색 순서 유지
 		Map<String, Boolean> citedFiles = new LinkedHashMap<>(); // 순서 유지 + 중복 제거
 		List<List<String>> filesBySearch = new ArrayList<>(); // file_search_call 순서별 결과 파일명
 
@@ -376,7 +383,7 @@ public class OpenAiRealService implements OpenAiService {
 					String name = r.path("filename").asString("");
 					files.add(name);
 					if (!name.isEmpty()) {
-						snippetByFile.putIfAbsent(name, r.path("text").asString(""));
+						chunksByFile.computeIfAbsent(name, k -> new ArrayList<>()).add(r.path("text").asString(""));
 					}
 				}
 				filesBySearch.add(files);
@@ -407,12 +414,82 @@ public class OpenAiRealService implements OpenAiService {
 		List<CitationData> citations = new ArrayList<>();
 		int seq = 1;
 		for (String name : citedFiles.keySet()) {
-			String snippet = truncate(snippetByFile.getOrDefault(name, ""));
+			String snippet = truncate(pickSnippet(chunksByFile.getOrDefault(name, List.of()), answer));
 			// file_search 인용은 브라우징 가능한 URI가 없음. non-null 유지(ChatService Map.of가 null 불가, mock 파리티).
 			// TODO(M2) : annotation의 file_id로 상관(filename 동명이인 방지) + 표시용 식별자 부여
 			citations.add(new CitationData(seq++, name, snippet, ""));
 		}
 		return citations;
+	}
+
+	private static final Pattern FIGURE_MARK = Pattern.compile("\\[\\[그림:[^\\]]+\\]\\]");
+
+	/**
+	 * 한 파일의 검색 결과 중 답이 근거로 쓴 청크를 고름(#268). annotation 에는 어느 청크인지가 없어,
+	 * 예전처럼 1순위를 쓰면 답과 무관한 단락이 출처로 보였다(2026-10-15 실측 : 답이 쓴 청크는 7위).
+	 * <ol>
+	 *   <li>답에 나온 그림 표식을 담은 청크 - 그림은 그 절에서만 나옴</li>
+	 *   <li>답과 겹치는 글자 2-gram(공백 제외) 종류가 가장 많은 청크. 동점은 앞 순위</li>
+	 *   <li>겹침이 전혀 없으면 1순위(빈 스니펫을 만들지 않음)</li>
+	 * </ol>
+	 * 청크는 800토큰이라 앞부분이 옆 절일 수 있음 - 화면에는 앞 200자만 보이므로 고른 청크 안에서도
+	 * 그림 표식 자리, 없으면 답과 가장 많이 겹치는 줄부터 잘라 돌려줌.
+	 */
+	static String pickSnippet(List<String> chunks, String answer) {
+		if (chunks.isEmpty()) {
+			return "";
+		}
+		Set<String> answerGrams = bigrams(answer);
+		Matcher m = FIGURE_MARK.matcher(answer);
+		while (m.find()) {
+			for (String c : chunks) {
+				int at = c.indexOf(m.group());
+				if (at >= 0) {
+					return c.substring(at);
+				}
+			}
+		}
+		String best = chunks.get(0);
+		int bestScore = 0;
+		for (String c : chunks) {
+			int score = overlap(c, answerGrams);
+			if (score > bestScore) {
+				best = c;
+				bestScore = score;
+			}
+		}
+		return best.substring(bestLineStart(best, answerGrams));
+	}
+
+	/** 답과 가장 많이 겹치는 줄의 시작 위치. 겹치는 줄이 없으면 0 */
+	private static int bestLineStart(String chunk, Set<String> answerGrams) {
+		int bestStart = 0;
+		int bestScore = 0;
+		int start = 0;
+		for (String line : chunk.split("\n", -1)) {
+			int score = overlap(line, answerGrams);
+			if (score > bestScore) {
+				bestStart = start;
+				bestScore = score;
+			}
+			start += line.length() + 1;
+		}
+		return bestStart;
+	}
+
+	private static int overlap(String text, Set<String> answerGrams) {
+		Set<String> grams = bigrams(text);
+		grams.retainAll(answerGrams);
+		return grams.size();
+	}
+
+	private static Set<String> bigrams(String s) {
+		String t = s.replaceAll("\\s+", "");
+		Set<String> grams = new HashSet<>();
+		for (int i = 0; i + 1 < t.length(); i++) {
+			grams.add(t.substring(i, i + 2));
+		}
+		return grams;
 	}
 
 	/** 출처 스니펫을 버블 분량으로 제한(UI 2줄 클램프보다 조금 넉넉하게) */
