@@ -1,10 +1,9 @@
 package com.ragchatbot.service;
 
-import java.util.Locale;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.ragchatbot.config.EmailDomainPolicy;
 import com.ragchatbot.entity.User;
 import com.ragchatbot.exception.ApiExceptions.UnauthorizedException;
 import com.ragchatbot.repository.UserRepository;
@@ -40,7 +39,7 @@ public class AuthService {
 	}
 
 	public AuthResponse login(LoginRequest req) {
-		String email = normalizeEmail(req.email());
+		String email = EmailDomainPolicy.normalize(req.email());
 		rateLimiter.checkLoginAllowed(email); // 실패 누적이 한도를 넘었으면 더 받지 않음
 		var found = userRepository.findByEmail(email);
 		// 계정 유무와 비밀번호 불일치를 **같은 응답 본문·상태 코드**로 돌려줌(존재 은닉) + 실패만 계수.
@@ -52,9 +51,5 @@ public class AuthService {
 		User user = found.get();
 		return new AuthResponse(jwtService.issue(user.id(), user.email()),
 				new MeResponse(user.id(), user.email(), user.name(), user.role()));
-	}
-
-	private static String normalizeEmail(String email) {
-		return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
 	}
 }

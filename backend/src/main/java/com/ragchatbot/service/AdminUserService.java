@@ -3,7 +3,6 @@ package com.ragchatbot.service;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -38,7 +37,7 @@ public class AdminUserService {
 
 	public AdminUserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
 			TemporaryPasswordGenerator temporaryPasswords, EmailDomainPolicy emailDomainPolicy,
-			@Value("${app.admin.emails:}") String adminEmails) {
+			@Value("${app.admin.emails}") String adminEmails) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.temporaryPasswords = temporaryPasswords;
@@ -55,7 +54,7 @@ public class AdminUserService {
 	 * "이미 있는 이메일"을 돌려주게 되어 계정 존재 여부가 샌다 - 로그인에서 계정 유무를 숨기는 것과 같은 결이다.
 	 */
 	public String create(CreateUserRequest req) {
-		String email = req.email().trim().toLowerCase(Locale.ROOT);
+		String email = EmailDomainPolicy.normalize(req.email());
 		if (!emailDomainPolicy.isAllowed(email)) {
 			throw new BadRequestException(emailDomainPolicy.rejectionMessage());
 		}

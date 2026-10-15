@@ -66,13 +66,7 @@ export default function MessageList({
    * 함께 추가돼 배열의 끝은 늘 assistant 다. 끝만 보면 새 질문을 영영 못 알아챈다
    * (실기기에서 실제로 그렇게 동작하지 않았다).
    */
-  let lastUserMessageIdInList: string | null = null
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].role === 'user') {
-      lastUserMessageIdInList = messages[i].id
-      break
-    }
-  }
+  const lastUserMessageIdInList = messages.findLast((m) => m.role === 'user')?.id ?? null
   useEffect(() => {
     if (lastUserMessageIdInList && lastUserMessageIdInList !== lastUserMessageId.current) {
       lastUserMessageId.current = lastUserMessageIdInList

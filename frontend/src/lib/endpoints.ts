@@ -1,4 +1,4 @@
-import { adoptRefreshedToken, api, API_BASE, getToken, toApiError } from './api'
+import { adoptRefreshedToken, api, API_BASE, authHeaders, toApiError } from './api'
 import type {
   AdminUser,
   Attachment,
@@ -79,13 +79,9 @@ export async function streamChat(
   handlers: ChatStreamHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  const token = getToken()
-  if (token) headers.Authorization = `Bearer ${token}`
-
   const res = await fetch(API_BASE + '/api/chat', {
     method: 'POST',
-    headers,
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
     signal,
   })

@@ -2,7 +2,6 @@ package com.ragchatbot.config;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 import java.util.UUID;
 
@@ -56,7 +55,7 @@ public class AdminRoleSynchronizer {
 			return List.of();
 		}
 		return Arrays.stream(raw.split(","))
-				.map(s -> s.trim().toLowerCase(Locale.ROOT))
+				.map(EmailDomainPolicy::normalize)
 				.filter(s -> !s.isEmpty())
 				.distinct()
 				.toList();
@@ -65,7 +64,7 @@ public class AdminRoleSynchronizer {
 	@Bean
 	ApplicationRunner syncAdminRoles(UserRepository userRepository, PasswordEncoder passwordEncoder,
 			TemporaryPasswordGenerator temporaryPasswords,
-			@Value("${app.admin.emails:}") String adminEmails) {
+			@Value("${app.admin.emails}") String adminEmails) {
 		return args -> {
 			List<String> emails = parse(adminEmails);
 			// 계정이 없는 관리자를 먼저 만든다. 뒤의 승격이 그 계정까지 한 번에 훑도록 순서를 이렇게 둔다

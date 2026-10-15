@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkCjkFriendly from 'remark-cjk-friendly'
 import remarkGfm from 'remark-gfm'
@@ -13,15 +14,23 @@ import remarkGfm from 'remark-gfm'
  * - **한국어 조사 앞의 굵게를 닫는다(#287).** 표준 강조 규칙은 닫는 `**` 앞이 문장부호 · 뒤가 글자면 안 닫는다 -
  *   `**설계불량(부품선정오류)**으로` 가 글자 그대로 보였다(sol 답 30%). remark-cjk-friendly 가 CJK 글자 옆에서 이 규칙을 푼다
  */
+// 답변 버블 안이라 한 단계씩 낮춰 그린다 - h1·h2 는 h3, h3·h4 는 h4
+const heading = ({ children }: { children?: ReactNode }) => (
+  <h3 className="mt-4 mb-2 text-base font-semibold first:mt-0">{children}</h3>
+)
+const subheading = ({ children }: { children?: ReactNode }) => (
+  <h4 className="mt-3 mb-1.5 font-semibold first:mt-0">{children}</h4>
+)
+
 const components: Components = {
   p: ({ children }) => <p className="my-2 break-words first:mt-0 last:mb-0">{children}</p>,
   ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5">{children}</ul>,
   ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5">{children}</ol>,
   li: ({ children }) => <li className="break-words">{children}</li>,
-  h1: ({ children }) => <h3 className="mt-4 mb-2 text-base font-semibold first:mt-0">{children}</h3>,
-  h2: ({ children }) => <h3 className="mt-4 mb-2 text-base font-semibold first:mt-0">{children}</h3>,
-  h3: ({ children }) => <h4 className="mt-3 mb-1.5 font-semibold first:mt-0">{children}</h4>,
-  h4: ({ children }) => <h4 className="mt-3 mb-1.5 font-semibold first:mt-0">{children}</h4>,
+  h1: heading,
+  h2: heading,
+  h3: subheading,
+  h4: subheading,
   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
   a: ({ href, children }) => (
     <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2">

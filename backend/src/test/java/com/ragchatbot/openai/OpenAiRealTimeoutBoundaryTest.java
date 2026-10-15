@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import com.ragchatbot.storage.FileStorage;
@@ -60,15 +61,15 @@ class OpenAiRealTimeoutBoundaryTest {
 	 * <b>실제 기본값</b>끼리도 성립해야 한다.
 	 *
 	 * <p>위 케이스들처럼 값을 손으로 넣으면 「내가 고른 두 수가 부등식을 만족한다」만 재게 된다.
-	 * 여기서는 컨텍스트를 띄워 {@code @Value} 기본값이 실제로 꽂히게 두고, 그 조합이 기동하는지 본다.
-	 * ({@code application.yml} 은 같은 값을 env 로 덮을 수 있게 한 번 더 적는데, 이 저장소가 다른
-	 * 튜닝 값에도 쓰는 방식이다 — 두 자리가 갈리면 env 를 안 준 배포와 준 배포가 다르게 동작한다.)
+	 * 여기서는 컨텍스트에 <b>실제 {@code application.yml}</b> 을 읽혀 그 기본값이 꽂히게 두고, 그 조합이
+	 * 기동하는지 본다. 기본값의 정본은 yml 한 곳이다 — {@code @Value} 에는 다시 적지 않는다(#300).
 	 * 한쪽 기본값만 바꾸면 <b>아무 설정도 주지 않은 배포가 곧바로 기동에 실패</b>하는데, 그 사고가
 	 * 여기서 드러난다.
 	 */
 	@Test
 	void real_defaults_satisfy_the_inequality() {
 		new ApplicationContextRunner()
+				.withInitializer(new ConfigDataApplicationContextInitializer())
 				.withBean(FileStorage.class, () -> mock(FileStorage.class))
 				.withUserConfiguration(OpenAiRealService.class)
 				// 이 빈은 @ConditionalOnProperty 로 live 에서만 로드된다

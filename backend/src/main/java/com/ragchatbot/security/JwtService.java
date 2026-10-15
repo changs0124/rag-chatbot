@@ -25,9 +25,9 @@ public class JwtService {
 	private final long refreshThresholdMinutes;
 
 	public JwtService(
-			@Value("${app.jwt.secret:}") String secret,
-			@Value("${app.jwt.expiration-minutes:120}") long expirationMinutes,
-			@Value("${app.jwt.refresh-threshold-minutes:30}") long refreshThresholdMinutes) {
+			@Value("${app.jwt.secret}") String secret,
+			@Value("${app.jwt.expiration-minutes}") long expirationMinutes,
+			@Value("${app.jwt.refresh-threshold-minutes}") long refreshThresholdMinutes) {
 		JwtSecretPolicy.require(secret, "JWT 서명 불가");
 		this.algorithm = Algorithm.HMAC256(secret);
 		// audience "auth" 강제 - 파일 서명 토큰(aud="file")이 인증 Bearer로 통용되지 않게 분리

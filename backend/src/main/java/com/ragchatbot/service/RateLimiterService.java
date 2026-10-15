@@ -38,11 +38,11 @@ public class RateLimiterService {
 	private final Map<String, Window> windows;
 	private long lastSweptMinute = -1;
 
-	public RateLimiterService(@Value("${app.ratelimit.chat-per-minute:20}") int chatPerMinute,
-			@Value("${app.ratelimit.login-per-minute:10}") int loginPerMinute,
-			@Value("${app.ratelimit.upload-per-minute:30}") int uploadPerMinute,
-			@Value("${app.ratelimit.password-change-per-minute:5}") int passwordChangePerMinute,
-			@Value("${app.ratelimit.max-keys:10000}") int maxKeys) {
+	public RateLimiterService(@Value("${app.ratelimit.chat-per-minute}") int chatPerMinute,
+			@Value("${app.ratelimit.login-per-minute}") int loginPerMinute,
+			@Value("${app.ratelimit.upload-per-minute}") int uploadPerMinute,
+			@Value("${app.ratelimit.password-change-per-minute}") int passwordChangePerMinute,
+			@Value("${app.ratelimit.max-keys}") int maxKeys) {
 		this.chatPerMinute = chatPerMinute;
 		this.loginPerMinute = loginPerMinute;
 		this.uploadPerMinute = uploadPerMinute;

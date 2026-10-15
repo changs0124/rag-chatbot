@@ -53,7 +53,7 @@ public class ChatService {
 
 	public ChatService(ConversationRepository conversationRepository, MessageRepository messageRepository,
 			AttachmentRepository attachmentRepository, OpenAiService openAiService, ChatPersistenceService chatPersistence,
-			@Value("${app.chat.history-token-budget:6000}") int historyTokenBudget) {
+			@Value("${app.chat.history-token-budget}") int historyTokenBudget) {
 		this.conversationRepository = conversationRepository;
 		this.messageRepository = messageRepository;
 		this.attachmentRepository = attachmentRepository;

@@ -59,8 +59,19 @@
 		order by d.created_at desc
 	</select>
 
-	<select id="findInProgressIds" resultType="java.util.UUID">
-		select id from rag_documents
+	<!-- listAlive 의 한 행. 업로드 직후 응답용 - 목록 전체를 읽어 거르지 않게 함(#300) -->
+	<select id="findSummaryById" resultMap="summaryResult">
+		select d.id, d.filename, d.byte_size, d.status, u.name as uploaded_by_name, d.created_at
+		from rag_documents d
+		join users u on u.id = d.uploaded_by
+		where d.id = #{id} and d.deleted_at is null
+	</select>
+
+	<!-- 컬럼은 findAliveById 와 같다. 행을 통째로 받아 id 별 재조회(N+1)를 없앰(#300) -->
+	<select id="findInProgress" resultMap="documentResult">
+		select id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by,
+		       created_at, deleted_at
+		from rag_documents
 		where deleted_at is null and status = 'in_progress'
 	</select>
 

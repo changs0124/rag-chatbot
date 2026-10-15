@@ -74,6 +74,11 @@ app:
     # 종전에는 클라이언트가 하나뿐이라 10분이 여기에도 걸려, in_progress 3건이면 관리자 목록
     # 요청 하나가 최대 30분 톰캣 스레드를 잡았음
     request-timeout-ms: ${OPENAI_REQUEST_TIMEOUT_MS:30000}
+    # 테스트 훅 - env 로 노출하지 않음. 증분 수신을 실 코드 경로로 재려고 엔드포인트를 갈아 끼우는 자리
+    base-url: https://api.openai.com/v1
+  mock:
+    # 테스트 훅 - env 로 노출하지 않음. 목업 토큰당 지연(ms) - 타이핑 효과용이며 테스트는 0
+    token-delay-ms: 45
   cors:
     # 프론트 출처(개발: Vite 5173). 배포 시 실제 도메인으로 교체
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
@@ -110,6 +115,8 @@ app:
     # 고아(미연결) 첨부 회수 - 유예 시간과 주기. 유예보다 최근 것은 어떤 cutoff 로도 지우지 않음
     orphan-ttl-minutes: ${ORPHAN_TTL_MINUTES:60}
     orphan-cleanup-cron: ${ORPHAN_CLEANUP_CRON:0 0 * * * *}
+    # 첨부 서빙용 서명 경로 토큰의 수명(분). <img src> 가 헤더를 못 실어 URL 에 토큰을 싣는다(M6/AC-22)
+    access-token-ttl-minutes: ${FILE_ACCESS_TOKEN_TTL_MINUTES:15}
   doc-figures:
     # 문서 그림 루트(FEAT-CHAT-004). 전처리가 만든 <key>.png 를 둠. 비면 live 는 그림이 전부 404 이고
     # mock 은 classpath mock-figures/ 견본을 씀. 기동은 막지 않음 - 그림은 보조 정보다
