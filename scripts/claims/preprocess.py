@@ -38,6 +38,20 @@ NAME_LIKE = re.compile(r"(?<![가-힣])([가-힣]{2,3})\s?(?:" + "|".join(TITLES
 # 「부장님」·「책임매니저」처럼 직함이 직함에 붙은 경우도 걸리므로 직함 자체도 뺀다
 NOT_A_NAME = {"고객", "센터", "담당", "업체", "본사", "현장", "지사", "영업", "창원", "부산", "서울", "협력사", *TITLES}
 
+# 장비 알람 코드(#267). 접두 `AL` · `L`(점·공백 선택) + 4자리, 또는 접두 없는 2xxx. 접두 없는 쪽은
+# 날짜(2023-06-19) · 연도(2024년) · 전압(220V) · 소수가 걸리지 않게 앞뒤를 막는다. 원본 실측으로 맞춘 규칙이다 -
+# 2144 를 115건(표기 변형 8건 포함)으로 센다
+ALARM_PREFIXED = re.compile(r"(?i)(?<![A-Za-z0-9])A?L\s*\.?\s*(\d{4})(?!\d)")
+ALARM_BARE = re.compile(r"(?<![\d\-/A-Za-z])(?<!\d\.)(2\d{3})(?![\d년\-/]|\.\d|\s*년|\s*[Vv])")
+# 드라이브 7세그 표시의 저전압 `UU`(AL1-UU · ALP_UU · 「드라이브 UU」 …). 표기가 제각각이라 UU 만 본다
+UU = re.compile(r"(?i)(?<![A-Za-z])UU(?![A-Za-z])")
+
+
+def alarm_codes(value):
+    text = fmt(value)
+    return sorted(set(ALARM_PREFIXED.findall(text)) | set(ALARM_BARE.findall(text)))
+
+
 FIELDS = ["입고일자", "품번", "품명", "업체명", "기종", "호기정보", "출하일", "고장일", "사용일",
           "S/W 버전", "S/N", "불량유형", "분석내용", "불량원인", "소손 및 불량소자", "최종원인"]
 
@@ -121,6 +135,30 @@ def claims_to_md(xlsx, terms):
         c = collections.Counter(fmt(r[key]) or "(비어 있음)" for r in recs)
         return [f"- {k} : {n}건" for k, n in c.most_common(top)]
 
+    def breakdown(groups, min_count=1, by_name=False):
+        """그룹 → 최종원인 분포. 기본은 건수 순, 연도처럼 순서가 있는 그룹은 이름 순"""
+        lines = []
+        order = (lambda kv: kv[0]) if by_name else (lambda kv: (-len(kv[1]), kv[0]))
+        for name, rs in sorted(groups.items(), key=order):
+            if len(rs) < min_count:
+                continue
+            fin = collections.Counter(fmt(r["최종원인"]) or "(비어 있음)" for r in rs)
+            lines.append(f"- {name} : {len(rs)}건 — " + " · ".join(f"{k} {n}" for k, n in fin.most_common()))
+        return lines
+
+    def group(key_fn):
+        g = collections.defaultdict(list)
+        for r in recs:
+            for k in key_fn(r):
+                g[k].append(r)
+        return g
+
+    by_year = group(lambda r: [f"{r['입고일자'].year}년"] if isinstance(r["입고일자"], dt.datetime) else ["(입고일자 없음)"])
+    by_model = group(lambda r: [fmt(r["기종"]) or "(비어 있음)"])
+    by_alarm = group(lambda r: [f"AL.{c}" for c in alarm_codes(r["불량내용"])])
+    with_uu = [r for r in recs if UU.search(fmt(r["불량내용"]))]
+    with_2144_or_uu = [r for r in recs if "2144" in alarm_codes(r["불량내용"]) or UU.search(fmt(r["불량내용"]))]
+
     dates = sorted(r["입고일자"] for r in recs if isinstance(r["입고일자"], dt.datetime))
     usage = [r["사용일"] for r in recs if isinstance(r["사용일"], (int, float))]
     out = [
@@ -140,17 +178,36 @@ def claims_to_md(xlsx, terms):
         "### 불량유형별 건수", "", *count("불량유형"), "",
         "### 소손 및 불량소자별 건수 (상위 15)", "", *count("소손및불량소자", 15), "",
         "### 품번별 건수", "", *count("품번"), "",
-        "### 기종별 건수 (상위 15)", "", *count("기종", 15), "",
+        "### 입고 연도별 건수와 최종원인 (입고일자의 연도 기준)", "", *breakdown(by_year, by_name=True), "",
+        "### 기종별 건수와 최종원인 (전체 기종, 기종 이름이 조금만 달라도 다른 기종 — 예 : T 4000 과 T 4000L)", "",
+        *breakdown(by_model), "",
+        "### 알람 코드별 건수와 최종원인 (불량 내용 기준)", "",
+        "집계 기준 : 「불량 내용」에 그 코드가 한 번이라도 나온 클레임 수. `AL.2144` · `AL2144` · `L.2144` · `al2144` · 접두 없는 `2144`",
+        "같은 표기 변형은 하나로 셌다. 한 클레임에 코드가 여럿이면 각 코드에 하나씩 센다(합이 총 건수보다 크다).", "",
+        *breakdown(by_alarm, min_count=2), "",
+        "### 드라이브 표시 UU (저전압) 언급 건수", "",
+        # 분포까지 함께 둔다 - 건수만 있으면 모델이 이 숫자를 들고 최종원인 분포를 지어냈다(QA E3)
+        # AL.2144 만의 줄을 합집합 바로 곁에 둔다 - 이 절만 검색되면 모델이 합집합(143)을 AL.2144 건수로 읽었다(QA E3)
+        *breakdown({"장비 알람 `AL.2144` 만(드라이브 표시 UU 제외)": by_alarm.get("AL.2144", [])}),
+        *breakdown({"드라이브 표시 `UU`(`AL1-UU` · `ALP-UU` · `AL 1_UU` 등 표기 무관)가 나온 클레임": with_uu,
+                    "저전압 계열 전체 — 장비 알람 `AL.2144` 와 드라이브 표시 `UU` 중 하나라도 나온 클레임(합집합). `AL.2144` 만의 건수는 위 알람 코드 표": with_2144_or_uu}, by_name=True), "",
         "## 클레임 상세", "",
+        "각 줄 앞의 `[클레임 N]` 은 그 줄이 어느 클레임의 것인지다. 검색 조각이 클레임 중간에서 잘려도 줄마다 출처가 남게 붙였다.", "",
     ]
     for r in recs:
+        tag = f"[클레임 {fmt(r['순번'])}]"
         out.append(f"### 클레임 {fmt(r['순번'])} · 서비스번호 {fmt(r['서비스번호'])}")
         out.append("")
-        out.append(f"- 불량 내용 : {fmt(r['불량내용'])}")
+        # **결론을 머리 바로 밑에 한 줄로 둔다.** 「불량 내용」이 길면 분석 · 최종원인 줄은 다음 검색 조각으로 넘어가,
+        # 서비스번호로 찾은 조각에는 원인이 없다 - 모델은 이웃 클레임의 흔한 원인(R64)으로 메꿨다(QA D2)
+        summary = [f"서비스번호 {fmt(r['서비스번호'])}"] + [
+            f"{f} {fmt(r[f])}" for f in ("기종", "호기정보", "분석내용", "불량원인", "최종원인") if fmt(r[f])]
+        out.append(f"- {tag} 요약 : " + " · ".join(summary))
+        out.append(f"- {tag} 불량 내용 : {fmt(r['불량내용'])}")
         for f in FIELDS:
             v = fmt(r[re.sub(r'\s+', '', f)])
             if v:
-                out.append(f"- {f} : {v}")
+                out.append(f"- {tag} {f} : {v}")
         out.append("")
     return "\n".join(out), len(recs), alias
 
