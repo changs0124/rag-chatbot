@@ -7,11 +7,7 @@
 
 ## 진행 중
 
-- [#243](https://github.com/changs0124/rag-chatbot/issues/243) Lightsail 이전 — 운영 반영 · merge 끝, **첫 자동 스냅샷 확인 뒤 close**
-- [#255](https://github.com/changs0124/rag-chatbot/issues/255) 스냅샷 복구 리허설(첫 자동 스냅샷 뒤)
-- [#296](https://github.com/changs0124/rag-chatbot/issues/296) · [#297](https://github.com/changs0124/rag-chatbot/issues/297) ·
-  [#298](https://github.com/changs0124/rag-chatbot/issues/298) · [#302](https://github.com/changs0124/rag-chatbot/issues/302) —
-  2026-10-15 문서 · 주석 · README 정리
+없음. 다음 할 일은 [backlog.md](./backlog.md) 에서 고른다.
 
 ## 완료
 
