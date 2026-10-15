@@ -1,0 +1,1 @@
+dist/assets/index-BEDlQAgI.js 470.10 kB │ gzip: 147.57 kB
