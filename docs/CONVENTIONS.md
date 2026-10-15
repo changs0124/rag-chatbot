@@ -86,7 +86,7 @@
     파비콘도 이 파일에서 렌더하므로 **사본을 따로 두지 않는다**
   - `frontend/index.html` 의 `theme-color`(주소창 색) — `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와
     같은 값을 손으로 맞춘다. `media="(prefers-color-scheme: …)"` 로 두지 않는다 — OS 가 다크면 주소창만 다크가 된다
-  - 아래가 **토큰이 아닌 면** 위에 얹히는 곳 — 사진·영상 위 오버레이(`ImageLightbox` · `CameraCapture` ·
+  - 아래가 **토큰이 아닌 면** 위에 얹히는 곳 — 사진·영상 위 오버레이(`ImageLightbox` ·
     `Composer` 썸네일). 아래 면이 화면 색과 무관하므로 토큰이 성립하지 않는다
   자리를 늘리려면 [design-system.md](./02_architecture/design-system.md) 「색 값을 들고 있는 파일 — 셋이다」를 함께 고친다.
 - **이모지·장식 기호를 화면에 쓰지 않는다**(#192). 아이콘은 `components/icons.tsx` 의 라인 아이콘만 쓴다 — `src/no-emoji.test.ts` 가 막는다.

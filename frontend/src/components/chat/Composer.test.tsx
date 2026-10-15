@@ -360,37 +360,36 @@ describe('Composer', () => {
     await waitFor(() => expect(deleteAttachment).toHaveBeenCalledWith('a2'))
   })
 
-  describe('첨부 메뉴 (#218)', () => {
+  describe('첨부 (+) 버튼 (#218 · #289)', () => {
     const original = window.matchMedia
     afterEach(() => {
       window.matchMedia = original
     })
 
-    /** 포인터 종류만 흉내 냄 - 이 컴포넌트가 묻는 미디어 쿼리는 하나뿐임 */
+    /** 포인터 종류만 흉내 냄 - 터치 환경에서도 앱 안 카메라가 없어야 함 */
     function pointer(coarse: boolean) {
       window.matchMedia = ((query: string) => ({
         matches: coarse && query === '(pointer: coarse)',
       })) as unknown as typeof window.matchMedia
     }
 
-    it('마우스·트랙패드 환경에서는 「카메라」 항목이 없음', () => {
-      pointer(false)
+    it.each([
+      ['터치', true],
+      ['마우스·트랙패드', false],
+    ])('%s 환경에서 + 는 메뉴 없이 기기 선택창을 바로 연다 - 「카메라」 항목 없음', (_, coarse) => {
+      pointer(coarse)
       render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      const open = vi.spyOn(input, 'click').mockImplementation(() => {})
+
       fireEvent.click(screen.getByLabelText('첨부 추가'))
 
-      expect(screen.getByText('사진')).toBeInTheDocument()
+      expect(open).toHaveBeenCalledTimes(1)
       expect(screen.queryByText('카메라')).toBeNull()
+      expect(screen.queryByText('사진')).toBeNull()
     })
 
-    it('터치 환경에서는 「카메라」 항목이 있음', () => {
-      pointer(true)
-      render(<Composer onSend={noop} streaming={false} onStop={noop} />)
-      fireEvent.click(screen.getByLabelText('첨부 추가'))
-
-      expect(screen.getByText('카메라')).toBeInTheDocument()
-    })
-
-    it('사진 선택기는 서버 허용 형식만 받음 - image/* 면 일부 모바일 선택기가 촬영 항목을 붙임', () => {
+    it('사진 선택기는 서버 허용 형식만 받음', () => {
       render(<Composer onSend={noop} streaming={false} onStop={noop} />)
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
 
