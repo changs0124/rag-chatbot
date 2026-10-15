@@ -5,6 +5,9 @@
 ## [Unreleased]
 
 ### Changed
+- **README 를 현재 코드 · 문서에 맞춰 다시 썼다(#302).** 공개 저장소 첫 화면이라 기능 · 구조 · 기술 스택 · 로컬 실행 · 테스트와 CI · 배포 개요 · 문서 표 순으로 정리했다.
+  - 버전은 `frontend/package.json` · `backend/pom.xml` · Spring Boot BOM · `.nvmrc` 에서, 기본값은 `application.yml` · `.env.example` 에서 옮겼다(동시 스트림 16 / 1 · 모델 `gpt-6-sol`)
+  - 서버 이름 · 호스팅 업체 · 백엔드 도메인 · 스토어 ID · 계정 주소는 적지 않는다 — 배포는 「단일 서버 자체 호스팅」으로만 쓰고 상세는 `backend.md` 「배포」로 넘긴다
 - **문서가 코드와 다르게 말하던 곳을 고쳤다(#296).** 사실 정정만 했고 경위 압축 · 문서 간 중복 정리는 #297 이다.
   - overview : 시퀀스도 순서를 동시성 획득 → 레이트리밋(#96)으로, 「전역 8자리」 → 전역 상한 16(#278)
   - backend : 이력 제외에 `timed_out && stopped`(#84) 추가 · 읽기 타임아웃은 `stream-read-timeout-ms` 가 맡음 ·
