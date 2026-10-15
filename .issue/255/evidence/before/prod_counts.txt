@@ -1,0 +1,8 @@
+# 운영 행 수 (지금 2026-10-15 17:13:03 · 스냅샷 시각 이전 생성분) — 표|전체|스냅샷 이전
+attachments|0|0
+citations|6|6
+conversations|3|3
+messages|14|14
+rag_documents|8|4
+users|1|1
+flyway_schema_history|9|9
