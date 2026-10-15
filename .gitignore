@@ -20,11 +20,9 @@ application-secret.yaml
 # === Node / Vite (frontend) ===
 node_modules/
 dist/
-dist-ssr/
 .vite/
 *.local
 coverage/
-.eslintcache
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -41,10 +39,7 @@ backend/uploads/
 target/
 *.class
 *.jar
-*.war
 !/backend/.mvn/wrapper/maven-wrapper.jar
-build/
-.gradle/
 
 # === IDE / 도구 상태 ===
 .idea/
@@ -52,7 +47,6 @@ build/
 *.iws
 *.ipr
 .vscode/*
-!.vscode/extensions.json
 .settings/
 .classpath
 .project

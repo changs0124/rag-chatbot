@@ -37,8 +37,11 @@ public class FileService {
 	/** webp 컨테이너의 오프셋 8에 있는 "WEBP" 마커 */
 	private static final byte[] WEBP_MARKER = { 0x57, 0x45, 0x42, 0x50 };
 
-	/** content-type → (확장자, 파일유형, 최대크기, 매직바이트) */
-	private record AllowedType(String extension, String fileType, long maxSize, byte[] magic, String mediaType) {
+	/** 첨부의 file_type - 받는 것이 이미지뿐이라 항상 이 값(R-2) */
+	private static final String FILE_TYPE = "image";
+
+	/** content-type(맵 키) → (확장자, 최대크기, 매직바이트) */
+	private record AllowedType(String extension, long maxSize, byte[] magic) {
 	}
 
 	/**
@@ -48,10 +51,10 @@ public class FileService {
 	 * 업로드가 필요하고 그건 실 키가 있어야 검증되므로, 지금은 **받지 않는 것**을 계약으로 함.
 	 */
 	private static final Map<String, AllowedType> ALLOWED = Map.of(
-			"image/jpeg", new AllowedType("jpg", "image", 10 * MB, new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF }, "image/jpeg"),
-			"image/png", new AllowedType("png", "image", 10 * MB, new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }, "image/png"),
-			"image/gif", new AllowedType("gif", "image", 10 * MB, new byte[] { 0x47, 0x49, 0x46, 0x38 }, "image/gif"),
-			"image/webp", new AllowedType("webp", "image", 10 * MB, new byte[] { 0x52, 0x49, 0x46, 0x46 }, "image/webp"));
+			"image/jpeg", new AllowedType("jpg", 10 * MB, new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF }),
+			"image/png", new AllowedType("png", 10 * MB, new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }),
+			"image/gif", new AllowedType("gif", 10 * MB, new byte[] { 0x47, 0x49, 0x46, 0x38 }),
+			"image/webp", new AllowedType("webp", 10 * MB, new byte[] { 0x52, 0x49, 0x46, 0x46 }));
 
 	private final FileStorage fileStorage;
 	private final AttachmentRepository attachmentRepository;
@@ -83,7 +86,7 @@ public class FileService {
 			throw new BadRequestException("파일을 읽을 수 없음");
 		}
 		if (bytes.length > type.maxSize()) {
-			throw new BadRequestException("용량 초과(" + type.fileType() + " 최대 " + (type.maxSize() / MB) + "MB)");
+			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (type.maxSize() / MB) + "MB)");
 		}
 		if (!regionEquals(bytes, 0, type.magic())) {
 			throw new BadRequestException("파일 내용이 형식과 일치하지 않음");
@@ -95,8 +98,8 @@ public class FileService {
 
 		String storagePath = fileStorage.store(userId, type.extension(), bytes);
 		UUID id = UUID.randomUUID();
-		attachmentRepository.insert(new Attachment(id, null, userId, storagePath, type.fileType(), null, null));
-		return new AttachmentResponse(id, type.fileType(), issueUrl(id, userId));
+		attachmentRepository.insert(new Attachment(id, null, userId, storagePath, FILE_TYPE, null, null));
+		return new AttachmentResponse(id, FILE_TYPE, issueUrl(id, userId));
 	}
 
 	/** 서빙 - 서명 토큰 검증 후 소유자 첨부만. 실패는 전부 404(존재 은닉, P-3). */
@@ -109,9 +112,9 @@ public class FileService {
 		}
 		Attachment att = attachmentRepository.findByIdAndUser(fileId, userId)
 				.orElseThrow(() -> new NotFoundException("파일 없음"));
-		String mediaType = ALLOWED.values().stream()
-				.filter(t -> att.storagePath().endsWith("." + t.extension()))
-				.map(AllowedType::mediaType)
+		String mediaType = ALLOWED.entrySet().stream()
+				.filter(e -> att.storagePath().endsWith("." + e.getValue().extension()))
+				.map(Map.Entry::getKey)
 				.findFirst()
 				.orElse("application/octet-stream");
 		return new ServedFile(fileStorage.load(att.storagePath()), mediaType);

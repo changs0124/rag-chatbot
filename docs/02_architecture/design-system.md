@@ -279,7 +279,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 
 | 파일 | 쓰임 | 배경 |
 |------|------|------|
-| `frontend/public/favicon-source.png` | 512px 래스터. `Logo.tsx` 의 마크를 렌더한 산출물이고 작은 크기는 여기서 뽑는다 | 투명 |
+| `docs/02_architecture/assets/favicon-source.png` | 512px 래스터. `Logo.tsx` 의 마크를 렌더한 산출물이고 작은 크기는 여기서 뽑는다 | 투명 |
 | `frontend/public/favicon.ico` | 16 · 32 · 48px 묶음 (탭) | 투명 |
 | `frontend/public/favicon-32.png` | 32px PNG | 투명 |
 | `frontend/public/apple-touch-icon.png` | 180px (iOS 홈 화면) | **흰 타일** |
@@ -288,8 +288,9 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 계획 단계에서는 `logo-mark.svg` 를 커밋할 예정이었고, 구현이 인라인 SVG 로 바뀌면서 그 문단만
 주인을 잃은 것이다(#153 에서 정리).
 
-`favicon-source.png` 는 **아무도 참조하지 않는 채 빌드 산출물에 실린다**(10KB). 생성 중간 산물이
-`public/` 에 있어서인데, 줄이려면 빌드가 복사하지 않는 곳으로 옮겨야 한다. **이번 범위 밖이라 두었다.**
+`favicon-source.png` 는 생성 중간 산물이라 `frontend/public/` 에 두지 않는다 — 거기 있으면
+아무도 참조하지 않는 채 빌드 산출물에 실린다(10KB). #299 에서 빌드가 복사하지 않는 이 문서 옆
+`assets/` 로 옮겼다.
 
 ### 재생성 절차
 
@@ -307,12 +308,12 @@ node -e "
 const {chromium}=require('playwright'),{readFileSync}=require('fs');
 (async()=>{const b=await chromium.launch(),p=await(await b.newContext({viewport:{width:512,height:512}})).newPage();
 await p.setContent('<body style=\"margin:0\">'+readFileSync(process.argv[1],'utf8')+'</body>');
-await p.screenshot({path:'frontend/public/favicon-source.png',omitBackground:true});await b.close()})()" <svg파일>
+await p.screenshot({path:'docs/02_architecture/assets/favicon-source.png',omitBackground:true});await b.close()})()" <svg파일>
 
 # 3) 512px -> 나머지 3종
 python -c "
 from PIL import Image
-s=Image.open('frontend/public/favicon-source.png').convert('RGBA')
+s=Image.open('docs/02_architecture/assets/favicon-source.png').convert('RGBA')
 s.resize((32,32),Image.LANCZOS).save('frontend/public/favicon-32.png')
 t=Image.new('RGBA',(180,180),(255,255,255,255)); t.alpha_composite(s.resize((180,180),Image.LANCZOS))
 t.convert('RGB').save('frontend/public/apple-touch-icon.png')

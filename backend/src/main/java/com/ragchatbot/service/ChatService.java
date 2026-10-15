@@ -62,8 +62,7 @@ public class ChatService {
 		this.historyTokenBudget = historyTokenBudget;
 	}
 
-	public record PreparedChat(UUID conversationId, String message, List<AttachmentRef> refs, String vectorStoreId,
-			List<Turn> history) {
+	public record PreparedChat(UUID conversationId, String message, List<AttachmentRef> refs, List<Turn> history) {
 	}
 
 	/** 동기 준비 - 소유권/검증 + 사용자 메시지 저장 + 첨부 연결 */
@@ -95,7 +94,7 @@ public class ChatService {
 			if (att.messageId() != null) {
 				throw new BadRequestException("이미 보낸 첨부는 다시 사용할 수 없음");
 			}
-			refs.add(new AttachmentRef(att.fileType(), att.storagePath(), att.openaiFileId()));
+			refs.add(new AttachmentRef(att.fileType(), att.storagePath()));
 		}
 
 		// 이력은 **새 사용자 메시지를 넣기 전에** 읽음 - 넣고 읽으면 방금 보낸 것이 이력에 섞여 중복됨
@@ -109,7 +108,7 @@ public class ChatService {
 		for (UUID attId : distinctIds) {
 			attachmentRepository.linkToMessage(attId, userMsgId, userId);
 		}
-		return new PreparedChat(conversation.id(), message, refs, conversation.vectorStoreId(), history);
+		return new PreparedChat(conversation.id(), message, refs, history);
 	}
 
 	private Set<UUID> messageIdsWithAttachments(UUID conversationId) {
@@ -218,7 +217,7 @@ public class ChatService {
 			onStage.accept(Stage.ANALYZING, List.of());
 
 			completion = openAiService.streamChat(
-					new ChatInput(prepared.message(), prepared.refs(), prepared.vectorStoreId(), prepared.history()),
+					new ChatInput(prepared.message(), prepared.refs(), prepared.history()),
 					token -> {
 						firstTokenSeen[0] = true;
 						// 보낸 뒤에 담음 - 중단 시 저장분이 "화면에 닿은 만큼"과 같아짐(전송 실패한 토큰은 남기지 않음)

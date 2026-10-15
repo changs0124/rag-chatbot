@@ -28,7 +28,6 @@ mybatis:
     map-underscore-to-camel-case: true
   mapper-locations: classpath:mapper/*.xml
   type-handlers-package: com.ragchatbot.repository.handler
-  type-aliases-package: com.ragchatbot.entity
 
 server:
   # Cloud/컨테이너 대응 - PORT 우선 리슨
