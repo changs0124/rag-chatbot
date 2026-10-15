@@ -63,7 +63,7 @@ app:
   openai:
     # 실 연동(APP_MODE=live)에서만 사용. 공용 Vector Store를 env로 지정(대화별 스토어 대신, 공용 Store 결정)
     api-key: ${OPENAI_API_KEY:}
-    model: ${OPENAI_MODEL:gpt-4o}
+    model: ${OPENAI_MODEL:gpt-6-sol}
     vector-store-id: ${OPENAI_VECTOR_STORE_ID:}
     # 스트리밍(/responses) 읽기 타임아웃. **app.chat.sse-timeout-ms 보다 작아야 하며, 크거나 같으면
     # 기동에 실패함**(#76·#92) - emitter 가 죽은 뒤에도 워커가 읽기에 붙어 있으면 그동안 스레드와

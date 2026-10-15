@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Changed
+- **`OPENAI_MODEL` 기본값을 `gpt-4o` → `gpt-6-sol` 로 맞췄다(#304).** 운영은 env 로 이미 sol 이라 동작 영향은 없다.
+  env 를 빠뜨리면 운영과 다른 모델로 조용히 돌았고, 인용 표기 필터(#277) · `turnNfileM` 복원(#281)은 sol 계열 전제다.
+  yml · `.env.example` · README · INDEX · overview · live-integration 의 표기, 테스트의 모델명 문자열을 함께 바꿨다
+  (overview 「알려진 제약」의 「gpt-4o 는 노후 라인」 → 「계열을 바꾸면 QA 를 다시 잰다」)
+
 ### Removed
 - **쓰이지 않는 `GET /api/profile` 을 지웠다(#303).** `GET /api/auth/me` 와 같은 `profileService.me()` 를 부르는 두 번째 경로였고
   화면은 `/api/auth/me` 만 쓴다. #105 §6 은 「`ProfileFlowTest` 가 비밀번호 변경 뒤 새 토큰 검증에 쓴다」며 남겼는데, 그 검증을

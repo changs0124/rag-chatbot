@@ -68,7 +68,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 | **JWT 서명 시크릿** | `JWT_SECRET` | **기동 실패**(`JwtSecretPolicy.require`). **32바이트 미만도 기동 실패**다. 32바이트 이상 임의 문자열 — `openssl rand -base64 48` |
 | OpenAI API 키 | `OPENAI_API_KEY` | `APP_MODE=live` 기동 즉시 실패(fail-fast). per-request 401로 흐르지 않는다 |
 | 공용 Vector Store ID | `OPENAI_VECTOR_STORE_ID` | 기동·응답은 되지만 `file_search` 툴을 아예 붙이지 않아 **출처가 항상 0건**이 된다 |
-| 모델 이름 | `OPENAI_MODEL` | 미지정 시 `gpt-4o`. 비전 입력을 쓰므로 **이미지 지원 모델이어야 한다** |
+| 모델 이름 | `OPENAI_MODEL` | 미지정 시 `gpt-6-sol`(운영과 같음). 비전 입력을 쓰므로 **이미지 지원 모델이어야 한다** |
 | 실행 모드 | `APP_MODE=live` | 미설정이면 `AppModeGuard`가 기동을 막는다(의도된 설계) |
 | **계정 허용 도메인** | `ALLOWED_EMAIL_DOMAINS` | **기동 즉시 실패**(FEAT-AUTH-001). 비면 관리자의 오타 한 번으로 사외 주소에 계정이 열리므로, 조용히 열리지 않도록 일부러 막는다 |
 | 관리자 이메일 명단 | `ADMIN_EMAILS` | 관리자가 0명이 되어 **문서를 등록할 사람이 없다.** 기동은 정상이라 5절 단계에서야 드러난다 |

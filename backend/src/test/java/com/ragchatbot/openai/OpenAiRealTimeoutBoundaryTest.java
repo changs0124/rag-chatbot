@@ -28,7 +28,7 @@ class OpenAiRealTimeoutBoundaryTest {
 	private static final String BASE_URL = "http://localhost:1";
 
 	private static OpenAiRealService create(long streamReadMs, long sseMs) {
-		return new OpenAiRealService("test-key", "gpt-4o", "", BASE_URL, streamReadMs, 30_000, sseMs, null);
+		return new OpenAiRealService("test-key", "gpt-6-sol", "", BASE_URL, streamReadMs, 30_000, sseMs, null);
 	}
 
 	/** 같은 값이면 막는다 - 이것이 실제로 있던 상태다(둘 다 10분) */

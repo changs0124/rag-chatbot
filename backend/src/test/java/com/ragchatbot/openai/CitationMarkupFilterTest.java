@@ -70,7 +70,7 @@ class CitationMarkupFilterTest {
 				data:{"type":"response.completed","response":{"output":[]}}
 				""";
 		List<String> tokens = new ArrayList<>();
-		OpenAiRealService service = new OpenAiRealService("test-key", "gpt-4o", "", "http://localhost:1",
+		OpenAiRealService service = new OpenAiRealService("test-key", "gpt-6-sol", "", "http://localhost:1",
 				540_000, 30_000, 600_000, null);
 
 		ChatCompletion result = service.consumeStream(new ByteArrayInputStream(sse.getBytes(StandardCharsets.UTF_8)),

@@ -25,7 +25,7 @@ class CitationFromMarkupTest {
 		String sse = "data:{\"type\":\"response.output_text.delta\",\"delta\":\"" + deltaJson + "\"}\n"
 				+ "data:{\"type\":\"response.completed\",\"response\":{\"output\":[" + SEARCHES
 				+ ",{\"type\":\"message\",\"content\":[{\"annotations\":[" + messageAnnotations + "]}]}]}}\n";
-		OpenAiRealService service = new OpenAiRealService("test-key", "gpt-4o", "", "http://localhost:1",
+		OpenAiRealService service = new OpenAiRealService("test-key", "gpt-6-sol", "", "http://localhost:1",
 				540_000, 30_000, 600_000, null);
 		return service.consumeStream(new ByteArrayInputStream(sse.getBytes(StandardCharsets.UTF_8)), t -> { },
 				(stage, sources) -> { });

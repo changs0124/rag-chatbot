@@ -31,7 +31,7 @@ class OpenAiRealUsageTest {
 
 	private static OpenAiRealService service() {
 		// 생성자는 키만 비지 않으면 뜸. consumeStream 은 네트워크를 타지 않는 순수 파서라 이대로 충분함
-		return new OpenAiRealService("test-key", "gpt-4o", "", "https://example.invalid/v1", STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
+		return new OpenAiRealService("test-key", "gpt-6-sol", "", "https://example.invalid/v1", STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 	}
 
 	private static ChatCompletion consume(String body) {

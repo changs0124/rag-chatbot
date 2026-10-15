@@ -78,7 +78,7 @@ class OpenAiRealStreamingSpikeTest {
 	@Test
 	void rest_client_delivers_sse_incrementally() {
 		String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
-		var service = new OpenAiRealService("test-key", "gpt-4o", "", baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
+		var service = new OpenAiRealService("test-key", "gpt-6-sol", "", baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 		List<String> tokens = new ArrayList<>();
 
 		var result = service.streamChat(
