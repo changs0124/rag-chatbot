@@ -1,0 +1,33 @@
+{
+ "model": "gpt-6-sol",
+ "answers": 37,
+ "answers_with_marker": 0,
+ "http_errors": 0,
+ "p50_sec": 10.3,
+ "p90_sec": 13.8,
+ "grading": {
+  "score": 33.0,
+  "of": 34,
+  "fail": 0,
+  "partial": [
+   "F1",
+   "G1"
+  ]
+ },
+ "noSource_on_grounded_answer": [
+  "F3",
+  "FU2-turn2"
+ ],
+ "claims_auto_pass": {
+  "D2": 3,
+  "D4": 0,
+  "E1": 3,
+  "E2": 3,
+  "E3": 2,
+  "E4": 3,
+  "FU1": 2,
+  "FU2": 3,
+  "R1": 3
+ },
+ "vision": "ok (tm-p008-f1.png 경고 표지 3개 정확히 설명)"
+}

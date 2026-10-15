@@ -1,0 +1,131 @@
+{
+ "summary": {
+  "label": "after",
+  "n": 12,
+  "answers_with_stream_marker": 0,
+  "answers_with_db_marker": 0,
+  "p50_sec": 14.7
+ },
+ "rows": [
+  {
+   "id": "A2",
+   "rep": 0,
+   "sec": 11.3,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 1,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "A5",
+   "rep": 0,
+   "sec": 17.4,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 1,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "C3",
+   "rep": 0,
+   "sec": 9.5,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 1,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "D1",
+   "rep": 0,
+   "sec": 28.5,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 1,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "F1",
+   "rep": 0,
+   "sec": 14.7,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 2,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "F3",
+   "rep": 0,
+   "sec": 10.9,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 0,
+   "noSource": true,
+   "http": null
+  },
+  {
+   "id": "A2",
+   "rep": 1,
+   "sec": 10.1,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 1,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "A5",
+   "rep": 1,
+   "sec": 15.1,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 1,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "C3",
+   "rep": 1,
+   "sec": 9.6,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 1,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "D1",
+   "rep": 1,
+   "sec": 29.4,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 1,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "F1",
+   "rep": 1,
+   "sec": 25.5,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 2,
+   "noSource": false,
+   "http": null
+  },
+  {
+   "id": "F3",
+   "rep": 1,
+   "sec": 14.7,
+   "stream_markers": 0,
+   "db_markers": 0,
+   "citations": 2,
+   "noSource": false,
+   "http": null
+  }
+ ]
+}
