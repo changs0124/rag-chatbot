@@ -1,0 +1,3 @@
+# before — 로컬 app(main 이미지)
+GET /api/profile -> 200
+GET /api/auth/me -> 200

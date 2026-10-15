@@ -1,0 +1,4 @@
+# after — 테스트(같은 Spring 컨텍스트 · 실 Postgres)
+ProfileFlowTest.get_profile_route_is_gone : GET /api/profile (유효 토큰) -> 404  PASS
+update_name_is_reflected · update_password_returns_usable_token · theme_is_gone_from_api : /api/auth/me 로 이전 후 PASS
+backend 287 / 하한 287
