@@ -560,7 +560,7 @@ S3 등으로 교체해야 한다.
 | `no-new-privileges` | ✅ | ✅ | ✅ |
 | `cap_drop: ALL` | ✅ (추가 없음 — **capability 0개**) | ✅ + 최소 4개 | ✅ |
 | `read_only` | ✅ + `/tmp` tmpfs 64m | — (postgres 가 런타임에 쓴다) | — (동작 검증 불가, 아래 참고) |
-| `pids_limit` | 256 | 128 | 64 |
+| `pids_limit` | 288 | 128 | 64 |
 | 로그 회전 | 10m × 3 | **10m × 3 (신규)** | **10m × 3 (신규)** |
 | 네트워크 | `backend` + `edge` | `backend` | `edge` |
 

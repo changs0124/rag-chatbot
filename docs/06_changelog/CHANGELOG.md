@@ -12,6 +12,9 @@
   - 로컬 확인 : mock + 기본 → 기동 실패(AC-18 문구) · mock + 빈 프로필 → 기동 · live + 기본 → 기동
 
 ### Changed
+- **app 의 `pids_limit` 를 256 → 288 로 올렸다(#301).** 산식이 「Tomcat 200 + 유휴 36 + 여유」뿐이라 채팅 실행기 고정 풀을
+  빠뜨렸고, #278 로 풀이 16 이 되자 최악(Tomcat 200 + 채팅 16 + 그 밖 약 39, 운영 유휴 49 기준) ≈ 255 로 한도에 닿았다.
+  compose 주석에 산식과 「채팅 상한을 올리면 이 값도」를 적었다. `backend.md` 하드닝 표 갱신
 - **아무도 읽지 않는 코드 · 설정 · 파일을 지웠다(#299).** 동작 변화 없음.
   - 백엔드 : `AttachmentRef.openaiFileId` · `ChatInput.vectorStoreId` · `PreparedChat.vectorStoreId`(항상 null) 제거 —
     `OpenAiRealService` 는 공용 스토어 id 를 바로 쓴다. `FileService.AllowedType` 의 `fileType`(항상 "image") ·
