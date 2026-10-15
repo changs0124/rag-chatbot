@@ -50,7 +50,7 @@ class OpenAiRealStageMappingTest {
 
 	private OpenAiRealService service() {
 		// api-key는 blank가 아니어야 빈이 생성됨(fail-fast 가드). 이 테스트는 네트워크를 타지 않음
-		return new OpenAiRealService("test-key", "gpt-4o", "", "http://localhost:1", STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
+		return new OpenAiRealService("test-key", "gpt-6-sol", "", "http://localhost:1", STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 	}
 
 	private List<Stage> stagesOf(String sse, List<String> tokensOut, ChatCompletion[] resultOut) {

@@ -40,7 +40,7 @@ import com.ragchatbot.storage.FileStorage;
 /**
  * 실 OpenAI 연동(APP_MODE=live). RestClient 직접 호출(1단계 채택) + Responses API 스트리밍.
  *
- * <p>구조 : Responses API(gpt-4o) + 공용 Vector Store 기반 file_search + 이미지 비전 입력(base64) +
+ * <p>구조 : Responses API(모델은 `OPENAI_MODEL`) + 공용 Vector Store 기반 file_search + 이미지 비전 입력(base64) +
  * 스트리밍 토큰 → onToken + 응답 annotations(file_citation) → CitationData. 무자료(인용 0건)는
  * 텍스트를 건드리지 않고 {@code noSource} 플래그로만 알림(P-8) - 인용 0건은 스트림이 끝나야 알 수 있어
  * 이미 보낸 토큰 앞에 접두를 붙일 수 없기 때문임.

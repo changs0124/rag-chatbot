@@ -84,7 +84,7 @@ class OpenAiRealBetaHeaderTest {
 	}
 
 	private OpenAiRealService service() {
-		return new OpenAiRealService("test-key", "gpt-4o", "shared-store", baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
+		return new OpenAiRealService("test-key", "gpt-6-sol", "shared-store", baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 	}
 
 	/** vector store 를 건드리는 네 경로를 모두 태움 */

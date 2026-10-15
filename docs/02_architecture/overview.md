@@ -117,7 +117,7 @@ sequenceDiagram
 
 | 대상 | 용도 | 비고 |
 |------|------|------|
-| OpenAI 모델(`OPENAI_MODEL`, 기본 `gpt-4o` · 운영 `gpt-6-sol`) | 답변 생성 · 이미지(비전) 입력 | env 로 교체 가능 |
+| OpenAI 모델(`OPENAI_MODEL`, 기본·운영 `gpt-6-sol`) | 답변 생성 · 이미지(비전) 입력 | env 로 교체 가능 |
 | OpenAI Vector Store | RAG 검색 + 관리자 문서 등록 | `OPENAI_VECTOR_STORE_ID` — 대화별이 아닌 **공용 스토어**. 미설정이면 검색이 없고 문서 업로드도 400 |
 | OpenAI Files | 관리자 문서 업로드 | 채팅 첨부와 별개 경로(문서만 받음) |
 | 로컬 디스크 | 첨부 저장 | `FileStorage` 구현만 갈아끼우면 S3로 이동 가능 |
@@ -165,5 +165,5 @@ env 로 빠지지 않은 값 하나만 적는다 — **업로드 하드 한도**
   [backend](./backend.md) 「배포」에 있다.
 - **관측 도구가 없다.** 장애 재현 근거가 상관 ID(REQ-OPS-002) 뿐이며 도구 도입은 별건이다.
 - **OpenAI Vector Store 는 저장 용량 비례 과금**이라 문서가 늘면 월 비용이 선형으로 는다.
-- **기본값 `gpt-4o` 는 노후 라인**이라 예고 없이 deprecation 공지가 날 수 있다. `OPENAI_MODEL` 이 env 로
-  빠져 있어 코드 변경 없이 교체할 수 있다.
+- **모델은 `OPENAI_MODEL` 하나로 바뀐다**(기본·운영 `gpt-6-sol`). 다른 계열로 바꾸면 인용 표기 처리(#277 · #281)가 전제와
+  어긋나므로, 바꾼 뒤에는 `live-integration.md` 의 QA 를 다시 잰다.

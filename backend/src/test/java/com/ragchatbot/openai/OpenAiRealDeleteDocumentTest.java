@@ -53,7 +53,7 @@ class OpenAiRealDeleteDocumentTest {
 			exchange.close();
 		});
 		server.start();
-		service = new OpenAiRealService("test-key", "gpt-4o", "shared-store",
+		service = new OpenAiRealService("test-key", "gpt-6-sol", "shared-store",
 				"http://127.0.0.1:" + server.getAddress().getPort(), STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 	}
 
