@@ -322,7 +322,7 @@ public class OpenAiRealService implements OpenAiService {
 					searchingSent = true;
 				} else if ("response.completed".equals(type)) {
 					JsonNode response = ev.path("response");
-					citations = extractCitations(response);
+					citations = extractCitations(response, markup.fileRefs());
 					inputTokens = intOrNull(response.path("usage"), "input_tokens");
 					outputTokens = intOrNull(response.path("usage"), "output_tokens");
 					completed = true;
@@ -359,19 +359,27 @@ public class OpenAiRealService implements OpenAiService {
 	/**
 	 * output[]을 훑어 file_search 결과(파일명 → 스니펫)를 모으고, 본문 annotation이 실제 인용한 파일만
 	 * 골라 출처로 만듦. 검색은 됐지만 인용되지 않은 파일은 제외함. 각주 번호(seq)는 인용 순서(1-base).
+	 *
+	 * <p>annotation 이 0건이면 본문 인용 표기의 {@code turnNfileM} 으로 복원함(#281). gpt-6-sol 은 근거 답에도
+	 * annotation 을 빠뜨릴 때가 있어, 그대로 두면 「자료 없음」이 본문과 반대로 뜸. 대응 규칙(N번째
+	 * file_search_call 의 results[M], 둘 다 0-base)은 2026-10-15 실측(live-integration.md 3-1). 범위 밖 참조는 버림.
 	 */
-	private List<CitationData> extractCitations(JsonNode response) {
+	private List<CitationData> extractCitations(JsonNode response, List<CitationMarkupFilter.FileRef> markupRefs) {
 		Map<String, String> snippetByFile = new HashMap<>();
 		Map<String, Boolean> citedFiles = new LinkedHashMap<>(); // 순서 유지 + 중복 제거
+		List<List<String>> filesBySearch = new ArrayList<>(); // file_search_call 순서별 결과 파일명
 
 		for (JsonNode item : response.path("output")) {
 			if ("file_search_call".equals(item.path("type").asString(""))) {
+				List<String> files = new ArrayList<>();
 				for (JsonNode r : item.path("results")) {
 					String name = r.path("filename").asString("");
+					files.add(name);
 					if (!name.isEmpty()) {
 						snippetByFile.putIfAbsent(name, r.path("text").asString(""));
 					}
 				}
+				filesBySearch.add(files);
 			}
 			for (JsonNode content : item.path("content")) {
 				for (JsonNode ann : content.path("annotations")) {
@@ -380,6 +388,17 @@ public class OpenAiRealService implements OpenAiService {
 						if (!name.isEmpty()) {
 							citedFiles.putIfAbsent(name, Boolean.TRUE);
 						}
+					}
+				}
+			}
+		}
+
+		if (citedFiles.isEmpty()) {
+			for (CitationMarkupFilter.FileRef ref : markupRefs) {
+				if (ref.turn() < filesBySearch.size() && ref.file() < filesBySearch.get(ref.turn()).size()) {
+					String name = filesBySearch.get(ref.turn()).get(ref.file());
+					if (!name.isEmpty()) {
+						citedFiles.putIfAbsent(name, Boolean.TRUE);
 					}
 				}
 			}
