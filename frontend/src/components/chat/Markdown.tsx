@@ -1,4 +1,5 @@
 import ReactMarkdown, { type Components } from 'react-markdown'
+import remarkCjkFriendly from 'remark-cjk-friendly'
 import remarkGfm from 'remark-gfm'
 
 /**
@@ -9,6 +10,8 @@ import remarkGfm from 'remark-gfm'
  *   스크립트 · 이벤트 속성을 실어 오는 길이 되면 안 된다. `javascript:` 같은 위험한 링크 스킴은 기본 urlTransform 이 지운다
  * - 표는 가로로만 스크롤되는 상자에 넣는다 - 모바일 폭에서 화면 전체를 밀어내지 않게
  * - 그림 표식(`[[그림:키]]`)은 여기 오기 전에 잘려 나간다(splitFigures). 이 컴포넌트는 표식 사이의 글만 받는다
+ * - **한국어 조사 앞의 굵게를 닫는다(#287).** 표준 강조 규칙은 닫는 `**` 앞이 문장부호 · 뒤가 글자면 안 닫는다 -
+ *   `**설계불량(부품선정오류)**으로` 가 글자 그대로 보였다(sol 답 30%). remark-cjk-friendly 가 CJK 글자 옆에서 이 규칙을 푼다
  */
 const components: Components = {
   p: ({ children }) => <p className="my-2 break-words first:mt-0 last:mb-0">{children}</p>,
@@ -56,7 +59,7 @@ const components: Components = {
 
 export default function Markdown({ text }: { text: string }) {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+    <ReactMarkdown remarkPlugins={[remarkGfm, remarkCjkFriendly]} components={components}>
       {text}
     </ReactMarkdown>
   )
