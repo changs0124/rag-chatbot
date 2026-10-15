@@ -1,0 +1,81 @@
+{
+ "N8": {
+  "stage": "N8",
+  "users": 8,
+  "wall": 12.8,
+  "codes": {
+   "200": 8
+  },
+  "stream_errors": 0,
+  "ttft_p50": 6.4,
+  "ttft_p95": 6.7,
+  "total_p50": 7.9,
+  "total_p95": 8.7,
+  "cross_talk": 0,
+  "own_marker_missing": 0,
+  "stored_bad": 0,
+  "rejected_bodies": [],
+  "app_mem_max_mib": 233.2,
+  "app_cpu_max_pct": 27.0
+ },
+ "N12": {
+  "stage": "N12",
+  "users": 12,
+  "wall": 12.4,
+  "codes": {
+   "200": 12
+  },
+  "stream_errors": 0,
+  "ttft_p50": 5.8,
+  "ttft_p95": 6.6,
+  "total_p50": 7.2,
+  "total_p95": 8.3,
+  "cross_talk": 0,
+  "own_marker_missing": 0,
+  "stored_bad": 0,
+  "rejected_bodies": [],
+  "app_mem_max_mib": 209.0,
+  "app_cpu_max_pct": 49.4
+ },
+ "N16": {
+  "stage": "N16",
+  "users": 16,
+  "wall": 13.4,
+  "codes": {
+   "200": 16
+  },
+  "stream_errors": 0,
+  "ttft_p50": 5.6,
+  "ttft_p95": 6.8,
+  "total_p50": 7.1,
+  "total_p95": 9.3,
+  "cross_talk": 0,
+  "own_marker_missing": 0,
+  "stored_bad": 0,
+  "rejected_bodies": [],
+  "app_mem_max_mib": 215.6,
+  "app_cpu_max_pct": 23.5
+ },
+ "N17": {
+  "stage": "N17",
+  "users": 17,
+  "wall": 13.5,
+  "codes": {
+   "200": 16,
+   "429": 1
+  },
+  "stream_errors": 0,
+  "ttft_p50": 6.6,
+  "ttft_p95": 7.3,
+  "total_p50": 8.0,
+  "total_p95": 9.4,
+  "cross_talk": 0,
+  "own_marker_missing": 0,
+  "stored_bad": 0,
+  "rejected_bodies": [
+   "{\"code\":\"RATE_LIMIT\",\"message\":\"동시 요청이 많음 - 잠시 후 다시 시도\"}"
+  ],
+  "app_mem_max_mib": 220.7,
+  "app_cpu_max_pct": 29.7
+ }
+}
