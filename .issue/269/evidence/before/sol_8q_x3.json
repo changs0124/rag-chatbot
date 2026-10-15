@@ -1,0 +1,202 @@
+[
+ {
+  "id": "E2",
+  "rep": 0,
+  "noSource": false,
+  "cites": [
+   "필드클레임현황.md"
+  ],
+  "sec": 8.5
+ },
+ {
+  "id": "E4",
+  "rep": 0,
+  "noSource": false,
+  "cites": [
+   "필드클레임현황.md"
+  ],
+  "sec": 6.2
+ },
+ {
+  "id": "H3",
+  "rep": 0,
+  "noSource": false,
+  "cites": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md",
+   "필드클레임현황.md"
+  ],
+  "sec": 13.5
+ },
+ {
+  "id": "F2",
+  "rep": 0,
+  "noSource": false,
+  "cites": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md",
+   "필드클레임현황.md"
+  ],
+  "sec": 14.9
+ },
+ {
+  "id": "F1",
+  "rep": 0,
+  "noSource": false,
+  "cites": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md",
+   "필드클레임현황.md"
+  ],
+  "sec": 16.9
+ },
+ {
+  "id": "G1",
+  "rep": 0,
+  "noSource": true,
+  "cites": [],
+  "sec": 13.5
+ },
+ {
+  "id": "G2",
+  "rep": 0,
+  "noSource": true,
+  "cites": [],
+  "sec": 9.8
+ },
+ {
+  "id": "G3",
+  "rep": 0,
+  "noSource": true,
+  "cites": [],
+  "sec": 11.3
+ },
+ {
+  "id": "E2",
+  "rep": 1,
+  "noSource": false,
+  "cites": [
+   "필드클레임현황.md"
+  ],
+  "sec": 6.6
+ },
+ {
+  "id": "E4",
+  "rep": 1,
+  "noSource": false,
+  "cites": [
+   "필드클레임현황.md"
+  ],
+  "sec": 7.7
+ },
+ {
+  "id": "H3",
+  "rep": 1,
+  "noSource": true,
+  "cites": [],
+  "sec": 13.9
+ },
+ {
+  "id": "F2",
+  "rep": 1,
+  "noSource": false,
+  "cites": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md",
+   "필드클레임현황.md"
+  ],
+  "sec": 22.8
+ },
+ {
+  "id": "F1",
+  "rep": 1,
+  "noSource": false,
+  "cites": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md",
+   "필드클레임현황.md"
+  ],
+  "sec": 19.0
+ },
+ {
+  "id": "G1",
+  "rep": 1,
+  "noSource": true,
+  "cites": [],
+  "sec": 12.3
+ },
+ {
+  "id": "G2",
+  "rep": 1,
+  "noSource": true,
+  "cites": [],
+  "sec": 11.8
+ },
+ {
+  "id": "G3",
+  "rep": 1,
+  "noSource": true,
+  "cites": [],
+  "sec": 9.9
+ },
+ {
+  "id": "E2",
+  "rep": 2,
+  "noSource": false,
+  "cites": [
+   "필드클레임현황.md"
+  ],
+  "sec": 6.9
+ },
+ {
+  "id": "E4",
+  "rep": 2,
+  "noSource": false,
+  "cites": [
+   "필드클레임현황.md"
+  ],
+  "sec": 7.2
+ },
+ {
+  "id": "H3",
+  "rep": 2,
+  "noSource": true,
+  "cites": [],
+  "sec": 13.3
+ },
+ {
+  "id": "F2",
+  "rep": 2,
+  "noSource": false,
+  "cites": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md",
+   "필드클레임현황.md"
+  ],
+  "sec": 21.3
+ },
+ {
+  "id": "F1",
+  "rep": 2,
+  "noSource": false,
+  "cites": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md"
+  ],
+  "sec": 21.1
+ },
+ {
+  "id": "G1",
+  "rep": 2,
+  "noSource": true,
+  "cites": [],
+  "sec": 12.6
+ },
+ {
+  "id": "G2",
+  "rep": 2,
+  "noSource": true,
+  "cites": [],
+  "sec": 9.9
+ },
+ {
+  "id": "G3",
+  "rep": 2,
+  "noSource": true,
+  "cites": [],
+  "sec": 9.5
+ }
+]
