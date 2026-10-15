@@ -3,8 +3,8 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 | rag-chatbot |
-| 문서 버전 | v1.0 |
-| 최종 수정일 | 2026-10-07 |
+| 문서 버전 | v1.1 |
+| 최종 수정일 | 2026-10-15 |
 | 작성자 | changs0124 |
 | 상태 | `반영됨` (2026-10-06 런칭) |
 
@@ -48,6 +48,7 @@ erDiagram
         text content
         text status
         boolean stopped
+        boolean timed_out
         integer input_tokens
         integer output_tokens
         timestamptz created_at
@@ -187,7 +188,7 @@ erDiagram
 |--------|------|------|--------|------|
 | id | uuid | N | `gen_random_uuid()` | PK |
 | user_id | uuid | N | - | FK → `users.id` **on delete cascade** |
-| message_id | uuid | Y | NULL | FK → `messages.id`. **업로드 시점엔 null** |
+| message_id | uuid | Y | NULL | FK → `messages.id` **on delete cascade**. **업로드 시점엔 null** |
 | storage_path | text | N | - | 로컬 디스크 경로 |
 | file_type | text | N | - | `image` \| `document`. 현재 신규 업로드는 `image` 만 |
 | openai_file_id | text | Y | NULL | 현재 미사용. 문서 첨부를 받지 않기 때문 |
@@ -240,7 +241,7 @@ erDiagram
 | users → rag_documents | 사용자는 여러 문서를 올림 | 1:N | **restrict** |
 | conversations → messages | 대화는 여러 메시지를 가짐 | 1:N | cascade |
 | messages → citations | 메시지는 여러 출처를 가짐 | 1:N | cascade |
-| messages → attachments | 메시지는 여러 첨부를 가짐 | 1:N (nullable) | 첨부 행이 먼저 사라짐 |
+| messages → attachments | 메시지는 여러 첨부를 가짐 | 1:N (nullable) | cascade — 파일 삭제보다 첨부 행이 먼저 사라짐 |
 
 **대화 삭제 시 알려진 결함** : cascade로 `attachments` 행이 먼저 사라진 뒤 파일 삭제가 실패하면,
 고아 회수가 **행 기준**이라 그 파일을 구조적으로 찾지 못한다. 저장소 스캔 회수(`cleanupUnreferencedFiles`)가

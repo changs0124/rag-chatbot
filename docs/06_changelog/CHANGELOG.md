@@ -5,6 +5,22 @@
 ## [Unreleased]
 
 ### Changed
+- **문서가 코드와 다르게 말하던 곳을 고쳤다(#296).** 사실 정정만 했고 경위 압축 · 문서 간 중복 정리는 #297 이다.
+  - overview : 시퀀스도 순서를 동시성 획득 → 레이트리밋(#96)으로, 「전역 8자리」 → 전역 상한 16(#278)
+  - backend : 이력 제외에 `timed_out && stopped`(#84) 추가 · 읽기 타임아웃은 `stream-read-timeout-ms` 가 맡음 ·
+    `:previous` 는 헬스체크 실패 때만 남고 성공하면 지워짐 · 서버 docker 는 `sudo`(`ubuntu` 는 docker 그룹 아님)
+  - api : SSE `error` 의 고정 `code`/`message`, 오류 코드 표에 `STREAM_ERROR`(HTTP 없음), `finishReason` 은 늘 `stop`,
+    404 는 인증된 요청 기준, 그림 404 의 `DOC_FIGURES_DIR` 미설정은 live 한정
+  - erd : `messages.timed_out`(V7) 다이어그램 누락 · `attachments.message_id` 의 on delete cascade(V1)
+  - requirements : 「5절 제약」 → 6절
+  - features : 세션 만료 서술을 수명 120분 · 임계 30분에 맞춤 · 업로드는 `Composer` 가 고를 때 · 문서 칩은 아이콘 + 「문서」 ·
+    usage 는 완료 이벤트에서 읽음 · FEAT-OPS-002 표를 「도입 전 상태」로 · 계획 메모 삭제
+  - design-system · CONVENTIONS · frontend : 색 리터럴 허용 목록을 design-system 「색 리터럴이 허용되는 자리」 하나로
+    (스크림 `bg-black/40` · `DocFigure` 의 `bg-white` 추가), 화면 제목 크기 실측값, 14px 하한은 답변 문단 한정,
+    MyPage 세그먼트 컨트롤 제거(#191) 반영, 「아래 둘」 → 하나, 제거된 카메라 예시에 현재 예시(`AuthContext`) 병기
+  - live-integration : 지금 상태(운영 `gpt-6-sol` · 2026-10-15 스토어 교체) · 부착률 판단 결론 · 동기화로 지울 수 있음 · 문서 목적
+  - current-sprint · backlog : 닫힌 #245~#254 · 끝난 항목 제거
+  - `docker-compose.yml` 주석 : cap 「다섯 개」 → 네 개, 인바운드 예외는 SSH(22)
 - **`OPENAI_MODEL` 기본값을 `gpt-4o` → `gpt-6-sol` 로 맞췄다(#304).** 운영은 env 로 이미 sol 이라 동작 영향은 없다.
   env 를 빠뜨리면 운영과 다른 모델로 조용히 돌았고, 인용 표기 필터(#277) · `turnNfileM` 복원(#281)은 sol 계열 전제다.
   yml · `.env.example` · README · INDEX · overview · live-integration 의 표기, 테스트의 모델명 문자열을 함께 바꿨다
