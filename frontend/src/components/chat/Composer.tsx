@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ClipboardEvent, FormEvent, ReactNode } from 'react'
-import CameraCapture from './CameraCapture'
+import type { ClipboardEvent, FormEvent } from 'react'
 import ImageLightbox from './ImageLightbox'
 import { errorMessage } from '../../lib/api'
 import { deleteAttachment, uploadFile } from '../../lib/endpoints'
@@ -8,9 +7,7 @@ import type { Attachment } from '../../lib/types'
 import {
   IconAlert,
   IconArrowUp,
-  IconCamera,
   IconClose,
-  IconImage,
   IconPlus,
   IconStop,
 } from '../icons'
@@ -43,8 +40,6 @@ export default function Composer({
 }) {
   const [text, setText] = useState('')
   const [drafts, setDrafts] = useState<Draft[]>([])
-  const [showCamera, setShowCamera] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   // 받는 것은 이미지뿐임 - 문서 첨부는 받지 않는다(2026-07-28 범위 축소, 2026-08-18 경로 자체를 제거)
@@ -242,51 +237,21 @@ export default function Composer({
         )}
 
         <div className="flex items-end gap-2 rounded-3xl border border-line bg-raised px-2 py-1.5 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-within:border-accent focus-within:shadow-[0_0_0_4px_var(--c-focus-ring)]">
-          {/* + 첨부 메뉴 */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label="첨부 추가"
-              aria-expanded={menuOpen}
-              className="grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10 text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink active:scale-[0.95]"
-            >
-              <IconPlus />
-            </button>
-            {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="absolute bottom-12 left-0 z-20 w-40 overflow-hidden rounded-xl bg-raised py-1 shadow-[var(--shadow-lifted)]">
-                  <MenuItem
-                    icon={<IconImage className="h-4 w-4" />}
-                    label="사진"
-                    onClick={() => {
-                      setMenuOpen(false)
-                      fileInputRef.current?.click()
-                    }}
-                  />
-                  {/* 마우스·트랙패드(정밀 포인터) 환경에는 내장 카메라가 있어도 찍을 일이 거의 없어 뺀다(#218).
-                      jsdom 처럼 matchMedia 가 없으면 숨김 쪽으로 둔다 */}
-                  {window.matchMedia?.('(pointer: coarse)').matches && (
-                    <MenuItem
-                      icon={<IconCamera className="h-4 w-4" />}
-                      label="카메라"
-                      onClick={() => {
-                        setMenuOpen(false)
-                        setShowCamera(true)
-                      }}
-                    />
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+          {/* + 는 메뉴 없이 기기 선택창을 바로 연다(#289). iOS 선택창이 「사진 찍기 · 사진 보관함 · 파일 선택」을
+              이미 보여 줘서, 따로 두던 앱 안 「카메라」가 같은 일을 두 번 했다 */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="첨부 추가"
+            className="grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10 text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink active:scale-[0.95]"
+          >
+            <IconPlus />
+          </button>
 
           <input
             ref={fileInputRef}
             type="file"
-            // image/* 가 아니라 서버 허용 목록 그대로 - 일부 모바일 선택기는 이때 「촬영」 항목을 뺀다.
-            // iOS Safari 는 이미지를 받는 한 항상 「사진 찍기」를 보여 줘 막을 수 없다(#218, WebKit 236981)
+            // image/* 가 아니라 서버 허용 목록 그대로(#218). 촬영 항목은 OS 선택창이 붙인다 - iOS 는 항상(WebKit 236981)
             accept="image/jpeg,image/png,image/webp,image/gif"
             multiple
             className="hidden"
@@ -355,10 +320,6 @@ export default function Composer({
             여기에 놓아 첨부
           </div>
         </div>
-      )}
-
-      {showCamera && (
-        <CameraCapture onCapture={(file) => addFiles([file])} onClose={() => setShowCamera(false)} />
       )}
 
       {lightboxIndex !== null && lightboxItems[lightboxIndex] && (
@@ -433,18 +394,5 @@ function DraftCard({
         <IconClose className="h-3 w-3" />
       </button>
     </div>
-  )
-}
-
-function MenuItem({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface"
-    >
-      <span className="text-ink-muted">{icon}</span>
-      {label}
-    </button>
   )
 }

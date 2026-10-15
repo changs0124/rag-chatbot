@@ -123,7 +123,6 @@
 | 자리 | 값 | 기준 | 비고 |
 |------|-----|------|------|
 | `border-line` / `canvas` (입력 테두리) | 1.43 (라이트) | WCAG 1.4.11 은 3.0 | #151 이 1.24 → 1.43 으로 **올렸지만 여전히 미달**. 3.0 을 맞추면 테두리가 눈에 띄게 진해져 색 범위를 넘는 디자인 변경이 된다 |
-| `text-danger` / `bg-black/90` (`CameraCapture`) | 3.23 (라이트) | 4.5 | #151 전후 동일(3.23 → 3.23). 안쪽 미리보기를 검정으로 두는 것은 §5 의 결정이다 |
 
 **대비 주장을 검사하는 게이트는 없다.** `check-doc-versions.sh` 가 버전 주장을 지키는 것과 달리
 대비 주장은 아무도 안 본다 — 색을 건드리면 이 표를 손으로 다시 재야 한다.
@@ -200,7 +199,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | 토큰 | 값 | 쓰는 곳 |
 |------|-----|---------|
 | `--shadow-ambient` | `0 1px 2px rgb(0 0 0 / .04), 0 8px 24px -12px rgb(0 0 0 / .1)` | 면 위 카드 · 입력창 · 「새 대화」 버튼 |
-| `--shadow-lifted` | `0 2px 4px rgb(0 0 0 / .05), 0 16px 40px -16px rgb(0 0 0 / .18)` | **화면 위에 뜬 것** — 모달(`ConfirmModal` · `AdminPage`) · 드로어(`ChatPage`) · 팝오버(`Sidebar`) · `+` 메뉴(`Composer`) · 카메라 시트(`CameraCapture`) |
+| `--shadow-lifted` | `0 2px 4px rgb(0 0 0 / .05), 0 16px 40px -16px rgb(0 0 0 / .18)` | **화면 위에 뜬 것** — 모달(`ConfirmModal` · `AdminPage`) · 드로어(`ChatPage`) · 팝오버(`Sidebar`) |
 
 `--shadow-lifted` 는 v1.0 부터 6곳에서 쓰였는데 **이 표에 없었다**(#153 에서 채움).
 이 절만 보고 모달에 `ambient` 를 쓰면 기존 모달과 깊이가 갈린다.
@@ -408,7 +407,6 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 | `frontend/src/components/chat/Composer.tsx` · `Citations.tsx` | 떠 있는 입력 판 · safe-area · 토큰 · **#155** 드롭 오버레이를 검정 스크림에서 `canvas/85` 로, 첨부 실패 아이콘을 `highlight` 로 |
 | `frontend/src/pages/LoginPage.tsx` · `MyPage.tsx` | Editorial Split · 카드 + 세그먼트 컨트롤 · **#151** 로그인 좌측 상단 로고(알약 텍스트 대체) · **#155** `MyPage` 오류 배너를 `danger-soft` 로(#151 이 `AdminPage` 만 고쳤다) |
 | `frontend/src/pages/AdminPage.tsx` | **#151** 오류 배너를 `danger-soft` 로 — accent 가 파랑이 되며 연파랑 위 빨간 글씨로 깨지던 자리다 |
-| `frontend/src/components/chat/CameraCapture.tsx` | 껍데기·버튼은 토큰, 안쪽 미리보기만 검정(영상이 주인공) |
 | `frontend/src/components/ErrorBoundary.tsx` | 토큰 · `100dvh` · accent 알약 버튼 |
 | `frontend/index.html` · `frontend/public/` | 파비콘 4종 · `theme-color` · `lang="ko"`(문서는 한국어인데 `en` 으로 선언돼 있었음) · **#151** 아이콘을 D 마크로 교체 |
 
