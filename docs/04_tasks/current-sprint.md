@@ -13,9 +13,6 @@
   [#298](https://github.com/changs0124/rag-chatbot/issues/298) · [#302](https://github.com/changs0124/rag-chatbot/issues/302) —
   2026-10-15 문서 · 주석 · README 정리
 
-[#105](https://github.com/changs0124/rag-chatbot/issues/105) 는 할 일이 아니라
-「고치지 않기로 한 리뷰 항목」의 영구 기록(`wontfix`)이다.
-
 ## 완료
 
 이 파일에는 두지 않는다. 끝난 일은 [CHANGELOG](../06_changelog/CHANGELOG.md) 가 정본이다.
