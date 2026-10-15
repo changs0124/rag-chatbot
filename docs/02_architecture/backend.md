@@ -345,7 +345,8 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 `mock` 과 `live` 는 `@ConditionalOnExpression` 으로 `OpenAiService` 구현 하나만 로드한다. **모드를 읽는 규칙은
 `AppModeGuard.normalize`(앞뒤 공백 제거 · 소문자) 하나다(#248)** — 가드 · 구현 선택 · `EmailDomainPolicy` 의 live 검사 ·
 `DocFigureService` 의 견본 그림이 모두 이것을 거친다. 종전에는 가드만 정규화해 `APP_MODE=LIVE` 에서 허용 도메인 검사가 빠졌다.
-`prod` 프로필 + `mock` 조합도 거부한다.
+`prod` 프로필 + `mock` 조합도 거부한다. 그 프로필은 `docker-compose.yml` 이 app 에 기본으로 켠다(#305) —
+종전에는 켜는 곳이 없어 이 검사가 운영에서 걸리지 않았다. 로컬 compose 로 목업을 띄울 때만 `SPRING_PROFILES_ACTIVE=` 로 비운다.
 
 설정값은 `backend/src/main/resources/application.yml` 에 `${ENV:기본값}` 으로 두고, 위험한 값
 (`app.mode` · `app.jwt.secret`)은 **일부러 기본값을 비워** 기동에 실패하게 한다.

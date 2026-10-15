@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Fixed
+- **compose 가 app 에 `prod` 프로필을 켜, 운영에서 목업 기동을 실제로 막는다(#305).** `AppModeGuard` 의 prod + `APP_MODE=mock` 거부는
+  운영 서버 · compose · `.env` 어디에서도 프로필을 켜지 않아 테스트에서만 돌았다(2026-10-15 서버 확인).
+  - `docker-compose.yml` app : `SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE-prod}` — 로컬 compose 목업만 `SPRING_PROFILES_ACTIVE=` 로 비운다
+  - 이 프로필이 바꾸는 것은 그 검사뿐이다(`application-prod.yml` · `@Profile` 없음)
+  - 로컬 확인 : mock + 기본 → 기동 실패(AC-18 문구) · mock + 빈 프로필 → 기동 · live + 기본 → 기동
+
 ### Changed
 - **아무도 읽지 않는 코드 · 설정 · 파일을 지웠다(#299).** 동작 변화 없음.
   - 백엔드 : `AttachmentRef.openaiFileId` · `ChatInput.vectorStoreId` · `PreparedChat.vectorStoreId`(항상 null) 제거 —
