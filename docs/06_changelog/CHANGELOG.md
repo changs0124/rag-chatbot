@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Changed
+- **사이드바 대화 목록의 스크롤바를 숨겼다(#274).** Windows 기본 스크롤바(화살표 달린 15px 막대)가 사이드바 면 위에서 튀었다.
+  `index.css` 의 `@utility scrollbar-none`(Firefox `scrollbar-width` · Chromium/Safari `::-webkit-scrollbar`)로 막대만 숨기고 스크롤은 그대로.
+  실제 Chrome 측정 15px → 0px. 테스트 2건, 프론트 하한 140 → 148
+
 ### Security
 - **클레임 자료의 연락처 · 사람 이름 · 협력사 상호를 지우고 다시 올렸다(#266).** 고객사 업체명만 가명이었고, 증상 본문의
   전화번호 1건 · 사람 이름 11명 · 협력사 상호 8곳은 그대로 공용 스토어(운영 포함)에 들어 있었다. 2026-10-15 QA 에서 봇이
