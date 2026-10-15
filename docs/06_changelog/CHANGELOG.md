@@ -34,6 +34,10 @@
   - 마스킹 외 내용은 그대로다(옛 산출물과 diff 해 바뀐 줄이 전부 마스킹 줄 + 머리말 한 줄임을 확인). 절차는 `live-integration.md` 5-2
 
 ### Fixed
+- **채팅을 `Accept: text/event-stream` 으로 부르면 거절이 빈 500 으로 나가던 것을 고쳤다(#279).** 오류 응답 `ApiError` 를
+  그 미디어 타입으로 쓸 변환기가 없어서, 예외 핸들러 자체가 실패했다(로그 `Failure in @ExceptionHandler`). 화면은 `Accept` 를 지정하지 않아 영향이 없었다.
+  - `GlobalExceptionHandler` 의 모든 오류 응답에 `Content-Type: application/json` 을 미리 정해 협상을 건너뛴다
+  - 테스트 3건(SSE Accept 로 400 · 404 · 429 가 상태 그대로 + JSON), 변이로 확인. 백엔드 하한 283 → 286(실측). `api.md` API-POST-005 에 한 단락
 - **출처 스니펫이 답과 무관한 검색 1순위 청크를 보여 주던 것을 고쳤다(#268).** 스니펫이 파일마다 첫 검색 결과였다.
   annotation 에는 어느 청크인지가 없어서, 「서보 모터 각 부 명칭 그림」 답이 실제로 쓴 청크(7위) 대신 「SET 키」 조작 단락이 붙었다.
   - `pickSnippet` 의 우선순위 : 답의 그림 표식을 담은 청크 → 답과 겹치는 글자 2-gram 이 가장 많은 청크 → 겹침 0 이면 1순위
