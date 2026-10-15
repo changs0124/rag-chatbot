@@ -133,6 +133,20 @@ describe('Composer', () => {
     expect(uploadFile).toHaveBeenCalledTimes(2)
   })
 
+  it('미리보기를 그리지 못하는 파일은 이미지를 빼고 카드 바탕만 남김 - 깨진 아이콘·파일명이 비치지 않음(#317)', async () => {
+    vi.mocked(uploadFile).mockRejectedValueOnce(new ApiError(400, '지원하지 않는 파일 형식: image/heic'))
+    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+
+    pick(new File(['x'], 'photo.heic', { type: 'image/heic' }))
+    const card = screen.getByLabelText('photo.heic 확대')
+    fireEvent.error(within(card).getByRole('img'))
+
+    await waitFor(() => expect(screen.getByText('재시도')).toBeInTheDocument())
+    expect(within(card).queryByRole('img')).toBeNull()
+    // 파일명은 접근성 이름으로만 남는다
+    expect(card).toHaveAccessibleName('photo.heic 확대')
+  })
+
   it('전송은 이미 올라간 id 로 나가고, 목록과 URL 을 정리함', async () => {
     vi.mocked(uploadFile)
       .mockResolvedValueOnce(attachment('a1'))

@@ -336,15 +336,25 @@ function DraftCard({
   onRemove: () => void
   onRetry: () => void
 }) {
+  // 브라우저가 그리지 못하는 형식(데스크톱의 HEIC 등)은 깨진 아이콘과 alt 글자가 오류 막 밑으로 비친다(#317) -
+  // 이미지를 빼고 카드 바탕만 남긴다. 파일명은 버튼의 aria-label 로 남는다
+  const [unrenderable, setUnrenderable] = useState(false)
   return (
     <div className="relative">
       <button
         type="button"
         onClick={onOpen}
         aria-label={`${draft.file.name} 확대`}
-        className="block h-16 w-16 overflow-hidden rounded-xl border border-line transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03]"
+        className="block h-16 w-16 overflow-hidden rounded-xl border border-line bg-surface transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03]"
       >
-        <img src={draft.previewUrl} alt={draft.file.name} className="h-full w-full object-cover" />
+        {!unrenderable && (
+          <img
+            src={draft.previewUrl}
+            alt={draft.file.name}
+            onError={() => setUnrenderable(true)}
+            className="h-full w-full object-cover"
+          />
+        )}
       </button>
 
       {draft.status === 'uploading' && (
