@@ -1,0 +1,1 @@
+# after: docker compose config → app pids_limit: 288 (db 128 그대로)

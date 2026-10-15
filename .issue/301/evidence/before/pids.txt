@@ -1,0 +1,5 @@
+# before 62705b0
+compose app pids_limit : 137:    pids_limit: 256
+산식 : Tomcat 200 + 유휴 36 + 여유 (chatExecutor 누락)
+운영 유휴 PIDs (10-15 15:2x) : 49 · 운영 PidsLimit 256
+최악 : Tomcat 200 + chatExecutor 16 + 기본(49 - 유휴 Tomcat 10) ≈ 255
