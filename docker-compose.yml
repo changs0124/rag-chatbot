@@ -142,6 +142,9 @@ services:
     env_file:
       - backend/.env
     environment:
+      # 운영 프로필 - AppModeGuard 가 prod + APP_MODE=mock 기동을 막는다(#305). 이 프로필이 바꾸는 것은 그 검사뿐이다.
+      # 로컬에서 compose 로 목업을 띄울 때만 셸이나 루트 .env 에서 SPRING_PROFILES_ACTIVE= 로 비운다
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE-prod}
       # DB 접속은 여기서 조립한다 - backend/.env 에 DB_URL 이 있어도 이 값이 이긴다.
       # 비밀번호를 .env 한 곳에만 두려는 것이고, 동시에 jdbc 스킴을 강제해
       # 관리형 DB 형식(postgres://…)을 그대로 넣어 기동이 깨지는 사고를 막는다
