@@ -15,11 +15,15 @@ vi.mock('../auth/AuthContext', () => ({
   useAuth: () => ({ user: { name: '사용자' }, logout: vi.fn() }),
 }))
 
+// 이력 불러오는 중인지 테스트마다 바꾼다(#291)
+const chatState = vi.hoisted(() => ({ loadingMessages: false }))
+
 vi.mock('../hooks/useChat', () => ({
   useChat: () => ({
     conversations: [],
     activeId: null,
     messages: [],
+    loadingMessages: chatState.loadingMessages,
     streaming: false,
     stage: null,
     error: null,
@@ -127,5 +131,26 @@ describe('ChatPage 모바일 뷰포트 (#221)', () => {
     unmount()
     expect(html.style.overflow).toBe('')
     expect(html.style.overscrollBehavior).toBe('')
+  })
+})
+
+describe('ChatPage 대화 불러오는 중 (#291)', () => {
+  afterEach(() => {
+    chatState.loadingMessages = false
+  })
+
+  it('이력이 오는 동안 본문에 로딩 표시를 보이고 빈 화면 안내는 숨긴다', () => {
+    chatState.loadingMessages = true
+    renderChatPage()
+
+    expect(screen.getByRole('status', { name: '대화 불러오는 중' })).toHaveTextContent('불러오는 중')
+    expect(screen.queryByText('무엇을 도와드릴까요?')).toBeNull()
+  })
+
+  it('불러오기가 끝나면 로딩 표시가 없다', () => {
+    renderChatPage()
+
+    expect(screen.queryByRole('status', { name: '대화 불러오는 중' })).toBeNull()
+    expect(screen.getByText('무엇을 도와드릴까요?')).toBeInTheDocument()
   })
 })

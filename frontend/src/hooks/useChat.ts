@@ -20,6 +20,8 @@ export function useChat() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  // 고른 대화의 이력이 오는 중 - 그동안 본문은 직전 대화 대신 로딩 표시를 보인다(#291)
+  const [loadingMessages, setLoadingMessages] = useState(false)
   const [streaming, setStreaming] = useState(false)
   // 진행 단계(R-11) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
   const [stage, setStage] = useState<string | null>(null)
@@ -99,15 +101,18 @@ export function useChat() {
       const mine = ++generation.current
       setActiveId(id)
       setError(null)
+      setLoadingMessages(true)
       try {
         const loaded = await getMessages(id)
         // 그사이 다른 대화로 옮겼으면 버린다. 이 검사가 없으면 A→B 를 빠르게 눌렀을 때
         // 늦게 도착한 A 의 이력이 B 화면을 덮어써, 사이드바는 B 인데 본문은 A 가 된다
         if (generation.current !== mine) return
         setMessages(loaded)
+        setLoadingMessages(false)
       } catch {
         if (generation.current !== mine) return
         setMessages([])
+        setLoadingMessages(false)
       }
     },
     [abortActiveStream],
@@ -118,6 +123,7 @@ export function useChat() {
     generation.current++
     setActiveId(null)
     setMessages([])
+    setLoadingMessages(false)
     setError(null)
   }, [abortActiveStream])
 
@@ -292,6 +298,7 @@ export function useChat() {
     conversations,
     activeId,
     messages,
+    loadingMessages,
     streaming,
     stage,
     error,
