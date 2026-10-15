@@ -1,0 +1,44 @@
+[
+ {
+  "case": "400 빈 메시지",
+  "accept": "text/event-stream",
+  "status": 500,
+  "ctype": null,
+  "body": ""
+ },
+ {
+  "case": "404 없는 대화",
+  "accept": "text/event-stream",
+  "status": 500,
+  "ctype": null,
+  "body": ""
+ },
+ {
+  "case": "400 빈 메시지",
+  "accept": "*/*",
+  "status": 400,
+  "ctype": "application/json",
+  "body": "{\"code\":\"BAD_REQUEST\",\"message\":\"메시지 또는 첨부가 필요함\"}"
+ },
+ {
+  "case": "404 없는 대화",
+  "accept": "*/*",
+  "status": 404,
+  "ctype": "application/json",
+  "body": "{\"code\":\"NOT_FOUND\",\"message\":\"대화 없음\"}"
+ },
+ {
+  "case": "429 동시 1건 초과",
+  "accept": "text/event-stream",
+  "status": 200,
+  "ctype": "text/event-stream",
+  "body": "event:meta\ndata:{\"conversationId\":\"7b3ba1bc-864b-4265-b72c-95edcb44d4a0\",\"messageId\":\"5b71f4a3-d15a-436f-820a-c271f947b0"
+ },
+ {
+  "case": "429 동시 1건 초과",
+  "accept": "*/*",
+  "status": 200,
+  "ctype": "text/event-stream",
+  "body": "event:meta\ndata:{\"conversationId\":\"7b3ba1bc-864b-4265-b72c-95edcb44d4a0\",\"messageId\":\"81fdd835-ad85-4813-82f2-5b57ce9c8e"
+ }
+]
