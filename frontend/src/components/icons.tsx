@@ -112,7 +112,7 @@ export function IconMenu({ className }: IconProps) {
   )
 }
 
-// 문서 — 첨부 칩 · 문서 관리 링크(#192). 종전에는 컬러 이모지 📄 였다
+// 문서 — 첨부 칩 · 문서 관리 링크(#192). 뜻은 글자가 전하고 아이콘은 보조다
 export function IconFile({ className }: IconProps) {
   return (
     <Svg className={className}>

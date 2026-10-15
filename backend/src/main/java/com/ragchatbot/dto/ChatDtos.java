@@ -11,7 +11,7 @@ public final class ChatDtos {
 	private ChatDtos() {
 	}
 
-	/** message는 첨부가 있으면 비어도 됨(AC-21, 이미지 단독 질문) */
+	/** message는 첨부가 있으면 비어도 됨(이미지 단독 질문) */
 	public record ChatRequest(UUID conversationId, String message, List<UUID> attachmentIds) {
 	}
 }

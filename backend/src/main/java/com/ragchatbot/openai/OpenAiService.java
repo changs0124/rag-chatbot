@@ -11,7 +11,7 @@ import java.util.function.Predicate;
  */
 public interface OpenAiService {
 
-	/** 첨부 참조 - 비전 이미지(첨부는 이미지뿐이다, R-2) */
+	/** 첨부 참조 - 비전 이미지(첨부는 이미지뿐이다) */
 	record AttachmentRef(String fileType, String storagePath) {
 	}
 
@@ -36,7 +36,7 @@ public interface OpenAiService {
 	}
 
 	/**
-	 * 채팅 결과. noSource=true면 무자료(citations 가 비어 있음, P-8). 응답 텍스트에 접두를 붙이지 않는다 - 표시는 플래그로 한다.
+	 * 채팅 결과. noSource=true면 무자료(citations 가 비어 있음, REQ-RAG-003). 응답 텍스트에 접두를 붙이지 않는다 - 표시는 플래그로 한다.
 	 *
 	 * <p>{@code inputTokens}·{@code outputTokens} 는 이 턴이 실제로 쓴 토큰 수임(FEAT-OPS-001).
 	 * <b>모르면 null</b> - 목업 · usage 필드가 없는 응답 · 중단으로 완료 이벤트 전에 끝난 턴이 그렇다.
@@ -47,7 +47,7 @@ public interface OpenAiService {
 	}
 
 	/**
-	 * 진행 단계 키(R-11). 키는 Mock/Real 공통이고 <b>라벨 문자열은 구현이 소유함</b>(P-2 : ChatService는 모드를 알지 않음).
+	 * 진행 단계 키(REQ-CHAT-005). 키는 Mock/Real 공통이고 <b>라벨 문자열은 구현이 소유함</b>(P-2 : ChatService는 모드를 알지 않음).
 	 * ANALYZING은 ChatService가 meta 직후 발행하고, SEARCHING·GENERATING은 구현이 자기 경계에서 올림.
 	 */
 	enum Stage {
@@ -55,23 +55,23 @@ public interface OpenAiService {
 	}
 
 	/**
-	 * 단계 라벨. 목업은 목 데이터임이 드러나는 전용 문구를 씀(P-10).
+	 * 단계 라벨. 목업은 목 데이터임이 드러나는 전용 문구를 씀(REQ-RAG-004).
 	 *
 	 * @param sources 그 단계가 <b>실제로 참조한</b> 자료명. 참조한 자료가 없거나 그 시점에 아직 알 수 없으면
-	 *                빈 리스트임 - 비어 있으면 자료명을 붙이지 않음(없는 자료명을 지어내지 않기 위함, P-10)
+	 *                빈 리스트임 - 비어 있으면 자료명을 붙이지 않음(없는 자료명을 지어내지 않기 위함, REQ-RAG-004)
 	 */
 	String stageLabel(Stage stage, List<String> sources);
 
 	/**
 	 * 스트리밍 채팅. 토큰을 onToken으로 흘리고(Phase 5 SSE 연결) 완료 시 결과 반환.
-	 * onStage는 실제로 통과한 경계에서만 호출함 - 근거가 없으면 그 단계를 보내지 않음(P-10, R-11).
+	 * onStage는 실제로 통과한 경계에서만 호출함 - 근거가 없으면 그 단계를 보내지 않음(REQ-RAG-004).
 	 * 두 번째 인자는 그 단계가 참조한 자료명이며 근거가 없으면 빈 리스트임.
-	 * OpenAI 실 호출은 여기 뒤에만 존재함(P-1 키 비노출).
+	 * OpenAI 실 호출은 여기 뒤에만 존재함(키 비노출).
 	 */
 	ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage);
 
 	/**
-	 * 대화 삭제 시 OpenAI 파일/Vector Store 정리(AC-12). Mock은 호출을 기록만 함.
+	 * 대화 삭제 시 OpenAI 파일/Vector Store 정리. Mock은 호출을 기록만 함.
 	 *
 	 * <p><b>현재 이 경로는 항상 {@code (null, [])} 로 불려 아무 일도 하지 않는다</b>(#124).
 	 * 두 인자의 출처인 {@code conversations.vector_store_id} 와 {@code attachments.openai_file_id} 에

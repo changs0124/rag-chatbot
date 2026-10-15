@@ -9,7 +9,7 @@ interface State {
 }
 
 /**
- * 렌더 예외를 잡아 복구 UI를 노출함(AC-17). 백지 화면 방지.
+ * 렌더 예외를 잡아 복구 UI를 노출함. 백지 화면 방지.
  */
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false }
@@ -19,7 +19,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    // 관측 도구 연결 지점(런칭 시). 지금은 콘솔 기록만
+    // 관측 도구 미연결 - 콘솔 기록만
     console.error('ErrorBoundary caught', error, info)
   }
 

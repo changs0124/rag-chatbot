@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 마이페이지 - 이름/비밀번호 변경 요청 DTO (AC-15·16).
+ * 마이페이지 - 이름/비밀번호 변경 요청 DTO.
  */
 public final class ProfileDtos {
 

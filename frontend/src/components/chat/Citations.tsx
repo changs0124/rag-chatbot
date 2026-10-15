@@ -1,7 +1,7 @@
 import type { Citation } from '../../lib/types'
 import { stripFigureMarkers } from '../../lib/docFigures'
 
-// 답변 하단 출처 목록(각주 번호 + 출처명 + 스니펫). R-4
+// 답변 하단 출처 목록(각주 번호 + 출처명 + 스니펫). REQ-RAG-001
 export default function Citations({ citations }: { citations: Citation[] }) {
   if (citations.length === 0) return null
   return (

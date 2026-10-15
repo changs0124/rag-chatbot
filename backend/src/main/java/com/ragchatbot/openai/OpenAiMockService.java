@@ -14,19 +14,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Service;
 
 /**
- * 목업 OpenAI (APP_MODE=mock). 모드에 기본값은 없다 - 지정하지 않으면 기동이 멈춘다(AppModeGuard). 실 API/키 없이 전 경로가 동작함(P-2, AC-5).
- * 고정 코퍼스 키워드에 매칭되면 출처 포함 답변, 아니면 무자료 플래그(noSource, P-8 · AC-6).
- * 호출을 기록해 AC-12·AC-14 검증을 가능케 함.
+ * 목업 OpenAI (APP_MODE=mock). 모드에 기본값은 없다 - 지정하지 않으면 기동이 멈춘다(AppModeGuard). 실 API/키 없이 전 경로가 동작함(P-2).
+ * 고정 코퍼스 키워드에 매칭되면 출처 포함 답변, 아니면 무자료 플래그(noSource, REQ-RAG-003).
+ * 호출을 기록해 리소스 정리·첨부 전달을 테스트에서 검증할 수 있게 함.
  */
 @Service
 // 판정은 AppModeGuard.normalize 하나로(#248) - 가드가 받아 준 표기면 구현 선택도 같은 값을 본다
 @ConditionalOnExpression("T(com.ragchatbot.config.AppModeGuard).normalize('${app.mode:}') == 'mock'")
 public class OpenAiMockService implements OpenAiService {
 
-	// 무자료는 **텍스트 접두가 아니라 플래그**로 알림(2026-07-28 결정).
-	// 라이브는 인용 0건 여부를 스트림이 끝나야 알 수 있어 이미 흘려보낸 토큰 앞에 접두를 붙일 수 없음 -
-	// 접두를 유지하면 화면(접두 없음)과 재조회(접두 있음)가 어긋남(Phase 4 리뷰 H4-1).
-	// 판정 규칙은 Mock·Real 공통으로 citations.isEmpty() 하나임(P-8).
+	// 무자료는 **텍스트 접두가 아니라 플래그**로 알림 - 라이브는 인용 0건 여부를 스트림이 끝나야 알 수 있어
+	// 이미 흘려보낸 토큰 앞에 접두를 붙일 수 없음.
+	// 판정 규칙은 Mock·Real 공통으로 citations.isEmpty() 하나임(REQ-RAG-003).
 
 	/** 목업 고정 코퍼스 키워드 */
 	private static final List<String> CORPUS_KEYWORDS = List.of("환불", "배송", "정책", "가격", "이용", "약관");
@@ -38,7 +37,7 @@ public class OpenAiMockService implements OpenAiService {
 	private static final String FIGURE_KEYWORD = "그림";
 
 	/**
-	 * 목업 전용 단계 라벨(R-11 · P-10). 라이브 라벨을 그대로 쓰지 않음 - 목업의 "검색"은 사용자 문자열
+	 * 목업 전용 단계 라벨(REQ-CHAT-005 · REQ-RAG-004). 라이브 라벨을 그대로 쓰지 않음 - 목업의 "검색"은 사용자 문자열
 	 * 키워드 비교라 문서 검색이 아니므로, 화면 문구만 봐도 목 데이터임이 드러나야 함.
 	 */
 	private static final Map<Stage, String> STAGE_LABELS = Map.of(
@@ -61,8 +60,8 @@ public class OpenAiMockService implements OpenAiService {
 	@Override
 	public String stageLabel(Stage stage, List<String> sources) {
 		String label = STAGE_LABELS.get(stage);
-		// 조회 단계에만 자료명을 덧붙임 - "어느 자료를 참조했는지"가 화면에 드러나야 함(R-11).
-		// 무자료 분기에서는 sources가 비어 있어 문구가 종전 그대로임 - 참조한 적 없는 이름을 붙이지 않기 위함(P-10)
+		// 조회 단계에만 자료명을 덧붙임 - "어느 자료를 참조했는지"가 화면에 드러나야 함(REQ-CHAT-005).
+		// 무자료 분기에서는 sources가 비어 있어 자료명이 붙지 않음 - 참조한 적 없는 이름을 붙이지 않기 위함(REQ-RAG-004)
 		if (stage == Stage.SEARCHING && !sources.isEmpty()) {
 			return label + " - " + String.join(" · ", sources);
 		}
@@ -99,14 +98,14 @@ public class OpenAiMockService implements OpenAiService {
 			noSource = true;
 		}
 
-		// 코퍼스 조회 경계 - 목업이 실제로 지나는 지점에서만 단계를 올림(P-10). 자료 유무와 무관하게 조회는 함.
-		// 조회 결과가 정해진 뒤에 올림 - 라벨에 실제로 참조한 자료명을 실어야 하기 때문임(R-11).
+		// 코퍼스 조회 경계 - 목업이 실제로 지나는 지점에서만 단계를 올림(REQ-RAG-004). 자료 유무와 무관하게 조회는 함.
+		// 조회 결과가 정해진 뒤에 올림 - 라벨에 실제로 참조한 자료명을 실어야 하기 때문임(REQ-CHAT-005).
 		// 자료명은 화면 하단 출처 목록과 같은 값을 씀 - 진행 문구와 출처가 어긋나지 않게 함
 		onStage.accept(Stage.SEARCHING, citations.stream().map(CitationData::sourceName).toList());
 
 		// 스트리밍 인터페이스를 실제로 흘려봄(Phase 5 SSE가 이 onToken을 emitter에 연결)
 		// 토큰당 소량 지연으로 실제 스트리밍처럼 타이핑 효과를 냄
-		// 첫 토큰 직전이 생성 경계임. 체감 시간을 만들려고 여기에 인위 지연을 넣지 않음(P-10 · 이관-7)
+		// 첫 토큰 직전이 생성 경계임. 체감 시간을 만들려고 여기에 인위 지연을 넣지 않음(REQ-RAG-004)
 		onStage.accept(Stage.GENERATING, List.of());
 		// (?s) - 그림 답은 줄바꿈을 품는다. 없으면 `.` 이 줄바꿈에서 멈춰 그 뒤가 토큰 하나로 몰려 온다
 		for (String chunk : fullText.split("(?s)(?<=\\G.{8})")) {

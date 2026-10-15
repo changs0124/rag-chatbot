@@ -9,9 +9,8 @@
 #   .env         - compose 전용 변수(DB 자격 · POSTGRES_*). 정본은 .env.example
 #                  터널 토큰은 여기 두지 않는다 - secrets/tunnel_token 파일이다(#203, 아래 cloudflared)
 #
-# **여기에 build 가 없는 것은 의도다(#127).** 운영 서버에 빌드 도구를 들이지 않는다 - build 스테이지의
-# Maven JVM 이 앱과 메모리를 다투고, 이미지를 못 찾았을 때 조용히 빌드로 빠지는 경로도 생긴다. 이미지는 로컬에서 빌드해
-# `scripts/deploy.sh` 가 서버로 옮긴다(docker save → scp → docker load).
+# **build 키가 없는 것은 의도다(#127)** - 이미지가 없으면 서버에서 조용히 빌드로 빠지지 않고 기동이 실패한다.
+# 로컬 빌드는 docker-compose.build.yml. 이미지는 `scripts/deploy.sh` 가 서버로 옮긴다(docker save → scp → docker load).
 # 로컬에서 빌드해 띄우려면 override 를 겹친다 :
 #   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app
 # 절차로 "서버에서 빌드하지 말자" 고 정하는 대신 **키를 없애 구조적으로 막았다** -
@@ -20,15 +19,12 @@
 # **mem_limit 을 셋 다 건다(#127).** 상한이 없으면 커널 OOM killer 가 누구를 죽일지 고르는데,
 # db 가 걸리면 pgdata 가 위험하다. 상한은 app 이 먼저 죽게 만들어 DB 를 지키는 장치이기도 하다.
 # app 의 memswap_limit 은 mem_limit 과 같게 둬 스왑을 금지한다(#202, 근거는 app 아래 주석).
-# 종전(#127)에는 비워서 스왑을 mem_limit 만큼 더 허용했는데, 운영 실측에서 그 여유가 기동 피크를
-# 받기보다 유휴 JVM 힙을 밀어내 첫 요청을 39초로 늦췄다.
 
 services:
   db:
     image: postgres:16-alpine
-    # 데이터가 작고 동시 접속이 한 자리인 개인 규모라 기본값(shared_buffers 128MB · max_connections 100)이
-    # 필요 없다 - 메모리는 app 의 JVM 몫으로 남긴다
-    # (커넥션 하나가 수 MB 다). app 쪽 Hikari 풀을 5 로 묶어 두었으므로 20 이면 여유가 있다
+    # 기본값(shared_buffers 128MB · max_connections 100)보다 줄인다. app 쪽 Hikari 풀이 5 라 20 이면 여유다.
+    # 호스트가 넓어져도 일부러 키우지 않았다
     command: >
       postgres
       -c shared_buffers=48MB
@@ -53,8 +49,7 @@ services:
     #   FOWNER 는 빼도 healthy 에 닿지만 chmod 가 **조용히 실패한다** - healthcheck 는 통과하는데
     #   권한만 어긋나는 조합이라, 나중에 원인을 찾기 어려워지므로 넣어 둔다.
     #
-    # **복구 절차를 만들 때 다시 볼 것(#132).** 위 결론은 named volume 전제다. 백업을 호스트
-    # bind mount 나 다른 uid 로 되살리면 소유권이 어긋나 CHOWN 이 다시 필요해질 수 있다.
+    # 위 결론은 named volume 전제다. bind mount 나 다른 uid 로 옮기면 CHOWN 이 다시 필요할 수 있다.
     #
     # **기존 볼륨으로 시험하면 거짓 통과한다.** 초기화가 끝난 pgdata 는 위 경로를 타지 않아
     # `cap_drop: ALL` 만으로도 잘 뜨고, **신규 서버의 첫 배포에서 깨진다.** 그래서 검증은
@@ -103,15 +98,9 @@ services:
     image: rag-chatbot-backend:latest
     # 1g(#243). 기동 직후 실측 151MiB
     mem_limit: 1g
-    # **스왑을 금지한다(#202).** mem_limit 과 같게 두면 Docker 가 이 컨테이너에 스왑을 전혀
-    # 내주지 않는다. 비워 두면(#127) mem_limit 만큼(합계 2배) 스왑을 더 허용하는데, 그 여유가
-    # 기동 피크를 받아 주기는커녕 **유휴 중 JVM 힙을 스왑으로 밀어냈다.** 그러면 한가하다 들어온
-    # 첫 업로드가 그 페이지를 디스크에서 도로 읽어오느라 **39초**가 걸렸다
-    # (2026-10-08 운영 실측 : 26MB 멀티파트를 동시 1·2·4·8개로 때렸을 때 첫 요청 39.1초 ·
-    # swap-in 최대 3.8MB/s · io-wait 72%, 반면 swap-out 은 1페이지뿐 — 두려워한 「업로드가 스왑을
-    # 밀어내는 스래싱」이 아니라 「유휴 스왑아웃을 도로 읽는 지연」이 실제 원인이었다).
-    # 스왑을 끄면 상주 집합이 메모리에 남아 그 지연이 사라진다. 진짜로 상한을 넘기면 스왑으로
-    # 디스크를 녹이는 대신 빨리 죽고 재시작한다.
+    # **스왑을 금지한다(#202).** mem_limit 과 같게 두면 Docker 가 스왑을 전혀 내주지 않는다 - 스왑을 허용하면
+    # 유휴 중 밀려난 JVM 힙을 도로 읽느라 첫 요청이 수십 초 늦어진다. 상한을 넘기면 빨리 죽고 재시작한다.
+    # 실측 근거는 backend.md 「업로드 부하에서 스왑을 금지하기로 정했다」
     memswap_limit: 1g
     security_opt:
       # **setuid 바이너리로 권한을 되찾는 길을 막는다(#130).** 컨테이너 안에서 실행되는
@@ -160,8 +149,8 @@ services:
       # MaxRAMPercentage 는 mem_limit(1g) 기준이다 - 힙 밖(메타스페이스 · 스레드 스택 · 코드
       # 캐시)이 나머지를 쓰므로 100 에 가깝게 두면 힙이 아니라 컨테이너가 먼저 죽는다
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65 -XX:+UseSerialGC -Xss512k"
-      # application.yml 에 hikari 설정이 없어 기본값이 10 이다. 커넥션당 수 MB 라
-      # 이 사양에서는 그냥 낭비다 - **소스를 고치지 않고** 환경변수로만 줄인다
+      # application.yml 에 hikari 설정이 없어 기본값이 10 이다. 커넥션은 스트림 앞뒤의 짧은 저장에만 잡혀
+      # 5로 충분하다(동시 16명 실측, backend.md 「유량 제어」)
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
     volumes:
       # 첨부는 로컬 디스크에 쌓인다. 이 볼륨을 떼면 업로드된 이미지가 사라진다

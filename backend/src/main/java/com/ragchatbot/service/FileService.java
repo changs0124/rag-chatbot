@@ -24,7 +24,7 @@ import com.ragchatbot.dto.FileDtos.AttachmentResponse;
 
 /**
  * 파일 업로드/검증/서빙/고아 정리.
- * 검증 : MIME 허용목록 → 타입별 용량 → 매직바이트(AC-11). 서빙 : 서명 경로 토큰(AC-22, M6).
+ * 검증 : MIME 허용목록 → 타입별 용량 → 매직바이트. 서빙 : 서명 경로 토큰.
  */
 @Service
 public class FileService {
@@ -37,7 +37,7 @@ public class FileService {
 	/** webp 컨테이너의 오프셋 8에 있는 "WEBP" 마커 */
 	private static final byte[] WEBP_MARKER = { 0x57, 0x45, 0x42, 0x50 };
 
-	/** 첨부의 file_type - 받는 것이 이미지뿐이라 항상 이 값(R-2) */
+	/** 첨부의 file_type - 받는 것이 이미지뿐이라 항상 이 값 */
 	private static final String FILE_TYPE = "image";
 
 	/** content-type(맵 키) → (확장자, 최대크기, 매직바이트) */
@@ -45,10 +45,9 @@ public class FileService {
 	}
 
 	/**
-	 * 이미지만 허용함(2026-07-28 R-2 범위 축소, 사용자 승인).
-	 * 문서(PDF)는 업로드·저장·표시는 되는데 모델에는 전달되지 않아, 사용자가 "그 PDF를 근거로 답했다"고
-	 * 오해하는 상태였음(Phase 4 리뷰 H4-3). 실제 근거로 쓰려면 OpenAI Files + 대화 전용 Vector Store
-	 * 업로드가 필요하고 그건 실 키가 있어야 검증되므로, 지금은 **받지 않는 것**을 계약으로 함.
+	 * 이미지만 허용함. 채팅 첨부는 모델에 비전 입력으로만 전달되므로, 문서(PDF)를 받으면 사용자가
+	 * "그 PDF를 근거로 답했다"고 오해함. RAG 근거 문서는 관리자 공용 스토어 경로({@code AdminDocumentService})로
+	 * 올리므로, 채팅 첨부는 **문서를 받지 않는 것**을 계약으로 함.
 	 */
 	private static final Map<String, AllowedType> ALLOWED = Map.of(
 			"image/jpeg", new AllowedType("jpg", 10 * MB, new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF }),
@@ -138,7 +137,7 @@ public class FileService {
 	}
 
 	/**
-	 * 고아(미연결) 첨부 회수 - 파일 삭제 후 행 삭제(AC-13).
+	 * 고아(미연결) 첨부 회수 - 파일 삭제 후 행 삭제(REQ-OPS-004).
 	 *
 	 * <p>cutoff 가 최소 유예({@value #MIN_ORPHAN_AGE_MINUTES}분)보다 최근이면 그 경계로 되돌림(클램프).
 	 * 첨부는 업로드된 뒤 사용자가 전송 버튼을 누를 때까지 {@code message_id = null} 로 있으므로,
@@ -156,17 +155,16 @@ public class FileService {
 	}
 
 	/**
-	 * 저장소 스캔 회수 - <b>파일은 있는데 그것을 가리키는 행이 없는</b> 것을 지움(AC-13 보완).
+	 * 저장소 스캔 회수 - <b>파일은 있는데 그것을 가리키는 행이 없는</b> 것을 지움(REQ-OPS-004 보완).
 	 *
 	 * <p>{@link #cleanupOrphans}는 {@code attachments} 행을 기준으로 돌기 때문에, 대화 삭제 시
-	 * cascade 로 행이 먼저 사라진 뒤 파일 삭제가 실패한 경우를 <b>구조적으로 볼 수 없음</b>. 그 파일은
-	 * 종전에 경고 로그만 남기고 영구 잔류했음(2026-07-28 결정으로 이 패스를 넣음).
+	 * cascade 로 행이 먼저 사라진 뒤 파일 삭제가 실패한 경우를 <b>구조적으로 볼 수 없음</b> - 이 패스가 그 파일을 회수함.
 	 *
 	 * <p>유예는 행 기준 회수와 같은 규칙임 - {@value #MIN_ORPHAN_AGE_MINUTES}분보다 최근에 <b>수정된</b>
 	 * 파일은 어떤 cutoff 로도 지우지 않음. 업로드 직후 아직 행이 커밋되기 전인 파일을 지우지 않으려는 것임.
 	 *
 	 * <p><b>참조 목록을 통째로 읽음</b> - 단일 인스턴스·소규모 전제라 한 번에 담음. 첨부가 많아지면
-	 * 경로별 존재 질의나 페이지 단위로 바꿔야 함(R-6과 같은 갈래).
+	 * 경로별 존재 질의나 페이지 단위로 바꿔야 함(단일 인스턴스 전제와 같은 갈래).
 	 */
 	public int cleanupUnreferencedFiles(OffsetDateTime cutoff) {
 		Instant effective = clampCutoff(cutoff).toInstant();

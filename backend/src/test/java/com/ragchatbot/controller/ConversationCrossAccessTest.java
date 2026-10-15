@@ -13,7 +13,7 @@ import org.springframework.http.HttpStatus;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * AC-1 : 사용자 A의 리소스에 B가 접근하면 전 경로에서 404(존재 은닉, P-3).
+ * 사용자 A의 리소스에 B가 접근하면 전 경로에서 404(존재 은닉, P-3).
  */
 class ConversationCrossAccessTest extends AbstractPgIntegrationTest {
 

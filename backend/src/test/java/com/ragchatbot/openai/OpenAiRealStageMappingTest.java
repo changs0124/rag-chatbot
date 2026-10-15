@@ -13,10 +13,10 @@ import com.ragchatbot.openai.OpenAiService.ChatCompletion;
 import com.ragchatbot.openai.OpenAiService.Stage;
 
 /**
- * Phase 7 : 라이브 스트림 → 진행 단계 매핑을 실 호출 없이 고정함(AC-24 · 리스크 R-13).
+ * Phase 7 : 라이브 스트림 → 진행 단계 매핑을 실 호출 없이 고정함(REQ-CHAT-005).
  * 캔드 SSE를 파서에 직접 먹임 - OpenAI 호출·Docker 불필요.
  *
- * <p>주의(S-1) : 이 테스트는 <b>매핑 로직</b>만 검증함. 실 API 가 이 순서로 이벤트를 보낸다는 것은
+ * <p>주의(REQ-RAG-005) : 이 테스트는 <b>매핑 로직</b>만 검증함. 실 API 가 이 순서로 이벤트를 보낸다는 것은
  * 2026-09-22 실 키로 확인됨(stage analyzing → searching → generating, live-integration.md 3절 가정 A · #184).
  */
 class OpenAiRealStageMappingTest {
@@ -68,7 +68,7 @@ class OpenAiRealStageMappingTest {
 
 		List<Stage> stages = stagesOf(SSE_WITHOUT_SEARCH, tokens, result);
 
-		// AC-24 : file_search 이벤트가 없으면 검색 단계는 0건임(연출 금지)
+		// file_search 이벤트가 없으면 검색 단계는 0건임(연출 금지)
 		assertThat(stages).containsExactly(Stage.GENERATING);
 		assertThat(result[0].noSource()).isTrue();
 		assertThat(result[0].citations()).isEmpty();
@@ -98,7 +98,7 @@ class OpenAiRealStageMappingTest {
 	}
 
 	/**
-	 * 라이브는 검색 시작 시점에 어느 문서가 걸렸는지 모르므로 자료명을 라벨에 싣지 않음(P-10).
+	 * 라이브는 검색 시작 시점에 어느 문서가 걸렸는지 모르므로 자료명을 라벨에 싣지 않음(REQ-RAG-004).
 	 * 자료명이 들어오더라도 라벨을 바꾸지 않는다는 것을 고정함 - 나중에 실 연동에서 이 결정을 되돌린다면
 	 * 이 테스트가 먼저 깨져 "언제 알 수 있는가"를 다시 확인하게 됨
 	 */

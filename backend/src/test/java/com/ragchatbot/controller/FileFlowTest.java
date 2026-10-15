@@ -26,7 +26,7 @@ import com.ragchatbot.service.FileService;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * Phase 3 파일 플로우 : 업로드·검증(AC-11)·서명 서빙(AC-22)·고아 정리(AC-13).
+ * Phase 3 파일 플로우 : 업로드·검증·서명 서빙·고아 정리(REQ-OPS-004).
  */
 class FileFlowTest extends AbstractPgIntegrationTest {
 
@@ -109,7 +109,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * AC-11 용량 상한(이미지 10MB). MIME·매직바이트가 전부 맞아도 크기만으로 거부돼야 함 -
+	 * 용량 상한(이미지 10MB). MIME·매직바이트가 전부 맞아도 크기만으로 거부돼야 함 -
 	 * 종전에는 이 경로에 케이스가 없어 상한을 지워도 초록이었음(2026-07-28 리스크 표 정비).
 	 */
 	@Test
@@ -123,7 +123,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * R-10 소유자 검증 - 서명이 유효해도 <b>남의 파일</b>이면 404.
+	 * 소유자 검증 - 서명이 유효해도 <b>남의 파일</b>이면 404.
 	 *
 	 * <p>무토큰·변조 케이스는 서명 검증만 재고, 소유자 대조({@code findByIdAndUser})는 재지 않았음.
 	 * B의 uid 로 정상 서명한 토큰을 A의 파일에 씌워, 서명이 통과한 뒤의 소유자 관문만 남겨 확인함.
@@ -142,7 +142,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
-	/** R-2 교차 접근 - 파일 삭제도 소유자만(대화 경로는 ConversationCrossAccessTest 가 담당) */
+	/** 교차 접근 - 파일 삭제도 소유자만(대화 경로는 ConversationCrossAccessTest 가 담당) */
 	@Test
 	void stranger_cannot_delete_others_file_404() {
 		String tokenA = createUser("file-del-a@b.com");
@@ -174,8 +174,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void pdf_upload_is_rejected() {
-		// 문서 첨부는 업로드·저장은 되는데 모델에는 전달되지 않아 오해를 만들었음 → 받지 않는 것을 계약으로 함
-		// (2026-07-28 R-2 범위 축소, 사용자 승인)
+		// 채팅 첨부는 모델에 비전 입력으로만 전달되므로 문서는 받지 않는 것을 계약으로 함
 		String token = createUser("file-pdf@b.com");
 		byte[] pdf = { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x37 }; // %PDF-1.7
 		var res = upload(token, pdf, MediaType.APPLICATION_PDF, "doc.pdf");

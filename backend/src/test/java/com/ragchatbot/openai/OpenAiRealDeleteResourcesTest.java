@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * 대화 삭제 시 OpenAI 리소스 정리(AC-12)가 <b>설정된 base-url 로</b> 나가는지 검증함.
+ * 대화 삭제 시 OpenAI 리소스 정리가 <b>설정된 base-url 로</b> 나가는지 검증함.
  *
  * <p>종전에는 삭제 경로만 절대 URL(api.openai.com)이 박혀 있어 {@code app.openai.base-url} 이
  * 그 경로에서만 죽어 있었음 - 스파이크·대체 엔드포인트로 돌려도 삭제만 실 API 로 나갔음.

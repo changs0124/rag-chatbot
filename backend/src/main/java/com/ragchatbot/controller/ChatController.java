@@ -54,9 +54,9 @@ public class ChatController {
 			// 중에 전송을 연타하면 전부 "이미 응답 중" 429 를 받으면서 분당 카운터만 올라, 스트림이
 			// 끝난 뒤에도 그 분이 끝날 때까지 막혔다 - 유량 제어가 스스로를 무력화했다.
 			// 여기서 던져도 아래 finally 가 자리를 반납하므로 추가 장치가 필요 없다
-			rateLimiter.checkChat(userId); // AC-10 : 초과 시 429
+			rateLimiter.checkChat(userId); // REQ-OPS-003 : 초과 시 429
 			PreparedChat prepared = chatService.prepare(userId, req); // 400/404 동기 반환
-			SseEmitter emitter = new SseEmitter(sseTimeoutMs); // P-5 : 타임아웃이 스트림 수명 단독 결정
+			SseEmitter emitter = new SseEmitter(sseTimeoutMs); // 타임아웃이 스트림 수명 단독 결정
 			chatExecutor.execute(() -> {
 				try {
 					chatService.stream(userId, prepared, emitter);

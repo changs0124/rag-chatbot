@@ -33,7 +33,7 @@ import com.ragchatbot.repository.UserRepository;
 // Boot 4 부터 @SpringBootTest 가 TestRestTemplate 을 자동으로 넣어 주지 않음 - 명시해야 함(#48)
 @AutoConfigureTestRestTemplate
 @TestPropertySource(properties = {
-		// app.mode 는 기본값이 없어졌으므로 테스트도 명시해야 뜸(AC-18, AppModeGuard)
+		// app.mode 는 기본값이 없어졌으므로 테스트도 명시해야 뜸(AppModeGuard)
 		"app.mode=mock",
 		// 뿌리 관리자. 기동 러너가 이 명단을 보고 계정을 만든다 - 테스트에서 계정이 태어나는 유일한 지점이다.
 		// 명단을 덮어쓰는 하위 테스트는 이 주소를 **함께** 넣어야 한다. 빼면 기동 동기화가 강등시켜

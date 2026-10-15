@@ -140,7 +140,7 @@ describe('MessageList', () => {
     expect(screen.getByText(/무엇을 도와드릴까요/)).toBeInTheDocument()
   })
 
-  // R-11 진행 단계 표시
+  // 진행 단계 표시(REQ-CHAT-005)
   const pending: ChatMessage[] = [
     { id: 'u1', role: 'user', content: '환불 정책', status: 'complete', createdAt: '', citations: [] },
     { id: 'a1', role: 'assistant', content: '', status: 'streaming', createdAt: '', citations: [] },

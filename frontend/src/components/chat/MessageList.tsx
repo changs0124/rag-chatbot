@@ -34,7 +34,7 @@ export default function MessageList({
   const lastUserMessageId = useRef<string | null>(null)
 
   /**
-   * 사용자가 어디를 보고 있는지 따라간다. 컨테이너가 없으면(테스트 환경 등) 종전대로 늘 따라간다.
+   * 사용자가 어디를 보고 있는지 따라간다. 컨테이너가 없으면(테스트 환경 등) 늘 따라간다.
    *
    * **`hasMessages` 에 의존하는 이유** - 메시지가 0건이면 아래에서 빈 화면을 그리며 조기 반환하므로
    * `rootRef` 가 붙지 않는다. 의존성을 `[]` 로 두면 그 시점에 한 번 돌고 끝나 **리스너가 영영
@@ -75,11 +75,7 @@ export default function MessageList({
   }, [lastUserMessageIdInList])
 
   /**
-   * 답변이 흐르는 동안 따라 내려간다 — **사용자가 위로 올렸으면 멈춘다**(#100).
-   *
-   * `patch` 가 토큰마다 새 배열을 만들어 이 effect 가 **토큰 하나당 한 번** 돈다. 판정이 없던 동안에는
-   * 긴 답변이 생성되는 내내 앞선 메시지를 다시 읽을 수 없었다 — 위로 올려도 다음 토큰이 도착하는
-   * 즉시 맨 아래로 되돌아갔다.
+   * 답변이 흐르는 동안 따라 내려간다 — **사용자가 위로 올렸으면 멈춘다**(#100). 이 effect 는 토큰마다 돈다.
    */
   useEffect(() => {
     if (!stick.current) return
@@ -99,7 +95,7 @@ export default function MessageList({
     )
   }
 
-  // 진행 단계를 보여주는 동안에는 답변 버블을 내지 않음(R-11 한 줄 교체형).
+  // 진행 단계를 보여주는 동안에는 답변 버블을 내지 않음(REQ-CHAT-005, 한 줄 교체형).
   // 단계가 최소 표시 시간을 마치면 stage가 null이 되고 그때 답변 텍스트로 교체됨
   const last = messages[messages.length - 1]
   const pending =
@@ -187,7 +183,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             )}
           </div>
         )}
-        {/* 무자료 표시 - 텍스트 접두가 아니라 "출처 0건"에서 파생함(P-8).
+        {/* 무자료 표시 - 텍스트 접두가 아니라 "출처 0건"에서 파생함(REQ-RAG-003).
             스트리밍 중에는 아직 citations가 안 왔으므로 complete 인 메시지에만 붙임.
             중단된 답변(stopped)은 출처 판정 자체를 못 마쳐 늘 0건이므로 제외함 - 붙이면 거짓말이 됨 */}
         {!isUser && message.status === 'complete' && !message.stopped && message.citations.length === 0 && (

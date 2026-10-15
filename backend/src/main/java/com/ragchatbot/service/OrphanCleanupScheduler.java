@@ -9,10 +9,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * 고아 첨부 정기 회수(AC-13).
+ * 고아 첨부 정기 회수(REQ-OPS-004).
  *
- * <p>회수 로직은 있었지만 <b>부르는 곳이 없어</b> 실제로는 한 번도 돌지 않았음(2026-07-28 리뷰).
- * 대화 삭제 시 파일 정리가 실패하면 경고 로그만 남기고 이 회수에 의존하므로, 기동해 두지 않으면
+ * <p>대화 삭제 시 파일 정리가 실패하면 경고 로그만 남기고 이 회수에 의존하므로, 기동해 두지 않으면
  * 디스크에 남은 파일이 영영 회수되지 않음.
  */
 @Component
