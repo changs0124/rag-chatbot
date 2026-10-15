@@ -1,6 +1,5 @@
 package com.ragchatbot.config;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -27,9 +26,9 @@ public class EmailDomainPolicy {
 	private final List<String> adminEmails;
 
 	public EmailDomainPolicy(
-			@Value("${app.mode:}") String mode,
-			@Value("${app.auth.allowed-email-domains:}") String allowedDomains,
-			@Value("${app.admin.emails:}") String adminEmails) {
+			@Value("${app.mode}") String mode,
+			@Value("${app.auth.allowed-email-domains}") String allowedDomains,
+			@Value("${app.admin.emails}") String adminEmails) {
 		this.allowedDomains = parseDomains(allowedDomains);
 		this.adminEmails = AdminRoleSynchronizer.parse(adminEmails);
 		if ("live".equals(AppModeGuard.normalize(mode)) && this.allowedDomains.isEmpty()) {
@@ -38,13 +37,17 @@ public class EmailDomainPolicy {
 		}
 	}
 
+	/**
+	 * 앱 전체의 이메일 정규화 - 앞뒤 공백을 걷고 소문자로. null 은 빈 문자열이다.
+	 * 로그인·계정 발급·명단 파싱이 모두 이 눈금을 써야 대소문자만 다른 주소가 갈리지 않는다(#300)
+	 */
+	public static String normalize(String email) {
+		return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+	}
+
 	/** 도메인 명단 파싱. {@code @} 를 붙여 적어도 받아 준다 - 헷갈리기 쉬운 표기라 기동을 막을 이유가 없다 */
 	static List<String> parseDomains(String raw) {
-		if (raw == null || raw.isBlank()) {
-			return List.of();
-		}
-		return Arrays.stream(raw.split(","))
-				.map(s -> s.trim().toLowerCase(Locale.ROOT))
+		return AdminRoleSynchronizer.parse(raw).stream()
 				.map(s -> s.startsWith("@") ? s.substring(1) : s)
 				.filter(s -> !s.isEmpty())
 				.distinct()

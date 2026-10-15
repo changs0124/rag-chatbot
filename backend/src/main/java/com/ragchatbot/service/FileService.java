@@ -194,7 +194,8 @@ public class FileService {
 		return "/api/files/" + fileId + "?token=" + fileTokenService.issue(fileId, userId);
 	}
 
-	private static boolean regionEquals(byte[] data, int offset, byte[] marker) {
+	/** 매직 바이트 비교. {@link AdminDocumentService} 의 문서 검사도 이것을 쓴다(#300) */
+	static boolean regionEquals(byte[] data, int offset, byte[] marker) {
 		if (data.length < offset + marker.length) {
 			return false;
 		}

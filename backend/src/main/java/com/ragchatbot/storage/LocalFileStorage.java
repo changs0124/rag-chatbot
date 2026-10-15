@@ -22,7 +22,7 @@ public class LocalFileStorage implements FileStorage {
 
 	private final Path root;
 
-	public LocalFileStorage(@Value("${app.file.storage-root:./uploads}") String storageRoot) {
+	public LocalFileStorage(@Value("${app.file.storage-root}") String storageRoot) {
 		this.root = Path.of(storageRoot).toAbsolutePath().normalize();
 	}
 

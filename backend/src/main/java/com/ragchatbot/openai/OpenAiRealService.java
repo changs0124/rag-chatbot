@@ -119,13 +119,13 @@ public class OpenAiRealService implements OpenAiService {
 			""";
 
 	public OpenAiRealService(
-			@Value("${app.openai.api-key:}") String apiKey,
-			@Value("${app.openai.model:gpt-4o}") String model,
-			@Value("${app.openai.vector-store-id:}") String vectorStoreId,
-			@Value("${app.openai.base-url:https://api.openai.com/v1}") String baseUrl,
-			@Value("${app.openai.stream-read-timeout-ms:540000}") long streamReadTimeoutMs,
-			@Value("${app.openai.request-timeout-ms:30000}") long requestTimeoutMs,
-			@Value("${app.chat.sse-timeout-ms:600000}") long sseTimeoutMs,
+			@Value("${app.openai.api-key}") String apiKey,
+			@Value("${app.openai.model}") String model,
+			@Value("${app.openai.vector-store-id}") String vectorStoreId,
+			@Value("${app.openai.base-url}") String baseUrl,
+			@Value("${app.openai.stream-read-timeout-ms}") long streamReadTimeoutMs,
+			@Value("${app.openai.request-timeout-ms}") long requestTimeoutMs,
+			@Value("${app.chat.sse-timeout-ms}") long sseTimeoutMs,
 			FileStorage fileStorage) {
 		// live 모드인데 키가 비면 부팅 즉시 실패(per-request 401 대신 fail-fast). 이 빈은 app.mode=live에서만 로드됨
 		if (apiKey == null || apiKey.isBlank()) {

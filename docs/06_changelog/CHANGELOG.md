@@ -12,6 +12,19 @@
   - 로컬 확인 : mock + 기본 → 기동 실패(AC-18 문구) · mock + 빈 프로필 → 기동 · live + 기본 → 기동
 
 ### Changed
+- **중복 코드를 합치고, 설정 기본값을 `application.yml` 한 곳에만 둔다(#300).** 동작 변화 없음.
+  - 백엔드 `@Value("${…:기본값}")` 34곳에서 기본값을 지웠다 — #278 은 숫자 하나를 바꾸려고 세 파일을 고쳤다.
+    yml 에 없던 `app.file.access-token-ttl-minutes`(15, env `FILE_ACCESS_TOKEN_TTL_MINUTES`) 를 추가하고,
+    테스트 훅 `app.openai.base-url` · `app.mock.token-delay-ms`(45) 는 env 없이 yml 에 적었다.
+    yml 을 읽지 않는 `ApplicationContextRunner` 테스트는 yml 이 주는 값을 직접 깔거나(5건) yml 을 읽게 했다(기본값 부등식 1건)
+  - `AdminDocumentService.startsWith` → `FileService.regionEquals`. 이메일 정규화는 `EmailDomainPolicy.normalize` 하나,
+    명단 파싱은 `AdminRoleSynchronizer.parse` 하나(도메인 파싱이 이것을 쓴다)
+  - 문서 목록의 상태 재조회가 id 마다 행을 다시 읽던 N+1 → `findInProgress` 한 번(`findInProgressIds` 제거).
+    업로드 응답은 목록 전체를 읽어 거르던 것을 `findSummaryById` 한 행으로
+  - 프론트 : Bearer 헤더를 `authHeaders()` 하나로(`api` · `streamChat` · `loadFigure`). `useChat` 의 언마운트 정리를
+    `abortActiveStream` 으로, 이력 로드 성공·실패 두 갈래를 한 길로. `MessageList` 의 마지막 사용자 메시지는 `findLast`,
+    `ResizableSidebar` 의 저장은 `persist()` 로(갱신 함수 밖), `Markdown` 의 h1·h2 / h3·h4 렌더러 공유, `ChatPage` 의 새 대화 핸들러 하나
+  - 모달 틀(`ConfirmModal` · `AdminPage` · `ImageLightbox`)은 합치지 않았다(#105 §4 결정)
 - **app 의 `pids_limit` 를 256 → 288 로 올렸다(#301).** 산식이 「Tomcat 200 + 유휴 36 + 여유」뿐이라 채팅 실행기 고정 풀을
   빠뜨렸고, #278 로 풀이 16 이 되자 최악(Tomcat 200 + 채팅 16 + 그 밖 약 39, 운영 유휴 49 기준) ≈ 255 로 한도에 닿았다.
   compose 주석에 산식과 「채팅 상한을 올리면 이 값도」를 적었다. `backend.md` 하드닝 표 갱신

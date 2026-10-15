@@ -10,7 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -76,8 +76,8 @@ class AdminDocumentUploadCompensationTest {
 	void does_not_roll_back_when_only_the_read_back_fails() {
 		OpenAiService openAi = openAiStub();
 		RagDocumentRepository repo = mock(RagDocumentRepository.class);
-		// insert 는 통과. 방금 넣은 행이 목록에 없으면 :159 가 던진다
-		when(repo.listAlive()).thenReturn(List.of());
+		// insert 는 통과. 방금 넣은 행을 다시 찾지 못하면 upload 가 던진다
+		when(repo.findSummaryById(any())).thenReturn(Optional.empty());
 
 		var service = new AdminDocumentService(repo, openAi);
 

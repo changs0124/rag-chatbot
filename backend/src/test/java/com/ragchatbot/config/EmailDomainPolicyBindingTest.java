@@ -25,8 +25,10 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
  */
 class EmailDomainPolicyBindingTest {
 
+	// 러너는 application.yml 을 읽지 않는다. env 가 없을 때 yml 이 주는 값(빈 문자열)을 같이 깔아 둔다(#300)
 	private final ApplicationContextRunner runner = new ApplicationContextRunner()
-			.withUserConfiguration(EmailDomainPolicy.class);
+			.withUserConfiguration(EmailDomainPolicy.class)
+			.withPropertyValues("app.mode=", "app.auth.allowed-email-domains=", "app.admin.emails=");
 
 	/**
 	 * 이 클래스의 핵심 - live 인데 명단이 비면 <b>기동하지 못한다</b>.

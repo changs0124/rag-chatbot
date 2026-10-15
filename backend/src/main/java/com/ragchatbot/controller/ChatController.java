@@ -33,7 +33,7 @@ public class ChatController {
 
 	public ChatController(ChatService chatService, RateLimiterService rateLimiter,
 			ChatConcurrencyLimiter concurrency, ExecutorService chatExecutor,
-			@Value("${app.chat.sse-timeout-ms:600000}") long sseTimeoutMs) {
+			@Value("${app.chat.sse-timeout-ms}") long sseTimeoutMs) {
 		this.chatService = chatService;
 		this.rateLimiter = rateLimiter;
 		this.concurrency = concurrency;

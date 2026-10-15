@@ -15,8 +15,10 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
  */
 class AppModeGuardTest {
 
+	// 러너는 application.yml 을 읽지 않는다. env 가 없을 때 yml 이 주는 값(빈 문자열)을 같이 깔아 둔다(#300)
 	private final ApplicationContextRunner runner = new ApplicationContextRunner()
-			.withUserConfiguration(AppModeGuard.class);
+			.withUserConfiguration(AppModeGuard.class)
+			.withPropertyValues("app.mode=");
 
 	/**
 	 * 새 계약의 핵심 - 프로필과 무관하게 <b>모드를 안 주면 못 뜬다</b>.

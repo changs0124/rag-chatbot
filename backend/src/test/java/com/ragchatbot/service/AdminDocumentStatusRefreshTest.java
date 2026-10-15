@@ -22,7 +22,7 @@ import com.ragchatbot.repository.RagDocumentRepository;
  * 인덱싱 상태 재조회가 「모름」을 「확정된 실패」로 굳히지 않는지 (#91).
  *
  * <p><b>왜 이 경계가 중요한가</b> — {@code in_progress} 가 아닌 행은
- * {@link RagDocumentRepository#findInProgressIds} 가 다시 묻지 않는다. 그래서 조회 실패를 한 번이라도
+ * {@link RagDocumentRepository#findInProgress} 가 다시 묻지 않는다. 그래서 조회 실패를 한 번이라도
  * {@code failed} 로 굳히면 <b>영구히 되돌릴 수 없다.</b> 색인이 정상 완료돼 검색에 잡히고 답변에
  * 인용되는 문서가 관리 화면에는 영원히 「실패」로 뜬다.
  *
@@ -42,8 +42,7 @@ class AdminDocumentStatusRefreshTest {
 
 	private static RagDocumentRepository repoWithInProgressDoc() {
 		RagDocumentRepository repo = mock(RagDocumentRepository.class);
-		when(repo.findInProgressIds()).thenReturn(List.of(DOC_ID));
-		when(repo.findAliveById(DOC_ID)).thenReturn(Optional.of(inProgress()));
+		when(repo.findInProgress()).thenReturn(List.of(inProgress()));
 		when(repo.listAlive()).thenReturn(List.of());
 		return repo;
 	}

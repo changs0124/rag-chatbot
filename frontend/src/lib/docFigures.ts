@@ -1,4 +1,4 @@
-import { API_BASE, adoptRefreshedToken, getToken, toApiError } from './api'
+import { API_BASE, adoptRefreshedToken, authHeaders, toApiError } from './api'
 
 /**
  * 답변 본문의 문서 그림 표식 `[[그림:<key>]]`(FEAT-CHAT-004).
@@ -54,8 +54,7 @@ export function loadFigure(key: string): Promise<string | null> {
   const hit = cache.get(key)
   if (hit) return hit
   const path = `/api/doc-figures/${key}`
-  const token = getToken()
-  const pending = fetch(API_BASE + path, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  const pending = fetch(API_BASE + path, { headers: authHeaders() })
     .then(async (res) => {
       adoptRefreshedToken(res)
       if (res.status === 404) return null

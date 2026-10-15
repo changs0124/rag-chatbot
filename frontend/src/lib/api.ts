@@ -99,9 +99,13 @@ interface RequestOptions {
   signal?: AbortSignal
 }
 
+/** Bearer 헤더. api 래퍼를 거치지 않는 fetch(SSE·그림)도 이것을 쓴다 (#300) */
+export function authHeaders(): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const headers: Record<string, string> = {}
-  if (token) headers.Authorization = `Bearer ${token}`
+  const headers = authHeaders()
 
   let body: BodyInit | undefined
   if (options.formData) {

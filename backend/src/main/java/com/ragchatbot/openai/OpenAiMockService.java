@@ -54,7 +54,7 @@ public class OpenAiMockService implements OpenAiService {
 	private volatile int lastAttachmentCount = 0;
 	private volatile List<Turn> lastHistory = List.of();
 
-	public OpenAiMockService(@Value("${app.mock.token-delay-ms:45}") long tokenDelayMs) {
+	public OpenAiMockService(@Value("${app.mock.token-delay-ms}") long tokenDelayMs) {
 		this.tokenDelayMs = tokenDelayMs;
 	}
 

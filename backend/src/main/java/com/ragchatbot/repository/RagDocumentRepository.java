@@ -38,8 +38,11 @@ public interface RagDocumentRepository {
 	 */
 	List<DocumentResponse> listAlive();
 
-	/** 아직 인덱싱 중인 문서의 id. 이 행만 OpenAI 에 상태를 다시 물음(완료·실패는 더 바뀌지 않음) */
-	List<UUID> findInProgressIds();
+	/** {@link #listAlive} 의 한 행. 업로드 직후 응답용 - 목록 전체를 읽어 거르지 않게 함 */
+	Optional<DocumentResponse> findSummaryById(UUID id);
+
+	/** 아직 인덱싱 중인 살아 있는 문서. 이 행만 OpenAI 에 상태를 다시 물음(완료·실패는 더 바뀌지 않음) */
+	List<RagDocument> findInProgress();
 
 	/** 살아 있는 것만 찾음 - 이미 지운 문서를 또 지우려는 요청은 404 로 귀결되어야 함 */
 	Optional<RagDocument> findAliveById(UUID id);

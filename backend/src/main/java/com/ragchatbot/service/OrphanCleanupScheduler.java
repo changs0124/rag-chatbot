@@ -24,7 +24,7 @@ public class OrphanCleanupScheduler {
 	private final long ttlMinutes;
 
 	public OrphanCleanupScheduler(FileService fileService,
-			@Value("${app.file.orphan-ttl-minutes:60}") long ttlMinutes) {
+			@Value("${app.file.orphan-ttl-minutes}") long ttlMinutes) {
 		this.fileService = fileService;
 		this.ttlMinutes = ttlMinutes;
 	}

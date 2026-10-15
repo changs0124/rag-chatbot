@@ -37,7 +37,7 @@ public class AppModeGuard {
 		return appMode == null ? "" : appMode.trim().toLowerCase(Locale.ROOT);
 	}
 
-	public AppModeGuard(@Value("${app.mode:}") String appMode, Environment environment) {
+	public AppModeGuard(@Value("${app.mode}") String appMode, Environment environment) {
 		String mode = normalize(appMode);
 		if (mode.isEmpty()) {
 			throw new IllegalStateException(

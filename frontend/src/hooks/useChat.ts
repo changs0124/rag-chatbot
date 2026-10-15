@@ -60,21 +60,6 @@ export function useChat() {
     setStage(null)
   }, [])
 
-  /**
-   * 언마운트 정리 - 단계 타이머와 **진행 중인 스트림**을 함께 끊는다(#94).
-   *
-   * abort 가 없던 동안에는 로그아웃해도 SSE 연결이 그대로 살아, 서버가 답변을 끝까지 생성하고
-   * 리더 루프가 언마운트된 훅의 setMessages 를 계속 호출했다. **로그인 화면에 도달한 뒤에도
-   * 이전 사용자의 요청이 진행 중**이었고, 화면을 드나들기를 반복하면 연결이 누적됐다.
-   */
-  useEffect(
-    () => () => {
-      abortRef.current?.abort()
-      clearStages()
-    },
-    [clearStages],
-  )
-
   const refreshConversations = useCallback(() => {
     listConversations().then(setConversations).catch(() => {})
   }, [])
@@ -95,6 +80,15 @@ export function useChat() {
     clearStages()
   }, [clearStages])
 
+  /**
+   * 언마운트 정리 - 단계 타이머와 **진행 중인 스트림**을 함께 끊는다(#94). 대화를 떠날 때와 같은 일이다.
+   *
+   * abort 가 없던 동안에는 로그아웃해도 SSE 연결이 그대로 살아, 서버가 답변을 끝까지 생성하고
+   * 리더 루프가 언마운트된 훅의 setMessages 를 계속 호출했다. **로그인 화면에 도달한 뒤에도
+   * 이전 사용자의 요청이 진행 중**이었고, 화면을 드나들기를 반복하면 연결이 누적됐다.
+   */
+  useEffect(() => abortActiveStream, [abortActiveStream])
+
   const selectConversation = useCallback(
     async (id: string) => {
       abortActiveStream()
@@ -102,18 +96,17 @@ export function useChat() {
       setActiveId(id)
       setError(null)
       setLoadingMessages(true)
+      let loaded: ChatMessage[] = []
       try {
-        const loaded = await getMessages(id)
-        // 그사이 다른 대화로 옮겼으면 버린다. 이 검사가 없으면 A→B 를 빠르게 눌렀을 때
-        // 늦게 도착한 A 의 이력이 B 화면을 덮어써, 사이드바는 B 인데 본문은 A 가 된다
-        if (generation.current !== mine) return
-        setMessages(loaded)
-        setLoadingMessages(false)
+        loaded = await getMessages(id)
       } catch {
-        if (generation.current !== mine) return
-        setMessages([])
-        setLoadingMessages(false)
+        // 실패하면 빈 이력으로 아래의 같은 길을 탄다
       }
+      // 그사이 다른 대화로 옮겼으면 버린다. 이 검사가 없으면 A→B 를 빠르게 눌렀을 때
+      // 늦게 도착한 A 의 이력이 B 화면을 덮어써, 사이드바는 B 인데 본문은 A 가 된다
+      if (generation.current !== mine) return
+      setMessages(loaded)
+      setLoadingMessages(false)
     },
     [abortActiveStream],
   )

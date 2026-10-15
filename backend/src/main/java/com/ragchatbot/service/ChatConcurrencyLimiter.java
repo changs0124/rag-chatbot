@@ -35,8 +35,8 @@ public class ChatConcurrencyLimiter {
 	private int active;
 
 	public ChatConcurrencyLimiter(
-			@Value("${app.chat.max-concurrent-streams:16}") int globalMax,
-			@Value("${app.chat.max-concurrent-per-user:1}") int perUserMax) {
+			@Value("${app.chat.max-concurrent-streams}") int globalMax,
+			@Value("${app.chat.max-concurrent-per-user}") int perUserMax) {
 		this.globalMax = globalMax;
 		this.perUserMax = perUserMax;
 	}

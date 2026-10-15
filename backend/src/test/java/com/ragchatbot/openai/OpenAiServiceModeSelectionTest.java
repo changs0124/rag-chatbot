@@ -19,7 +19,12 @@ class OpenAiServiceModeSelectionTest {
 	private final ApplicationContextRunner runner = new ApplicationContextRunner()
 			.withUserConfiguration(OpenAiMockService.class, OpenAiRealService.class)
 			.withBean(FileStorage.class, () -> mock(FileStorage.class))
-			.withPropertyValues("app.openai.api-key=test-key");
+			.withPropertyValues("app.openai.api-key=test-key",
+					// 러너는 application.yml 을 읽지 않는다. 두 빈이 읽는 나머지 키를 같이 깔아 둔다(#300)
+					"app.openai.model=gpt-4o", "app.openai.vector-store-id=",
+					"app.openai.base-url=https://api.openai.com/v1",
+					"app.openai.stream-read-timeout-ms=540000", "app.openai.request-timeout-ms=30000",
+					"app.chat.sse-timeout-ms=600000", "app.mock.token-delay-ms=0");
 
 	@Test
 	void live_with_case_and_spaces_selects_real() {

@@ -66,6 +66,12 @@ export default function ChatPage() {
     }
   }
 
+  // 사이드바 버튼과 모바일 헤더 버튼이 같이 쓴다 - 모바일 드로어가 열려 있으면 닫는다
+  function startNewChat() {
+    chat.newConversation()
+    setSidebarOpen(false)
+  }
+
   const sidebar = (
     <Sidebar
       conversations={chat.conversations}
@@ -74,10 +80,7 @@ export default function ChatPage() {
         chat.selectConversation(id)
         setSidebarOpen(false)
       }}
-      onNew={() => {
-        chat.newConversation()
-        setSidebarOpen(false)
-      }}
+      onNew={startNewChat}
       onDelete={chat.deleteConversation}
       userName={user?.name ?? ''}
       onLogout={logout}
@@ -155,10 +158,7 @@ export default function ChatPage() {
 
           <button
             className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink md:hidden"
-            onClick={() => {
-              chat.newConversation()
-              setSidebarOpen(false)
-            }}
+            onClick={startNewChat}
             aria-label="새 채팅"
           >
             <IconEdit />

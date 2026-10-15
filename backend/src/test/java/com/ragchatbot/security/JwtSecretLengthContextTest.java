@@ -20,11 +20,15 @@ class JwtSecretLengthContextTest {
 	/** 32바이트를 넘는 값. 통합 테스트가 쓰는 것과 같은 형태 */
 	private static final String VALID_SECRET = "test-secret-please-change-0123456789abcdef";
 
+	// 러너는 application.yml 을 읽지 않는다. env 가 없을 때 yml 이 주는 값을 같이 깔아 둔다(#300)
 	private final ApplicationContextRunner authRunner = new ApplicationContextRunner()
-			.withUserConfiguration(JwtService.class);
+			.withUserConfiguration(JwtService.class)
+			.withPropertyValues("app.jwt.secret=", "app.jwt.expiration-minutes=120",
+					"app.jwt.refresh-threshold-minutes=30");
 
 	private final ApplicationContextRunner fileRunner = new ApplicationContextRunner()
-			.withUserConfiguration(FileAccessTokenService.class);
+			.withUserConfiguration(FileAccessTokenService.class)
+			.withPropertyValues("app.jwt.secret=", "app.file.access-token-ttl-minutes=15");
 
 	@Test
 	void short_secret_fails_auth_token_service_startup() {

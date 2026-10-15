@@ -38,8 +38,8 @@ public class DocFigureService {
 	private final boolean mock;
 
 	public DocFigureService(
-			@Value("${app.doc-figures.dir:}") String dir,
-			@Value("${app.mode:}") String mode) {
+			@Value("${app.doc-figures.dir}") String dir,
+			@Value("${app.mode}") String mode) {
 		this.root = dir == null || dir.isBlank() ? null : Path.of(dir).toAbsolutePath().normalize();
 		this.mock = "mock".equals(AppModeGuard.normalize(mode));
 	}

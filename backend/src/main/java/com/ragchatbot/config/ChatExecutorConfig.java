@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 public class ChatExecutorConfig {
 
 	@Bean(destroyMethod = "shutdown")
-	public ExecutorService chatExecutor(@Value("${app.chat.max-concurrent-streams:16}") int maxConcurrentStreams) {
+	public ExecutorService chatExecutor(@Value("${app.chat.max-concurrent-streams}") int maxConcurrentStreams) {
 		return Executors.newFixedThreadPool(maxConcurrentStreams);
 	}
 }

@@ -18,6 +18,10 @@ function readStoredWidth(): number {
   return raw
 }
 
+function persist(width: number) {
+  localStorage.setItem(STORAGE_KEY, String(width))
+}
+
 /**
  * 데스크톱 사이드바의 폭 조절. 모바일 드로어는 이 컴포넌트를 쓰지 않는다(폭 고정).
  *
@@ -40,7 +44,7 @@ export default function ResizableSidebar({ children }: { children: ReactNode }) 
       if (!dragging.current) return
       dragging.current = false
       document.body.style.userSelect = ''
-      localStorage.setItem(STORAGE_KEY, String(widthRef.current))
+      persist(widthRef.current)
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
@@ -73,12 +77,11 @@ export default function ResizableSidebar({ children }: { children: ReactNode }) 
     document.body.style.userSelect = 'none'
   }
 
+  // 저장은 갱신 함수 밖에서 한다 - 갱신 함수는 순수해야 한다(StrictMode 는 두 번 부른다)
   function nudge(delta: number) {
-    setWidth((prev) => {
-      const next = clampWidth(prev + delta)
-      localStorage.setItem(STORAGE_KEY, String(next))
-      return next
-    })
+    const next = clampWidth(widthRef.current + delta)
+    setWidth(next)
+    persist(next)
   }
 
   return (
@@ -99,7 +102,7 @@ export default function ResizableSidebar({ children }: { children: ReactNode }) 
         onPointerDown={startDrag}
         onDoubleClick={() => {
           setWidth(SIDEBAR_DEFAULT_WIDTH)
-          localStorage.setItem(STORAGE_KEY, String(SIDEBAR_DEFAULT_WIDTH))
+          persist(SIDEBAR_DEFAULT_WIDTH)
         }}
         onKeyDown={(e) => {
           if (e.key === 'ArrowLeft') nudge(-KEY_STEP)
