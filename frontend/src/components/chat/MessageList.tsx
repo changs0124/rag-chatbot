@@ -6,6 +6,7 @@ import { nextStick } from './scroll'
 import ImageLightbox from './ImageLightbox'
 import { IconFile } from '../icons'
 import DocFigure from './DocFigure'
+import Markdown from './Markdown'
 import { splitFigures } from '../../lib/docFigures'
 
 /** 스크롤을 실제로 하는 조상. MessageList 는 컨테이너를 소유하지 않는다(ChatPage 가 가진다) */
@@ -202,9 +203,14 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         )}
         {segments.map((s, i) =>
           s.type === 'text' ? (
-            <p key={`t${i}`} className="whitespace-pre-wrap break-words">
-              {s.text}
-            </p>
+            // 답변만 마크다운으로 그린다(#270). 사용자가 친 글은 쓴 그대로 보여야 한다 - `*` 나 `|` 를 친 사람의 글이 서식으로 바뀌면 안 된다
+            isUser ? (
+              <p key={`t${i}`} className="whitespace-pre-wrap break-words">
+                {s.text}
+              </p>
+            ) : (
+              <Markdown key={`t${i}`} text={s.text} />
+            )
           ) : (
             <DocFigure key={`f${i}-${s.key}`} figureKey={s.key} onLoad={onFigureLoad} onOpen={setOpenFigure} />
           ),

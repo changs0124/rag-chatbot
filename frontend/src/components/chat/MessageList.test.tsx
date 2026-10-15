@@ -232,4 +232,60 @@ describe('MessageList', () => {
       expect(screen.queryByText(/그림:/)).not.toBeInTheDocument()
     })
   })
+
+  describe('답변 마크다운 (#270)', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      resetFigureCache()
+    })
+
+    const msg = (role: 'user' | 'assistant', content: string): ChatMessage => ({
+      id: role + content.length,
+      role,
+      content,
+      status: 'complete',
+      createdAt: '',
+      citations: role === 'assistant' ? [{ seq: 1, sourceName: '매뉴얼', snippet: '', uri: '' }] : [],
+    })
+
+    it('굵게 · 목록 · 표를 기호가 아니라 서식으로 그린다', () => {
+      render(
+        <MessageList
+          messages={[msg('assistant', '핀 배열은 **CN3** 이다.\n\n- 3상 입력\n- 모터 파워\n\n| 핀 | 신호 |\n|---|---|\n| B1 | +6 |')]}
+        />,
+      )
+      expect(screen.getByText('CN3').tagName).toBe('STRONG')
+      // 출처 목록도 listitem 이라 본문 항목만 글자로 집는다
+      expect(screen.getByText('3상 입력').tagName).toBe('LI')
+      expect(screen.getByText('모터 파워').tagName).toBe('LI')
+      expect(screen.getByRole('table')).toBeInTheDocument()
+      expect(screen.getByRole('cell', { name: '+6' })).toBeInTheDocument()
+      expect(screen.queryByText(/\*\*|\|---/)).not.toBeInTheDocument()
+    })
+
+    it('원시 HTML 은 실행하지 않고 위험한 링크 스킴은 지운다', () => {
+      const { container } = render(
+        <MessageList
+          messages={[msg('assistant', '<img src=x onerror="alert(1)"> <script>alert(2)</script>\n\n[누르기](javascript:alert(3))')]}
+        />,
+      )
+      expect(container.querySelector('img, script')).toBeNull()
+      const link = screen.getByText('누르기').closest('a')
+      expect(link?.getAttribute('href') ?? '').not.toMatch(/javascript:/i)
+    })
+
+    it('그림 표식 앞뒤의 마크다운과 그림이 함께 나온다', async () => {
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(new Blob(['png']), { status: 200 })))
+      vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:fig' })
+      render(<MessageList messages={[msg('assistant', '**각 부 명칭**\n[[그림:tm-p020-f1]]\n1. 엔코더 커넥터')]} />)
+      expect(screen.getByText('각 부 명칭').tagName).toBe('STRONG')
+      expect(await screen.findByAltText('문서 그림')).toBeInTheDocument()
+      expect(screen.getByText('엔코더 커넥터').tagName).toBe('LI')
+    })
+
+    it('사용자가 친 글은 서식으로 바꾸지 않는다', () => {
+      render(<MessageList messages={[msg('user', '**굵게** 가 아니라 별표 그대로')]} />)
+      expect(screen.getByText('**굵게** 가 아니라 별표 그대로')).toBeInTheDocument()
+    })
+  })
 })
