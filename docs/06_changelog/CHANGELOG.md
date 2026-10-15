@@ -5,6 +5,26 @@
 ## [Unreleased]
 
 ### Changed
+- **문서의 경위 서술과 문서 간 중복을 걷어, 규칙마다 정본 하나만 남겼다(#297).** 결정 · 불변식 · 현재 수치 · 절차는 그대로이고,
+  지운 경위는 대부분 아래 기존 항목에 이미 있다(괄호 안 번호).
+  - 정본 정리 : 시각 규칙(라이트 하나 · 토큰 · 모션 · 답변 배경 · 사이드바 폭)은 design-system, 동작 계약 · API 통신은 frontend,
+    SSE 계약은 api.md(backend 는 구현 이유, overview 는 그림 + 링크), 환경변수는 `.env.example`, 알려진 제약은 overview
+    (requirements 6절은 링크 · 도메인 검사 시점 항목을 overview 로 옮김), CI 잡 목록은 CONVENTIONS(INDEX 는 한 줄)
+  - backend : 호스팅 선정 경위(대안표 — Render · Fly.io · Koyeb · Railway · Cloud Run · GCE 행, Oracle A1 좌초, GCE 제약,
+    전환 실측 → #243 · 「백엔드 호스트 확정」 항목)를 요구 넷 + 다시 볼 조건 + 운영 구성표로, GHCR · #137 한도 이야기를 한 줄로,
+    스왑 실측 서술을 결정 이유 두 줄로(#202), 메모리 상한 중복을 「메모리 상한」 하나로, 예외 핸들러 측정 이력(#38 · #45 · #217)을
+    「TC-OPS-014~023 이 잠근다」로, 관리자 부트스트랩을 규칙 셋 + 대가로, 「배포 시 반드시 확인할 것」 env 표를 링크로.
+    유량 제어는 로컬 실측표를 지우고 운영 실측표 · Hikari 5 결론만 남겼다(#278)
+  - CONVENTIONS : CI run 미생성 사고 서술(#170)을 증상 → `actions/runs` 확인 → 닫고 다시 열기 · `gh workflow run` 불가로,
+    주간 스캔의 #127 경위 · shellcheck 도입 집계를 한 줄로, 스타일 · API 통신을 design-system · frontend 링크로
+  - design-system : #151 · #153 · #155 경위(옛 값 · 오렌지 스크림 농도표 · 재도색 표 · 파비콘 SVG 부재 · `--shadow-lifted` 누락),
+    「다크는 #191 에서 사라졌다」 반복 7곳을 §1 머리 한 번으로, `gradientUnits` 주의(§7-2 에만) · 모바일 헤더 마크(§7-3 에만) 중복 제거
+  - frontend : `VITE_API_BASE_URL` 빌드 시점 치환 세 번 → 한 번, Git 연결 절차 → Root Directory 한 줄, #235 모바일 점검 기록 삭제
+    (실기기는 #221 이 정본), #289 를 세 줄로, 토큰 목록 · 다크 · 모션 · 서체 · 답변 배경 · 사이드바 폭을 design-system 으로
+  - live-integration : #37 `OpenAI-Beta` 판정 세 번 → 한 번, 1절 준비물 표를 `.env.example` 링크 + 「투입 관점」 표로
+    (「기동을 막는 것은 여섯」 → 목록), #269 QA 표 → 한 문장
+  - api : SSE Accept 빈 본문 500 경위 삭제(규칙은 유지). requirements : 작성 경위 한 줄 · Phase 9 문장 중복 제거.
+    current-sprint : #105 설명을 「블로커」 하나로
 - **README 를 현재 코드 · 문서에 맞춰 다시 썼다(#302).** 공개 저장소 첫 화면이라 기능 · 구조 · 기술 스택 · 로컬 실행 · 테스트와 CI · 배포 개요 · 문서 표 순으로 정리했다.
   - 버전은 `frontend/package.json` · `backend/pom.xml` · Spring Boot BOM · `.nvmrc` 에서, 기본값은 `application.yml` · `.env.example` 에서 옮겼다(동시 스트림 16 / 1 · 모델 `gpt-6-sol`)
   - 서버 이름 · 호스팅 업체 · 백엔드 도메인 · 스토어 ID · 계정 주소는 적지 않는다 — 배포는 「단일 서버 자체 호스팅」으로만 쓰고 상세는 `backend.md` 「배포」로 넘긴다

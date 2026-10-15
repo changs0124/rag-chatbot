@@ -42,8 +42,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | 대화·메시지·스트리밍 | `frontend/src/hooks/useChat.ts` | 대화 목록, 활성 대화, 메시지 배열, 스트리밍 여부, 진행 단계, 오류를 한 훅이 보유 |
 | 인증 토큰 | `frontend/src/lib/api.ts` 모듈 변수 + `localStorage` | React 상태가 아님 — 렌더링과 무관하게 요청 시점에 읽혀야 함 |
 
-테마 상태는 없다 — **화면은 라이트 하나다**(#191, 2026-10-06). 종전의 `ThemeContext`(라이트·다크·시스템, 계정에 저장)는
-회사 홈페이지가 테마를 걷은 것에 맞춰 화면·API·컬럼까지 함께 걷었다.
+테마 상태는 없다 — 화면은 라이트 하나다([design-system.md](./design-system.md) §1).
 
 ## API 통신
 
@@ -165,12 +164,9 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   눈으로 확인되지 않는 규칙이라 테스트가 유일한 게이트다(`Composer.test.tsx` 가 회수 호출을 단언한다).
 - **카드에 파일명을 쓰지 않는다.** 파일명은 `alt` · `aria-label` 로만 남기고, 구분이 필요하면 눌러서 확대한다.
 - **이미지가 아닌 파일은 받지 않는다.** 드롭·붙여넣기로 들어온 비이미지도 버린다.
-  **`+` 는 메뉴 없이 기기 선택창을 바로 연다(#289).** iOS 선택창이 「사진 찍기 · 사진 보관함 · 파일 선택」을 이미
-  보여 줘서, #218 에서 남겨 둔 앱 안 「카메라」(`CameraCapture`)가 같은 일을 두 번 했다 — 사용자 결정으로 없앴다.
-  사진 선택기의 `accept` 는 **`image/*`** 다(#289). #218 때는 촬영 항목을 빼려고 서버 허용 목록(jpeg · png · webp · gif)으로
-  좁혔지만, iOS 는 그래도 「사진 찍기」를 붙였고(WebKit 236981) **Android(갤럭시)는 카메라 없이 보관함으로 바로 들어갔다** —
-  앱 안 카메라를 없앤 뒤로는 촬영 길이 사라지는 셈이라 넓혔다. 허용 밖 형식(HEIC 등)은 업로드에서 서버가 거절하고 카드에 오류로 남는다.
-  iOS 는 이 설정에서 HEIC 를 JPEG 로 바꿔 넘긴다.
+  **`+` 는 메뉴 없이 기기 선택창을 바로 연다(#289)** — iOS 선택창이 촬영 · 보관함 · 파일을 이미 보여 줘 앱 안 카메라를 두지 않는다.
+  `accept` 는 **`image/*`** 다 — 서버 허용 목록으로 좁히면 Android 가 카메라 없이 보관함으로 바로 들어가 촬영 길이 사라진다.
+  허용 밖 형식(HEIC 등)은 서버가 거절하고 카드에 오류로 남는다(iOS 는 이 설정에서 HEIC 를 JPEG 로 바꿔 넘긴다).
   서버가 받지 않는 것을 화면에 올려 두면 실패만 보여 주게 된다. 과거 메시지에 남은 문서 첨부는 그대로 표시한다.
 - **확대 보기는 전송 전·후가 같은 컴포넌트다**(`frontend/src/components/chat/ImageLightbox.tsx`).
   `src` 가 로컬 objectURL 이냐 서명 URL 이냐만 다르다. 양 끝에서 순환하지 않는다 — 한 장짜리에서 같은 이미지가
@@ -183,25 +179,8 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ## 스타일
 
 - Tailwind 유틸리티 클래스만 쓴다. CSS 모듈·CSS-in-JS 없음. 전역 CSS 는 `frontend/src/index.css` 뿐이다.
-- **다크 모드가 없다**(#191). OS 설정과 무관하게 라이트로 뜬다(`index.css` 의 `color-scheme: light`).
-  **`dark:` · `data-theme` · `prefers-color-scheme` 을 쓰지 않는다** — Tailwind 4 의 `dark:` 기본값은
-  `prefers-color-scheme` 미디어쿼리라, 하나라도 다시 들어오면 **OS 가 다크인 사용자에게만** 화면이 갈린다.
-  `src/theme-tokens.test.ts` 가 소스를 훑어 막는다.
-- **색은 토큰으로만 쓴다.** 토큰 값은 `index.css` 의 `:root` 에 CSS 변수로 두고 `@theme inline` 이 그 변수를
-  가리킨다. 화면 코드에 hex 를 박으면 토큰을 고쳐도 따라오지 않는다.
-  - 면 : `canvas`(바탕) · `surface`(가라앉음) · `raised`(카드·입력창) · `line`(구분선)
-  - 글 : `ink` · `ink-muted`
-  - 강조 : `accent` · `accent-ink` · `accent-soft`
-  - 주의 : `highlight` · `highlight-ink` — **배경 전용**이다. 옅은 무채색이라(#190) 글자로 쓰면 밝은 바탕에서 보이지 않는다
-  - 경고 : `danger` · `danger-ink` · `danger-soft`
-  - **14종이고 값의 정본은 [design-system.md](./design-system.md) 「색 — 토큰으로만 쓴다」다.** 여기에는 이름만 둔다
-  - **예외** : 회사 CI 색(`components/Logo.tsx`)은 토큰이 아니다.
-    로고는 CI 원색 그대로여야 하기 때문이다 — 허용 목록은 [design-system.md](./design-system.md) 「색 리터럴이 허용되는 자리」 참고
-- **모션은 이징 하나로 통일한다** — `--ease-out-quint`(`cubic-bezier(0.16,1,0.3,1)`). `linear` · `ease-in-out` 을 쓰지 않고,
-  값이 매 프레임 바뀌는 동작(사이드바 폭 드래그)에는 트랜지션을 걸지 않는다 — 손보다 늦게 따라와 고무줄처럼 보인다.
-  `prefers-reduced-motion: reduce` 는 전역 CSS 가 받아 트랜지션을 1ms 로 줄인다.
-- 본문 서체는 Pretendard(동적 서브셋)를 번들에 넣어 쓴다. CDN 을 새로 물리지 않는다.
-- 한국어 본문은 `word-break: keep-all` 을 전역으로 받는다 — 조사 앞에서 줄이 갈리면 읽는 속도가 떨어진다.
+- **시각 규칙의 정본은 [design-system.md](./design-system.md) 다** — 라이트 하나(`dark:` · `data-theme` · `prefers-color-scheme` 금지,
+  `src/theme-tokens.test.ts` 가 막는다) · 색 토큰과 리터럴 허용 자리 · 모션 · 서체 · 답변 배경 · 사이드바 폭 · 로고.
 
 ### 화면 골격
 
@@ -213,22 +192,12 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   **이 메타는 전 페이지에 걸린다** — Chrome 108 전의 기본 동작과 같다. 로그인·관리·마이 페이지는 `min-h-[100dvh]` +
   문서 스크롤이라 키보드가 열리면 최소 높이만 줄고 내용은 그대로 스크롤된다.
   `scrollTo(0, 0)` 은 데스크톱 창 크기 변경에도 불리지만 채팅 화면은 문서가 스크롤되지 않아(목록만 스크롤) 잃는 위치가 없다.
-  **헤드리스 브라우저는 가상 키보드와 iOS 튕김을 재현하지 못한다** — 이 부분은 실기기로만 확인된다.
+  **헤드리스 브라우저는 가상 키보드와 iOS 튕김 · 확대를 재현하지 못한다** — 이 부분은 #221 의 실기기 확인이 정본이다.
 - **입력 글자는 모바일 16px · md 이상 15px 이다(#221 후속).** iOS Safari 는 16px 미만 입력에 포커스하면 화면을 확대하고
   포커스가 풀려도 되돌리지 않는다 — 실기기에서 입력 칸이 위로 솟고(확대된 보이는 영역 높이가 루트에 들어감) 포커스를
   풀면 가로 스크롤이 생겼다. 새 입력을 만들 때도 `text-base md:text-[15px]` 를 지킨다(`TextInput` 은 이미 그렇다).
   같은 이유로 `visualViewport.scale` 이 1 이 아닐 때(사용자가 손가락으로 확대한 동안)는 높이 맞춤을 하지 않는다.
-- 답변에는 배경을 깔지 않는다(ChatGPT · Claude 공통). 사용자 메시지만 `raised` 카드다 —
-  긴 답변에 큰 색면이 깔리면 읽는 흐름이 끊긴다.
-- 사이드바 폭은 `ResizableSidebar` 가 관장한다(200~420px, 기본 260px, `localStorage`).
-  범위 밖 저장값은 무시하고 기본값으로 연다. 손잡이는 `role="separator"` 로 키보드에서도 조절된다.
-  모바일 드로어에는 손잡이가 없다.
-- 드로어가 열린 동안 뒤 화면 스크롤을 잠근다. 터치 대상은 44px 을 밑돌지 않는다.
 - 모바일 헤더는 메뉴 버튼 · 대화 제목 · 새 채팅 버튼뿐이다. 로고는 드로어 안 사이드바에만 있다(#235, `design-system.md` 7-3).
-- **모바일 점검(#235, 2026-10-08)** : 폭 360 · 390 · 430 에서 `/login` · `/`(헤더 · 드로어 열기 · 배경 눌러 닫기 · 메시지 · 이미지 첨부 ·
-  문서 그림 · 출처 · 입력창) · 이미지 확대 보기 · `/me` · `/admin`(긴 파일명 · 긴 이메일) 을 헤드리스 Chromium 으로 확인했다.
-  가로 스크롤 · 잘림 · 겹침은 없었다. 긴 제목 · 파일명 · 이메일은 말줄임으로 한 줄에 남는다. 실기기 동작(가상 키보드 · iOS 확대)은
-  이 점검으로 확인되지 않는다 — #221 의 실기기 확인이 정본이다.
 
 ## 오류 경계
 
@@ -244,24 +213,12 @@ Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts
 
 **운영 중** : https://rag-chatbot-jade-pi.vercel.app (Vercel 프로젝트명 `rag-chatbot`)
 
-2026-10-06 런칭 때 `VITE_API_BASE_URL` 을 터널 도메인으로 넣고(production · preview) 재배포해 백엔드와
-붙었다. 그 전에는 번들에 `http://localhost:8080` 이 박혀 로그인부터 실패했다(2026-09-11 실측) —
-빌드 시점에 박히는 값이라 **설정만 바꾸고 재배포하지 않으면 그대로**라는 점은 지금도 같다.
 preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막힌다.
 
 `frontend/vercel.json` 이 빌드 명령·출력 디렉터리와 **SPA 리라이트**를 고정한다. 리라이트가 없으면
 `/me` 를 직접 열거나 새로고침할 때 404 가 난다 — 라우팅을 `BrowserRouter` 가 하기 때문이다.
 
-### GitHub 연동
-
-첫 배포는 파일을 직접 올려 만들었고, 지금은 저장소가 연결돼 `main` 푸시가 자동 배포된다.
-새로 연결해야 할 때(프로젝트를 다시 만드는 경우 등) Vercel 대시보드에서 :
-
-1. 프로젝트 → Settings → Git → Connect Git Repository → `changs0124/rag-chatbot`
-   (공개 저장소라 별도 접근 승인은 필요 없다. 처음 연결하는 계정이면 Vercel GitHub App 설치는
-   한 번 거친다 — 저장소 공개 여부와 무관한 절차다)
-2. **Root Directory 를 `frontend` 로 지정** — 모노레포라 이걸 빼면 루트에서 빌드를 시도해 실패한다
-3. 연결 후 첫 배포부터는 저장소의 `package-lock.json` 으로 빌드되므로 CI 와 같은 의존성이 잡힌다
+GitHub 저장소가 연결돼 `main` 푸시가 자동 배포된다. **다시 연결할 때 : Root Directory = `frontend`** — 모노레포라 빼면 루트에서 빌드해 실패한다.
 
 배포 전 반드시 할 것 :
 
@@ -271,8 +228,7 @@ preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막�
 2. 백엔드의 `ALLOWED_ORIGINS` 에 Vercel 도메인을 넣는다(백엔드 설정 — `backend.md` 「배포」).
    안 넣으면 브라우저가 모든 호출을 CORS 로 막는다.
 
-백엔드를 로컬에 두고 터널로 노출하는 데모 구성이면 `VITE_API_BASE_URL` 이 터널 주소가 된다.
-터널 주소가 바뀌면 환경변수만 고쳐서는 반영되지 않고 **재배포까지 해야 한다**(1번의 빌드 시점 치환 때문).
+백엔드를 로컬에 두고 터널로 노출하는 데모 구성이면 `VITE_API_BASE_URL` 이 터널 주소가 된다(바뀌면 1번대로 재배포).
 절차와 터널 도구 선택은 [backend.md](./backend.md) 「배포」 참고.
 
 토큰은 `localStorage` 에 둔다. 만료되면 어떤 요청에서든 세션을 비우고 로그인으로 돌아간다

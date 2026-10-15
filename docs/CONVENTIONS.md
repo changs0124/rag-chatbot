@@ -69,24 +69,17 @@
 - 서버 캐시 라이브러리(react-query 등)도 없다. 필요한 시점에 직접 호출하고 로컬 상태를 갱신한다.
 
 ### API 통신
-- API 호출은 `lib/api.ts`의 `api.get/post/patch/del/postForm`을 통한다. **래퍼 밖에서 `fetch`를 직접
-  부르는 곳은 셋** — 채팅 스트림(아래, `endpoints.ts`), 문서 그림 로드(`docFigures.ts` — blob 을 objectURL 로), 첨부 저장(`ImageLightbox.download()`이 blob으로 받아야 해서). 앞의 둘은 컴포넌트가 아니라 `lib/`에 있다.
-- 엔드포인트 함수는 `lib/endpoints.ts`에 둔다. **대부분은 `api.*`를 한 줄로 감싼 것**이고, 래퍼로 안 되는 것만 함수로 편다 — 멀티파트 업로드 둘(`uploadFile`·`uploadDocument`)과 채팅 스트림이다. **`AuthContext`는 예외로 `/api/auth/me`와 `/api/auth/login`을 직접 부른다.**
-- **응답이 도착한** 실패는 `ApiError(status, message)`로 통일. 서버가 `message`를 주면 그대로 보여주고, 없으면 `요청 실패 (n)`로 떨어진다. 네트워크 단계 실패(CORS 거절·오프라인·중단)는 `fetch` 또는 본문 읽기가 reject 되어 이 경로를 타지 않는다.
-- 채팅 스트림은 `EventSource`가 아니라 **fetch + ReadableStream** 이다. `EventSource`는 Authorization 헤더를 못 싣는다.
+- API 호출은 `lib/api.ts` 의 `api.*` 래퍼를 통하고, 엔드포인트 함수는 `lib/endpoints.ts` 에 둔다. 래퍼 밖 `fetch` 예외 · `ApiError` · 채팅 스트림 규칙은
+  [frontend.md](./02_architecture/frontend.md) 「API 통신」이 정본이다.
 
 ### 스타일
 - Tailwind CSS 4 유틸리티 클래스. 별도 CSS 모듈·CSS-in-JS 없음. 전역은 `frontend/src/index.css`뿐.
-- **다크 모드가 없다 — 화면은 라이트 하나다**(#191). `dark:` · `data-theme` · `prefers-color-scheme` 을 쓰지 않는다.
-  Tailwind 4 의 `dark:` 기본값이 OS 미디어쿼리라 하나라도 들어오면 OS 가 다크인 사용자에게만 화면이 갈린다.
-  `src/theme-tokens.test.ts` 가 막는다.
-- **색은 토큰(`bg-surface` · `text-ink` · `bg-accent` …)으로만 쓴다.** 새 색이 필요하면 유틸리티에 값을 박지 말고 `index.css` 에 토큰을 먼저 추가한다.
-- **색 리터럴이 허용되는 자리는 [design-system.md](./02_architecture/design-system.md) 「색 리터럴이 허용되는 자리」 표뿐이다.**
-  나머지는 전부 토큰이다. 표의 자리는 `index.css`(토큰 정본) · `Logo.tsx`(회사 CI 색) · `index.html` 의 `theme-color` ·
-  사진·영상 위 오버레이(`ImageLightbox` · `Composer` 썸네일) · 모달·드로어 스크림 `bg-black/40`(`ConfirmModal` · `AdminPage` ·
-  `ChatPage`) · 문서 그림 바탕 `bg-white`(`DocFigure`)다. 이유는 그 표에 있다. 자리를 늘리려면 그 표를 함께 고친다.
+- **시각 규칙(라이트 하나 · 색 토큰 · 모션)의 정본은 [design-system.md](./02_architecture/design-system.md) 다.** 코드에서 지킬 것 :
+  `dark:` · `data-theme` · `prefers-color-scheme` 을 쓰지 않는다(`src/theme-tokens.test.ts` 가 막는다).
+  색은 토큰 유틸리티(`bg-surface` · `text-ink` …)로만 쓰고, 새 색은 `index.css` 에 토큰을 먼저 추가한다.
+  **색 리터럴은 design-system 「색 리터럴이 허용되는 자리」 표의 자리에서만** 쓴다 — 자리를 늘리려면 그 표를 함께 고친다.
 - **이모지·장식 기호를 화면에 쓰지 않는다**(#192). 아이콘은 `components/icons.tsx` 의 라인 아이콘만 쓴다 — `src/no-emoji.test.ts` 가 막는다.
-- 모션은 `ease-[var(--ease-out-quint)]` 하나로 통일한다. `transition` 기본 이징(`ease-in-out`)을 그대로 쓰지 않는다.
+- 모션 이징은 `ease-[var(--ease-out-quint)]` 하나다. `transition` 기본 이징(`ease-in-out`)을 그대로 쓰지 않는다.
 
 ### 테스트
 - 테스트는 **소스 옆에** 둔다(`useChat.test.ts`, `LoginPage.test.tsx`). 별도 `__tests__` 폴더를 만들지 않는다.
@@ -121,9 +114,7 @@
 - `scripts/check-shell-lint.sh` 가 같은 대상에 **`shellcheck -x`** 를 돌린다(#145).
   `#138` 의 버그(`printf` 가 인자를 버리던 것)는 `bash -n` 을 통과했고 **shellcheck 만 SC2182
   로 잡았다** — 둘은 서로 다른 것을 잡으므로 스크립트도 나눠 두었다(실패 신호가 섞이지 않게).
-  **경고를 남긴 채 통과시키지 않는다** — 도입 시점에 기존 12건을 전부 처리했다(고침 2 ·
-  근거 있는 억제 6 · `-x` 로 해소 1 · 배열 전환으로 소멸 3). 하한을 두면 그 아래가 조용히 쌓인다.
-  **억제는 반드시 이유와 함께** 쓴다(`# shellcheck disable=SCxxxx` 바로 위에 한국어 한 줄).
+  **경고 0 을 유지한다.** 억제는 이유 한 줄과 함께 쓴다(`# shellcheck disable=SCxxxx` 바로 위에 한국어 한 줄).
   `ubuntu-latest` 러너에는 기본 설치돼 있고, 로컬에 없으면 **"통과"가 아니라 "모름"** 으로 찍힌다.
 - `scripts/check-merge-markers.sh` 가 **병합 충돌 표시**(줄 맨 앞의 `<<<<<<< ` · `>>>>>>> ` · `||||||| `)를
   추적 중인 파일 전체와 추적 전 새 파일에서 찾는다(#210). `overview.md` 에 표시가 약 3주 동안 커밋돼 있었는데
@@ -155,11 +146,8 @@
   이름이 아니라 **값**이 제 컬럼에서 왔는지는 `AdminDocumentFlowTest` 가 본다. 이름만 보면 결선이 어긋나도 통과하고,
   값만 보면 프론트가 따로 놀아도 통과한다.
 - 시크릿 스캔(gitleaks)·의존성 취약점 스캔(Trivy · `npm audit`)은 **변경마다 + 주 1회** 돈다(#135).
-  한때 주 1회만 돌린 적이 있는데(#127) 근거는 "Actions 분이 유료 한도에
-  묶인다" 였다. 2026-09-11 공개 전환으로 **그 근거가 사라졌다** — 공개 저장소는 분이 무료다.
-  오히려 공개 저장소는 **시크릿이 한 번 들어오면 회수가 불가능**하므로 merge 전에 돌아야 한다.
-  **주간 실행은 그대로 둔다** — 이 셋은 우리 커밋이 아니라 **바깥**(취약점 DB · 커밋 이력 전체)이
-  바뀔 때도 결과가 달라져, 둘은 서로 다른 것을 잡는다.
+  공개 저장소는 **시크릿이 한 번 들어오면 회수가 불가능**하므로 merge 전에 돌아야 한다.
+  주간 실행은 우리 커밋이 아니라 **바깥**(취약점 DB)이 바뀐 것을 잡는다.
 - **위 7잡은 `main` 에서 required status checks 다**(#166). 빨간불이면 merge 가 **막힌다** —
   `main: CI must pass` ruleset 이 집행한다. 필수인 것은 CI 7잡 **전부**다 :
   `backend` · `frontend` · `docker` · `static` · `secrets` · `deps (백엔드)` · `deps (프론트)`.
@@ -199,33 +187,14 @@
     --jq '.workflow_runs[]|"\(.created_at) \(.event) \(.head_sha[0:8])"'
   ```
 
-  PR head SHA 에 해당하는 `pull_request` 줄이 없으면 run 이 안 생긴 것이다.
-  **GitHub 이 푸시를 인지했는데도 run 만 없을 수 있다** — 2026-09-12 PR #168 에서 PR 의
-  `updatedAt` 은 갱신됐는데 run 이 생성되지 않았다. 원인은 확정하지 못했다(같은 시간대 다른 PR 은
-  정상이었으므로 간헐적이다).
-
-  **같은 날 세 번 더 재발했다** — `c3e5acc` · `47d397d` · `d5b454e`. 한 번짜리 사고가 아니므로
-  **이 절차는 언젠가 또 쓰인다.** 셋의 공통점은 푸시된 커밋이 전부 **증거 커밋**이었다는 것이다
-  (`docs(issue-*): 작업 전후 증거 자료 추가`). **상관만 적는다 — 인과는 주장하지 않는다.**
-  증거 커밋 푸시는 `main` 미러 푸시와 맞물려 일어나므로 그쪽이 원인일 수도 있지만,
-  `ci.yml` 의 `concurrency` 그룹은 `event_name` 을 포함해 미러 푸시가 PR run 을 **취소하지 않고**,
-  취소였다면 위 `actions/runs` 목록에 `cancelled` 줄로 남을 텐데 그런 줄 자체가 없었다.
-  **세 번 모두 닫고 다시 열어 풀렸다**(롤업 1건 → 8건).
-
-  **복구는 PR 을 닫고 다시 여는 것이다.**
+  PR head SHA 에 해당하는 `pull_request` 줄이 없으면 run 이 안 생긴 것이다(간헐적으로 재발한다 — 경위는 CHANGELOG #170).
+  **복구는 PR 을 닫고 다시 여는 것이다** — `reopened` 는 `pull_request` 기본 트리거라 커밋 이력을 건드리지 않는다.
 
   ```bash
   gh pr close <n> && gh pr reopen <n>
   ```
 
-  `reopened` 는 `pull_request` 의 기본 트리거 타입이라 `ci.yml` 이 그대로 받고, **커밋 이력을
-  건드리지 않는다**(빈 커밋보다 나은 이유다).
-
-  **`gh workflow run` 으로는 풀리지 않는다.** #161 의 기록이 잡이 안 돌 때의 확인 수단으로 그것을
-  가리키고 있어 먼저 손이 가는데, **required checks 를 걸어 둔 지금은 듣지 않는다** —
-  커밋에는 7잡이 `success` 로 붙지만 **PR 의 required checks 는 `workflow_dispatch` 로 생긴 체크를
-  세지 않는다.** 같은 날 실측했다 : 커밋 기준 `check-runs` 는 8건인데 PR 롤업은 1건이었고
-  `BLOCKED` 이 2분 30초 동안 그대로였다. 재개방 직후 롤업이 8건으로 바뀌며 `CLEAN` 이 됐다.
+  **`gh workflow run` 으로는 풀리지 않는다** — PR 의 required checks 는 `workflow_dispatch` 로 생긴 체크를 세지 않는다.
 - **관리자 우회는 남겨 두었다**(`bypass_actors` = Repository admin / always, #166). 잠그지 않은
   이유가 취향이 아니라 구체적 파손이다 — required checks 는 PR merge 뿐 아니라 **그 브랜치로의
   직접 푸시도 막는데**, 증거 미러 커밋은 `.issue/**` 만 바꿔 바로 아래 항목대로 CI 를 건너뛰므로
