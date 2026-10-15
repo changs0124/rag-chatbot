@@ -285,6 +285,7 @@ public class OpenAiRealService implements OpenAiService {
 		boolean completed = false;
 		boolean searchingSent = false;
 		boolean generatingSent = false;
+		CitationMarkupFilter markup = new CitationMarkupFilter();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
@@ -302,7 +303,11 @@ public class OpenAiRealService implements OpenAiService {
 				// 업스트림 스키마가 넓어져도 조용히 넘어가는 쪽이 맞다(#63)
 				String type = ev.path("type").asString("");
 				if ("response.output_text.delta".equals(type)) {
-					String delta = ev.path("delta").asString("");
+					// 인용 표기 원문은 화면·저장본 어디에도 남기지 않음(#277)
+					String delta = markup.accept(ev.path("delta").asString(""));
+					if (delta.isEmpty()) {
+						continue;
+					}
 					if (!generatingSent) {
 						onStage.accept(Stage.GENERATING, List.of()); // 첫 토큰 직전이 생성 경계임
 						generatingSent = true;
