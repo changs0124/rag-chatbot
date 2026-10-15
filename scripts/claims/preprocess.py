@@ -1,0 +1,178 @@
+"""필드 클레임 엑셀을 Vector Store 투입용 Markdown 으로 바꾼다 (#266).
+
+관리자 업로드 허용 형식이 PDF·TXT·MD·DOCX 뿐이라 xlsx 는 그대로 못 올린다. 「통합리스트」 시트를
+클레임 1건 = 절 하나로 펴고, 머리에 전체 집계를 붙인다.
+
+반출승인이 없는 자료라 사람을 알아볼 수 있는 값은 올리기 전에 지운다.
+- 고객사 업체명(`업체명` 열) → `고객사-NNN` (2026-09-22 결정). 등장 순 번호라 같은 업체는 같은 가명이다
+- 자유 서술(불량내용 · 분석내용 …)에 섞인 사람 이름 → `담당자-NN`, 협력사 상호 → `협력사-NN`.
+  **목록은 저장소에 두지 않는다** - 저장소가 공개라 목록 자체가 유출이다. `--mask-terms` 파일로 받는다
+- 전화번호 → `[연락처 삭제]`
+
+**마스킹 뒤 남은 후보를 다시 훑고, 있으면 exit 1 로 멈춘다.** 목록은 사람이 만든 것이라 새 자료가 들어오면
+빠지는 이름이 생긴다. 조용히 산출물을 쓰면 그대로 스토어에 올라간다.
+
+산출물은 저장소에 커밋하지 않는다. 반영 절차는 docs/01_specs/live-integration.md 5-2.
+
+실행 : python scripts/claims/preprocess.py <원본.xlsx> <출력.md> --mask-terms <목록 파일>
+"""
+import argparse
+import collections
+import datetime as dt
+import pathlib
+import re
+import sys
+
+import openpyxl
+
+# 휴대폰(010-1234-5678 · 01012345678) · 유선(02-123-4567 · 055)123-4567). 품번 `300419-00035B` 를
+# 잡지 않게 앞뒤에 글자·하이픈이 붙은 숫자는 뺀다 - 넓게 잡으면 품번 212건이 전부 걸린다
+PHONE = re.compile(
+    r"(?<![\w-])01[016789][-. ]?\d{3,4}[-. ]?\d{4}(?!\w)"
+    r"|(?<![\w-])0(?:2|[3-6]\d)[-. )]\d{3,4}[-. ]\d{4}(?!\w)"
+)
+# 남은 사람 이름 후보 : 한글 2~3자 + 직함. 「고객님」처럼 사람을 가리키지 않는 말은 아래에서 뺀다
+TITLES = ["님", "부장", "차장", "과장", "대리", "사원", "주임", "책임", "선임", "수석", "팀장", "실장", "소장",
+          "센터장", "이사", "매니저", "기사"]
+NAME_LIKE = re.compile(r"(?<![가-힣])([가-힣]{2,3})\s?(?:" + "|".join(TITLES) + ")")
+# 「부장님」·「책임매니저」처럼 직함이 직함에 붙은 경우도 걸리므로 직함 자체도 뺀다
+NOT_A_NAME = {"고객", "센터", "담당", "업체", "본사", "현장", "지사", "영업", "창원", "부산", "서울", "협력사", *TITLES}
+
+FIELDS = ["입고일자", "품번", "품명", "업체명", "기종", "호기정보", "출하일", "고장일", "사용일",
+          "S/W 버전", "S/N", "불량유형", "분석내용", "불량원인", "소손 및 불량소자", "최종원인"]
+
+
+def clean(s):
+    # NBSP 도 공백으로 편다 - 엑셀 셀에 섞여 있어 빼면 같은 문장이 다른 글자로 색인된다.
+    # 보이지 않는 글자를 정규식에 그대로 두면 옮기다 일반 공백으로 바뀐다(실제로 그랬다) - 이스케이프로 적는다
+    return re.sub(r"[ \t\u00a0]+", " ", str(s)).strip()
+
+
+def fmt(v):
+    if v is None:
+        return ""
+    if isinstance(v, dt.datetime):
+        return v.date().isoformat()
+    # 셀 안 줄바꿈이 목록 항목을 끊지 않게 한 줄로 편다
+    return " / ".join(clean(l) for l in str(v).splitlines() if clean(l))
+
+
+def load_terms(path):
+    """`person <이름>` · `partner <상호>` 한 줄씩. `#` 은 주석."""
+    terms = {"person": [], "partner": []}
+    for no, line in enumerate(pathlib.Path(path).read_text(encoding="utf-8").splitlines(), 1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        kind, _, value = line.partition(" ")
+        if kind not in terms or not value.strip():
+            sys.exit(f"{path}:{no} : `person <이름>` 또는 `partner <상호>` 형식이 아니다")
+        terms[kind].append(value.strip())
+    return terms
+
+
+def build_aliases(recs, terms):
+    """원문 → 가명. 등장 순으로 번호를 매긴다 - 같은 대상은 늘 같은 가명이라 대상 단위 질문이 성립한다."""
+    alias = {}
+    for r in recs:
+        name = fmt(r["업체명"])
+        if name and name not in alias:
+            alias[name] = f"고객사-{sum(v.startswith('고객사-') for v in alias.values()) + 1:03d}"
+    text = "\n".join(fmt(v) for r in recs for v in r.values() if isinstance(v, str))
+    for kind, label in (("person", "담당자"), ("partner", "협력사")):
+        # 상호는 「영남머신(주)」와 「영남머신」처럼 표기가 갈린다. 짧은 표기가 긴 표기에 들어 있으면 같은 대상이다
+        found = sorted((t for t in terms[kind] if t in text), key=text.index)
+        canon = {}
+        for t in found:
+            root = next((c for c in canon if c in t or t in c), None)
+            canon[t] = canon[root] if root else f"{label}-{len(set(canon.values())) + 1:02d}"
+        alias.update(canon)
+    return alias
+
+
+def mask(value, alias):
+    # 긴 것부터 바꿔야 「영남머신(주)」가 「영남머신」 치환에 반쯤 먹히지 않는다
+    for name in sorted(alias, key=len, reverse=True):
+        value = value.replace(name, alias[name])
+    return PHONE.sub("[연락처 삭제]", value)
+
+
+def leftovers(md):
+    """마스킹 뒤에도 남은 개인정보 후보."""
+    found = [f"전화번호 {len(PHONE.findall(md))}건"] if PHONE.search(md) else []
+    names = collections.Counter(m.group(1) for m in NAME_LIKE.finditer(md) if m.group(1) not in NOT_A_NAME)
+    found += [f"이름 후보 「{n}」 {c}회" for n, c in names.items()]
+    return found
+
+
+def claims_to_md(xlsx, terms):
+    ws = openpyxl.load_workbook(xlsx, data_only=True)["통합리스트"]
+    rows = list(ws.iter_rows(values_only=True))
+    header = [re.sub(r"\s+", "", str(h)) for h in rows[0]]
+    recs = [dict(zip(header, r)) for r in rows[1:] if any(c is not None for c in r)]
+
+    alias = build_aliases(recs, terms)
+    for r in recs:
+        for key in r:
+            if isinstance(r[key], str):
+                r[key] = mask(fmt(r[key]), alias)
+
+    def count(key, top=None):
+        c = collections.Counter(fmt(r[key]) or "(비어 있음)" for r in recs)
+        return [f"- {k} : {n}건" for k, n in c.most_common(top)]
+
+    dates = sorted(r["입고일자"] for r in recs if isinstance(r["입고일자"], dt.datetime))
+    usage = [r["사용일"] for r in recs if isinstance(r["사용일"], (int, float))]
+    out = [
+        "# 필드 클레임 현황 (서보 드라이브 불량 분석 통합리스트)",
+        "",
+        "원본 : 필드클레임현황.xlsx 「통합리스트」 시트. 현장에서 고장 난 서보 드라이브를 회수해 분석한 결과다.",
+        "고객사 업체명은 「고객사-001」, 협력사 상호는 「협력사-01」, 사람 이름은 「담당자-01」 형식의 가명으로 바꿔 두었다.",
+        "같은 번호는 같은 대상이다. 전화번호는 지웠다.",
+        "한 건 = 한 클레임. 「불량 내용」은 현장 서비스 기록, 「분석내용·불량원인·최종원인」은 회수품 분석 결과다.",
+        "",
+        "## 전체 요약 (집계)",
+        "",
+        f"- 총 {len(recs)}건 · 입고일자 {dates[0].date()} ~ {dates[-1].date()}",
+        f"- 출하 후 고장까지 사용일 : 평균 {sum(usage) / len(usage):.0f}일 · 최소 {min(usage)}일 · 최대 {max(usage)}일",
+        "",
+        "### 최종원인별 건수", "", *count("최종원인"), "",
+        "### 불량유형별 건수", "", *count("불량유형"), "",
+        "### 소손 및 불량소자별 건수 (상위 15)", "", *count("소손및불량소자", 15), "",
+        "### 품번별 건수", "", *count("품번"), "",
+        "### 기종별 건수 (상위 15)", "", *count("기종", 15), "",
+        "## 클레임 상세", "",
+    ]
+    for r in recs:
+        out.append(f"### 클레임 {fmt(r['순번'])} · 서비스번호 {fmt(r['서비스번호'])}")
+        out.append("")
+        out.append(f"- 불량 내용 : {fmt(r['불량내용'])}")
+        for f in FIELDS:
+            v = fmt(r[re.sub(r'\s+', '', f)])
+            if v:
+                out.append(f"- {f} : {v}")
+        out.append("")
+    return "\n".join(out), len(recs), alias
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("xlsx")
+    ap.add_argument("out")
+    ap.add_argument("--mask-terms", required=True, help="person/partner 목록 파일 (저장소 밖)")
+    args = ap.parse_args()
+
+    md, n, alias = claims_to_md(args.xlsx, load_terms(args.mask_terms))
+    left = leftovers(md)
+    if left:
+        # 산출물을 쓰지 않는다 - 쓰면 누군가 그대로 올린다
+        print("마스킹 뒤에도 개인정보 후보가 남았다. 목록에 넣거나, 사람이 아니면 NOT_A_NAME 에 더한 뒤 다시 돌린다 :",
+              *left, sep="\n  ", file=sys.stderr)
+        sys.exit(1)
+    pathlib.Path(args.out).write_text(md, encoding="utf-8")
+    kinds = collections.Counter(v.split("-")[0] for v in set(alias.values()))
+    print(f"클레임 : {n}건 · {len(md):,}자 · 가명 {dict(kinds)}")
+
+
+if __name__ == "__main__":
+    main()
