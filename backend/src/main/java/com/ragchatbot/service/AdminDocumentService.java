@@ -243,14 +243,25 @@ public class AdminDocumentService {
 		List<StoreFile> files = openAiService.listStoreFiles(fileId -> !alive.contains(fileId));
 
 		int added = 0;
+		int orphans = 0;
 		for (StoreFile file : files) {
+			if (StoreFile.MISSING.equals(file.status())) {
+				// 파일은 지워지고 연결만 남은 스토어 항목(#271). 검색에는 잡히는데 이름이 없어 행으로 만들 수도,
+				// 관리자가 고를 수도 없다 - 여기서 연결을 끊는다. 이 동기화가 그것을 정리할 수 있는 유일한 손잡이다
+				openAiService.deleteDocument(file.vectorStoreId(), file.openaiFileId());
+				orphans++;
+				continue;
+			}
 			if (alive.contains(file.openaiFileId())) {
 				continue;
 			}
 			added += documentRepository.insertIfAbsent(new RagDocument(UUID.randomUUID(), file.filename(),
 					file.openaiFileId(), file.vectorStoreId(), file.byteSize(), file.status(), adminId, null, null));
 		}
-		return new SyncResponse(added, files.size());
+		if (orphans > 0) {
+			log.warn("스토어 동기화 : 파일이 없는 스토어 연결 {}건을 정리함", orphans);
+		}
+		return new SyncResponse(added, files.size() - orphans);
 	}
 
 	private static boolean startsWith(byte[] data, byte[] prefix) {

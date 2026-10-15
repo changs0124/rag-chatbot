@@ -20,6 +20,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import com.ragchatbot.entity.RagDocument;
+import com.ragchatbot.openai.OpenAiMockService;
 import com.ragchatbot.repository.RagDocumentRepository;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
@@ -33,6 +34,9 @@ class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 
 	@Autowired
 	private RagDocumentRepository documentRepository;
+
+	@Autowired
+	private OpenAiMockService mockOpenAi;
 
 	private static final byte[] PDF = "%PDF-1.4 동기화 본문".getBytes(StandardCharsets.UTF_8);
 
@@ -140,6 +144,24 @@ class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 
 		assertThat(deleted.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 		assertThat(aliveRows(fileId)).isZero();
+	}
+
+	/**
+	 * TC-ADMIN-059 (#271) : File 이 사라진 스토어 연결이 있어도 동기화는 200 이고, 그 연결은 행으로 넣지 않고 정리한다.
+	 * 종전에는 그 404 하나로 동기화 전체가 500 이었다 - 삭제가 연결 해제에 실패한 채 File 만 지운 흔적이다
+	 */
+	@Test
+	void sync_cleans_store_entry_whose_file_is_gone() {
+		String token = createAdminUser("sync-orphan@b.com");
+		String fileId = upload(token, "고아.pdf");
+		jdbc.update("delete from rag_documents where openai_file_id = ?", fileId);
+		mockOpenAi.simulateFileGone(fileId);
+
+		var res = sync(token);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(aliveRows(fileId)).isZero();
+		assertThat(mockOpenAi.listStoreFiles(id -> true)).extracting(f -> f.openaiFileId()).doesNotContain(fileId);
 	}
 
 	/** TC-ADMIN-051 : 일반 사용자는 404(P-3), 미인증은 401 */

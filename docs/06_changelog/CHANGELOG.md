@@ -13,6 +13,16 @@
   - 마스킹 뒤 전화번호 · 「이름 + 직함」 후보가 남으면 산출물을 쓰지 않고 exit 1 — 목록에서 빠진 이름이 조용히 올라가지 않게
   - 마스킹 외 내용은 그대로다(옛 산출물과 diff 해 바뀐 줄이 전부 마스킹 줄 + 머리말 한 줄임을 확인). 절차는 `live-integration.md` 5-2
 
+### Fixed
+- **관리 화면에서 지운 문서가 Vector Store 에서 계속 검색되던 것을 고쳤다(#271).** 스토어 연결 해제
+  `DELETE /vector_stores/{vs}/files/{id}` 가 JDK HttpURLConnection 의 기본 Content-Type(form)으로 나가 OpenAI 가 400 으로
+  거절했고, `deleteQuietly` 가 그것을 삼킨 채 File 만 지웠다. 화면은 204 라 아무도 몰랐다 — #266 에서 지운 원문의 전화번호가
+  계속 답에 나와 드러났다.
+  - DELETE 에 `Content-Type: application/json` 명시. 연결 해제가 실패하면 File 을 지우지 않는다(남아 있어야 동기화로 다시 지울 수 있다)
+  - 동기화 : File 이 404 인 스토어 항목을 예외 대신 `missing` 으로 받아 연결을 끊는다. 종전에는 그 404 하나로 동기화 전체가 500
+  - 기존 `OpenAiRealDeleteResourcesTest` 는 경로만 보고 헤더를 보지 않아 이 결함을 못 잡았다 — 새 테스트는 OpenAI 처럼 form 을 400 으로 거절한다
+  - 케이스 : TC-ADMIN-055~059, 백엔드 하한 253 → 264(실측)
+
 ### Added
 - **답변에 매뉴얼 그림을 함께 보여준다(#228, FEAT-CHAT-004 · REQ-RAG-006).** Vector Store 는 텍스트만 색인해, 매뉴얼을 md 로
   넣은 뒤로 그림(키 조작 순서 · 7세그 표시 · 드라이브 전면 · 배선도)이 답에 전혀 나오지 않았다. 「그림으로 보여줘」라고 하면

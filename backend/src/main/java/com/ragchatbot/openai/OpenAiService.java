@@ -114,14 +114,20 @@ public interface OpenAiService {
 	 */
 	String documentStatus(String vectorStoreId, String openaiFileId);
 
-	/** Vector Store 연결 해제 + 파일 삭제. 실패해도 예외를 던지지 않음(호출자는 삭제를 계속 진행함) */
+	/**
+	 * Vector Store 연결 해제 + 파일 삭제. 실패해도 예외를 던지지 않음(호출자는 삭제를 계속 진행함).
+	 * 연결 해제가 실패하면 파일은 남긴다(#271) - 파일까지 지우면 검색에 잡히는 연결을 다시 지울 손잡이가 없어진다
+	 */
 	void deleteDocument(String vectorStoreId, String openaiFileId);
 
 	/**
 	 * 공용 스토어의 파일 하나(#193). {@code status} 는 {@link #documentStatus} 와 같은 어휘로 좁힌 값이다.
 	 * 스토어 ID 를 함께 싣는 것은 {@link UploadedDocument} 와 같은 이유다 - 호출자는 어느 스토어인지 모른다.
+	 *
+	 * <p>{@link #MISSING} 은 이 어휘 밖의 값이다 - 스토어 연결은 있는데 파일이 지워져 없는 상태(#271).
 	 */
 	record StoreFile(String openaiFileId, String vectorStoreId, String filename, long byteSize, String status) {
+		public static final String MISSING = "missing";
 	}
 
 	/**
@@ -132,6 +138,7 @@ public interface OpenAiService {
 	 * 조회하지 않기 위함이다.
 	 *
 	 * <p><b>하나라도 실패하면 던진다.</b> 일부만 돌려주면 호출자가 그것을 전부로 읽어 빠진 문서가 없다고 보고한다.
+	 * 단 파일이 없다는 확답(404)은 실패가 아니라 그 파일의 상태다 - {@link StoreFile#MISSING} 으로 돌려준다(#271).
 	 */
 	List<StoreFile> listStoreFiles(Predicate<String> needsDetail);
 }

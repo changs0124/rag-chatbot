@@ -33,6 +33,7 @@ class OpenAiRealStoreFilesTest {
 	private final List<String> received = new CopyOnWriteArrayList<>();
 	private OpenAiRealService service;
 	private volatile boolean failFileLookup;
+	private volatile String missingFile;
 
 	@BeforeEach
 	void startServer() throws IOException {
@@ -53,6 +54,10 @@ class OpenAiRealStoreFilesTest {
 					return;
 				}
 				String id = uri.substring("/files/".length());
+				if (id.equals(missingFile)) {
+					reply(exchange, 404, "{\"error\":{\"message\":\"No such File object: " + id + "\"}}");
+					return;
+				}
 				reply(exchange, 200, "{\"id\":\"" + id + "\",\"filename\":\"" + id + ".md\",\"bytes\":1234}");
 			} else {
 				reply(exchange, 404, "{}");
@@ -88,6 +93,21 @@ class OpenAiRealStoreFilesTest {
 		assertThat(received).doesNotContain("/files/file-a");
 	}
 
+	/**
+	 * TC-ADMIN-058 (#271) : File 이 없는(404) 스토어 연결은 예외가 아니라 {@code missing} 으로 돌려준다.
+	 * 그 연결은 스토어에 남아 검색에 잡히는데, 종전처럼 던지면 고아 하나가 동기화 전체를 500 으로 멈춰 정리할 길이 없다
+	 */
+	@Test
+	void file_gone_from_files_api_is_reported_as_missing() {
+		missingFile = "file-b";
+
+		List<StoreFile> files = service.listStoreFiles(id -> true);
+
+		assertThat(files).contains(new StoreFile("file-b", "shared-store", null, 0, "missing"));
+		assertThat(files).extracting(StoreFile::openaiFileId).containsExactly("file-a", "file-b", "file-c");
+	}
+
+	/** 404 가 아닌 실패는 여전히 던진다 - 일부만 돌려주면 동기화가 그것을 전부로 읽는다 */
 	@Test
 	void any_lookup_failure_throws_instead_of_returning_a_partial_list() {
 		failFileLookup = true;
