@@ -1,0 +1,21 @@
+# before 526a7d1 — 이력(CHANGELOG) 밖 gpt-4o
+README.md:1
+backend/.env.example:2
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:1
+backend/src/main/resources/application.yml:1
+backend/src/test/java/com/ragchatbot/openai/CitationFromMarkupTest.java:1
+backend/src/test/java/com/ragchatbot/openai/CitationMarkupFilterTest.java:1
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealBetaHeaderTest.java:1
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealDeleteDocumentTest.java:1
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealDeleteResourcesTest.java:2
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealInstructionsTest.java:1
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealStageMappingTest.java:1
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealStoreFilesTest.java:1
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java:1
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealTimeoutBoundaryTest.java:1
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealUsageTest.java:1
+backend/src/test/java/com/ragchatbot/openai/OpenAiServiceModeSelectionTest.java:1
+backend/src/test/java/com/ragchatbot/openai/SnippetPickTest.java:1
+docs/01_specs/live-integration.md:1
+docs/02_architecture/overview.md:2
+docs/INDEX.md:2
