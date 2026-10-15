@@ -66,7 +66,7 @@ export default function Sidebar({
         </button>
       </div>
 
-      <nav className="min-w-0 flex-1 overflow-y-auto px-2 pb-2">
+      <nav className="scrollbar-none min-w-0 flex-1 overflow-y-auto px-2 pb-2">
         {groups.map((group) => (
           <div key={group.label} className="mb-3">
             <p className="px-3 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-muted">
