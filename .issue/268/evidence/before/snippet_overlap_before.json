@@ -1,0 +1,106 @@
+[
+ {
+  "id": "FIG",
+  "rep": 0,
+  "overlap": [
+   0.0
+  ],
+  "sources": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md"
+  ]
+ },
+ {
+  "id": "B4",
+  "rep": 0,
+  "overlap": [
+   0.159
+  ],
+  "sources": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md"
+  ]
+ },
+ {
+  "id": "C1",
+  "rep": 0,
+  "overlap": [
+   0.184
+  ],
+  "sources": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md"
+  ]
+ },
+ {
+  "id": "F3",
+  "rep": 0,
+  "overlap": [
+   0.178,
+   0.402
+  ],
+  "sources": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md",
+   "필드클레임현황.md"
+  ]
+ },
+ {
+  "id": "H1",
+  "rep": 0,
+  "overlap": [
+   0.305
+  ],
+  "sources": [
+   "필드클레임현황.md"
+  ]
+ },
+ {
+  "id": "FIG",
+  "rep": 1,
+  "overlap": [
+   0.03
+  ],
+  "sources": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md"
+  ]
+ },
+ {
+  "id": "B4",
+  "rep": 1,
+  "overlap": [
+   0.159
+  ],
+  "sources": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md"
+  ]
+ },
+ {
+  "id": "C1",
+  "rep": 1,
+  "overlap": [
+   0.204
+  ],
+  "sources": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md"
+  ]
+ },
+ {
+  "id": "F3",
+  "rep": 1,
+  "overlap": [
+   0.027,
+   0.383
+  ],
+  "sources": [
+   "TM매뉴얼_VSVDTMNOPK10_v3.md",
+   "필드클레임현황.md"
+  ]
+ },
+ {
+  "id": "H1",
+  "rep": 1,
+  "overlap": [
+   0.253
+  ],
+  "sources": [
+   "필드클레임현황.md"
+  ]
+ }
+]
