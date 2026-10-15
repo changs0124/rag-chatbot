@@ -3,7 +3,7 @@ spring:
     name: rag-chatbot-backend
   mvc:
     async:
-      # P-5 : 스트림 수명은 SSE emitter가 단독 관장. MVC async 타임아웃을 끔
+      # 스트림 수명은 SSE emitter가 단독 관장. MVC async 타임아웃을 끔
       request-timeout: -1
   datasource:
     # 실 DB 접속(live/local). 테스트는 Testcontainers가 @ServiceConnection으로 주입함
@@ -18,7 +18,7 @@ spring:
       max-file-size: 26MB
       max-request-size: 31MB
   flyway:
-    # P-4 : 스키마의 소유자는 마이그레이션 SQL. 기동 시 자동 적용
+    # 스키마의 소유자는 마이그레이션 SQL. 기동 시 자동 적용
     enabled: true
     locations: classpath:db/migration
 
@@ -30,7 +30,7 @@ mybatis:
   type-handlers-package: com.ragchatbot.repository.handler
 
 server:
-  # Cloud/컨테이너 대응 - PORT 우선 리슨
+  # PORT → SERVER_PORT → 8080 순
   port: ${PORT:${SERVER_PORT:8080}}
   tomcat:
     # 멀티파트 한도를 넘긴 요청의 **남은 본문**을 여기까지 읽어 버린 뒤 413 을 내려보낸다.
@@ -45,8 +45,8 @@ server:
     # 끊기며, 그 사실은 api.md 오류 코드 표에 적어 뒀다(#70 에서 45MB 로 실측)
     max-swallow-size: 32MB
 
-# 실행 모드 : mock | live (P-2). **기본값 없음** - 미설정이면 기동 실패(AC-18, AppModeGuard).
-# 목업이 우연히 켜지는 경로를 없애려고 명시 옵트인으로 뒤집었음(2026-07-28 결정)
+# 실행 모드 : mock | live (P-2). **기본값 없음** - 미설정이면 기동 실패(AppModeGuard).
+# 목업이 우연히 켜지는 경로를 없애려는 명시 옵트인임
 app:
   mode: ${APP_MODE:}
   auth:
@@ -65,14 +65,9 @@ app:
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-6-sol}
     vector-store-id: ${OPENAI_VECTOR_STORE_ID:}
-    # 스트리밍(/responses) 읽기 타임아웃. **app.chat.sse-timeout-ms 보다 작아야 하며, 크거나 같으면
-    # 기동에 실패함**(#76·#92) - emitter 가 죽은 뒤에도 워커가 읽기에 붙어 있으면 그동안 스레드와
-    # 동시 스트림 권한이 함께 잡혀, 화면에 아무 스트림도 없는데 429 를 받게 됨.
-    # 종전에는 하드코딩 10분이라 SSE 타임아웃과 정확히 같았고 결말이 밀리초 경합이었음
+    # 스트리밍(/responses) 읽기 타임아웃. app.chat.sse-timeout-ms 보다 작아야 함(기동 실패) - 근거는 OpenAiRealService 생성자
     stream-read-timeout-ms: ${OPENAI_STREAM_READ_TIMEOUT_MS:540000}
-    # 그 밖의 호출(문서 업로드·상태 조회·삭제) 읽기 타임아웃. 스트리밍이 아니므로 짧다 -
-    # 종전에는 클라이언트가 하나뿐이라 10분이 여기에도 걸려, in_progress 3건이면 관리자 목록
-    # 요청 하나가 최대 30분 톰캣 스레드를 잡았음
+    # 그 밖의 호출(문서 업로드·상태 조회·삭제) 읽기 타임아웃. 스트리밍이 아니므로 짧다(#92)
     request-timeout-ms: ${OPENAI_REQUEST_TIMEOUT_MS:30000}
     # 테스트 훅 - env 로 노출하지 않음. 증분 수신을 실 코드 경로로 재려고 엔드포인트를 갈아 끼우는 자리
     base-url: https://api.openai.com/v1
@@ -83,11 +78,11 @@ app:
     # 프론트 출처(개발: Vite 5173). 배포 시 실제 도메인으로 교체
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
   chat:
-    # P-5 : SSE emitter 타임아웃이 스트림 수명을 단독 결정(기본 10분). 참조 착지값
+    # SSE emitter 타임아웃이 스트림 수명을 단독 결정(기본 10분). 참조 착지값
     sse-timeout-ms: ${SSE_TIMEOUT_MS:600000}
-    # back-pressure(2026-07-28 결정) - 동시 스트림 상한. 초과는 큐에 쌓지 않고 429로 거절함.
+    # back-pressure - 동시 스트림 상한. 초과는 큐에 쌓지 않고 429로 거절함.
     # 이 값은 chatExecutor 풀 크기이기도 함(ChatExecutorConfig) - 상한이 풀보다 크면 큐가 쌓임
-    # 8 → 16(#278) : 8 이면 서로 다른 사용자 9명째부터 거절됨. 16명 동시 실측은 backend.md 「유량 제어」
+    # 16 : 동시 16명 실측은 backend.md 「유량 제어」(#278)
     max-concurrent-streams: ${CHAT_MAX_CONCURRENT_STREAMS:16}
     # 사용자별 동시 스트림. 화면이 한 번에 하나만 쓰므로 1 - 한 사용자가 풀을 독점하지 못하게 함
     max-concurrent-per-user: ${CHAT_MAX_CONCURRENT_PER_USER:1}
@@ -95,7 +90,7 @@ app:
     # 커서 "최근 N개"가 턴당 비용을 예측하지 못하기 때문임. 과거 이미지는 재전송하지 않음
     history-token-budget: ${CHAT_HISTORY_TOKEN_BUDGET:6000}
   ratelimit:
-    # 사용자별 분당 채팅 상한(비용 통제, D-1). 단일 인스턴스 전제(R-6, 미결)
+    # 사용자별 분당 채팅 상한(비용 통제, REQ-OPS-003). 단일 인스턴스 전제
     chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}
     # 계정별 분당 로그인 시도 상한(대입 지연). 키는 정규화된 이메일 - IP 기준이 아님
     login-per-minute: ${RATELIMIT_LOGIN_PER_MINUTE:10}
@@ -106,16 +101,16 @@ app:
     # 사용자별 분당 비밀번호 변경 상한(#95). 매 호출이 BCrypt 를 두 번 돌아 CPU 를 먹음.
     # 정상 사용은 가끔 한 번이라 낮아도 막히지 않음
     password-change-per-minute: ${RATELIMIT_PASSWORD_CHANGE_PER_MINUTE:5}
-    # 카운터 키 총량 상한(2026-07-28 결정). 넘으면 가장 오래 안 쓴 키부터 축출해 메모리를 유계로 둠.
+    # 카운터 키 총량 상한. 넘으면 가장 오래 안 쓴 키부터 축출해 메모리를 유계로 둠.
     # 축출은 곧 카운터 리셋이라는 약화가 따름 - 사유는 docs/02_architecture/overview.md 「알려진 제약」
     max-keys: ${RATELIMIT_MAX_KEYS:10000}
   file:
-    # 파일 저장 루트(로컬/서버 디스크, P-7). S3 교체 시 FileStorage 구현만 교체
+    # 파일 저장 루트(로컬/서버 디스크). S3 교체 시 FileStorage 구현만 교체
     storage-root: ${FILE_STORAGE_ROOT:./uploads}
     # 고아(미연결) 첨부 회수 - 유예 시간과 주기. 유예보다 최근 것은 어떤 cutoff 로도 지우지 않음
     orphan-ttl-minutes: ${ORPHAN_TTL_MINUTES:60}
     orphan-cleanup-cron: ${ORPHAN_CLEANUP_CRON:0 0 * * * *}
-    # 첨부 서빙용 서명 경로 토큰의 수명(분). <img src> 가 헤더를 못 실어 URL 에 토큰을 싣는다(M6/AC-22)
+    # 첨부 서빙용 서명 경로 토큰의 수명(분). <img src> 가 헤더를 못 실어 URL 에 토큰을 싣는다
     access-token-ttl-minutes: ${FILE_ACCESS_TOKEN_TTL_MINUTES:15}
   doc-figures:
     # 문서 그림 루트(FEAT-CHAT-004). 전처리가 만든 <key>.png 를 둠. 비면 live 는 그림이 전부 404 이고

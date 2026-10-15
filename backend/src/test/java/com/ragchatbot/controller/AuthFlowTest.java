@@ -20,7 +20,7 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
  * Phase 2 인증 플로우 (공유 싱글턴 PostgreSQL).
- * AC-2(위조 JWT 401) · AC-3(미인증 401) · AC-4(BCrypt 저장).
+ * 위조 JWT 401 · 미인증 401 · BCrypt 저장(REQ-AUTH-002).
  */
 class AuthFlowTest extends AbstractPgIntegrationTest {
 
@@ -84,7 +84,7 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 	}
 
-	// --- AC-2 : 위조 · 만료 · 서명 불일치 -------------------------------------
+	// --- 위조 · 만료 · 서명 불일치 -------------------------------------
 	// 위 forged 테스트는 형식이 깨진 문자열이라 디코딩 단계에서 죽음 - 서명 검증에 도달하지 않아,
 	// verify() 를 decode() 로 바꿔도 초록이었음(2026-07-28 Phase 2 리뷰 H1). 아래 3건이 실제 검증 지점임.
 

@@ -35,7 +35,7 @@ import com.ragchatbot.dto.ChatDtos.ChatRequest;
 /**
  * 채팅 오케스트레이션(Phase 5, SSE).
  * prepare(동기) : 소유권/검증 + 사용자 메시지 저장 → 400/404를 정상 HTTP로 반환.
- * stream(비동기) : OpenAI(목업) 토큰을 SSE(meta→stage*→token*→citations→done)로 흘림(P-5).
+ * stream(비동기) : OpenAI 토큰을 SSE(meta→stage*→token*→citations→done)로 흘림.
  * 스트리밍 이후 영속화는 ChatPersistenceService에 위임(원자적 저장, 스트리밍 구간 비트랜잭션).
  */
 @Service
@@ -74,7 +74,7 @@ public class ChatService {
 		String message = req.message() == null ? "" : req.message().trim();
 		List<UUID> attachmentIds = req.attachmentIds() == null ? List.of() : req.attachmentIds();
 		if (message.isEmpty() && attachmentIds.isEmpty()) {
-			throw new BadRequestException("메시지 또는 첨부가 필요함"); // AC-21 : 첨부 있으면 허용
+			throw new BadRequestException("메시지 또는 첨부가 필요함"); // 첨부 있으면 허용
 		}
 
 		// **같은 id 를 두 번 넣으면 이미지가 두 번 인코딩돼 나간다**(#99). 중복은 조용히 접는다 -
@@ -84,12 +84,8 @@ public class ChatService {
 		for (UUID attId : distinctIds) {
 			Attachment att = attachmentRepository.findByIdAndUser(attId, userId)
 					.orElseThrow(() -> new NotFoundException("첨부 없음"));
-			// **이미 다른 메시지에 붙은 첨부는 여기서 거절한다**(#99). 종전에는 소유권만 보고 통과시켜
-			// refs 에 담았는데, linkToMessage 의 SQL 에는 `message_id is null` 조건이 있어 0행을 갱신했다.
-			// 그 결과 이미지가 base64 로 모델에 다시 전송돼 **비용은 나가고 저장은 안 됐다** -
-			// 새로고침하면 그 메시지에 이미지가 없고, historyText 의 자리표시자도 안 붙어 이후 턴에서
-			// 「그 사진」의 지시 대상이 모델 입력에서 사라졌다.
-			//
+			// **이미 다른 메시지에 붙은 첨부는 여기서 거절한다**(#99) - linkToMessage 는 `message_id is null`
+			// 조건이라 0행을 갱신해, 통과시키면 이미지가 모델에는 다시 전송되고 저장에는 안 붙는다.
 			// **모델 호출 전에 걸러야 한다** - 뒤에서 잡으면 비용이 이미 나간 뒤다
 			if (att.messageId() != null) {
 				throw new BadRequestException("이미 보낸 첨부는 다시 사용할 수 없음");
@@ -188,14 +184,15 @@ public class ChatService {
 	public void stream(UUID userId, PreparedChat prepared, SseEmitter emitter) {
 		UUID asstMsgId = UUID.randomUUID();
 		StringBuilder buffer = new StringBuilder();
-		// 첫 토큰 이후에는 단계를 보내지 않음(R-11 전송 규칙). 람다 안에서 값을 바꿔야 해 지역 boolean 대신 배열로 캡처(스트림 스레드 단독 사용이라 동기화는 필요 없음)
+		// 첫 토큰 이후에는 단계를 보내지 않음(단계 전송 규칙). 람다 안에서 값을 바꿔야 해 지역 boolean 대신 배열로 캡처(스트림 스레드 단독 사용이라 동기화는 필요 없음)
 		boolean[] firstTokenSeen = { false };
 		boolean saved = false;
 		// 타임아웃 사실을 저장에 남기기 위한 표시(#84). **컨테이너 스레드가 세우고 스트림 스레드가
 		// 읽으므로 AtomicBoolean 이어야 함** - 두 스레드 사이라 배열 캡처로는 가시성이 보장되지 않음.
 		//
 		// 이 리스너는 스트림을 끊지 못한다. emitter 는 이미 닫혀 있고(DefaultCallback.run 이 complete
-		// 를 먼저 세움) 워커의 블로킹 read 는 인터럽트로 깨지지 않는다 - 자원 반납 문제는 #76 소관임.
+		// 를 먼저 세움) 워커의 블로킹 read 는 인터럽트로 깨지지 않는다 - 자원 반납은 읽기 타임아웃 < SSE
+		// 타임아웃 부등식이 맡는다(#76).
 		// 여기서 하는 일은 **무슨 일이 일어났는지 기록에 남기는 것** 하나뿐이다
 		AtomicBoolean timedOut = new AtomicBoolean(false);
 		emitter.onTimeout(() -> timedOut.set(true));
@@ -225,7 +222,7 @@ public class ChatService {
 						buffer.append(token);
 					}, onStage);
 
-			// 어시스턴트 메시지 + 출처를 하나의 트랜잭션으로 저장(P-6)
+			// 어시스턴트 메시지 + 출처를 하나의 트랜잭션으로 저장(REQ-RAG-002)
 			// timedOut 이 참일 수 있음 - 워커가 대기 중 emitter 가 닫혔고 업스트림이 뒤늦게 응답한
 			// 갈래 ②임. 텍스트는 전문이므로 stopped 는 false 지만, 화면은 끊긴 채라 그 사실을 남김
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, completion.fullText(),
@@ -242,7 +239,7 @@ public class ChatService {
 			sendQuietly(emitter, "done", Map.of("finishReason", "stop", "noSource", completion.noSource()));
 			completeQuietly(emitter);
 		} catch (ClientGoneException gone) {
-			// AC-9 : 사용자가 정지했거나 연결이 끊긴 경우임. **실패가 아니므로** 받은 데까지 complete 로 저장함
+			// REQ-CHAT-006 : 사용자가 정지했거나 연결이 끊긴 경우임. **실패가 아니므로** 받은 데까지 complete 로 저장함
 			// (2026-07-28 결정 - 서버는 error, 프론트는 complete 로 서로 다르게 처리하던 것을 프론트 쪽으로 통일).
 			// 부분 텍스트가 비면 저장하지 않음 - 빈 답변 버블을 남기면 화면(버블 제거)과 재조회가 어긋남.
 			// stopped=true 로 남겨야 무자료 배너가 붙지 않음 - 인용은 스트림 끝에 오므로 여기서는 늘 0건임
@@ -255,9 +252,8 @@ public class ChatService {
 			//
 			// **completion 이 있으면 그것을 그대로 넘긴다**(#97). 스트림이 완주한 뒤 저장이 실패한
 			// 경로가 여기로 오는데(saveAssistant 가 던짐), 그 시점에는 인용과 사용량을 **이미 알고
-			// 있다.** 종전에는 빈 값으로 덮어써 재조회 시 본문에는 각주 [1][2] 가 남았는데 출처
-			// 목록만 비어 있었고, 사용량 합계도 조용히 낮아졌다 - 「모르면 null」(FEAT-OPS-001)의
-			// 취지와 반대로 **알고 있는 값을 버린 것**이다. 중단 경로는 정말로 모르므로 null 이 맞다.
+			// 있다** - 빈 값으로 덮으면 「모르면 null」(FEAT-OPS-001)과 달리 아는 값을 버린다.
+			// 중단 경로는 정말로 모르므로 null 이 맞다.
 			//
 			// status 는 error 로 둔다. 저장이 실제로 한 번 실패했고, 화면에도 error 이벤트가 나가므로
 			// complete 로 두면 화면(오류)과 재조회(정상)가 갈린다 - 이 저장소가 반복해 고쳐 온 모양이다

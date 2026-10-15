@@ -42,10 +42,10 @@ import com.ragchatbot.storage.FileStorage;
  *
  * <p>구조 : Responses API(모델은 `OPENAI_MODEL`) + 공용 Vector Store 기반 file_search + 이미지 비전 입력(base64) +
  * 스트리밍 토큰 → onToken + 응답 annotations(file_citation) → CitationData. 무자료(인용 0건)는
- * 텍스트를 건드리지 않고 {@code noSource} 플래그로만 알림(P-8) - 인용 0건은 스트림이 끝나야 알 수 있어
+ * 텍스트를 건드리지 않고 {@code noSource} 플래그로만 알림(REQ-RAG-003) - 인용 0건은 스트림이 끝나야 알 수 있어
  * 이미 보낸 토큰 앞에 접두를 붙일 수 없기 때문임.
  *
- * <p><b>실 응답으로 검증됨(S-1, 2026-09-22)</b> : 실키 · 공용 Vector Store 로 스트리밍 · 검색 단계 이벤트 ·
+ * <p><b>실 응답으로 검증됨(REQ-RAG-005, 2026-09-22)</b> : 실키 · 공용 Vector Store 로 스트리밍 · 검색 단계 이벤트 ·
  * 완료 이벤트 · {@code file_citation} 인용 · 결과 스니펫 · 이미지 입력 · 문서 업로드/삭제를 확인함.
  * 가정별 관측과 날짜는 {@code docs/01_specs/live-integration.md} 3절이 정본임(#184).
  */
@@ -69,7 +69,7 @@ public class OpenAiRealService implements OpenAiService {
 	 * API 레퍼런스)과 맞추려고</b> 남긴다. 판정 기록은 이슈 #37 에 있다.
 	 *
 	 * <p><b>왜 기본 헤더가 아닌가</b> — 기본 헤더로 올리면 {@code /responses} 와 {@code /files} 에도 함께
-	 * 나간다. SDK 는 그 둘에 붙이지 않으며, 부작용 여부는 키가 없어 확인할 수 없다. 근거가 있는 범위에만
+	 * 나간다. SDK 는 그 둘에 붙이지 않으며, 그 둘에 붙였을 때의 효과는 재 보지 않았다. 근거가 있는 범위에만
 	 * 붙인다. 이 경계는 {@code OpenAiRealBetaHeaderTest} 가 양방향으로 잠근다.
 	 */
 	private static final String OPENAI_BETA_ASSISTANTS_V2 = "assistants=v2";
@@ -134,8 +134,7 @@ public class OpenAiRealService implements OpenAiService {
 		}
 		// **워커가 emitter 보다 오래 살면 안 됨**(#76·#92). 부등식이 깨지면 emitter 가 타임아웃으로
 		// 죽은 뒤에도 워커가 읽기에 붙어 있어, 그동안 스레드와 동시 스트림 권한이 함께 잡힌다 -
-		// 화면에는 아무 스트림도 없는데 "이미 응답을 받는 중" 429 를 받는다. 종전에는 두 값이
-		// 정확히 같아(둘 다 10분) 결말이 밀리초 경합이었다
+		// 화면에는 아무 스트림도 없는데 "이미 응답을 받는 중" 429 를 받는다. 같은 값이어도 밀리초 경합이라 안 된다
 		if (streamReadTimeoutMs >= sseTimeoutMs) {
 			throw new IllegalStateException(
 					"app.openai.stream-read-timeout-ms(" + streamReadTimeoutMs + ") 는 "
@@ -145,9 +144,8 @@ public class OpenAiRealService implements OpenAiService {
 		this.model = model;
 		this.sharedVectorStoreId = vectorStoreId;
 		this.fileStorage = fileStorage;
-		// **클라이언트를 둘로 나눈다**(#92). 종전에는 하나뿐이라 스트리밍용 10분이 문서 상태 조회 ·
-		// 업로드 · 삭제에도 그대로 걸렸다 - in_progress 3건이면 관리자 목록 요청 하나가 최대 30분,
-		// 첨부 5개 대화 삭제가 최대 50분 톰캣 스레드를 잡았다. 그 값은 스트리밍으로만 정당화된다
+		// **클라이언트를 둘로 나눈다**(#92) - 스트리밍용 긴 읽기 타임아웃은 스트리밍으로만 정당화되고,
+		// 문서 조회 · 업로드 · 삭제에 걸리면 그만큼 톰캣 스레드를 잡는다
 		this.streamClient = restClient(baseUrl, apiKey, Duration.ofMillis(streamReadTimeoutMs));
 		this.client = restClient(baseUrl, apiKey, Duration.ofMillis(requestTimeoutMs));
 	}
@@ -160,14 +158,14 @@ public class OpenAiRealService implements OpenAiService {
 		return RestClient.builder()
 				.requestFactory(factory)
 				// 기본값이 실 엔드포인트임. 설정으로 뺀 이유는 **증분 수신을 실 코드 경로로 잴 수 있게**
-				// 하려는 것임(M3 스파이크) - 캔드 InputStream 으로는 RestClient 가 응답을 통째로
+				// 하려는 것임(OpenAiRealStreamingSpikeTest) - 캔드 InputStream 으로는 RestClient 가 응답을 통째로
 				// 버퍼링하는지 아닌지가 드러나지 않음
 				.baseUrl(baseUrl)
 				.defaultHeader("Authorization", "Bearer " + apiKey)
 				.build();
 	}
 
-	/** 라이브 단계 라벨(R-11). 목업과 달리 실제 file_search 결과에 근거하므로 실 문구를 씀 */
+	/** 라이브 단계 라벨(REQ-CHAT-005). 목업과 달리 실제 file_search 결과에 근거하므로 실 문구를 씀 */
 	private static final Map<Stage, String> STAGE_LABELS = Map.of(
 			Stage.ANALYZING, "질문 분석 중",
 			Stage.SEARCHING, "참조 문서 검색 중",
@@ -176,7 +174,7 @@ public class OpenAiRealService implements OpenAiService {
 	/**
 	 * sources는 라이브에서 늘 비어 있음. 검색 단계는 file_search 호출이 <b>시작됐다는</b> 이벤트에 올리는데
 	 * 그 시점에는 어느 문서가 걸렸는지 아직 모르고, 파일명은 response.completed 의 결과에서야 나옴 -
-	 * 즉 이미 토큰이 나간 뒤라 단계 라벨에 실을 수 없음(R-11 전송 규칙). 없는 이름을 지어내지 않고 비워 둠(P-10)
+	 * 즉 이미 토큰이 나간 뒤라 단계 라벨에 실을 수 없음(단계 전송 규칙). 없는 이름을 지어내지 않고 비워 둠(REQ-RAG-004)
 	 */
 	@Override
 	public String stageLabel(Stage stage, List<String> sources) {
@@ -201,7 +199,7 @@ public class OpenAiRealService implements OpenAiService {
 		}
 
 		return streamClient.post()
-				// 상대 경로여야 빌더의 baseUrl 이 적용됨. 종전에는 절대 URI 라 baseUrl 이 죽은 설정이었음
+				// 상대 경로여야 빌더의 baseUrl 이 적용됨 - 절대 URI 면 app.openai.base-url 이 무시된다
 				.uri("/responses")
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.TEXT_EVENT_STREAM)
@@ -273,9 +271,9 @@ public class OpenAiRealService implements OpenAiService {
 
 	/**
 	 * Responses API SSE를 읽어 토큰을 흘리고, 완료 이벤트에서 출처를 추출함.
-	 * 진행 단계(R-11)는 실제 도착한 이벤트에만 근거함 - file_search 이벤트가 없으면 검색 단계도 없음(P-10, AC-24).
+	 * 진행 단계(REQ-CHAT-005)는 실제 도착한 이벤트에만 근거함 - file_search 이벤트가 없으면 검색 단계도 없음(REQ-RAG-004).
 	 */
-	// 패키지 가시성 : 캔드 스트림으로 단계 매핑을 단위 테스트함(실 호출 없이 AC-24 검증)
+	// 패키지 가시성 : 캔드 스트림으로 단계 매핑을 단위 테스트함(실 호출 없이 검증)
 	ChatCompletion consumeStream(InputStream in, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage) {
 		StringBuilder buffer = new StringBuilder();
 		List<CitationData> citations = List.of();
@@ -316,7 +314,7 @@ public class OpenAiRealService implements OpenAiService {
 					onToken.accept(delta);
 				} else if (!searchingSent && ("response.file_search_call.in_progress".equals(type)
 						|| "response.file_search_call.searching".equals(type))) {
-					// 실제 file_search 호출이 시작된 근거가 있을 때만 검색 단계를 보냄(AC-24).
+					// 실제 file_search 호출이 시작된 근거가 있을 때만 검색 단계를 보냄.
 					// 이 시점에는 어느 문서가 걸렸는지 아직 모르므로 자료명은 비워 보냄(stageLabel 주석 참고)
 					onStage.accept(Stage.SEARCHING, List.of());
 					searchingSent = true;
@@ -335,7 +333,6 @@ public class OpenAiRealService implements OpenAiService {
 		}
 
 		// 완료 이벤트 없이 스트림이 끝나면 업스트림 실패를 무자료 성공으로 위장하지 않고 오류로 처리.
-		// (M2 : 실 API의 완료 이벤트명이 다르면 여기서 드러남 - 조용히 무자료로 넘어가지 않게)
 		if (!completed) {
 			throw new IllegalStateException("OpenAI 스트림이 완료(response.completed) 없이 종료됨");
 		}
@@ -412,7 +409,7 @@ public class OpenAiRealService implements OpenAiService {
 		for (String name : citedFiles.keySet()) {
 			String snippet = truncate(pickSnippet(chunksByFile.getOrDefault(name, List.of()), answer));
 			// file_search 인용은 브라우징 가능한 URI가 없음. non-null 유지(ChatService Map.of가 null 불가, mock 파리티).
-			// TODO(M2) : annotation의 file_id로 상관(filename 동명이인 방지) + 표시용 식별자 부여
+			// 인용은 파일명으로 묶는다 - 이름이 같은 문서가 둘이면 한 출처로 합쳐진다(annotation 의 file_id 로 묶으면 피할 수 있다)
 			citations.add(new CitationData(seq++, name, snippet, ""));
 		}
 		return citations;
@@ -498,7 +495,7 @@ public class OpenAiRealService implements OpenAiService {
 	}
 
 	/**
-	 * 대화 삭제 시 OpenAI 리소스 정리(AC-12). 공용 Store는 절대 삭제하지 않음.
+	 * 대화 삭제 시 OpenAI 리소스 정리. 공용 Store는 절대 삭제하지 않음.
 	 * 대화별 업로드 파일(openaiFileId)만 삭제하고, 대화 전용 스토어(공용과 다른 경우)만 삭제함.
 	 *
 	 * <p>{@link OpenAiService#deleteResources} 참고(#124).
@@ -546,9 +543,8 @@ public class OpenAiRealService implements OpenAiService {
 				.retrieve()
 				.body(JsonNode.class);
 
-		// 기본값 null 이 이 가드의 전제다. Jackson 2 는 `"id": null` 에 **문자열 "null"** 을 돌려줘
-		// isBlank() 가 false 가 됐고, openai_file_id = "null" 인 행이 만들어져 검색에도 안 잡히고
-		// 삭제도 안 되는 문서가 남았다. Jackson 3 은 기본값을 그대로 줘 여기서 걸린다(#63 에서 확인)
+		// 기본값 null 이 이 가드의 전제다 - `"id": null` 이 문자열 "null" 로 읽히면 가드를 지나
+		// openai_file_id = "null" 인 행이 생긴다. Jackson 3 은 기본값을 그대로 줘 여기서 걸린다(#63)
 		String fileId = uploaded == null ? null : uploaded.path("id").asString(null);
 		if (fileId == null || fileId.isBlank()) {
 			throw new IllegalStateException("OpenAI 파일 업로드 응답에 id 가 없음");
@@ -585,10 +581,8 @@ public class OpenAiRealService implements OpenAiService {
 					.body(JsonNode.class);
 			return narrowStatus(node == null ? "" : node.path("status").asString(""));
 		} catch (Exception e) {
-			// 조회 자체가 실패한 것은 "인덱싱 실패"와 **다르다**(#91). 종전에는 failed 를 돌려줬는데,
-			// 호출자가 그것을 DB 에 굳히면 그 행이 재조회 대상에서 빠져 다시는 묻지 않게 됨 -
-			// 「모르는 동안 failed 가 안전하다」는 판단은 **표시**에 대해서만 맞고, 영속화하는 순간
-			// 「모름」이 「확정된 실패」가 됨. 모르면 null 을 돌려주고 판단은 호출자에게 맡김
+			// 조회 자체가 실패한 것은 "인덱싱 실패"와 **다르다**(#91) - failed 를 돌려주면 호출자가 DB 에
+			// 굳혀 재조회 대상에서 빠진다. 모르면 null 을 돌려주고 판단은 호출자에게 맡김
 			log.warn("openai 문서 상태 조회 실패 {}: {}", openaiFileId, e.getMessage());
 			return null;
 		}
@@ -701,7 +695,7 @@ public class OpenAiRealService implements OpenAiService {
 			var request = client.delete().uri(path)
 					// **본문이 없어도 JSON 을 명시한다**(#271). JDK HttpURLConnection 은 DELETE 에 출력 스트림을 열면서
 					// 기본 Content-Type(application/x-www-form-urlencoded)을 붙이는데, 스토어 연결 해제는 그것을
-					// 400 unsupported_content_type 으로 거절한다. 그 400 을 아래에서 삼켜, 지운 문서가 계속 검색됐다
+					// 400 unsupported_content_type 으로 거절한다
 					.header("Content-Type", MediaType.APPLICATION_JSON_VALUE);
 			// 이 메서드는 /files 삭제와 공유됨 - 베타 헤더는 vector store 쪽에만 붙임
 			if (path.startsWith("/vector_stores")) {

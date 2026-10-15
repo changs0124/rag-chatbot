@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * Phase 6c 마이페이지 - 이름/비밀번호/테마 변경 (AC-15·16).
+ * Phase 6c 마이페이지 - 이름/비밀번호/테마 변경.
  */
 class ProfileFlowTest extends AbstractPgIntegrationTest {
 

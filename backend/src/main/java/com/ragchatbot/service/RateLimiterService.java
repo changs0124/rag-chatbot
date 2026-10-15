@@ -11,22 +11,21 @@ import org.springframework.stereotype.Service;
 import com.ragchatbot.exception.ApiExceptions.RateLimitException;
 
 /**
- * 사용자별 분당 요청 상한(비용 통제, D-1). 고정 윈도우 방식.
- * <b>단일 인스턴스 전제</b>임 - 다중 인스턴스에서는 실효 한도가 곱해짐(R-6, 미결: 배포 형태 확정 시 중앙화).
+ * 사용자별 분당 요청 상한(비용 통제, REQ-OPS-003). 고정 윈도우 방식.
+ * <b>단일 인스턴스 전제</b>임 - 다중 인스턴스에서는 실효 한도가 곱해짐.
  *
  * <p>지난 분(minute)의 창은 분이 바뀔 때 한 번에 버림. 로그인 키는 <b>미인증 요청 본문의 이메일</b>이라
- * 정리하지 않으면 서로 다른 주소를 계속 보내는 것만으로 맵이 무한히 커졌음(재리뷰 지적 4).
+ * 정리하지 않으면 서로 다른 주소를 계속 보내는 것만으로 맵이 무한히 커짐.
  *
- * <p><b>키 총량 상한 + LRU 축출</b>(2026-07-28 결정, {@code app.ratelimit.max-keys}). 스윕만으로는
- * <b>한 분 안에서</b> 서로 다른 키가 상한 없이 쌓였음 - 이제 상한을 넘으면 가장 오래 안 쓴 키부터 밀려나
- * 메모리가 유계임.
+ * <p><b>키 총량 상한 + LRU 축출</b>({@code app.ratelimit.max-keys}) - 스윕만으로는 <b>한 분 안에서</b>
+ * 쌓이는 키를 막지 못하므로, 상한을 넘으면 가장 오래 안 쓴 키부터 밀어내 메모리를 유계로 둠.
  *
  * <p><b>대신 축출은 곧 카운터 리셋임</b> - 서로 다른 이메일을 상한 이상 쏟아부으면 남의 로그인 실패
  * 카운터를 밀어낼 수 있음. 로그인 상한은 대입 <b>지연</b> 장치이지 차단 장치가 아니므로 감수한 것이며,
  * 이 약화는 {@code docs/02_architecture/overview.md} 「알려진 제약」에 적혀 있음.
  *
- * <p>맵 접근을 전부 {@code synchronized} 로 감쌈 - LRU 축출은 원자 구간이 필요하고, 종전 구조의
- * <b>락 밖 읽기 가시성</b> 문제와 <b>check-then-act 경합</b>도 함께 사라짐.
+ * <p>맵 접근을 전부 {@code synchronized} 로 감쌈 - LRU 축출은 원자 구간이 필요하고, 락 밖 읽기 가시성과
+ * check-then-act 경합도 이것으로 막음.
  */
 @Service
 public class RateLimiterService {
@@ -99,7 +98,7 @@ public class RateLimiterService {
 	 *
 	 * <p>키가 정규화된 이메일이라 <b>대상 계정을 보호</b>하지만, 같은 이유로 <b>남의 계정을 잠글 지렛대</b>도 됨 -
 	 * 알려진 주소로 일부러 틀리면 그 주인이 그 분 동안 429를 받음. 출발지(IP) 기준이 아니라 여러 계정을
-	 * 훑는 살포형 시도도 걸리지 않음. 둘 다 배포 형태 확정 시 재검토 대상임(R-6).
+	 * 훑는 살포형 시도도 걸리지 않음. 둘 다 단일 인스턴스 전제에서 감수한 한계임.
 	 */
 	public void checkLoginAllowed(String email) {
 		if (count("login:" + email) >= loginPerMinute) {

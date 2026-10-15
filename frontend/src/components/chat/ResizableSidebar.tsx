@@ -65,10 +65,8 @@ export default function ResizableSidebar({ children }: { children: ReactNode }) 
   /**
    * 드래그 시작.
    *
-   * **포인터를 잡는다**(`setPointerCapture`, #102). 잡지 않으면 창 밖에서 버튼을 뗐을 때
-   * `pointerup` 이 도달하지 않아 `dragging` 이 참으로 남는다 - 창으로 돌아오면 버튼을 누르지
-   * 않았는데도 폭이 계속 따라오고, `userSelect: none` 도 복원되지 않아 **앱 전체에서 텍스트
-   * 선택이 막힌다.** 캡처하면 그 창 자체가 없어진다 - 이후 포인터 이벤트가 이 요소로 온다.
+   * **포인터를 잡는다**(`setPointerCapture`) - 창 밖에서 버튼을 떼도 `pointerup` 이 이 요소로 온다
+   * (위 #102 참고).
    */
   function startDrag(e: React.PointerEvent<HTMLDivElement>) {
     dragging.current = true

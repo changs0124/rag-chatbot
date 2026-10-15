@@ -12,7 +12,7 @@ import type { Attachment, ChatMessage, Conversation } from '../lib/types'
 
 /**
  * 한 단계를 화면에 유지하는 최소 시간(ms). 목업은 단계가 같은 순간에 도착해 표시 시간이 0이 되므로,
- * 실제로 도달한 단계를 읽을 수 있을 만큼만 붙잡아 둠. 없는 단계를 만들거나 순서를 바꾸지는 않음(P-10).
+ * 실제로 도달한 단계를 읽을 수 있을 만큼만 붙잡아 둠. 없는 단계를 만들거나 순서를 바꾸지는 않음(REQ-RAG-004).
  */
 const STAGE_MIN_MS = 350
 
@@ -23,7 +23,7 @@ export function useChat() {
   // 고른 대화의 이력이 오는 중 - 그동안 본문은 직전 대화 대신 로딩 표시를 보인다(#291)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [streaming, setStreaming] = useState(false)
-  // 진행 단계(R-11) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
+  // 진행 단계(REQ-CHAT-005) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -81,11 +81,7 @@ export function useChat() {
   }, [clearStages])
 
   /**
-   * 언마운트 정리 - 단계 타이머와 **진행 중인 스트림**을 함께 끊는다(#94). 대화를 떠날 때와 같은 일이다.
-   *
-   * abort 가 없던 동안에는 로그아웃해도 SSE 연결이 그대로 살아, 서버가 답변을 끝까지 생성하고
-   * 리더 루프가 언마운트된 훅의 setMessages 를 계속 호출했다. **로그인 화면에 도달한 뒤에도
-   * 이전 사용자의 요청이 진행 중**이었고, 화면을 드나들기를 반복하면 연결이 누적됐다.
+   * 언마운트 정리 - 단계 타이머와 **진행 중인 스트림**을 함께 끊는다(#94). 안 끊으면 로그아웃 뒤에도 SSE 가 살아 있다.
    */
   useEffect(() => abortActiveStream, [abortActiveStream])
 
@@ -121,11 +117,7 @@ export function useChat() {
   }, [abortActiveStream])
 
   /**
-   * 삭제 실패를 화면에 드러낸다(#77).
-   *
-   * 종전에는 catch 가 없고 호출부가 `(id: string) => void` 로 받아 프라미스를 버렸다.
-   * 서버가 500 이면 **확인 모달은 닫히고 목록에는 대화가 그대로 남는데 아무 표시가 없었다** -
-   * 사용자는 「삭제를 눌렀는데 그대로다」만 보고 콘솔에는 unhandled rejection 만 남았다.
+   * 삭제 실패를 화면에 드러낸다(#77) - 확인 모달은 먼저 닫히므로 표시가 없으면 실패를 알 길이 없다.
    *
    * 실패하면 목록도 건드리지 않는다. 지운 것처럼 보였다가 새로고침에 되살아나는 쪽이 더 나쁘다.
    */
@@ -150,10 +142,7 @@ export function useChat() {
   )
 
   /**
-   * 이름 변경 실패를 화면에 드러낸다(#77).
-   *
-   * 입력창은 `commitTitle` 이 먼저 닫으므로, 실패하면 헤더가 옛 제목으로 조용히 되돌아갔다 -
-   * 「제목이 저장되지 않는 화면」으로 읽힌다.
+   * 이름 변경 실패를 화면에 드러낸다(#77) - 입력창은 `commitTitle` 이 먼저 닫아, 표시가 없으면 헤더가 조용히 옛 제목으로 돌아간다.
    */
   const renameConversation = useCallback(async (id: string, title: string) => {
     const trimmed = title.trim()
@@ -247,7 +236,7 @@ export function useChat() {
               refreshConversations()
             },
             onError: (msg) => {
-              clearStages() // 오류 경로는 즉시 비움(잔류 0, AC-23)
+              clearStages() // 오류 경로는 즉시 비움(잔류 0)
               setError(msg)
               patch((m) => ({ ...m, status: 'error' }))
             },
@@ -255,19 +244,19 @@ export function useChat() {
           controller.signal,
         )
       } catch {
-        // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지). 중단·절단 모두 단계는 즉시 비움(AC-23)
+        // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지). 중단·절단 모두 단계는 즉시 비움
         clearStages()
         if (controller.signal.aborted) {
           // 받은 것이 없으면 빈 버블을 남기지 않음 - 서버도 부분 텍스트가 비면 저장하지 않으므로,
-          // 남겨 두면 새로고침에 사라져 화면과 재조회가 어긋남(2026-07-28 중단 상태 정책 결정)
-          // 단 onDone 이 이미 확정한 메시지는 서버가 정상 경로로 저장했으므로 지우지 않음(재리뷰 라운드 3 ③)
+          // 남겨 두면 새로고침에 사라져 화면과 재조회가 어긋남
+          // 단 onDone 이 이미 확정한 메시지는 서버가 정상 경로로 저장했으므로 지우지 않음
           setMessages((prev) =>
             prev.filter((m) => !(m.id === assistantId && !m.content && m.status !== 'complete')),
           )
         }
         patch((m) =>
           // onDone 이 이미 확정한 메시지는 건드리지 않음 - 서버는 그 답변을 stopped=false 로 저장했으므로,
-          // 여기서 stopped 를 세우면 화면(배너 없음)과 재조회(배너 있음)가 어긋남(재리뷰 라운드 2 N-4)
+          // 여기서 stopped 를 세우면 화면(배너 없음)과 재조회(배너 있음)가 어긋남
           m.status === 'complete'
             ? m
             : {

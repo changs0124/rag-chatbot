@@ -3,7 +3,7 @@ import { API_BASE, adoptRefreshedToken, authHeaders, toApiError } from './api'
 /**
  * 답변 본문의 문서 그림 표식 `[[그림:<key>]]`(FEAT-CHAT-004).
  *
- * 본문은 평문으로 그린다 - 마크다운 렌더러를 들이지 않고 표식만 잘라 그 자리에 그림을 끼운다.
+ * 표식만 잘라 그 자리에 그림을 끼우고, 사이의 글은 `Markdown` 이 그린다.
  * 키 형식은 서버(`DocFigureService`)와 같다. 형식이 아니면 표식으로 보지 않고 글자 그대로 둔다.
  */
 const MARKER = /\[\[그림:([a-z0-9-]{1,64})\]\]/g

@@ -16,7 +16,7 @@ import com.ragchatbot.dto.AuthDtos.AuthResponse;
 import com.ragchatbot.dto.AuthDtos.MeResponse;
 
 /**
- * 마이페이지 - 이름/비밀번호 변경 (AC-15·16). 소유자 본인만(userId는 JWT에서).
+ * 마이페이지 - 이름/비밀번호 변경. 소유자 본인만(userId는 JWT에서).
  */
 @Service
 public class ProfileService {
@@ -49,7 +49,7 @@ public class ProfileService {
 	 * 여기서 새로 발급한 토큰만 기준선 이후라 살아남음.
 	 *
 	 * <p>기준선과 새 토큰의 {@code iat}를 <b>같은 시계(앱)</b>로 맞춤. DB의 {@code now()}를 기준선으로 쓰면
-	 * DB 호스트 시계가 앞설 때 새 토큰이 발급 즉시 자기 기준선에 걸림(재리뷰 라운드 2 N-2).
+	 * DB 호스트 시계가 앞설 때 새 토큰이 발급 즉시 자기 기준선에 걸림.
 	 */
 	public AuthResponse updatePassword(UUID userId, String currentPassword, String newPassword) {
 		User user = require(userId);

@@ -49,7 +49,7 @@ public class FileController {
 	}
 
 	/**
-	 * 서빙(비인증 경로 - 서명 경로 토큰으로 검증, M6/AC-22).
+	 * 서빙(비인증 경로 - 서명 경로 토큰으로 검증).
 	 * &lt;img src&gt;가 Authorization 헤더를 못 실으므로 쿼리 토큰을 씀.
 	 */
 	@GetMapping("/{id}")

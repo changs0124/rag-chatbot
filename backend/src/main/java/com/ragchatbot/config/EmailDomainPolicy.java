@@ -9,9 +9,7 @@ import org.springframework.stereotype.Component;
 /**
  * 계정 이메일 도메인 화이트리스트(FEAT-AUTH-001 · REQ-AUTH-007).
  *
- * <p>회원가입이 있던 시절에는 {@code /api/auth/signup} 이 permitAll 이라 <b>URL 에 닿는 누구나</b>
- * 계정을 만들 수 있었고, 이 명단이 그것을 막는 유일한 장치였다. 가입이 사라진 지금 계정을 만드는 것은
- * 관리자뿐이지만 <b>명단은 그대로 남는다</b> - 관리자가 주소를 손으로 치므로 오타 한 번이면 사외 주소에
+ * <p>계정을 만드는 것은 관리자뿐이지만 관리자가 주소를 손으로 치므로 오타 한 번이면 사외 주소에
  * 계정이 열린다. 사람이 입력하는 값에 경계를 두는 것이 이 클래스가 하는 일이다.
  *
  * <p><b>{@code live} 에서는 명단이 비면 기동을 막는다</b>({@code OpenAiRealService} 와 같은 fail-fast).

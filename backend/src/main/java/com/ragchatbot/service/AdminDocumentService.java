@@ -107,12 +107,10 @@ public class AdminDocumentService {
 	 * 완료·실패는 더 바뀌지 않으므로 전 행을 매번 조회하지 않는다.
 	 *
 	 * <p><b>조회 실패는 굳히지 않는다</b>(#91). {@code documentStatus} 가 null 을 주면 「모른다」는
-	 * 뜻이므로 {@code in_progress} 를 그대로 둬 <b>다음 조회에서 다시 묻게</b> 한다. 종전에는 조회
-	 * 실패가 {@code failed} 로 저장됐는데, 그 순간 그 행이 {@link RagDocumentRepository#findInProgress}
-	 * 의 조건에서 빠져 <b>영구히 재조회되지 않았다</b> - 색인이 정상 완료돼 검색에 잡히고 답변에
-	 * 인용되는 문서가 관리 화면에는 영원히 「실패」로 뜨고, 되돌릴 경로가 없었다.
+	 * 뜻이므로 {@code in_progress} 를 그대로 둬 <b>다음 조회에서 다시 묻게</b> 한다 - {@code failed} 로
+	 * 굳히면 {@link RagDocumentRepository#findInProgress} 에서 빠져 다시는 재조회되지 않는다.
 	 *
-	 * <p>OpenAI 가 <b>실패를 명시한 것</b>은 종전대로 굳힌다 - 그것까지 유예하면 진짜 실패한 색인이
+	 * <p>OpenAI 가 <b>실패를 명시한 것</b>은 굳힌다 - 그것까지 유예하면 진짜 실패한 색인이
 	 * 매 조회마다 다시 물어지며 영원히 {@code in_progress} 로 남는다.
 	 */
 	public List<DocumentResponse> list() {
@@ -171,8 +169,8 @@ public class AdminDocumentService {
 			// 지울 수 없고, 검색에는 잡혀 **삭제한 적 없는 문서가 계속 인용된다.** 고아 회수 스케줄러는
 			// 로컬 첨부만 보므로 기다려도 사라지지 않음(#72)
 			//
-			// deleteDocument 는 조용히 실패하므로(deleteQuietly) 되돌리기가 안 됐을 수 있다.
-			// 손으로 찾을 수 있게 file_id 를 남긴다 - OpenAiRealService 안쪽 보상과 같은 방식
+			// deleteDocument 는 던지지 않는다. 스토어 연결 해제가 실패하면 File 을 남기므로(#271)
+			// 스토어 동기화(#193)가 행을 되살려 관리자가 다시 지울 수 있다. file_id 는 경고 로그에도 남긴다
 			log.warn("문서 DB 기록 실패 - OpenAI 리소스 회수 시도 file_id={} store={}",
 					uploaded.openaiFileId(), uploaded.vectorStoreId());
 			openAiService.deleteDocument(uploaded.vectorStoreId(), uploaded.openaiFileId());
@@ -200,20 +198,16 @@ public class AdminDocumentService {
 		// **던질 수 있는 쪽을 앞에 둬, 실패하면 아무것도 바뀌지 않게 한다.**
 		//
 		// 업로드에서 던질 수 있는 것은 OpenAI 단계이므로 그쪽이 앞이고, 삭제에서 던질 수 있는 것은
-		// DB 쪽뿐이다 - deleteDocument 는 deleteQuietly 기반이라 **절대 던지지 않는다.**
-		//
-		// 순서가 반대였을 때는 softDelete 가 던지면 「스토어에서는 빠졌는데 행은 살아 있는」 상태가
-		// 남았다. 목록에는 보이는데 검색에는 안 잡히니, 관리자는 아직 색인돼 있다고 읽는다.
-		// 지금은 그 경우 예외가 먼저 올라와 **아무것도 바뀌지 않고** 관리자가 다시 시도할 수 있다.
+		// DB 쪽뿐이다 - deleteDocument 는 실패를 거짓으로 돌려받을 뿐 **던지지 않는다.**
+		// softDelete 가 던지면 아무것도 바뀌지 않아 관리자가 다시 시도할 수 있다.
 		int deleted = documentRepository.softDelete(documentId, OffsetDateTime.now());
 		if (deleted == 0) {
 			// 조회와 삭제 사이에 누가 먼저 지웠음. 결과는 같으므로 오류로 올리지 않음
 			log.warn("rag 문서 {} 가 이미 삭제돼 있었음", documentId);
 		}
 
-		// 이쪽이 조용히 실패하면 스토어에 파일이 남아 **삭제한 적 없는 문서가 계속 인용된다.**
-		// 그 창은 순서를 어떻게 두든 남는다(deleteQuietly 가 실패를 보고하지 않기 때문). 대신
-		// 경고 로그에 file_id 가 남아 손으로 찾을 수 있다 - #72 가 업로드 쪽에 세운 것과 같은 방식이다
+		// 이쪽이 실패하면 스토어에 파일이 남아 **삭제한 적 없는 문서가 계속 인용된다.** 연결 해제가
+		// 실패하면 File 을 남기므로(#271) 스토어 동기화(#193)가 행을 되살려 관리자가 다시 지울 수 있다
 		openAiService.deleteDocument(doc.vectorStoreId(), doc.openaiFileId());
 	}
 

@@ -9,7 +9,7 @@ import org.springframework.context.ApplicationContext;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * 리스크 R-9 : Vector Stores 베타 API 가 바뀌어도 목업 경로가 실 API 에 닿지 않아야 함.
+ * Vector Stores 베타 API 가 바뀌어도 목업 경로가 실 API 에 닿지 않아야 함.
  *
  * <p>완화 수단은 {@code @ConditionalOnProperty} 로 두 구현을 배타 등록하는 것인데, <b>그것이 실제로
  * 걸려 있는지 재는 케이스가 없었음</b>(2026-07-28 리스크 표 정비에서 드러남). 조건을 지우거나 값을

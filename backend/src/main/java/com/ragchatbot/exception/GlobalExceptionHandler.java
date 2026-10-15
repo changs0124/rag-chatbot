@@ -32,10 +32,8 @@ import com.ragchatbot.exception.ApiExceptions.UnauthorizedException;
 /**
  * 예외 → 일관된 ApiError(JSON) 변환.
  *
- * <p>도메인 예외는 각각의 핸들러가, 그 밖의 예외는 {@link #handleUnexpected} 가 받음(FEAT-OPS-002).
- * 폴백이 없던 동안에는 예상 못 한 예외만 Spring 기본 형태({@code timestamp}·{@code status}·
- * {@code error}·{@code path})로 나가 <b>이 경로에서만 응답 계약이 깨졌고</b>, 프론트는 {@code message}
- * 를 못 찾아 "요청 실패 (500)" 만 띄웠음. 서버 로그에도 어느 요청이었는지 상관 지을 기록이 없었음.
+ * <p>도메인 예외는 각각의 핸들러가, 그 밖의 예외는 {@link #handleUnexpected} 가 받음(FEAT-OPS-002) -
+ * 예상 못 한 예외도 같은 {@code ApiError} 형태로 나가야 프론트가 {@code message} 를 찾음.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -196,10 +194,8 @@ public class GlobalExceptionHandler {
 	 * 핸들러를 먼저 고르므로 400·404 가 500 으로 뭉개지지 않음.
 	 *
 	 * <p><b>그 보장은 핸들러가 있는 예외에만 성립함.</b> 핸들러가 없으면 그것이 요청 잘못이든
-	 * 서버 잘못이든 전부 여기로 와서 500 이 됨 - 실제로 {@code HttpMessageNotReadableException} 이
-	 * 그렇게 새어 깨진 JSON 이 500 으로 나갔음(#38). 라우팅 단계 셋(없는 URL · 405 · 415)도 같은
-	 * 이유로 새고 있었음(#45). 요청 잘못으로 분류되는 예외를 새로 발견하면 폴백에 맡기지 말고
-	 * 위에 핸들러를 추가할 것.</p>
+	 * 서버 잘못이든 전부 여기로 와서 500 이 됨(#38 · #45). 요청 잘못으로 분류되는 예외를 새로 발견하면
+	 * 폴백에 맡기지 말고 위에 핸들러를 추가할 것.</p>
 	 *
 	 * <p><b>예외 메시지를 응답에 싣지 않음.</b> SQL 조각·클래스 이름이 그대로 나가면 정보 노출임.
 	 * 사용자에게 주는 것은 상관 ID 하나이고, 그 값으로 로그를 찾음 - 관측 도구를 붙이지 않고

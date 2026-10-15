@@ -14,8 +14,8 @@ import org.springframework.http.HttpStatus;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * Phase 7 : 진행 단계 표시(R-11)가 실제 동작과 어긋나지 않는지 고정함(리스크 R-13 · AC-24).
- * 목업 단계는 목업이 실제로 지나는 경계에서만 나오고, 라벨도 라이브 문구가 아닌 목업 전용 문구여야 함(P-10).
+ * Phase 7 : 진행 단계 표시(REQ-CHAT-005)가 실제 동작과 어긋나지 않는지 고정함.
+ * 목업 단계는 목업이 실제로 지나는 경계에서만 나오고, 라벨도 라이브 문구가 아닌 목업 전용 문구여야 함(REQ-RAG-004).
  */
 class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 
@@ -63,7 +63,7 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void mock_emits_same_stage_list_when_no_source() {
-		// 무자료 분기도 동일한 3종 - 목업·라이브가 분기에 따라 어긋나지 않게 함(P-8)
+		// 무자료 분기도 동일한 3종 - 목업·라이브가 분기에 따라 어긋나지 않게 함(REQ-RAG-003)
 		String body = chat(createUser("stage-nosource@b.com"), "우주의 크기는 얼마나 되나");
 		assertThat(body).contains("\"noSource\":true");
 		assertThat(stageKeys(body)).containsExactly("analyzing", "searching", "generating");
@@ -73,11 +73,11 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 	void mock_uses_mock_only_labels() {
 		String body = chat(createUser("stage-label@b.com"), "가격 문의");
 		assertThat(body).contains("질문 분석 중(목업)").contains("목업 코퍼스 조회 중").contains("답변 작성 중(목업)");
-		assertThat(body).doesNotContain(LIVE_SEARCH_LABEL); // AC-24 : 라이브 라벨 재사용 금지
+		assertThat(body).doesNotContain(LIVE_SEARCH_LABEL); // 라이브 라벨 재사용 금지
 	}
 
 	/**
-	 * R-11 : "어느 자료를 참조했는지"가 진행 문구에 드러나야 함. 자료명은 화면 하단 출처 목록과 <b>같은 값</b>을
+	 * REQ-CHAT-005 : "어느 자료를 참조했는지"가 진행 문구에 드러나야 함. 자료명은 화면 하단 출처 목록과 <b>같은 값</b>을
 	 * 씀 - 진행 문구가 말한 자료와 실제로 붙는 출처가 어긋나면 그 자체가 거짓 표시가 됨
 	 */
 	@Test
@@ -86,7 +86,7 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 		assertThat(body).contains("목업 코퍼스 조회 중 - 이용 정책 문서 · FAQ 문서");
 	}
 
-	/** 무자료 분기에는 붙일 자료명이 없음 - 참조한 적 없는 이름을 지어내지 않음(P-10) */
+	/** 무자료 분기에는 붙일 자료명이 없음 - 참조한 적 없는 이름을 지어내지 않음(REQ-RAG-004) */
 	@Test
 	void mock_search_label_has_no_source_names_when_nothing_matched() {
 		String body = chat(createUser("stage-nosources@b.com"), "우주의 크기는 얼마나 되나");

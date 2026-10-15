@@ -11,7 +11,7 @@
 # 있었다. **`bash -n` 은 통과했고 shellcheck 만 SC2182 으로 잡는다.**
 #
 # **대상은 `check-shell-syntax.sh` 와 같은 규칙으로 뽑는다** - 목록을 두 곳에서 따로 관리하면
-# 한쪽에만 추가되는 날이 온다. 다만 `case-floors.env` 는 뺀다. 단독으로는 셸 조각이라
+# 한쪽에만 추가되는 날이 온다. 다만 `case-floors.env` 는 뺀다. 셸 조각이라
 # 단독으로는 shellcheck 가 셸 종류를 못 정하고, 소싱하는 쪽(`check-case-floor.sh`)이 `-x` 로 함께 본다.
 #
 # **`-x` 를 켠다.** 소싱되는 파일을 따라가야 `SC1091`(Not following)이 사라지고, 소싱된

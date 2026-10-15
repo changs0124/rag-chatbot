@@ -26,7 +26,7 @@ import com.ragchatbot.dto.ConversationDtos.MessageResponse;
 import com.ragchatbot.dto.FileDtos.AttachmentResponse;
 
 /**
- * 대화 CRUD. 모든 접근은 requireOwned 를 통과함(P-3, AC-1). 남의 것은 404로 은닉.
+ * 대화 CRUD. 모든 접근은 requireOwned 를 통과함(P-3). 남의 것은 404로 은닉.
  */
 @Service
 public class ConversationService {
@@ -72,7 +72,7 @@ public class ConversationService {
 				.toList();
 	}
 
-	/** 메시지 + 출처(AC-7 재조회 시 유지) + 첨부(새로고침 시 이미지 소실 방지) */
+	/** 메시지 + 출처(재조회 시 유지, REQ-RAG-002) + 첨부(새로고침 시 이미지 소실 방지) */
 	public List<MessageResponse> messages(UUID userId, UUID conversationId) {
 		requireOwned(conversationId, userId);
 
@@ -97,11 +97,10 @@ public class ConversationService {
 	}
 
 	/**
-	 * 대화 삭제 - **DB 를 먼저 지우고, 되돌릴 수 없는 외부 정리는 그 뒤에** 함(AC-12).
+	 * 대화 삭제 - **DB 를 먼저 지우고, 되돌릴 수 없는 외부 정리는 그 뒤에** 함.
 	 *
-	 * <p>이전에는 한 트랜잭션 안에서 파일 삭제와 OpenAI DELETE 를 먼저 수행했음. 커밋이 실패하면
-	 * 파일만 사라진 채 행이 남고, 원격 호출이 지연되면 그동안 DB 커넥션을 점유했음(Phase 3 리뷰 H3-1).
-	 * cascade 삭제는 단일 문장이라 그 자체로 원자적이므로 별도 트랜잭션이 필요 없음.
+	 * <p>외부 정리를 트랜잭션 안에서 먼저 하면 커밋 실패 시 파일만 사라진 채 행이 남고, 원격 호출이
+	 * 지연되는 동안 DB 커넥션을 점유함. cascade 삭제는 단일 문장이라 그 자체로 원자적이므로 별도 트랜잭션이 필요 없음.
 	 *
 	 * <p><b>주의</b> - DB 가 먼저 지워지므로 그 뒤 파일 삭제가 실패하면 <b>대응하는 행이 이미 없어
 	 * 행 기준 회수({@link FileService#cleanupOrphans})가 찾지 못함</b>. {@code findOrphans} 는
@@ -137,7 +136,7 @@ public class ConversationService {
 			}
 		}
 		try {
-			// OpenAI 파일/Vector Store 정리(AC-12). 목업은 호출 기록만. OpenAiService#deleteResources 참고(#124)
+			// OpenAI 파일/Vector Store 정리. 목업은 호출 기록만. OpenAiService#deleteResources 참고(#124)
 			openAiService.deleteResources(conversation.vectorStoreId(), openaiFileIds);
 		} catch (RuntimeException e) {
 			log.warn("대화 삭제 후 OpenAI 리소스 정리 실패. conversationId={}", conversationId, e);

@@ -94,7 +94,7 @@ describe('useChat 진행 단계(R-11)', () => {
     })
     expect(result.current.stage).toBeNull()
 
-    // 남은 큐가 되살아나지 않아야 함(잔류 0, AC-23)
+    // 남은 큐가 되살아나지 않아야 함(잔류 0)
     act(() => void vi.advanceTimersByTime(1000))
     expect(result.current.stage).toBeNull()
   })
@@ -171,7 +171,7 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
 
   it('정상 완료 뒤 abort 예외가 나도 stopped 를 세우지 않음', async () => {
     // 서버는 그 답변을 stopped=false 로 저장했으므로, 화면만 stopped 가 되면
-    // 무자료 배너가 화면과 재조회에서 갈림(재리뷰 라운드 2 N-4)
+    // 무자료 배너가 화면과 재조회에서 갈림
     const stream = openStream()
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', []))

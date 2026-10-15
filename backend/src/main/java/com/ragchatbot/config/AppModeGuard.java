@@ -9,18 +9,16 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 
 /**
- * 실행 모드 가드(AC-18). 생성자에서 예외를 던지면 ApplicationContext 기동이 실패함.
+ * 실행 모드 가드. 생성자에서 예외를 던지면 ApplicationContext 기동이 실패함.
  *
- * <p>2026-07-28 결정으로 {@code @Profile("prod")} 결합을 뗐음. 이전 구조는 <b>운영 프로필을 켤 때만</b>
- * 가드 빈이 생겼는데 저장소 어디에도 그 프로필을 켜는 경로가 없어, 배포 설정이 프로필을 빠뜨리면
- * 가드가 아예 생성되지 않는 빈 자물쇠였음(Phase 0 리뷰). 그래서 잠금 지점을 프로필이 아니라
- * <b>{@code app.mode} 필수화</b>로 옮김 - 값을 주지 않으면 어떤 환경에서도 기동하지 못함.
+ * <p>잠금 지점은 프로필이 아니라 <b>{@code app.mode} 필수화</b>임 - 값을 주지 않으면 어떤 환경에서도
+ * 기동하지 못함. 이 빈은 프로필과 무관하게 항상 생성됨.
  *
  * <p>세 가지를 막음.
  * <ul>
  * <li>미설정 - 기본값 {@code mock}이 없어졌으므로 목업이 우연히 켜지는 경로가 없음</li>
  * <li>오타 - {@code mock}/{@code live} 밖의 값</li>
- * <li>운영 목업 - {@code prod} 프로필 + {@code mock}(기존 AC-18). 프로필은 {@code docker-compose.yml} 이 켠다(#305)</li>
+ * <li>운영 목업 - {@code prod} 프로필 + {@code mock}. 프로필은 {@code docker-compose.yml} 이 켠다(#305)</li>
  * </ul>
  */
 @Configuration
@@ -30,8 +28,7 @@ public class AppModeGuard {
 
 	/**
 	 * 모드 문자열을 읽는 <b>유일한 규칙</b>(#248) - 앞뒤 공백을 걷고 소문자로. {@code app.mode} 를 읽는 곳은
-	 * 전부 이것을 거친다. 종전에는 이 가드만 정규화하고 나머지는 원문을 비교해, {@code APP_MODE=LIVE} 면
-	 * 가드와 Real 빈은 live 로 보면서 {@link EmailDomainPolicy} 의 live 검사만 빠졌다(허용 도메인 경계가 조용히 꺼짐).
+	 * 전부 이것을 거친다 - 한 곳이라도 원문을 비교하면 {@code APP_MODE=LIVE} 에서 그곳의 live 검사만 빠진다.
 	 */
 	public static String normalize(String appMode) {
 		return appMode == null ? "" : appMode.trim().toLowerCase(Locale.ROOT);

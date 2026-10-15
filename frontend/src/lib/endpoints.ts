@@ -56,7 +56,7 @@ export function uploadDocument(file: File): Promise<RagDocument> {
 }
 
 export interface ChatStreamHandlers {
-  /** 진행 단계(R-11) - 라벨 문자열은 서버가 소유함(모드별로 다름) */
+  /** 진행 단계(REQ-CHAT-005) - 라벨 문자열은 서버가 소유함(모드별로 다름) */
   onStage?: (data: { stage: string; label: string }) => void
   onToken?: (delta: string) => void
   onCitations?: (items: Citation[]) => void

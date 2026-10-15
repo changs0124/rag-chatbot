@@ -16,7 +16,7 @@ import com.ragchatbot.openai.OpenAiService;
 import com.ragchatbot.service.ChatService.PreparedChat;
 
 /**
- * AC-9 중단 상태 정책 - <b>사용자가 멈춘 것은 실패가 아님</b>(2026-07-28 결정).
+ * 중단 상태 정책(REQ-CHAT-006) - <b>사용자가 멈춘 것은 실패가 아님</b>.
  *
  * <p>이전에는 서버가 중단을 {@code error}로 저장하고 프론트는 같은 상황을 {@code complete}로 표시해
  * 화면과 재조회가 어긋났음. 여기서 서버 쪽을 프론트 쪽으로 통일한 것을 고정함.

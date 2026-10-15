@@ -20,8 +20,7 @@ import type { AdminUser, RagDocument } from '../lib/types'
 /** 인덱싱 중인 문서가 있을 때만 도는 폴링 간격. 완료를 알려줄 푸시 경로가 없어 폴링으로 한다 */
 const POLL_MS = 5000
 
-// 기호(● ◐ ⚠)는 글꼴·OS 마다 모양이 달라 ⚠ 는 컬러 이모지로도 뜬다 - 무채색 라인 아이콘으로 바꿨다(#192).
-// 뜻은 글자가 전하고 아이콘은 보조다(aria-hidden). 색은 아래 STATUS_CLASS 를 그대로 따른다
+// 상태 표시는 무채색 라인 아이콘(#192). 뜻은 글자가 전하고 아이콘은 보조다(aria-hidden). 색은 아래 STATUS_CLASS 를 그대로 따른다
 const STATUS_LABEL: Record<RagDocument['status'], string> = {
   completed: '완료',
   in_progress: '처리중',

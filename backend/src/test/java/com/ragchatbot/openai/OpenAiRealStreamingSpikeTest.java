@@ -20,7 +20,7 @@ import com.ragchatbot.openai.OpenAiService.ChatInput;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * 스파이크 M3 : <b>동기형 {@code RestClient} 가 SSE 를 증분으로 흘려주는가.</b>
+ * 스파이크 : <b>동기형 {@code RestClient} 가 SSE 를 증분으로 흘려주는가.</b>
  *
  * <p>{@code OpenAiRealStageMappingTest} 는 캔드 {@code ByteArrayInputStream} 을 파서에 직접 먹이므로
  * <b>파싱 로직만</b> 검증함 - 이미 메모리에 다 있는 바이트라, RestClient 가 응답을 통째로 버퍼링하는지

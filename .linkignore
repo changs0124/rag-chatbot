@@ -9,7 +9,7 @@ backend/.env
 # 저장소에 없는 것이 정상이고, 커밋되면 STALE로 빨간불이 됨(낡은 수가 게이트에 남는 것을 막음)
 frontend/vitest-report.json
 
-# 삭제된 백업 스크립트(#243) - 변경 이력(CHANGELOG)과 backend.md 가 "지웠다"는 사실을 적으므로 참조가 남는다
+# 삭제된 백업 스크립트(#243) - CHANGELOG 이력이 참조한다
 scripts/backup.sh
 
 # 옮긴 파비콘 원본(#299) - 변경 이력(CHANGELOG)의 옛 항목이 옮기기 전 경로를 적으므로 참조가 남는다

@@ -42,7 +42,6 @@ export default function Composer({
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
-  // 받는 것은 이미지뿐임 - 문서 첨부는 받지 않는다(2026-07-28 범위 축소, 2026-08-18 경로 자체를 제거)
   const fileInputRef = useRef<HTMLInputElement>(null)
   // 언마운트 정리용 - 정리 시점에 최신 목록을 봐야 해서 상태가 아니라 ref 로 들고 있음
   const draftsRef = useRef<Draft[]>([])
@@ -114,10 +113,6 @@ export default function Composer({
 
   /**
    * 언마운트 정리 - 미리보기 URL 회수 + **진행 중인 업로드 중단과 고아 회수**(#94).
-   *
-   * URL 만 회수하던 동안에는 업로드가 계속 진행돼 파일이 서버에 남았고, 어떤 메시지에도 연결되지
-   * 않아 회수 크론을 기다리는 고아가 됐다. removeDraft 는 이 경우를 정확히 처리하는데
-   * **언마운트 경로만 빠져 있었다.**
    *
    * 순서가 중요하다 - draftsRef 를 마지막에 비워야, abort 보다 먼저 서버가 받아 버린 업로드가
    * 뒤늦게 resolve 했을 때 startUpload 의 `some(...)` 가 거짓이 되어 **기존 회수 경로를 그대로 탄다.**
@@ -223,12 +218,7 @@ export default function Composer({
           </div>
         )}
 
-        {/*
-          실패 사유를 **텍스트로** 내보낸다(#101). 카드의 `title` 속성만으로는 터치 기기에서
-          툴팁이 뜨지 않아, 모바일 사용자는 작은 경고 아이콘만 보고 전송 버튼이 왜 회색인지
-          알 방법이 없었다. `features.md` FEAT-CHAT-001 이 「서버가 준 메시지를 보여준다」를
-          이미 요구하고 있었는데 구현이 `title` 에 그친 것이다.
-        */}
+        {/* `title` 툴팁은 터치 기기에서 안 뜨므로 실패 사유를 텍스트로 낸다(#101) */}
         {failed.length > 0 && (
           <p role="alert" className="mb-2 px-1 text-[13px] text-danger">
             첨부 {failed.length}건이 실패해 보낼 수 없습니다 — {failed[0].message ?? '업로드 실패'}
@@ -237,8 +227,7 @@ export default function Composer({
         )}
 
         <div className="flex items-end gap-2 rounded-3xl border border-line bg-raised px-2 py-1.5 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-within:border-accent focus-within:shadow-[0_0_0_4px_var(--c-focus-ring)]">
-          {/* + 는 메뉴 없이 기기 선택창을 바로 연다(#289). iOS 선택창이 「사진 찍기 · 사진 보관함 · 파일 선택」을
-              이미 보여 줘서, 따로 두던 앱 안 「카메라」가 같은 일을 두 번 했다 */}
+          {/* + 는 OS 선택창을 바로 연다 - iOS · Android 선택창이 촬영 항목을 붙인다(#289) */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -311,10 +300,8 @@ export default function Composer({
         </div>
       </form>
 
-      {/* 스크림을 검정이 아니라 canvas 로 깐다 - 검정 30% 는 다크 전제였고, 라이트에서는
-          밝은 회색(rgb(173,174,176))이 되어 그 위 흰 글자가 2.10~2.36 밖에 안 나왔다.
-          canvas/85 에서 글자 12.70 · 점선 4.95 다(다크 테마는 #191 에서 걷었다).
-          불투명도는 85~95 가 사실상 같은 값이라(아래 면이 canvas 와 가깝다) 뒤가 비치는 85 를 쓴다 */}
+      {/* 스크림은 검정이 아니라 canvas/85 - 글자 12.70 · 점선 4.95. 85~95 는 사실상 같은 값이라
+          뒤가 비치는 85 를 쓴다 */}
       {dragging && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-canvas/85 p-6 backdrop-blur-sm">
           <div className="grid h-full w-full place-items-center rounded-[1.75rem] border-2 border-dashed border-accent text-[15px] font-medium text-ink">
@@ -375,10 +362,8 @@ function DraftCard({
           title={draft.message}
           className="absolute inset-0 grid place-items-center gap-0.5 rounded-xl bg-black/75 text-white"
         >
-          {/* 바탕이 임의의 이미지라 최악(흰 이미지)을 기준으로 잰다. 스크림을 60% → 75% 로 내려
-              당시 highlight(오렌지)가 2.45 → 4.43 이 됐다(아이콘 기준 3.0). #190 에서 highlight 가
-              밝은 회색이 되어 지금은 8.34 다. 이 패널은 화면 색과 무관한 고정
-              어두운 면이라 danger 를 쓰면 1.06 으로 무너진다 */}
+          {/* 바탕이 임의의 이미지라 최악(흰 이미지)을 기준으로 잰다 - 스크림 75% 에서 highlight 8.34
+              (아이콘 기준 3.0). 화면 색과 무관한 고정 어두운 면이라 danger 를 쓰면 1.06 으로 무너진다 */}
           <IconAlert className="h-4 w-4 text-highlight" />
           <button type="button" onClick={onRetry} className="text-[10px] underline">
             재시도

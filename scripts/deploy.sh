@@ -5,10 +5,6 @@
 # 서버에 빌드 도구를 들이지 않는다), 압축 후 90MB 남짓이라 그냥 넘기는 편이 단순하다. 플랜 전송량(월 4TB) 안이다.
 # 레지스트리를 끼우면 인증·태그 관리·정리 정책이 따라오는데, 서버가 하나뿐이라 그 값을 못 한다.
 #
-# **한도 근거는 이제 없다(#137).** 종전 주석은 "패키지 저장 500MB ·
-# 전송 1GB/월 한도에 걸린다" 를 근거로 들었다. 2026-09-11 공개 전환으로 **공개 패키지는
-# 저장·전송이 무료**가 되어 그 근거가 사라졌다. 위의 남은 근거만으로도 결론은 그대로다.
-#
 # 사용법 :
 #   bash scripts/deploy.sh                 # 빌드 → 전송 → 기동
 #   bash scripts/deploy.sh --skip-build    # 이미 빌드된 이미지로 전송만
@@ -25,9 +21,7 @@ cd "$(git rev-parse --show-toplevel)"
 # 적어 두는 것과 같다. 빈 값으로 받아 아래에서 한 번에 검사한다 - `set -u` 아래에서
 # `${DEPLOY_HOST}` 로 두면 여기서 `unbound variable` 로 **안내 없이** 죽는다
 HOST="${DEPLOY_HOST:-}"
-# **홈 상대 경로로 둔다(#129).** `/home/User/deploy` 는 Windows 사용자명 `User` 에 우연히
-# 맞았던 값이다. 원격 사용자가 바뀌면(서버 이전 등)
-# 경로가 통째로 어긋난다. 상대 경로면 어느 계정으로 붙든 그 홈 아래를 가리킨다
+# **홈 상대 경로로 둔다(#129)** - 어느 계정으로 붙든 그 홈 아래를 가리킨다
 REMOTE_DIR="${DEPLOY_DIR:-deploy}"
 IMAGE="rag-chatbot-backend:latest"
 TARBALL="backend-image.tar.gz"
@@ -42,10 +36,7 @@ for a in "$@"; do
 	esac
 done
 
-# 접속 대상이 비었는지 **여기서** 본다(#133). `preflight` 안에 넣으면 안 된다 -
-# 아래 `--dry-run` 분기가 `preflight` 보다 먼저 `exit 0` 하므로 그 경로가 검사를 통째로
-# 비껴가고, 빈 계획(`호스트   ( / )`)을 출력하며 정상 종료한다. 처음 배포하는 사람은
-# 「`--dry-run` 을 먼저 본다」가 자연스러운 첫 동작이라, 가장 먼저 밟는 경로가 정확히 그 사각지대다.
+# 접속 대상이 비었는지 **여기서** 본다(#133) - `--dry-run` 분기가 `preflight` 보다 먼저 끝나므로 그 안에 두면 비껴간다.
 if [ -z "$HOST" ]; then
 	echo "배포 대상이 지정되지 않았다. 아래 환경변수를 넣고 다시 실행할 것 :" >&2
 	echo "  - DEPLOY_HOST(~/.ssh/config 의 Host 별칭)" >&2
@@ -217,11 +208,7 @@ echo \"  cd $REMOTE_DIR && sudo docker tag rag-chatbot-backend:previous $IMAGE &
 exit 1"
 
 # 6. 옛 이미지 정리 ---------------------------------------------------------
-# **헬스체크가 통과한 뒤에야 옛 이미지를 버린다(#129).**
-# 종전에는 `up -d` 직후에 prune 을 돌렸다. 그 시점의 이전 이미지는 latest 태그를 새 것에
-# 뺏겨 dangling 이고 컨테이너도 이미 갈아탄 뒤라 **즉시 삭제**됐다. 레지스트리를 쓰지 않는
-# 설계라 서버의 그 이미지가 **유일한 롤백 자산**인데, 검증 전에 버린 셈이다 -
-# 새 이미지가 Flyway 오류로 못 뜨면 되돌릴 것이 아무것도 남지 않았다.
+# **헬스체크가 통과한 뒤에야 옛 이미지를 버린다(#129)** - 레지스트리가 없어 서버의 옛 이미지가 유일한 롤백 자산이다.
 say "옛 이미지 정리"
 ssh_run "sudo docker rmi rag-chatbot-backend:previous 2>/dev/null || true;
 sudo docker image prune -f"

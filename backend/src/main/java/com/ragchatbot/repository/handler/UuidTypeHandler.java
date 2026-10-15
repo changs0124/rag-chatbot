@@ -12,7 +12,7 @@ import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.MappedTypes;
 
 /**
- * MyBatis ↔ PostgreSQL uuid 타입 핸들러 (M7 스파이크).
+ * MyBatis ↔ PostgreSQL uuid 타입 핸들러.
  * setString은 uuid 컬럼에서 거부되므로 setObject(..., Types.OTHER)로 넘기고,
  * 결과는 getObject(col, UUID.class)로 받음. type-handlers-package로 자동 등록됨.
  */

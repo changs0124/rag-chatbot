@@ -43,7 +43,7 @@ const FOLD_STOPS = [
 ]
 
 interface LogoProps {
-  /** `full` 은 마크 + 텍스트 2줄, `mark` 는 D 마크만 (좁은 폭·파비콘용) */
+  /** `full` 은 마크 + 텍스트 2줄, `mark` 는 D 마크만. 화면에는 쓰지 않고 파비콘 정본(design-system §7-2) */
   variant?: 'full' | 'mark'
   /**
    * 필수다. 기본값을 두면 호출부가 넘긴 값이 병합이 아니라 **교체**라,

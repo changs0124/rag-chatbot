@@ -21,7 +21,7 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
  * Phase 5 : SSE 스트리밍 채팅 + 레이트리밋.
- * AC-6(무자료) · AC-7(출처 저장·재조회) · AC-10(429) · AC-12 · AC-14 · AC-21.
+ * 무자료(REQ-RAG-003) · 출처 저장·재조회(REQ-RAG-002) · 429(REQ-OPS-003) · 리소스 정리 · 첨부 전달 · 이미지 단독 질문.
  */
 class ChatFlowTest extends AbstractPgIntegrationTest {
 
@@ -65,7 +65,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getBody()).contains("event:token").contains("event:citations")
 				.contains("event:done").contains("이용 정책 문서");
 
-		// AC-7 : 재조회 시 출처 유지
+		// REQ-RAG-002 : 재조회 시 출처 유지
 		var messages = rest.exchange("/api/conversations/" + convId + "/messages", HttpMethod.GET,
 				new HttpEntity<>(bearer(token)), List.class);
 		List<Map<String, Object>> list = messages.getBody();
@@ -174,13 +174,13 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		String attId = uploadImage(token);
 
 		var res = chat(token, Map.of("conversationId", convId, "message", "", "attachmentIds", List.of(attId)));
-		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK); // AC-21
-		assertThat(mock.lastAttachmentCount()).isEqualTo(1); // AC-14
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK); // 이미지 단독 질문
+		assertThat(mock.lastAttachmentCount()).isEqualTo(1); // 첨부가 모델에 전달됨
 	}
 
 	@Test
 	void attachments_survive_reload_with_fresh_url() {
-		// 재조회 응답에 첨부가 없어 새로고침하면 이미지가 사라졌음(Phase 3 리뷰 M3-6)
+		// 재조회 응답에 첨부가 있어야 새로고침해도 이미지가 남음
 		String token = createUser("chat-reload@b.com");
 		String convId = createConversation(token);
 		String attId = uploadImage(token);
@@ -236,7 +236,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		var del = rest.exchange("/api/conversations/" + convId, HttpMethod.DELETE,
 				new HttpEntity<>(bearer(token)), Void.class);
 		assertThat(del.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-		assertThat(mock.deleteResourcesCalls()).isGreaterThan(before); // AC-12
+		assertThat(mock.deleteResourcesCalls()).isGreaterThan(before); // 대화 삭제 시 리소스 정리
 	}
 
 	@Test
