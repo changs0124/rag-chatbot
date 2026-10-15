@@ -1,0 +1,8 @@
+# after (작업 트리)
+compose config 의 app SPRING_PROFILES_ACTIVE : SPRING_PROFILES_ACTIVE: prod
+1) APP_MODE=mock · 기본 프로필 :
+운영(prod) 프로필에서는 APP_MODE=mock 을 사용할 수 없음
+2) APP_MODE=mock · SPRING_PROFILES_ACTIVE= (로컬 목업) :
+Started BackendApplication in 3.575 seconds
+3) backend/.env 그대로(live) · 기본 프로필 :
+Started BackendApplication in 4.234 seconds

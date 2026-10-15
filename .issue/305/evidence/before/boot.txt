@@ -1,0 +1,4 @@
+# before 7782f87
+compose config 의 app SPRING_PROFILES_ACTIVE 줄 수 : 0
+APP_MODE=mock 으로 compose app 실행 :
+Started BackendApplication in 3.587 seconds (process running for 4.057)
