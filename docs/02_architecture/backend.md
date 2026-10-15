@@ -585,11 +585,24 @@ GB-월 과금)을 켜고, 종전 GCS 백업 스크립트는 삭제했다.
 | 같은 공급자 | 오프사이트가 아니다. 계정 · 리전 사고에는 무용하다 |
 | crash-consistent | 실행 중 디스크를 찍는다. Postgres 는 WAL 로 복구하므로 기동하면 일관된 상태로 올라오지만, 스냅샷 직전 커밋 순간까지의 일관성이지 앱 수준 정지점이 아니다 |
 
-**복구** : 콘솔에서 스냅샷으로 **새 인스턴스를 만든다** → 고정 IP 를 옮겨 붙인다(또는 `~/.ssh/config` 의 `HostName` 교체) →
-새 인스턴스는 SSH 호스트 키가 바뀌므로 `ssh-keygen -R <고정 IP>` 후 새 지문을 확인하고 접속 → `sudo docker compose up -d` 로 기동한 뒤 헬스체크. 터널 토큰이 디스크에 있으므로 **옛 인스턴스를 먼저 멈춰야** 한다(「서버를 옮길 때」와 같은 이유).
+**복구(운영 서버가 죽었을 때)** : 콘솔에서 스냅샷으로 **새 인스턴스를 만든다**(같은 번들 · 같은 가용 영역) → 고정 IP 를 옮겨 붙인다
+(또는 `~/.ssh/config` 의 `HostName` 교체) → 새 인스턴스는 SSH 호스트 키가 바뀌므로 `ssh-keygen -R <고정 IP>` 후 새 지문을 확인하고 접속 →
+헬스체크. **컨테이너는 부팅과 함께 `restart: unless-stopped` 로 저절로 뜬다** — `docker compose up -d` 를 칠 일이 없다.
+그래서 **옛 인스턴스를 먼저 멈춰야** 한다 : 새 인스턴스의 cloudflared 가 부팅 몇 초 안에 같은 터널 토큰으로 붙는다(「서버를 옮길 때」와 같은 이유).
+새 인스턴스의 기본 방화벽은 22 · 80 을 연다 — 80 을 닫는다.
 산출물에는 **사용자 이메일 · BCrypt 해시 · 전체 대화**가 들어 있어 스냅샷 공유 · 복사 권한을 열지 않는다.
 
-> 종전 GCS 백업 설계와 복구 리허설은 #132 · CHANGELOG 에 있다. 스냅샷 복구 리허설은 [#255](https://github.com/changs0124/rag-chatbot/issues/255) 에서 한다.
+**리허설(운영을 살려 둔 채 복구를 확인할 때, #255 · 2026-10-15)** — 운영 터널에 붙지 않게 하는 것이 전부다.
+
+- `create-instances-from-snapshot --use-latest-restorable-auto-snapshot` 에 **launch script**(user-data)로 `secrets/tunnel_token` 이름 바꾸기 ·
+  `docker update --restart=no deploy-cloudflared-1` · `docker stop deploy-cloudflared-1` 을 넘긴다. 스크립트는 **ASCII 만** — 한글 주석이 있으면 Windows AWS CLI 가 파일을 못 읽는다
+- **launch script 는 docker 보다 늦게 돈다.** 실측 : 부팅 뒤 cloudflared 가 연결 4개를 먼저 등록했고 스크립트가 끊기까지 **약 3초 운영 터널에 같이 붙었다.**
+  그 사이 들어온 요청은 시험 서버(스냅샷 시점 DB)로 갈 수 있으므로 **사용자가 없는 시간에** 하고, 접속 즉시 `docker ps` 로 cloudflared 가 꺼졌는지 본다
+- 확인 : `127.0.0.1:8080/api/health` 200 · 표 7개 행 수를 운영의 **스냅샷 시각 이전 생성분**(`created_at`/`installed_on` < 스냅샷 `createdAt`)과 대조 — 2026-10-15 전부 일치.
+  요청부터 헬스 200 까지 **2분 13초**, 앱 기동은 58초(운영 9초 — 스냅샷 디스크의 첫 읽기가 느리다)
+- 끝나면 인스턴스를 지우고 `get-instances` · `get-static-ips` · `get-disks` 로 남은 것이 없는지 본다. 고정 IP 는 붙이지 않는다(분리된 고정 IP 는 과금)
+
+> 종전 GCS 백업 설계와 복구 리허설은 #132 · CHANGELOG 에 있다.
 
 ### 데모 - 로컬 + 터널
 
