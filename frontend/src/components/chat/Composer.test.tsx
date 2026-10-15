@@ -389,11 +389,12 @@ describe('Composer', () => {
       expect(screen.queryByText('사진')).toBeNull()
     })
 
-    it('사진 선택기는 서버 허용 형식만 받음', () => {
+    it('선택창은 image/* 로 연다 - 형식을 좁히면 Android 가 카메라 없이 보관함으로 바로 들어간다 (#289)', () => {
       render(<Composer onSend={noop} streaming={false} onStop={noop} />)
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
 
-      expect(input.accept.split(',').sort()).toEqual(['image/gif', 'image/jpeg', 'image/png', 'image/webp'])
+      expect(input.accept).toBe('image/*')
+      expect(input.multiple).toBe(true)
     })
   })
 })

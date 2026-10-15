@@ -251,8 +251,9 @@ export default function Composer({
           <input
             ref={fileInputRef}
             type="file"
-            // image/* 가 아니라 서버 허용 목록 그대로(#218). 촬영 항목은 OS 선택창이 붙인다 - iOS 는 항상(WebKit 236981)
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            // image/* 여야 OS 선택창이 촬영 항목을 붙인다(#289) - 서버 허용 목록으로 좁히면 Android 가 카메라 없이
+            // 보관함으로 바로 들어갔다. 허용 밖 형식(HEIC 등)은 업로드에서 서버가 거절하고 카드에 오류로 남는다
+            accept="image/*"
             multiple
             className="hidden"
             onChange={(e) => {
