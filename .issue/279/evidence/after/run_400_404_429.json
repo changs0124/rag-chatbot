@@ -1,0 +1,44 @@
+[
+ {
+  "case": "400 빈 메시지",
+  "accept": "text/event-stream",
+  "status": 400,
+  "ctype": "application/json",
+  "body": "{\"code\":\"BAD_REQUEST\",\"message\":\"메시지 또는 첨부가 필요함\"}"
+ },
+ {
+  "case": "404 없는 대화",
+  "accept": "text/event-stream",
+  "status": 404,
+  "ctype": "application/json",
+  "body": "{\"code\":\"NOT_FOUND\",\"message\":\"대화 없음\"}"
+ },
+ {
+  "case": "400 빈 메시지",
+  "accept": "*/*",
+  "status": 400,
+  "ctype": "application/json",
+  "body": "{\"code\":\"BAD_REQUEST\",\"message\":\"메시지 또는 첨부가 필요함\"}"
+ },
+ {
+  "case": "404 없는 대화",
+  "accept": "*/*",
+  "status": 404,
+  "ctype": "application/json",
+  "body": "{\"code\":\"NOT_FOUND\",\"message\":\"대화 없음\"}"
+ },
+ {
+  "case": "429 동시 1건 초과",
+  "accept": "text/event-stream",
+  "status": 429,
+  "ctype": "application/json",
+  "body": "{\"code\":\"RATE_LIMIT\",\"message\":\"이미 응답을 받는 중임 - 끝난 뒤 다시 시도\"}"
+ },
+ {
+  "case": "429 동시 1건 초과",
+  "accept": "*/*",
+  "status": 429,
+  "ctype": "application/json",
+  "body": "{\"code\":\"RATE_LIMIT\",\"message\":\"이미 응답을 받는 중임 - 끝난 뒤 다시 시도\"}"
+ }
+]
