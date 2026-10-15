@@ -170,6 +170,7 @@ def claims_to_md(xlsx, terms):
     year_of = lambda r: f"{r['입고일자'].year}년" if isinstance(r["입고일자"], dt.datetime) else "(입고일자 없음)"
     by_year_part = group(lambda r: [f"{year_of(r)} · {fmt(r['품번']) or '(비어 있음)'}"])
     by_year_model = group(lambda r: [f"{year_of(r)} · {fmt(r['기종']) or '(비어 있음)'}"])
+    by_alarm_year = group(lambda r: [f"AL.{c} · {year_of(r)}" for c in alarm_codes(r["불량내용"])])
     by_customer = group(lambda r: [fmt(r["업체명"]) or "(비어 있음)"])
     by_machine = group(lambda r: [fmt(r["호기정보"])] if fmt(r["호기정보"]) else [])
     with_uu = [r for r in recs if UU.search(fmt(r["불량내용"]))]
@@ -244,6 +245,9 @@ def claims_to_md(xlsx, terms):
         "집계 기준 : 「불량 내용」에 그 코드가 한 번이라도 나온 클레임 수. `AL.2144` · `AL2144` · `L.2144` · `al2144` · 접두 없는 `2144`",
         "같은 표기 변형은 하나로 셌다. 한 클레임에 코드가 여럿이면 각 코드에 하나씩 센다(합이 총 건수보다 크다).", "",
         *breakdown(by_alarm, min_count=2, with_nums=True), "",
+        "### 알람 코드 × 입고 연도별 건수와 최종원인 (위 알람 표를 입고일자의 연도로 나눈 것)", "",
+        *breakdown({k: v for k, v in by_alarm_year.items() if len(by_alarm[k.split(" · ")[0]]) >= 2},
+                   by_name=True, with_nums=True), "",
         f"### 고객사별 건수 (2건 이상인 고객사 전부 · 전체 고객사 {len(by_customer)}곳 중 "
         f"{sum(len(rs) >= 2 for rs in by_customer.values())}곳, 나머지는 1건씩)", "", *customer_lines(), "",
         f"### 같은 호기 재발 (호기정보가 같은 클레임이 2건 이상인 장비 전부 · {len(machines)}대)", "",
