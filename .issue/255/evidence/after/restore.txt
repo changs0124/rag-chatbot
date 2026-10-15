@@ -1,0 +1,15 @@
+# 복구 인스턴스 (자동 스냅샷 2026-10-15 04:27:56 KST, medium_3_0 · ap-northeast-2a)
+생성 요청 17:13:34 · running 17:13:44 · SSH 17:14:24 · app health 200 17:15:47 (총 2분 13초)
+app 기동 58.5초(운영 8.6초 — 스냅샷 디스크 첫 읽기 지연으로 추정) · Flyway 9개 검증 · 마이그레이션 없음
+기본 방화벽 : 80 open;22 open;
+doc-figures 295장 · uploads 볼륨 복원 · app 183MiB / db 47MiB
+## 행 수 (표|전체|스냅샷 이전) — 운영의 「스냅샷 이전」 열과 대조
+attachments  복구 0  운영(스냅샷 이전) 0  일치
+citations  복구 6  운영(스냅샷 이전) 6  일치
+conversations  복구 3  운영(스냅샷 이전) 3  일치
+messages  복구 14  운영(스냅샷 이전) 14  일치
+rag_documents  복구 4  운영(스냅샷 이전) 4  일치
+users  복구 1  운영(스냅샷 이전) 1  일치
+flyway_schema_history  복구 9  운영(스냅샷 이전) 9  일치
+## cloudflared
+부팅 직후 docker 가 restart 정책으로 cloudflared 를 먼저 띄움 — 08:14:38~41Z 운영 터널에 연결 4개 등록, 08:14:40Z launch script 의 stop 으로 종료(겹친 시간 약 3초). launch script(user-data) 실행 시각 17:14:42 KST
