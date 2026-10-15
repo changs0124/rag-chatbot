@@ -34,6 +34,10 @@
   - 마스킹 외 내용은 그대로다(옛 산출물과 diff 해 바뀐 줄이 전부 마스킹 줄 + 머리말 한 줄임을 확인). 절차는 `live-integration.md` 5-2
 
 ### Fixed
+- **한국어 답에서 굵게가 문장부호 뒤 조사 앞에서 안 닫혀 `**` 가 글자 그대로 보이던 것을 고쳤다(#287).** 사용자가 운영 화면에서
+  「마크다운이 그대로」라고 보고했다. 배포는 최신이었고, 원인은 CommonMark 강조 규칙이었다(닫는 `**` 앞이 문장부호이고 뒤가 글자면 안 닫힘).
+  - `Markdown.tsx` 에 `remark-cjk-friendly` 2.3.2(unified 11) 를 붙였다. 원시 HTML 미렌더 · 위험 링크 제거는 그대로다
+  - sol 답 37개를 실제 렌더러로 그려 `**` 가 남은 답 12 → 0, 굵게 182 → 196곳. 테스트 1건(변경 전 실패 확인), 프론트 하한 152 → 153. 번들 gzip +7.1KB
 - **채팅을 `Accept: text/event-stream` 으로 부르면 거절이 빈 500 으로 나가던 것을 고쳤다(#279).** 오류 응답 `ApiError` 를
   그 미디어 타입으로 쓸 변환기가 없어서, 예외 핸들러 자체가 실패했다(로그 `Failure in @ExceptionHandler`). 화면은 `Accept` 를 지정하지 않아 영향이 없었다.
   - `GlobalExceptionHandler` 의 모든 오류 응답에 `Content-Type: application/json` 을 미리 정해 협상을 건너뛴다

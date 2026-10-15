@@ -263,6 +263,23 @@ describe('MessageList', () => {
       expect(screen.queryByText(/\*\*|\|---/)).not.toBeInTheDocument()
     })
 
+    it('문장부호로 끝나는 굵게 뒤에 조사가 붙어도 굵게로 그린다 (#287)', () => {
+      // 표준 강조 규칙으로는 닫는 ** 앞이 문장부호 · 뒤가 글자면 안 닫힌다 - 한국어 조사에서 흔하다(sol 답 30%)
+      render(
+        <MessageList
+          messages={[
+            msg(
+              'assistant',
+              '최종원인은 **설계불량(부품선정오류)**으로 기록됐고, **19번 파라미터는 ‘잔류펄스 허용범위’**입니다.',
+            ),
+          ]}
+        />,
+      )
+      expect(screen.getByText('설계불량(부품선정오류)').tagName).toBe('STRONG')
+      expect(screen.getByText('19번 파라미터는 ‘잔류펄스 허용범위’').tagName).toBe('STRONG')
+      expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument()
+    })
+
     it('원시 HTML 은 실행하지 않고 위험한 링크 스킴은 지운다', () => {
       const { container } = render(
         <MessageList
