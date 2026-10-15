@@ -12,7 +12,7 @@ import java.util.function.Predicate;
 public interface OpenAiService {
 
 	/** 첨부 참조 - 비전 이미지(첨부는 이미지뿐이다, R-2) */
-	record AttachmentRef(String fileType, String storagePath, String openaiFileId) {
+	record AttachmentRef(String fileType, String storagePath) {
 	}
 
 	/**
@@ -28,7 +28,7 @@ public interface OpenAiService {
 	 * @param history 이전 턴들. <b>오래된 것부터</b>의 순서이며 이번 사용자 메시지는 포함하지 않음.
 	 *                토큰 예산 안에서 잘려 있음(ChatService 가 자름)
 	 */
-	record ChatInput(String userMessage, List<AttachmentRef> attachments, String vectorStoreId, List<Turn> history) {
+	record ChatInput(String userMessage, List<AttachmentRef> attachments, List<Turn> history) {
 	}
 
 	/** 출처 데이터 (응답 annotations 에 대응) */

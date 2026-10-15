@@ -15,7 +15,7 @@ class OpenAiMockFigureTest {
 	private final OpenAiMockService mock = new OpenAiMockService(0);
 
 	private OpenAiService.ChatCompletion ask(String message, List<String> tokens) {
-		return mock.streamChat(new ChatInput(message, List.of(), null, List.of()), tokens::add, (s, src) -> {
+		return mock.streamChat(new ChatInput(message, List.of(), List.of()), tokens::add, (s, src) -> {
 		});
 	}
 

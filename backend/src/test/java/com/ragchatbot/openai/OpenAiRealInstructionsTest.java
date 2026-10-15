@@ -59,7 +59,7 @@ class OpenAiRealInstructionsTest {
 	private void chat(String storeId) {
 		var service = new OpenAiRealService("test-key", "gpt-4o", storeId, baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
 		try {
-			service.streamChat(new ChatInput("연차는 언제 소멸하나요?", List.of(), null, List.of()),
+			service.streamChat(new ChatInput("연차는 언제 소멸하나요?", List.of(), List.of()),
 					token -> {
 					}, (stage, sources) -> {
 					});

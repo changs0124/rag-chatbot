@@ -618,15 +618,7 @@ compose `secrets`(파일)로 마운트한다. 고정한 이미지(2026.10.0)가 
 지정이 먹지 않고 호스트 권한이 그대로 보인다. cloudflared 는 65532 로 돌아 **파일이 600 이면 못 읽는다**
 (`permission denied`, 운영 VM 에서 음성 대조로 확인). 그래서 파일은 644, 대신 **디렉터리 `secrets/` 를 700** 으로
 막아 호스트의 다른 사용자는 경로부터 들어오지 못한다. `deploy.sh` 프리플라이트가 파일이 있는지 보고 디렉터리를
-700 으로 고정하며, `.env` 에 옛 `TUNNEL_TOKEN` 값이 남아 있으면 경고한다. 파일이 없으면 compose 가 기동 전에 멈춘다.
-
-옛 방식에서 옮길 때(서버에서, 한 번) :
-
-```bash
-install -d -m 700 secrets
-grep '^TUNNEL_TOKEN=' .env | cut -d= -f2- | tr -d '\n' > secrets/tunnel_token && chmod 644 secrets/tunnel_token
-# 새 compose 로 cloudflared 를 다시 만든 뒤 터널이 붙는 것을 보고 나서 .env 의 TUNNEL_TOKEN 줄을 지운다
-```
+700 으로 고정한다. 파일이 없으면 compose 가 기동 전에 멈춘다.
 
 **업로드 부하에서 스왑을 금지하기로 정했다(#202 — `memswap_limit` = `mem_limit`).**
 종전에는 `memswap_limit` 을 비워 스왑을 `mem_limit` 만큼 더 허용했고(#127), 그것이 26MB 멀티파트 동시 업로드에서

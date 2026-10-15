@@ -101,7 +101,6 @@ done
 #
 # 파일은 644 여야 한다(컨테이너 사용자 65532 가 읽는다 - compose 하단 주석). 그래서 **디렉터리를 700 으로**
 # 잠근다. 좁히는 방향이라 확인 없이 고치고 무엇을 바꿨는지 찍는다 - env_perms 와 같다.
-# .env 에 옛 TUNNEL_TOKEN 값이 남아 있으면 경고만 한다 - 지우는 것은 사람이 확인하고 한다
 tunnel_secret() {
 	ssh_run "
 d=\"$REMOTE_DIR/secrets\"; f=\"\$d/tunnel_token\"
@@ -114,9 +113,6 @@ if [ \"\$mode\" = '700' ]; then
   echo '  secrets/ 권한 700 (정상)'
 else
   chmod 700 \"\$d\" && echo \"  secrets/ 권한 \$mode -> 700 으로 고쳤다\"
-fi
-if grep -q '^TUNNEL_TOKEN=..*' \"$REMOTE_DIR/.env\" 2>/dev/null; then
-  echo '  경고: .env 에 TUNNEL_TOKEN 값이 남아 있다 - 이제 쓰이지 않는다. 확인 후 그 줄을 지울 것'
 fi
 "
 }
