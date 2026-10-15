@@ -3,10 +3,10 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 | rag-chatbot |
-| 문서 버전 | v2.2 |
-| 최종 수정일 | 2026-10-07 |
+| 문서 버전 | v2.3 |
+| 최종 수정일 | 2026-10-15 |
 | 작성자 | changs0124 |
-| 상태 | `반영됨` (2026-08-18 구현 · 2026-09-11 회사 CI 반영, #151 · 2026-10-06 홈페이지 색 체계, #190 · 2026-10-07 로고 텍스트 2줄, #229) |
+| 상태 | `반영됨` (2026-08-18 구현 · 2026-09-11 회사 CI 반영, #151 · 2026-10-06 홈페이지 색 체계, #190 · 2026-10-07 로고 텍스트 2줄, #229 · 2026-10-15 색 리터럴 허용 목록 · 타이포 실측값, #296) |
 
 ---
 
@@ -117,8 +117,8 @@
 
 **"토큰 쌍"이라고 쓴 것은 한정이다.** 화면에는 토큰끼리 만나지 않는 조합이 남아 있고,
 그건 위 계산에 들어가지 않는다. 바로 위 「토큰 밖 겹침」 셋은 #155 에서 고쳐 재 놓았고,
-아래 둘은 **아직 그대로다** — **#151 이 만든 것이 아니라 그 전부터 있었고, #151 범위(색과 로고)
-밖이라 고치지 않았다.** #155 도 이 둘은 이슈 본문이 명시적으로 범위 밖에 두었다.
+아래 하나는 **아직 그대로다** — **#151 이 만든 것이 아니라 그 전부터 있었고, #151 범위(색과 로고)
+밖이라 고치지 않았다.** #155 도 이것은 이슈 본문이 명시적으로 범위 밖에 두었다.
 
 | 자리 | 값 | 기준 | 비고 |
 |------|-----|------|------|
@@ -177,7 +177,9 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - **본문 서체** : Pretendard Variable (npm 패키지로 번들에 넣는다 — CDN 을 새로 물리지 않는다).
   받지 못하는 환경을 위해 시스템 스택을 뒤에 둔다.
 - **금지** : `Noto Sans KR` · `Malgun Gothic` 을 **선순위로** 지정하지 않는다. 자소 간격이 넓어 화면이 헐거워 보인다.
-- **크기** : 본문 15px / 보조 13px / 화면 제목 20px. 채팅 본문은 14px 보다 작게 두지 않는다.
+- **크기** : 본문 15px / 보조 13px. 화면 제목은 화면마다 다르다 — `AdminPage` 20px(`text-xl`) · `MyPage` 24px(`text-2xl`) ·
+  `LoginPage` 24px → md 이상 36px(`text-2xl md:text-4xl`). **답변 문단**은 14px 보다 작게 두지 않는다
+  (`Markdown.tsx` 의 코드 블록 13px · 표 14px 는 이 규칙 밖이다).
 - **한국어 규칙**
   - 모든 한국어 블록에 `break-keep` — 조사 앞에서 줄이 갈리면 읽는 속도가 눈에 띄게 떨어진다
   - 본문 `leading-relaxed`, 제목 `leading-snug`. 한국어는 라틴보다 행간이 더 필요하다
@@ -406,7 +408,7 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 | `frontend/src/pages/ChatPage.tsx` | `100dvh` · 드로어 blur + 스크롤 잠금 · 스크롤 페이드 |
 | `frontend/src/components/chat/MessageList.tsx` | 답변 버블 제거 · 사용자만 `raised` 카드 · **#151** 「자료 없음」 배지를 `highlight` 로 |
 | `frontend/src/components/chat/Composer.tsx` · `Citations.tsx` | 떠 있는 입력 판 · safe-area · 토큰 · **#155** 드롭 오버레이를 검정 스크림에서 `canvas/85` 로, 첨부 실패 아이콘을 `highlight` 로 |
-| `frontend/src/pages/LoginPage.tsx` · `MyPage.tsx` | Editorial Split · 카드 + 세그먼트 컨트롤 · **#151** 로그인 좌측 상단 로고(알약 텍스트 대체) · **#155** `MyPage` 오류 배너를 `danger-soft` 로(#151 이 `AdminPage` 만 고쳤다) |
+| `frontend/src/pages/LoginPage.tsx` · `MyPage.tsx` | Editorial Split · 카드(세그먼트 컨트롤은 #191 에서 뺐다) · **#151** 로그인 좌측 상단 로고(알약 텍스트 대체) · **#155** `MyPage` 오류 배너를 `danger-soft` 로(#151 이 `AdminPage` 만 고쳤다) |
 | `frontend/src/pages/AdminPage.tsx` | **#151** 오류 배너를 `danger-soft` 로 — accent 가 파랑이 되며 연파랑 위 빨간 글씨로 깨지던 자리다 |
 | `frontend/src/components/ErrorBoundary.tsx` | 토큰 · `100dvh` · accent 알약 버튼 |
 | `frontend/index.html` · `frontend/public/` | 파비콘 4종 · `theme-color` · `lang="ko"`(문서는 한국어인데 `en` 으로 선언돼 있었음) · **#151** 아이콘을 D 마크로 교체 |
@@ -414,7 +416,7 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 `frontend/src/pages/ChatPage.tsx` 는 **#151** 로 모바일 헤더에 D 마크가 붙었다(`md:hidden`) —
 드로어로 접히면 사이드바 로고가 보이지 않기 때문이다. **#235 에서 다시 뺐다** — 드로어를 열면 로고가 나와 겹치는 표식이었다(7-3 배치).
 
-화면 코드에 남은 `zinc-*` 색은 0건이고, **화면이 쓰는 색은 전부 토큰이다.** 그래서 #151 의
+화면 코드에 남은 `zinc-*` 색은 0건이고, **화면이 쓰는 색은 아래 「색 리터럴이 허용되는 자리」 밖에서는 전부 토큰이다.** 그래서 #151 의
 전면 재도색이 화면의 색 클래스를 한 줄도 바꾸지 않고 끝났다. 손댄 컴포넌트 셋은 사정이 각각 다르다.
 
 | 파일 | 바뀐 것 | 성격 |
@@ -423,17 +425,20 @@ translate 안 좌표를 써야 한다 — 밖 좌표를 넣으면 그라데이�
 | `pages/AdminPage.tsx` | `bg-accent-soft` → `bg-danger-soft` | **재도색이 드러낸 것** — 종전엔 accent(테라코타)와 danger(붉은)가 같은 계열이라 우연히 어울렸다 |
 | `components/ConfirmModal.tsx` | `text-white` → `text-danger-ink` | **재도색이 강제한 것** — 다크 danger 가 바뀌며 흰 글자가 2.89:1 이 됐다 |
 
-### 색 값을 들고 있는 파일 — 셋이다
+### 색 리터럴이 허용되는 자리
 
-토큰이 유일한 출처라는 말은 **화면 코드**에 한정된다. 실제로 색 리터럴을 든 파일은 셋이다.
+토큰이 유일한 출처라는 말은 **아래 자리를 뺀 화면 코드**에 한정된다. **이 표가 허용 목록의 정본이다.**
 
-| 파일 | 값 | 왜 토큰이 아닌가 |
+| 자리 | 값 | 왜 토큰이 아닌가 |
 |------|-----|-----------------|
 | `frontend/src/index.css` | 토큰 14개 | 정본. 다크 14개는 #191 에서 지웠다 |
 | `frontend/src/components/Logo.tsx` | 브랜드색 2 + 램프 5스톱 | **로고는 화면 토큰을 따라가면 안 된다.** CI 색은 고정이어야 한다 — 토큰으로 빼는 순간 화면 색을 바꿀 때 로고가 다른 회사 색이 된다. 파비콘도 여기서 렌더하므로 사본을 따로 두지 않는다 |
-| `frontend/index.html` | `theme-color` **1개** | `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 **같은 값을 손으로 맞춘다** |
+| `frontend/index.html` | `theme-color` **1개** | `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 **같은 값을 손으로 맞춘다**. `media="(prefers-color-scheme: …)"` 로 두지 않는다 — OS 가 다크면 주소창만 다크가 된다 |
+| 사진·영상 위 오버레이 — `chat/ImageLightbox.tsx` · `chat/Composer.tsx` 썸네일 | `bg-black/*` · `bg-white/*` · `text-white*` · `border-white/*` | 아래 면이 **토큰이 아닌 이미지**라 화면 색과 무관하다 |
+| 모달·드로어 뒤 스크림 — `ConfirmModal.tsx` · `pages/AdminPage.tsx`(발급 모달) · `pages/ChatPage.tsx`(모바일 드로어) | `bg-black/40` | 화면 전체를 가리는 반투명 막이라 바탕 토큰과 짝지을 대상이 없다 |
+| 문서 그림 바탕 — `chat/DocFigure.tsx` | `bg-white` | 그림 자체가 화면 토큰과 무관한 이미지다 |
 
-**이 예외는 [CONVENTIONS.md](../CONVENTIONS.md) 「스타일」에도 적혀 있다.** 한쪽만 읽고 고치면 어긋난다.
+**[CONVENTIONS.md](../CONVENTIONS.md) 「스타일」은 이 표를 가리킨다.** 자리를 늘리면 이 표를 고친다.
 
 **#190 이후 `index.css` 와 `Logo.tsx` 는 같은 값을 공유하지 않는다.** 종전에는 `#0070B5` 가 `accent` 이자 로고 램프의 첫 스톱이라
 한쪽만 고치면 주장이 조용히 거짓이 되는 경고를 여기 두었다. 지금 `accent`(`#08719B`)의 출처는 **홈페이지 `index.css` 의

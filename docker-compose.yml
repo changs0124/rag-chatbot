@@ -1,8 +1,9 @@
 # 자체 호스팅(우분투 서버) 배포 구성 - 앱 · DB · 터널 세 컨테이너.
 # 프론트는 Vercel 에 있으므로 여기 없음. 절차는 docs/02_architecture/backend.md 「배포」 참고.
 #
-# 인바운드 포트를 열지 않는다 - cloudflared 가 바깥으로 연결을 걸어 터널을 유지하므로
-# 공인 IP · 포트포워딩 · 방화벽 인바운드 규칙이 전부 필요 없다. TLS 는 Cloudflare 가 종단한다.
+# 서비스 포트는 인바운드로 열지 않는다 - cloudflared 가 바깥으로 연결을 걸어 터널을 유지하므로
+# 서비스용 포트포워딩 · 방화벽 인바운드 규칙이 필요 없다. 예외는 관리용 SSH(22) 하나다
+# (backend.md 「배포」). TLS 는 Cloudflare 가 종단한다.
 #
 # 환경변수는 두 곳으로 나뉜다 :
 #   backend/.env - 앱 변수(정본은 backend/.env.example)
@@ -37,7 +38,7 @@ services:
       # app 과 같은 이유로 권한 상승 경로를 닫는다(#130).
       - no-new-privileges:true
     # **db 만 cap_drop: ALL 로 끝내지 못한다(#130).** postgres 이미지는 **초기화 중** root 로
-    # `chown -R postgres:postgres` 를 하고 `gosu` 로 강등하므로 다섯 개가 필요하다 :
+    # `chown -R postgres:postgres` 를 하고 `gosu` 로 강등하므로 네 개가 필요하다 :
     #   DAC_OVERRIDE · FOWNER  - 데이터 디렉터리 읽기/권한 조정
     #   SETUID · SETGID        - postgres 사용자로 강등
     # 나머지는 전부 버린다(기본 14개 중 10개 제거).

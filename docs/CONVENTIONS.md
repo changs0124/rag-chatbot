@@ -81,15 +81,10 @@
   Tailwind 4 의 `dark:` 기본값이 OS 미디어쿼리라 하나라도 들어오면 OS 가 다크인 사용자에게만 화면이 갈린다.
   `src/theme-tokens.test.ts` 가 막는다.
 - **색은 토큰(`bg-surface` · `text-ink` · `bg-accent` …)으로만 쓴다.** 새 색이 필요하면 유틸리티에 값을 박지 말고 `index.css` 에 토큰을 먼저 추가한다.
-- **색 리터럴이 허용되는 자리는 아래 셋뿐이다.** 나머지는 전부 토큰이다.
-  - `frontend/src/components/Logo.tsx` — **회사 CI 색.** 로고는 CI 원색 그대로여야 하므로 화면 토큰을
-    따라가지 않는다. 토큰으로 빼면 화면 색을 바꿀 때 로고가 다른 회사 색이 된다.
-    파비콘도 이 파일에서 렌더하므로 **사본을 따로 두지 않는다**
-  - `frontend/index.html` 의 `theme-color`(주소창 색) — `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와
-    같은 값을 손으로 맞춘다. `media="(prefers-color-scheme: …)"` 로 두지 않는다 — OS 가 다크면 주소창만 다크가 된다
-  - 아래가 **토큰이 아닌 면** 위에 얹히는 곳 — 사진·영상 위 오버레이(`ImageLightbox` ·
-    `Composer` 썸네일). 아래 면이 화면 색과 무관하므로 토큰이 성립하지 않는다
-  자리를 늘리려면 [design-system.md](./02_architecture/design-system.md) 「색 값을 들고 있는 파일 — 셋이다」를 함께 고친다.
+- **색 리터럴이 허용되는 자리는 [design-system.md](./02_architecture/design-system.md) 「색 리터럴이 허용되는 자리」 표뿐이다.**
+  나머지는 전부 토큰이다. 표의 자리는 `index.css`(토큰 정본) · `Logo.tsx`(회사 CI 색) · `index.html` 의 `theme-color` ·
+  사진·영상 위 오버레이(`ImageLightbox` · `Composer` 썸네일) · 모달·드로어 스크림 `bg-black/40`(`ConfirmModal` · `AdminPage` ·
+  `ChatPage`) · 문서 그림 바탕 `bg-white`(`DocFigure`)다. 이유는 그 표에 있다. 자리를 늘리려면 그 표를 함께 고친다.
 - **이모지·장식 기호를 화면에 쓰지 않는다**(#192). 아이콘은 `components/icons.tsx` 의 라인 아이콘만 쓴다 — `src/no-emoji.test.ts` 가 막는다.
 - 모션은 `ease-[var(--ease-out-quint)]` 하나로 통일한다. `transition` 기본 이징(`ease-in-out`)을 그대로 쓰지 않는다.
 
