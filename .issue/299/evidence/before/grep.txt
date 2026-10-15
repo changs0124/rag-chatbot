@@ -1,0 +1,13 @@
+# before (main 7644482)
+openaiFileId           50
+vectorStoreId          44
+type-aliases-package   1
+timedOut               43
+favicon-source.png     6
+TUNNEL_TOKEN           6
+\.eslintcache          1
+dist-ssr               1
+apple-touch-icon.png
+favicon-32.png
+favicon-source.png
+favicon.ico

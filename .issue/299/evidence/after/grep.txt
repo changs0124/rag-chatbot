@@ -1,0 +1,12 @@
+# after (8f1d0cc)
+openaiFileId           47
+vectorStoreId          38
+type-aliases-package   0
+timedOut               41
+favicon-source.png     6
+TUNNEL_TOKEN           0
+\.eslintcache          0
+dist-ssr               0
+apple-touch-icon.png
+favicon-32.png
+favicon.ico
