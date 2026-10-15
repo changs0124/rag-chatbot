@@ -129,12 +129,12 @@ services:
     #   /data/uploads - 볼륨이라 read_only 와 무관하게 쓰기 가능
     #   /tmp          - JVM 이 hsperfdata(성능 카운터)를 만든다. 아래 tmpfs 로 덮는다
     read_only: true
-    # **Tomcat 자체 한도 뒤의 안전망으로 잡는다(#130).** 유휴 시 실측 36 스레드인데 이 값을
-    # 40~50 으로 조이면 **정상 부하에서 pids_limit 이 먼저 터진다** - application.yml 에
-    # max-threads 설정이 없어 Spring Boot 기본값 200 이 살아 있기 때문이다.
-    # 256 은 200 + 유휴 36 + 여유라, 한도 역할은 Tomcat 이 먼저 하고 이 값은 fork/스레드
-    # 폭주만 막는다.
-    pids_limit: 256
+    # **Tomcat 자체 한도 뒤의 안전망으로 잡는다(#130).** 한도 역할은 Tomcat 과 채팅 풀이 먼저 하고
+    # 이 값은 fork/스레드 폭주만 막는다. 그래서 정상 부하의 최대치보다 커야 한다 :
+    #   Tomcat 200(max-threads 기본값) + 채팅 실행기 CHAT_MAX_CONCURRENT_STREAMS(16) + 그 밖 약 39
+    #   (운영 유휴 49 에서 Tomcat 유휴 10 을 뺀 값, 2026-10-15) ≈ 255 → 288(#301)
+    # 채팅 상한을 올리면 이 값도 같이 올린다
+    pids_limit: 288
     tmpfs:
       # **크기를 묶는다.** 상한이 없으면 tmpfs 가 컨테이너 메모리(1g)를 먹어 들어가
       # mem_limit 으로 DB 를 지키려던 의도가 무너진다. hsperfdata 는 수십 KB 라 64m 면 넉넉하다.
