@@ -1,0 +1,5 @@
+# after 9576289
+@Value with default: 0
+Bearer assembly sites: 2
+findInProgressIds: 0
+toLowerCase(Locale.ROOT) email sites: 2
