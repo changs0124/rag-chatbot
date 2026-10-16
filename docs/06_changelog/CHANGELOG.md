@@ -13,13 +13,25 @@
     폴백은 ERROR 로그를 그대로 두고 커밋됐으면 본문을 쓰지 않는다. null `ResponseEntity` 로 처리 완료를 표시한다(`void` 는 기본 뷰 렌더링으로 빠짐)
   - `backend.md` 「예외 → 상태 매핑」 · `api.md` 오류 코드 · 상태 코드 표 : 「SSE 도중 오류는 여기 오지 않는다」를 실제 경로로 고치고 `SERVICE_UNAVAILABLE`(503, 지금은 도달 경로 없음) 추가
   - 테스트 `ChatStreamExceptionHandlerTest` TC-OPS-025~027 3건(실 톰캣 원시 스트림 · 출력 캡처, 025 · 026 변경 전 실패 확인). **백엔드 하한 294 → 297**(실측)
-  - 테스트 `ChatStreamExceptionHandlerTest` TC-OPS-025~027 3건(실 톰캣 원시 스트림 · 출력 캡처, 025 · 026 변경 전 실패 확인). **백엔드 하한 287 → 290**(실측)
 - **통합 테스트 컨텍스트가 공유 PostgreSQL 연결 상한에 닿던 것을 고쳤다(#343).** 설정이 다른 테스트 컨텍스트는 캐시에 남고
   컨텍스트마다 Hikari 풀이 기본 10 연결을 붙잡아, 9개 × 10 = 90 이 공유 컨테이너 상한 97 에 거의 닿아 있었다.
   #326 이 자기 컨텍스트가 필요한 클래스를 하나 더하자 CI 에서만 순서가 맞아 「too many clients」로 기동이 실패했다(PR #342)
   - `AbstractPgIntegrationTest` 공통 속성에 `spring.datasource.hikari.maximum-pool-size=4` — 최악 36 연결. 동시성 테스트 포함 294건 통과, 테스트 수 변화 없음
 
 ### Changed
+- **문서가 코드 · 설정과 다르게 말하던 곳을 고쳤다(#333).** 2026-10-16 문서 리뷰 표 A. 사실 정정만 했고 서술 축약은 #334 다.
+  - README : `deps-frontend` 는 Trivy 가 아니라 `npm audit` · ERD 설계서 설명(마이그레이션 이력 절은 없다) · oxlint 1.75(잠금 파일) · `scripts/` 에 클레임 전처리
+  - INDEX : backend.md 의 「호스트 선정 근거」(#297 에서 CHANGELOG #243 으로 옮김)
+  - api : 배포 행(운영 중 · 선정 근거 없음) · 로그인 429 는 **실패** 누적 상한 · 비밀번호 변경 400 · 429 행 · 초기화의 자기 자신 400 행 ·
+    동기화의 고아 연결 정리(#271)와 `total` 정의
+  - erd : `conversations.updated_at` 은 제목 변경에도 오른다(V1 트리거)
+  - live-integration : 운영 서버 로그 명령에 `sudo`(`~/deploy`) · 클레임 집계 표 목록은 스크립트 `## 전체 요약` 이 정본
+  - backend : 「백업」을 헤딩으로(같은 문서 「아래 「백업」」 참조 두 곳) · 복구 리허설의 `sudo docker ps`
+  - design-system : 모션은 150ms 하나 · 이중 테두리는 모달 · 로그인 폼에만(§6 표) · 보조 글자 크기 실측 · MyPage 오류 배너는 같은 색 조합
+  - frontend · features : 미리보기를 못 그리는 첨부 카드(#317) · `VITE_API_BASE_URL` 누락은 실행 시 콘솔 오류 · 번들 수치 모순 제거 ·
+    토큰 교체 세 곳은 frontend 「API 통신」으로 · 동기화 400 문구 · 업로드 400 인용 · 정의 없는 `SCR-` 화면 ID 를 경로로 ·
+    초기화 자기 자신은 API 가 400
+  - 고친 명세 문서의 헤더 버전 · 최종 수정일(api · features · erd · live-integration · design-system)
 - **프론트 죽은 코드 · 복사본을 정리했다(#330).** 2026-10-16 전체 리뷰 F7 · F8 · F9 · F10 · F11 · F12.
   화면 변화는 의도한 둘뿐이다 — 마이페이지 주요 버튼의 비활성 투명도 40 → 50(관리자 · 로그인과 같게), 발급 창 「닫기」 40 → 44px.
   - 주요 버튼 클래스 4벌을 `primaryButtonClass` 하나로 · 뒤로가기 링크 · 페이지 골격 2벌을 `BackLink` · `PageShell` 로 ·
@@ -29,10 +41,6 @@
     `ChatMessage.createdAt`(`useChat` 의 쓰기 포함) · `AdminUser.createdAt` · 관리 · 마이 페이지 테스트에 남은 `cleanup()`(#219 이후 `test/setup.ts` 가 건다)
   - **하지 않은 것** : `Citation.uri` 는 계약 필드 제거 이슈 몫
   - 테스트 : 폴링 케이스가 사용자 목록 호출이 늘지 않음을 단언(변경 전 실패 확인) · 「닫기」 44px 케이스 1건 추가. **프론트 하한 171 → 172**(실측)
-    `AdminUser.createdAt` · 관리 · 마이 페이지 테스트에 남은 `cleanup()`(#219 이후 `test/setup.ts` 가 건다)
-  - **하지 않은 것** : `ChatMessage.createdAt` 은 쓰는 곳이 `useChat.ts` 라 그 파일을 고치는 다른 작업과 겹치지 않게 남겼다.
-    `Citation.uri` 는 계약 필드 제거 이슈 몫
-  - 테스트 : 폴링 케이스가 사용자 목록 호출이 늘지 않음을 단언(변경 전 실패 확인) · 「닫기」 44px 케이스 1건 추가. **프론트 하한 165 → 166**(실측)
 - **스크립트 · CI 의 중복과 쓰지 않는 설정을 걷었다(#331).** 동작은 그대로다(같은 리뷰의 I4 · I7~I14).
   - `ci.yml` : `deps (프론트)` 잡의 `npm ci` 제거 — `npm audit` 는 `package-lock.json` 만 읽는다(node_modules 없이 `found 0 vulnerabilities` 확인).
     `setup-node` 두 곳은 `node-version: '24'` 대신 `node-version-file: .nvmrc`
@@ -51,7 +59,7 @@
     한 번도 돌지 않은 이미지가 `:previous`(유일한 롤백 자산)를 덮었다. 사전 확인에서 exit 3 으로 멈춘다(권한 고정은 그대로)
   - `scripts/claims/preprocess.py` : 고장일이 빈 호기 · 텍스트 고장일이 하나라도 있으면 호기 타임라인 정렬에서 `ValueError` · `TypeError` 로 죽었다.
     고장일이 날짜인 행만 호기 그룹에 넣고, 뺀 건이 있으면 「같은 호기 재발」 절 머리에 건수 · 클레임 번호를 한 줄로 밝힌다. 현재 원본의 산출물은 수정 전후 바이트 동일
-    고장일이 날짜인 행만 호기 그룹에 넣는다. 현재 원본의 산출물은 수정 전후 바이트 동일
+
 ### Removed
 - **아무도 읽지 않던 계약 필드 둘을 뺐다 — 출처 `uri` 와 JWT `email` 클레임(#328).**
   - 출처 `uri` : 레코드 → SSE `citations` → DB insert/select → REST `CitationResponse` → 프론트 `Citation` 타입까지 실려 다녔지만 읽는 곳이 없었다

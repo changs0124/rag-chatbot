@@ -3,8 +3,8 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 | rag-chatbot |
-| 문서 버전 | v2.4 |
-| 최종 수정일 | 2026-10-15 |
+| 문서 버전 | v2.5 |
+| 최종 수정일 | 2026-10-16 |
 | 작성자 | changs0124 |
 | 상태 | `반영됨` (2026-08-18 구현 · 2026-09-11 회사 CI 반영, #151 · 2026-10-06 홈페이지 색 체계, #190 · 2026-10-07 로고 텍스트 2줄, #229 · 2026-10-15 색 리터럴 허용 목록 · 타이포 실측값, #296) |
 
@@ -153,7 +153,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | `highlight` | `chat/Composer.tsx` 첨부 실패 아이콘 | 1회. 어두운 고정 스크림 위라 밝은 면 기준 토큰을 못 쓴다 |
 | `danger-ink` | `ConfirmModal.tsx` 확인 버튼(삭제 · 비밀번호 초기화) | 1회 — `bg-danger` 가 있는 유일한 자리다 |
 | `danger-soft` | `pages/AdminPage.tsx` 관리자 오류 배너 | 1회 |
-| `danger-soft` | `pages/MyPage.tsx` 오류 배너 | 1회. 관리자 쪽과 같은 모양 |
+| `danger-soft` | `pages/MyPage.tsx` 오류 배너 | 1회. 관리자 쪽과 같은 색 조합(모서리 · 여백은 다르다) |
 
 쓰이지 않는 토큰은 다음 사람이 아무 데나 갖다 쓰는 근거가 된다.
 
@@ -162,7 +162,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - **본문 서체** : Pretendard Variable (npm 패키지로 번들에 넣는다 — CDN 을 새로 물리지 않는다).
   받지 못하는 환경을 위해 시스템 스택을 뒤에 둔다.
 - **금지** : `Noto Sans KR` · `Malgun Gothic` 을 **선순위로** 지정하지 않는다. 자소 간격이 넓어 화면이 헐거워 보인다.
-- **크기** : 본문 15px / 보조 13px. 화면 제목은 화면마다 다르다 — `AdminPage` 20px(`text-xl`) · `MyPage` 24px(`text-2xl`) ·
+- **크기** : 본문 15px / 보조는 14px(`text-sm`)이 주이고 13px · 12px(`text-xs`)도 쓴다(라벨 · 배지 11px, 첨부 재시도 버튼 10px). 화면 제목은 화면마다 다르다 — `AdminPage` 20px(`text-xl`) · `MyPage` 24px(`text-2xl`) ·
   `LoginPage` 24px → md 이상 36px(`text-2xl md:text-4xl`). **답변 문단**은 14px 보다 작게 두지 않는다
   (`Markdown.tsx` 의 코드 블록 13px · 표 14px 는 이 규칙 밖이다).
 - **한국어 규칙**
@@ -194,7 +194,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 
 - **이징 한 가지** : `cubic-bezier(0.16, 1, 0.3, 1)` — `--ease-out-quint` 로 두고 전 컴포넌트가 쓴다.
   `linear` · `ease-in-out` 금지.
-- **지속** : 상태 변화 150ms · 진입 240ms · 모달 200ms
+- **지속** : 150ms 하나(`duration-150`) — 상태 변화 · 모달 모두
 - **속성** : `transform` · `opacity` · `background-color` 만. 레이아웃을 흔드는 속성에 트랜지션을 걸지 않는다
 - **누르는 느낌** : 버튼 `hover:scale-[1.02]` / `active:scale-[0.98]`
 - **끄는 중에는 트랜지션을 끈다** : 사이드바 폭 드래그처럼 값이 매 프레임 바뀌는 동작에 트랜지션이 걸리면
@@ -235,7 +235,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | Warm Editorial 팔레트 | ~~채택~~ → **폐기** | v1.0 에서 채택했으나 #151 에서 버렸다. 회사 CI 와 온도가 정면으로 어긋난다(§1) |
 | 종이 질감(노이즈 오버레이) | 버림 | 면 색 차이만으로 계층이 충분히 읽힌다. 고정 오버레이를 한 겹 더 얹을 이유가 없다 |
 | 이징 시그니처 · 누름 물리감 | **채택** | §4 |
-| 이중 테두리 카드 · 알약 CTA | **부분 채택** | 모달 · 첨부 카드 · 주요 버튼에만 |
+| 이중 테두리 카드 · 알약 CTA | **부분 채택** | 이중 테두리는 모달 · 로그인 폼에만(§5), 알약은 주요 버튼 |
 | 한국어 타이포 규칙(`break-keep`, 행간) | **채택** | §2 |
 | 모바일 붕괴 규칙 · `100dvh` | **채택** | §7 |
 
