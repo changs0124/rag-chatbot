@@ -129,7 +129,8 @@ run "문서 버전 주장 대조"     bash scripts/check-doc-versions.sh
 run "프론트 의존성 설치"      bash -c 'cd frontend && npm ci'
 run "프론트 lint"            bash -c 'cd frontend && npm run lint'
 # **낡은 리포트를 먼저 지우고 json 리포터로 돈다** - 이유는 `check-case-floor.sh` 머리주석.
-run "프론트 test"            bash -c 'cd frontend && rm -f vitest-report.json && npm test -- --reporter=json --outputFile=vitest-report.json'
+# **기본 리포터를 함께 켠다(#331)** - json 만 주면 기본 리포터가 꺼져, 무엇이 왜 깨졌는지 콘솔에 안 남는다
+run "프론트 test"            bash -c 'cd frontend && rm -f vitest-report.json && npm test -- --reporter=default --reporter=json --outputFile.json=vitest-report.json'
 run "프론트 build"           bash -c 'cd frontend && npm run build'
 run "프론트 케이스 수 하한"   bash scripts/check-case-floor.sh frontend
 

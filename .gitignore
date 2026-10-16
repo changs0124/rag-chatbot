@@ -11,8 +11,6 @@
 application-local.yml
 application-local.yaml
 application-local.properties
-application-secret.yml
-application-secret.yaml
 !/.env.example
 !/frontend/.env.example
 !/backend/.env.example
@@ -30,7 +28,6 @@ pnpm-debug.log*
 
 # === 업로드된 파일(로컬 저장소 - 커밋 금지) ===
 uploads/
-backend/uploads/
 
 # === 문서 그림(FEAT-CHAT-004) - 매뉴얼에서 잘라 낸 그림. 저장소가 공개라 커밋 금지 ===
 /doc-figures/

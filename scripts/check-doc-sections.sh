@@ -28,15 +28,11 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-DOC_PATHS="${DOC_PATHS:-docs README.md}"
 fail=0
 checked=0
 
-# **배열로 받는다(#145).** 문자열에 이어 붙이면 아래 호출부마다 따옴표 없이 전개해야 하고
-# (shellcheck SC2086), 경로에 공백이 있으면 조각난다. 배열이면 "${paths[@]}" 로 안전하다
-paths=()
-for p in $DOC_PATHS; do [ -e "$p" ] && paths+=("$p"); done
-[ "${#paths[@]}" -gt 0 ] || { echo "검사 대상 경로가 하나도 없음 - DOC_PATHS 를 확인할 것" >&2; exit 1; }
+# 검사 대상 - check-doc-refs.sh · check-doc-versions.sh 와 같은 값
+paths=(docs README.md)
 
 # `a/b/../c` 같은 경로를 눕힘. realpath 가 없는 환경도 있어 직접 처리함
 normalize() {
@@ -135,7 +131,8 @@ if [ -n "$matches" ]; then
 		checked=$((checked + 1))
 		if ! has_section "$target" "$section"; then
 			echo "FAIL: $src:$line — $target 에 「$section」 헤딩이 없음"
-			echo "      있는 헤딩: $(headings "$target" | paste -sd' · ' -)"
+			# paste -d 는 구분자를 바이트 단위로 돌려 써 2바이트 「·」 를 쪼갠다(#331) - awk 로 잇는다
+			echo "      있는 헤딩: $(headings "$target" | awk 'NR>1{printf " · "}{printf "%s",$0}')"
 			fail=1
 		fi
 	done <<< "$matches"

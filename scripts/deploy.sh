@@ -24,6 +24,7 @@ HOST="${DEPLOY_HOST:-}"
 # **홈 상대 경로로 둔다(#129)** - 어느 계정으로 붙든 그 홈 아래를 가리킨다
 REMOTE_DIR="${DEPLOY_DIR:-deploy}"
 IMAGE="rag-chatbot-backend:latest"
+PREV="rag-chatbot-backend:previous"
 TARBALL="backend-image.tar.gz"
 
 SKIP_BUILD=0
@@ -59,21 +60,27 @@ preflight() {
 }
 
 # **서버의 .env 권한을 600 으로 고정한다(#130).** 이 파일들에는 JWT_SECRET · OPENAI_API_KEY ·
-# DB_PASSWORD 가 평문으로 있다(터널 토큰은 #203 에서 secrets/ 파일로 옮겼다 - 아래 터널 절).
+# DB_PASSWORD 가 평문으로 있다(터널 토큰은 secrets/ 파일에 있다 - 아래 터널 절).
 # 기본 umask 로 만들면 644 가 되어 **서버에 셸이
 # 닿는 누구나 읽는다** - 단일 VM 에 전부 모으는 구성이라 "호스트 셸 하나 = 전 비밀" 이 된다.
 #
-# **여기서 고친다.** 런북에만 적으면 사람이 기억해야만 지켜지고, 이번처럼 잊힌다.
+# **여기서 고친다.** 런북에만 적으면 사람이 기억해야만 지켜지고, 기억은 잊힌다.
 # 권한을 좁히는 방향이라 되돌릴 피해가 없어 확인 없이 적용하되 **무엇을 바꿨는지 찍는다.**
 # .env 를 보내지 않는 것(3단계 주석)과 짝을 이룬다 - 비밀은 서버에만 있고, 거기서 잠근다.
+#
+# **파일이 없으면 여기서 멈춘다(#331).** 경고만 하고 넘어가면 빌드·전송 뒤 compose up 에서야 죽고, 그 전에
+# 4단계가 이미 실행 중 이미지를 `:previous` 로 다시 태그했으므로 .env 를 고쳐 재실행하면 한 번도 돌지 않은
+# 이미지가 `:previous` 를 덮어 유일한 롤백 자산이 사라진다. 권한은 있는 파일에 대해 끝까지 고치고 나서 멈춘다.
 env_perms() {
 	# 원격에서 도는 스크립트다. `$REMOTE_DIR` 는 **로컬에서** 펼쳐 넣고, 원격에서 펼쳐야 하는
 	# 것은 `\$` 로 넘긴다 - 아래 4단계의 이미지 ID 대조가 쓰는 것과 같은 방식이다.
 	ssh_run "
+missing=0
 for f in .env backend/.env; do
   p=\"$REMOTE_DIR/\$f\"
   if [ ! -f \"\$p\" ]; then
-    echo \"  경고: \$f 가 서버에 없다 - compose 기동이 실패한다\"
+    echo \"  \$f 가 서버에 없다 - compose 기동이 실패한다. .env.example 을 참고해 만들 것\" >&2
+    missing=1
     continue
   fi
   mode=\$(stat -c '%a' \"\$p\" 2>/dev/null || echo '?')
@@ -83,6 +90,7 @@ for f in .env backend/.env; do
     chmod 600 \"\$p\" && echo \"  \$f 권한 \$mode -> 600 으로 고쳤다\"
   fi
 done
+[ \$missing -eq 0 ] || exit 3
 "
 }
 
@@ -176,7 +184,7 @@ scp -q "$TMP/$TARBALL" docker-compose.yml "$HOST:$REMOTE_DIR/"
 say "서버에서 로드 후 재기동"
 ssh_run "set -e;
 cd '$REMOTE_DIR';
-if sudo docker image inspect '$IMAGE' >/dev/null 2>&1; then sudo docker tag '$IMAGE' 'rag-chatbot-backend:previous'; fi;
+if sudo docker image inspect '$IMAGE' >/dev/null 2>&1; then sudo docker tag '$IMAGE' '$PREV'; fi;
 sudo docker load -i '$TARBALL';
 rm -f '$TARBALL';
 want=\$(sudo docker image inspect -f '{{.Id}}' '$IMAGE');
@@ -203,14 +211,14 @@ sudo docker compose logs --tail=60 app;
 echo '--- 종료 코드 137 이면 OOM 이다 ---';
 free -h | head -2;
 echo '';
-echo '되돌리려면 (이전 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :';
-echo \"  cd $REMOTE_DIR && sudo docker tag rag-chatbot-backend:previous $IMAGE && sudo docker compose up -d\";
+echo '되돌리려면 (이전 이미지를 $PREV 로 남겨 두었다) :';
+echo \"  cd $REMOTE_DIR && sudo docker tag $PREV $IMAGE && sudo docker compose up -d\";
 exit 1"
 
 # 6. 옛 이미지 정리 ---------------------------------------------------------
 # **헬스체크가 통과한 뒤에야 옛 이미지를 버린다(#129)** - 레지스트리가 없어 서버의 옛 이미지가 유일한 롤백 자산이다.
 say "옛 이미지 정리"
-ssh_run "sudo docker rmi rag-chatbot-backend:previous 2>/dev/null || true;
+ssh_run "sudo docker rmi $PREV 2>/dev/null || true;
 sudo docker image prune -f"
 
 say "배포 완료"

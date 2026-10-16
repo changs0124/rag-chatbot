@@ -10,17 +10,10 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 fail=0
 
-# 검사 대상 - 저장소 규약이 다르면 여기만 고침. docs 경로를 코드에 박지 않음
-DOC_PATHS="${DOC_PATHS:-docs README.md}"
 EXT='md|mdx|ts|tsx|js|jsx|mjs|cjs|json|ya?ml|java|kt|py|sql|sh|xml|css|html?|txt|png|jpe?g|gif|svg|webp|env|toml'
 
-command -v grep >/dev/null || { echo "grep 없음 - 검사 불가"; exit 1; }
-
-# **배열로 받는다(#145).** 문자열에 이어 붙이면 아래 호출부마다 따옴표 없이 전개해야 하고
-# (shellcheck SC2086), 경로에 공백이 있으면 조각난다. 배열이면 "${paths[@]}" 로 안전하다
-paths=()
-for p in $DOC_PATHS; do [ -e "$p" ] && paths+=("$p"); done
-[ "${#paths[@]}" -gt 0 ] || { echo "검사 대상 경로가 하나도 없음 - DOC_PATHS 를 확인할 것"; exit 1; }
+# 검사 대상 - check-doc-sections.sh · check-doc-versions.sh 와 같은 값
+paths=(docs README.md)
 
 # --- 수집 ---------------------------------------------------------------
 # 1) 마크다운 링크 · 참조형 정의 · <img src>. 앵커(#) · 타이틀(" ") · 꺾쇠(< >)가 붙은 형태까지

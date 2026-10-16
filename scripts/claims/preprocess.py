@@ -163,18 +163,25 @@ def claims_to_md(xlsx, terms):
                 g[k].append(r)
         return g
 
-    by_year = group(lambda r: [f"{r['입고일자'].year}년"] if isinstance(r["입고일자"], dt.datetime) else ["(입고일자 없음)"])
-    by_model = group(lambda r: [fmt(r["기종"]) or "(비어 있음)"])
-    by_alarm = group(lambda r: [f"AL.{c}" for c in alarm_codes(r["불량내용"])])
-    by_part = group(lambda r: [fmt(r["품번"]) or "(비어 있음)"])
     year_of = lambda r: f"{r['입고일자'].year}년" if isinstance(r["입고일자"], dt.datetime) else "(입고일자 없음)"
+    # 알람 코드는 정규식 두 벌을 도는 계산이라 행마다 한 번만 뽑는다
+    codes = {id(r): alarm_codes(r["불량내용"]) for r in recs}
+    by_year = group(lambda r: [year_of(r)])
+    by_model = group(lambda r: [fmt(r["기종"]) or "(비어 있음)"])
+    by_alarm = group(lambda r: [f"AL.{c}" for c in codes[id(r)]])
+    by_part = group(lambda r: [fmt(r["품번"]) or "(비어 있음)"])
     by_year_part = group(lambda r: [f"{year_of(r)} · {fmt(r['품번']) or '(비어 있음)'}"])
     by_year_model = group(lambda r: [f"{year_of(r)} · {fmt(r['기종']) or '(비어 있음)'}"])
-    by_alarm_year = group(lambda r: [f"AL.{c} · {year_of(r)}" for c in alarm_codes(r["불량내용"])])
+    by_alarm_year = group(lambda r: [f"AL.{c} · {year_of(r)}" for c in codes[id(r)]])
     by_customer = group(lambda r: [fmt(r["업체명"]) or "(비어 있음)"])
-    by_machine = group(lambda r: [fmt(r["호기정보"])] if fmt(r["호기정보"]) else [])
+    # 고장일이 날짜인 행만 호기 타임라인에 넣는다(#331) - 공란 · 텍스트가 섞이면 아래 min() · 정렬 · 뺄셈이 예외로 죽는다
+    by_machine = group(lambda r: [fmt(r["호기정보"])] if fmt(r["호기정보"]) and isinstance(r["고장일"], dt.datetime) else [])
+    # 뺀 건은 절 머리에 밝힌다 - 조용히 빠지면 「재발 호기 전부」라는 제목이 거짓이 된다
+    undated = [r for r in recs if fmt(r["호기정보"]) and not isinstance(r["고장일"], dt.datetime)]
     with_uu = [r for r in recs if UU.search(fmt(r["불량내용"]))]
-    with_2144_or_uu = [r for r in recs if "2144" in alarm_codes(r["불량내용"]) or UU.search(fmt(r["불량내용"]))]
+    # 두 집합의 합 - recs 순서를 지키고 겹치는 건은 한 번만
+    either = {id(r) for r in by_alarm.get("AL.2144", []) + with_uu}
+    with_2144_or_uu = [r for r in recs if id(r) in either]
 
     dates = sorted(r["입고일자"] for r in recs if isinstance(r["입고일자"], dt.datetime))
     usage = [r["사용일"] for r in recs if isinstance(r["사용일"], (int, float))]
@@ -256,6 +263,7 @@ def claims_to_md(xlsx, terms):
         f"### 고객사별 건수 (2건 이상인 고객사 전부 · 전체 고객사 {len(by_customer)}곳 중 "
         f"{sum(len(rs) >= 2 for rs in by_customer.values())}곳, 나머지는 1건씩)", "", *customer_lines(), "",
         f"### 같은 호기 재발 (호기정보가 같은 클레임이 2건 이상인 장비 전부 · {len(machines)}대)", "",
+        *([f"고장일이 날짜가 아닌 클레임 {len(undated)}건(클레임 {nums(undated)})은 이 표에서 뺐다", ""] if undated else []),
         "고객사가 둘로 적힌 호기는 원본에 그렇게 기록된 것이다.", "", *machines, "",
         "### 출하 후 고장까지 사용일 구간별 건수", "", *usage_lines(), "",
         "### 드라이브 표시 UU (저전압) 언급 건수", "",
