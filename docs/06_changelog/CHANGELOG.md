@@ -13,7 +13,6 @@
     폴백은 ERROR 로그를 그대로 두고 커밋됐으면 본문을 쓰지 않는다. null `ResponseEntity` 로 처리 완료를 표시한다(`void` 는 기본 뷰 렌더링으로 빠짐)
   - `backend.md` 「예외 → 상태 매핑」 · `api.md` 오류 코드 · 상태 코드 표 : 「SSE 도중 오류는 여기 오지 않는다」를 실제 경로로 고치고 `SERVICE_UNAVAILABLE`(503, 지금은 도달 경로 없음) 추가
   - 테스트 `ChatStreamExceptionHandlerTest` TC-OPS-025~027 3건(실 톰캣 원시 스트림 · 출력 캡처, 025 · 026 변경 전 실패 확인). **백엔드 하한 294 → 297**(실측)
-  - 테스트 `ChatStreamExceptionHandlerTest` TC-OPS-025~027 3건(실 톰캣 원시 스트림 · 출력 캡처, 025 · 026 변경 전 실패 확인). **백엔드 하한 287 → 290**(실측)
 - **통합 테스트 컨텍스트가 공유 PostgreSQL 연결 상한에 닿던 것을 고쳤다(#343).** 설정이 다른 테스트 컨텍스트는 캐시에 남고
   컨텍스트마다 Hikari 풀이 기본 10 연결을 붙잡아, 9개 × 10 = 90 이 공유 컨테이너 상한 97 에 거의 닿아 있었다.
   #326 이 자기 컨텍스트가 필요한 클래스를 하나 더하자 CI 에서만 순서가 맞아 「too many clients」로 기동이 실패했다(PR #342)
@@ -42,10 +41,6 @@
     `ChatMessage.createdAt`(`useChat` 의 쓰기 포함) · `AdminUser.createdAt` · 관리 · 마이 페이지 테스트에 남은 `cleanup()`(#219 이후 `test/setup.ts` 가 건다)
   - **하지 않은 것** : `Citation.uri` 는 계약 필드 제거 이슈 몫
   - 테스트 : 폴링 케이스가 사용자 목록 호출이 늘지 않음을 단언(변경 전 실패 확인) · 「닫기」 44px 케이스 1건 추가. **프론트 하한 171 → 172**(실측)
-    `AdminUser.createdAt` · 관리 · 마이 페이지 테스트에 남은 `cleanup()`(#219 이후 `test/setup.ts` 가 건다)
-  - **하지 않은 것** : `ChatMessage.createdAt` 은 쓰는 곳이 `useChat.ts` 라 그 파일을 고치는 다른 작업과 겹치지 않게 남겼다.
-    `Citation.uri` 는 계약 필드 제거 이슈 몫
-  - 테스트 : 폴링 케이스가 사용자 목록 호출이 늘지 않음을 단언(변경 전 실패 확인) · 「닫기」 44px 케이스 1건 추가. **프론트 하한 165 → 166**(실측)
 - **스크립트 · CI 의 중복과 쓰지 않는 설정을 걷었다(#331).** 동작은 그대로다(같은 리뷰의 I4 · I7~I14).
   - `ci.yml` : `deps (프론트)` 잡의 `npm ci` 제거 — `npm audit` 는 `package-lock.json` 만 읽는다(node_modules 없이 `found 0 vulnerabilities` 확인).
     `setup-node` 두 곳은 `node-version: '24'` 대신 `node-version-file: .nvmrc`
@@ -64,7 +59,7 @@
     한 번도 돌지 않은 이미지가 `:previous`(유일한 롤백 자산)를 덮었다. 사전 확인에서 exit 3 으로 멈춘다(권한 고정은 그대로)
   - `scripts/claims/preprocess.py` : 고장일이 빈 호기 · 텍스트 고장일이 하나라도 있으면 호기 타임라인 정렬에서 `ValueError` · `TypeError` 로 죽었다.
     고장일이 날짜인 행만 호기 그룹에 넣고, 뺀 건이 있으면 「같은 호기 재발」 절 머리에 건수 · 클레임 번호를 한 줄로 밝힌다. 현재 원본의 산출물은 수정 전후 바이트 동일
-    고장일이 날짜인 행만 호기 그룹에 넣는다. 현재 원본의 산출물은 수정 전후 바이트 동일
+
 ### Removed
 - **아무도 읽지 않던 계약 필드 둘을 뺐다 — 출처 `uri` 와 JWT `email` 클레임(#328).**
   - 출처 `uri` : 레코드 → SSE `citations` → DB insert/select → REST `CitationResponse` → 프론트 `Citation` 타입까지 실려 다녔지만 읽는 곳이 없었다
