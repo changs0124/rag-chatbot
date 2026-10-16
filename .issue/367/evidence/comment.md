@@ -11,9 +11,10 @@
 | --- | --- | --- |
 | `unreferenced_cleanup_continues_when_a_file_delete_fails` | **ERROR** — `IllegalStateException` 이 루프 밖으로 새어 다음 파일을 지우지 않음 | 통과 — 다음 파일 삭제, 회수 수 1 |
 | AttachmentLinkRaceTest · OrphanCleanupSchedulerTest · FileFlowTest | 5건 중 1 ERROR | 5 · 3 · 16건 전부 통과 |
+| 경고 로그 | — (예외가 그대로 샘) | `WARN FileService -- 미참조 파일 삭제 실패 - 다음 주기에 다시 시도함. path=u/broken.png` (`after/log-warn.txt`) |
 | 백엔드 케이스 수 | 307 | **308** (하한 307 → 308) |
 
-원본 : `.issue/367/evidence/before/test.txt` · `after/test.txt` · `after/check-all.txt`, 변경 전 코드는 `before/code.txt`.
+원본 : `.issue/367/evidence/before/test.txt` · `after/test.txt` · `after/log-warn.txt` · `after/check-all.txt`(요약만 — 테스트 로그는 뺐다), 변경 전 코드는 `before/code.txt`.
 
 ## 변경 파일
 

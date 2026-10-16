@@ -64,8 +64,6 @@
 2026-10-16T21:35:16.181+09:00  INFO 29676 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 9 migrations to schema "public", now at version v9 (execution time 00:00.082s)
 2026-10-16T21:35:18.155+09:00  INFO 29676 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 49296 (http) with context path '/'
 2026-10-16T21:35:18.180+09:00  INFO 29676 --- [rag-chatbot-backend] [           main] com.ragchatbot.controller.FileFlowTest   : Started FileFlowTest in 5.327 seconds (process running for 13.291)
-2026-10-16T21:35:18.326+09:00  WARN 29676 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 계정 발급 : root@rag.test · 임시 비밀번호 cyqy-3Mc5-xBp4 (최초 로그인 후 마이페이지에서 변경할 것)
-2026-10-16T21:35:18.432+09:00  INFO 29676 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 1건 · 승격 0건 · 강등 0건
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
 2026-10-16T21:35:19.377+09:00  INFO 29676 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
 2026-10-16T21:35:19.377+09:00  INFO 29676 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
