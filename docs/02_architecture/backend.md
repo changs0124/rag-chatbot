@@ -490,7 +490,7 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build d
 | 네트워크 | `backend` + `edge` | `backend` | `edge` |
 
 주제별 근거는 `docker-compose.yml` 의 해당 서비스 주석이 정본이다 — `db` 의 `cap_add` 넷(실측으로 좁힘 · **빈 볼륨으로 초기화 경로를 태워야**
-검증된다) · 네트워크 분리(`edge` 에서 `db` 는 이름 해석부터 안 된다) · `cloudflared` 다이제스트 고정(올릴 때는 다이제스트를 바꾸는 커밋으로).
+검증된다) · 네트워크 분리(`edge` 에서 `db` 는 이름 해석부터 안 된다) · `cloudflared` · `db` 다이제스트 고정(#130 · #357, 올릴 때는 다이제스트를 바꾸는 커밋으로).
 운영 VM 에서도 로컬과 같은 값을 확인했다 — 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
 
 **서버의 `.env` 권한은 `deploy.sh` 가 600 으로 고정한다(#130).** 이 파일들에는 `JWT_SECRET` ·

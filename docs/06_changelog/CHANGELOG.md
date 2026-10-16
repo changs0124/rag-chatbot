@@ -37,6 +37,10 @@
   - `AbstractPgIntegrationTest` 공통 속성에 `spring.datasource.hikari.maximum-pool-size=4` — 최악 36 연결. 동시성 테스트 포함 294건 통과, 테스트 수 변화 없음
 
 ### Changed
+- **`db` 이미지 `postgres:16-alpine` 을 다이제스트로 고정했다(#357).** 움직이는 태그라 서버를 새로 만들거나 pull 하면 아무도 고르지 않은 이미지가 들어왔다 —
+  같은 태그가 로컬(07-07 빌드)과 운영(09-17 빌드, 16.15 · alpine 3.24)에서 이미 달랐고, `cap_add` 넷(#130)도 특정 시점 이미지로 실측한 값이다. `cloudflared`(#130)와 같은 기준
+  - 고정값은 운영 db 가 돌던 이미지 `sha256:721873c3…` 그대로라 반영해도 이미지는 바뀌지 않는다. 다만 image 문자열이 달라져 **첫 `compose up` 에서 db 컨테이너가 한 번 재생성된다**(실측, 데이터는 볼륨에 남는다)
+  - 빈 볼륨으로 초기화 경로를 태워 `cap_add` 넷으로 healthy 확인. 테스트용 Testcontainers 이미지(`AbstractPgIntegrationTest`)는 범위 밖이라 태그 그대로
 - **`ChatStreamExceptionHandlerTest` 의 TC-OPS-025~027 을 032~034 로 옮겼다(#355).** 같은 025 가 세션 슬라이딩 재발급 수신 테스트(`refresh.test.ts`, FEAT-OPS-003)에도 쓰여
   `backend.md` 의 「TC-OPS-025~027 이 잠근다」가 어느 쪽인지 모호했다(#351 리뷰에서 범위 밖으로 남긴 항목). 먼저 있던 프론트 쪽은 그대로 두고 나중에 붙은 스트림 예외 3건을 묶음째 옮겼다(변경 전 최고 번호 031).
   javadoc 의 ID 만 바뀌고 동작 · 테스트 수(297)는 그대로다. 과거 항목의 옛 번호(#326: 025~027)는 이력이라 고치지 않는다

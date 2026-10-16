@@ -21,7 +21,15 @@
 
 services:
   db:
-    image: postgres:16-alpine
+    # **다이제스트로 고정한다(#357)** - `16-alpine` 은 pull 할 때마다 바뀌는 태그라, 서버를 새로 만들거나
+    # pull 하면 아무도 고르지 않은 이미지가 들어온다(같은 태그가 로컬과 운영에서 이미 달랐다). 아래 cap_add 넷도
+    # 그 시점 이미지로 실측한 값이다. 태그는 읽는 사람을 위한 표기이고 실제로는 다이제스트만 쓰인다.
+    # 고정값은 2026-10-16 운영 db 가 돌던 이미지(16.15 · alpine 3.24) - 반영 때 이미지가 바뀌지 않게 맞췄다.
+    # 그래도 image 문자열이 달라져 첫 `compose up` 에서 db 컨테이너는 한 번 재생성된다(실측, 데이터는 볼륨에 남는다).
+    #
+    # 올릴 때는 **다이제스트를 바꾸는 커밋**으로 올린다 - 초기화 경로 검증은 아래 cap_add 주석대로 `down -v` 로 한다 :
+    #   docker buildx imagetools inspect postgres:16-alpine     (Digest 줄 - 멀티 아키텍처 인덱스)
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     # 기본값(shared_buffers 128MB · max_connections 100)보다 줄인다. app 쪽 Hikari 풀이 5 라 20 이면 여유다.
     # 호스트가 넓어져도 일부러 키우지 않았다
     command: >
