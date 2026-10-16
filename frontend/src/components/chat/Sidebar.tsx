@@ -8,9 +8,10 @@ import ConfirmModal from '../ConfirmModal'
 /**
  * 대화 목록을 시간 묶음으로 나눔(ChatGPT · Claude 공통). 제목만 길게 늘어놓으면
  * "어제 그 대화"를 눈으로 찾지 못한다. 기준은 마지막 갱신 시각이다.
+ * 경계는 로컬 자정이다 - 24시간 창이면 어제 밤 대화가 아침에 「오늘」로 보인다(#324).
  */
 function groupByRecency(conversations: Conversation[]) {
-  const now = Date.now()
+  const startOfToday = new Date().setHours(0, 0, 0, 0)
   const day = 24 * 60 * 60 * 1000
   const groups: { label: string; items: Conversation[] }[] = [
     { label: '오늘', items: [] },
@@ -18,8 +19,8 @@ function groupByRecency(conversations: Conversation[]) {
     { label: '이전', items: [] },
   ]
   for (const c of conversations) {
-    const age = now - new Date(c.updatedAt || c.createdAt).getTime()
-    const bucket = age < day ? 0 : age < 7 * day ? 1 : 2
+    const t = new Date(c.updatedAt || c.createdAt).getTime()
+    const bucket = t >= startOfToday ? 0 : t >= startOfToday - 6 * day ? 1 : 2
     groups[bucket].items.push(c)
   }
   return groups.filter((g) => g.items.length > 0)

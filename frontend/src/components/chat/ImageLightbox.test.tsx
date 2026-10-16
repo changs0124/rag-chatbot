@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import ImageLightbox from './ImageLightbox'
 
 const items = [
@@ -53,5 +53,60 @@ describe('ImageLightbox', () => {
     fireEvent.pointerUp(img, { pointerId: 3, clientX: 30, clientY: 20 })
 
     expect(img).toHaveStyle({ transform: 'translate(30px, 20px) scale(2)' })
+  })
+
+  describe('내려받기', () => {
+    let click: ReturnType<typeof vi.spyOn>
+    let saved: string[]
+
+    function setup(res: { ok: boolean; status: number; type?: string }) {
+      saved = []
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() =>
+          Promise.resolve({
+            ok: res.ok,
+            status: res.status,
+            blob: () => Promise.resolve(new Blob(['x'], { type: res.type ?? 'application/json' })),
+          }),
+        ),
+      )
+      vi.stubGlobal('URL', { ...URL, createObjectURL: vi.fn(() => 'blob:dl'), revokeObjectURL: vi.fn() })
+      click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+        saved.push(this.download)
+      })
+    }
+
+    afterEach(() => {
+      click.mockRestore()
+      vi.unstubAllGlobals()
+    })
+
+    /**
+     * #324 F3 : 서명 URL 이 만료되면 백엔드는 404 JSON 을 돌려준다. 상태를 안 보면
+     * 그 JSON 을 그림 파일로 저장한다 - 실패면 아무것도 저장하지 않는다.
+     */
+    it('응답이 실패면 저장하지 않음', async () => {
+      setup({ ok: false, status: 404 })
+      render(<ImageLightbox items={[{ src: 'https://api/x' }]} startIndex={0} onClose={vi.fn()} />)
+
+      fireEvent.click(screen.getByLabelText('내려받기'))
+
+      await waitFor(() => expect(fetch).toHaveBeenCalled())
+      await Promise.resolve()
+      expect(URL.createObjectURL).not.toHaveBeenCalled()
+      expect(click).not.toHaveBeenCalled()
+    })
+
+    /** #324 F3 : 이름 없이 넘어온 첨부도 확장자가 붙어 저장된다(blob.type 기준) */
+    it('이름이 없으면 받은 형식의 확장자를 붙여 저장함', async () => {
+      setup({ ok: true, status: 200, type: 'image/png' })
+      render(<ImageLightbox items={[{ src: 'https://api/x' }]} startIndex={0} onClose={vi.fn()} />)
+
+      fireEvent.click(screen.getByLabelText('내려받기'))
+
+      await waitFor(() => expect(click).toHaveBeenCalled())
+      expect(saved).toEqual(['image.png'])
+    })
   })
 })
