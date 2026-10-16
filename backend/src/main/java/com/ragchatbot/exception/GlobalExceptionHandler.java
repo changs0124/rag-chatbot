@@ -15,6 +15,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
@@ -22,6 +23,7 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.ConflictException;
@@ -190,6 +192,27 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
+	 * 비동기 요청 타임아웃 - 실제로는 채팅 SSE emitter 의 타임아웃({@code app.chat.sse-timeout-ms})뿐임(#326).
+	 *
+	 * <p><b>오류가 아니라 수명이 다한 것이라 WARN 이다.</b> 이 핸들러가 없으면 {@link #handleUnexpected} 가
+	 * 받아 타임아웃마다 ERROR + 스택 트레이스를 남겼다. 무슨 일이 있었는지는 {@code timed_out}(#84)이 저장에 남긴다.
+	 *
+	 * <p>SSE 는 헤더를 먼저 내보내 이미 커밋돼 있으므로 아무것도 쓰지 않는다(null = 처리 완료) - 쓰면
+	 * 열린 이벤트 스트림에 JSON 을 섞으려다 변환기가 실패하고 그 실패가 다시 로그를 남긴다.
+	 * 커밋 전이면 다른 응답처럼 JSON 으로 알린다.
+	 */
+	@ExceptionHandler(AsyncRequestTimeoutException.class)
+	public ResponseEntity<ApiError> handleAsyncTimeout(AsyncRequestTimeoutException ex, HttpServletRequest request,
+			HttpServletResponse response) {
+		log.warn("SSE 스트림 타임아웃 {} {}", request.getMethod(), request.getRequestURI());
+		if (response.isCommitted()) {
+			return null;
+		}
+		return json(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(new ApiError("SERVICE_UNAVAILABLE", "응답 시간이 초과됨"));
+	}
+
+	/**
 	 * 최종 폴백(FEAT-OPS-002). 위 핸들러에 걸리지 않은 예외만 여기로 옴 - 스프링이 더 구체적인
 	 * 핸들러를 먼저 고르므로 400·404 가 500 으로 뭉개지지 않음.
 	 *
@@ -201,14 +224,22 @@ public class GlobalExceptionHandler {
 	 * 사용자에게 주는 것은 상관 ID 하나이고, 그 값으로 로그를 찾음 - 관측 도구를 붙이지 않고
 	 * "오류가 났어요"를 서버 로그의 한 줄과 이어 붙일 수 있는 유일한 수단임.
 	 *
-	 * <p>SSE 스트림 도중의 오류는 여기 오지 않음. 응답이 이미 시작돼 상태 코드를 바꿀 수 없고,
-	 * ChatService 가 {@code event: error} 로 따로 처리함.
+	 * <p><b>SSE 스트림 도중의 오류도 여기 온다</b>(#326). ChatService 가 {@code event: error} 를 보낸 뒤
+	 * {@code completeWithError} 로 끝내면 스프링이 그 예외를 비동기 디스패치로 다시 넘긴다. 그때 응답은 이미
+	 * 커밋돼 있으므로 로그만 남기고 본문은 쓰지 않는다 - 이 ERROR 가 실제 원인의 유일한 서버 기록이라 지우지 않는다.
+	 *
+	 * <p>반환형을 {@code void} 로 바꾸지 않는다 - response 인자 없는 void 처리기는 처리 완료로 표시되지 않아
+	 * 기본 뷰 렌더링으로 빠진다. null {@code ResponseEntity} 가 「처리 완료 · 본문 없음」이다.
 	 */
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ApiError> handleUnexpected(Exception ex, HttpServletRequest request) {
+	public ResponseEntity<ApiError> handleUnexpected(Exception ex, HttpServletRequest request,
+			HttpServletResponse response) {
 		// 8자리면 로그에서 찾기 충분하고 사용자가 읽어 옮기기도 부담이 없음(UUID 전체는 36자)
 		String traceId = UUID.randomUUID().toString().substring(0, 8);
 		log.error("처리되지 않은 예외 [{}] {} {}", traceId, request.getMethod(), request.getRequestURI(), ex);
+		if (response.isCommitted()) {
+			return null;
+		}
 		return json(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(new ApiError("INTERNAL_ERROR", "처리 중 오류가 발생했습니다 (오류 번호: " + traceId + ")"));
 	}

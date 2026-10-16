@@ -5,6 +5,14 @@
 ## [Unreleased]
 
 ### Fixed
+- **채팅 스트림의 타임아웃 · 도중 오류가 범용 예외 처리기로 가 ERROR 로그를 남기고 열린 스트림에 500 JSON 을 쓰려던 것을 고쳤다(#326).**
+  SSE 타임아웃과 `completeWithError` 는 스프링이 비동기 디스패치로 예외 처리기에 다시 넘기는데, `handleUnexpected` 가 받아
+  타임아웃마다 `ERROR 처리되지 않은 예외` + 스택을 남기고 커밋된 `text/event-stream` 에 `ApiError` 를 쓰려다 변환기가 실패했다.
+  도중 오류 경로는 그 실패로 연결이 깨져 클라이언트가 청크 인코딩 오류를 받았다(변경 전 테스트로 재현).
+  - `GlobalExceptionHandler` : `AsyncRequestTimeoutException` 전용 처리기(WARN 한 줄 · 커밋됐으면 본문 없음 · 아니면 503 JSON),
+    폴백은 ERROR 로그를 그대로 두고 커밋됐으면 본문을 쓰지 않는다. null `ResponseEntity` 로 처리 완료를 표시한다(`void` 는 기본 뷰 렌더링으로 빠짐)
+  - `backend.md` 「예외 → 상태 매핑」 · `api.md` 오류 코드 · 상태 코드 표 : 「SSE 도중 오류는 여기 오지 않는다」를 실제 경로로 고치고 `SERVICE_UNAVAILABLE`(503, 지금은 도달 경로 없음) 추가
+  - 테스트 `ChatStreamExceptionHandlerTest` TC-OPS-025~027 3건(실 톰캣 원시 스트림 · 출력 캡처, 025 · 026 변경 전 실패 확인). **백엔드 하한 287 → 290**(실측)
 - **통합 테스트 컨텍스트가 공유 PostgreSQL 연결 상한에 닿던 것을 고쳤다(#343).** 설정이 다른 테스트 컨텍스트는 캐시에 남고
   컨텍스트마다 Hikari 풀이 기본 10 연결을 붙잡아, 9개 × 10 = 90 이 공유 컨테이너 상한 97 에 거의 닿아 있었다.
   #326 이 자기 컨텍스트가 필요한 클래스를 하나 더하자 CI 에서만 순서가 맞아 「too many clients」로 기동이 실패했다(PR #342)
