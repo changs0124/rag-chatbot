@@ -162,7 +162,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - **본문 서체** : Pretendard Variable (npm 패키지로 번들에 넣는다 — CDN 을 새로 물리지 않는다).
   받지 못하는 환경을 위해 시스템 스택을 뒤에 둔다.
 - **금지** : `Noto Sans KR` · `Malgun Gothic` 을 **선순위로** 지정하지 않는다. 자소 간격이 넓어 화면이 헐거워 보인다.
-- **크기** : 본문 15px / 보조는 14px(`text-sm`)이 주이고 13px · 12px(`text-xs`)도 쓴다(배지는 11 · 10px). 화면 제목은 화면마다 다르다 — `AdminPage` 20px(`text-xl`) · `MyPage` 24px(`text-2xl`) ·
+- **크기** : 본문 15px / 보조는 14px(`text-sm`)이 주이고 13px · 12px(`text-xs`)도 쓴다(라벨 · 배지 11px, 첨부 재시도 버튼 10px). 화면 제목은 화면마다 다르다 — `AdminPage` 20px(`text-xl`) · `MyPage` 24px(`text-2xl`) ·
   `LoginPage` 24px → md 이상 36px(`text-2xl md:text-4xl`). **답변 문단**은 14px 보다 작게 두지 않는다
   (`Markdown.tsx` 의 코드 블록 13px · 표 14px 는 이 규칙 밖이다).
 - **한국어 규칙**

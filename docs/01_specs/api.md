@@ -203,7 +203,7 @@
 | code | HTTP | 상황 |
 |------|------|------|
 | `UNAUTHORIZED` | 401 | **현재 비밀번호 불일치**. 세션 만료가 아니다 |
-| `BAD_REQUEST` | 400 | `newPassword` 8자 미만 · 빈 값 |
+| `BAD_REQUEST` | 400 | `currentPassword` 빈 값 · `newPassword` 8자 미만 · 빈 값 |
 | `RATE_LIMIT` | 429 | 사용자별 분당 비밀번호 변경 상한 초과 |
 
 **프론트 주의** : 이 경로의 401은 "세션이 죽었다"가 아니라 "방금 넣은 값이 틀렸다"는 뜻이다.
