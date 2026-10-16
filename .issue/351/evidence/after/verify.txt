@@ -1,0 +1,5 @@
+cd backend && ./mvnw verify : Tests run: 297, Failures: 0, Errors: 0, Skipped: 0 / BUILD SUCCESS (수 변화 없음)
+bash scripts/check-all.sh docs : exit 0, 돌린 검사 전부 통과 (shellcheck 없음으로 1건 건너뜀 - CI 러너에는 설치돼 있음)
+중복 정의 : 변경 전 TC-OPS-020(2) 021(1+머리말) 022(2) 023(2) -> 변경 후 020~023 은 슬라이딩 재발급 쪽에만, 폴백은 028~031 (tc-ids.txt 집계)
+집계 정규식은 javadoc 선두 'TC-OPS-NNN :' 만 센다. 021 은 JwtRefreshFarFromExpiryTest 클래스 머리말에서 정의되고 집계에는 안 잡힌다.
+범위 밖 잔여 : frontend/src/lib/refresh.test.ts 의 TC-OPS-025 가 ChatStreamExceptionHandlerTest 의 025 와 겹친다.

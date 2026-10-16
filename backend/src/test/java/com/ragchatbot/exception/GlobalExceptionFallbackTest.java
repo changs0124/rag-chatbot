@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * 예외 최종 폴백 (FEAT-OPS-002 · TC-OPS-010~013).
+ * 예외 최종 폴백 (FEAT-OPS-002 · TC-OPS-010~019 · 028~031).
  *
  * <p>실 서비스에서 예상 못 한 예외를 일부러 나게 만들 수 없으므로, 테스트 전용 컨트롤러를 하나
  * 띄워 던지게 함. 검증 대상은 던지는 쪽이 아니라 <b>받는 쪽(GlobalExceptionHandler)</b> 임.
@@ -224,7 +224,7 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * TC-OPS-020 : 미지원 메서드는 405 이고 Allow 헤더를 단다.
+	 * TC-OPS-028 : 미지원 메서드는 405 이고 Allow 헤더를 단다.
 	 *
 	 * <p>/api/conversations 는 POST·GET 만 있다. RFC 9110 §15.5.6 이 405 응답에 Allow 를 MUST 로
 	 * 요구하므로 상태 코드와 헤더를 함께 잠근다 - 헤더가 없으면 보낸 쪽은 무엇으로 다시 쳐야 하는지 모른다.
@@ -243,7 +243,7 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * TC-OPS-021 : 미지원 미디어 타입은 415 다.
+	 * TC-OPS-029 : 미지원 미디어 타입은 415 다.
 	 *
 	 * <p>본문을 읽을 수 없는 것(400·TC-OPS-014)과 다른 사건이다. 이쪽은 본문에 닿기 전, 협상 단계에서
 	 * 거절된다. 같은 400 으로 뭉뚱그리면 보낸 쪽은 JSON 문법을 고쳐야 하는지 헤더를 고쳐야 하는지 모른다.
@@ -262,7 +262,7 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * TC-OPS-022 : 멀티파트인데 {@code file} 파트가 없으면 400 이다.
+	 * TC-OPS-030 : 멀티파트인데 {@code file} 파트가 없으면 400 이다.
 	 *
 	 * <p>화면은 늘 파일을 실어 보내므로 API 를 직접 칠 때만 밟는다. 전용 핸들러가 없으면
 	 * {@code MissingServletRequestPartException} 이 폴백으로 떨어져 500 이 됐다(#217).
@@ -282,10 +282,10 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * TC-OPS-023 : 멀티파트가 아닌 요청을 업로드 경로로 보내도 400 이다.
+	 * TC-OPS-031 : 멀티파트가 아닌 요청을 업로드 경로로 보내도 400 이다.
 	 *
 	 * <p>라우트에 {@code consumes} 가 없어 415 협상 단계를 지나 파라미터 해석에서
-	 * {@code MultipartException} 이 난다. TC-OPS-022 와 같은 「업로드 형식이 틀림」 한 갈래다.
+	 * {@code MultipartException} 이 난다. TC-OPS-030 과 같은 「업로드 형식이 틀림」 한 갈래다.
 	 */
 	@SuppressWarnings("unchecked")
 	@Test

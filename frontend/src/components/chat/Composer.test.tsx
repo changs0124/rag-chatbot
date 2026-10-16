@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import Composer from './Composer'
 import { ApiError } from '../../lib/api'
 import { deleteAttachment, uploadFile } from '../../lib/endpoints'
@@ -46,7 +46,7 @@ describe('Composer', () => {
 
   const noop = () => {}
   // 전송을 받아들인 입력창 - 받아들였을 때만 비운다(#323)
-  const accept = () => true
+  const accept = async () => true
 
   it('고른 즉시 카드가 뜨고 업로드가 시작됨 - 파일명은 화면 텍스트로 두지 않음', () => {
     vi.mocked(uploadFile).mockReturnValue(deferred<Attachment>().promise)
@@ -153,7 +153,7 @@ describe('Composer', () => {
     vi.mocked(uploadFile)
       .mockResolvedValueOnce(attachment('a1'))
       .mockResolvedValueOnce(attachment('a2'))
-    const onSend = vi.fn(() => true)
+    const onSend = vi.fn(async () => true)
     render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
 
     pick(image('photo_0001.png'))
@@ -161,7 +161,9 @@ describe('Composer', () => {
     await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
 
     fireEvent.change(screen.getByPlaceholderText('메시지를 입력하세요'), { target: { value: '두 장 설명해줘' } })
-    fireEvent.click(screen.getByLabelText('보내기'))
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('보내기'))
+    })
 
     expect(onSend).toHaveBeenCalledWith('두 장 설명해줘', [attachment('a1'), attachment('a2')])
     // 전송 시점에는 업로드가 없음(이미 올라가 있음)
@@ -178,14 +180,16 @@ describe('Composer', () => {
    */
   it('onSend 가 받지 않으면 입력과 첨부 카드가 남음', async () => {
     vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
-    const onSend = vi.fn(() => false)
+    const onSend = vi.fn(async () => false)
     render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
 
     pick(image())
     await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
     const box = screen.getByPlaceholderText('메시지를 입력하세요')
     fireEvent.change(box, { target: { value: '남아야 함' } })
-    fireEvent.keyDown(box, { key: 'Enter' })
+    await act(async () => {
+      fireEvent.keyDown(box, { key: 'Enter' })
+    })
 
     expect(onSend).toHaveBeenCalledTimes(1)
     expect(box).toHaveValue('남아야 함')
@@ -193,9 +197,94 @@ describe('Composer', () => {
     expect(revokeObjectURL).not.toHaveBeenCalled()
   })
 
+  /**
+   * #349 - 받아들임이 생성 왕복 뒤에 정해지면 그때까지 비우지 않고, 받지 않았으면 남긴다.
+   *
+   * 고치기 전에는 `onSend` 의 반환을 기다리지 않아, 새 대화 생성이 실패해도 입력과 첨부 초안이 이미 비워져 있었다.
+   */
+  it('onSend 가 나중에 받지 않음으로 끝나면 입력과 첨부 카드가 남음', async () => {
+    vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
+    const settled = deferred<boolean>()
+    const onSend = vi.fn(() => settled.promise)
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+
+    pick(image())
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    const box = screen.getByPlaceholderText('메시지를 입력하세요')
+    fireEvent.change(box, { target: { value: '남아야 함' } })
+    fireEvent.keyDown(box, { key: 'Enter' })
+    expect(onSend).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      settled.resolve(false)
+      await settled.promise
+    })
+
+    expect(box).toHaveValue('남아야 함')
+    expect(screen.getByAltText('photo_0001.png')).toBeInTheDocument()
+    expect(revokeObjectURL).not.toHaveBeenCalled()
+  })
+
+  /** #349 - 받아들임을 기다리는 사이 이어 쓴 글 · 더한 첨부는 받아들여진 뒤에도 남고, 보낸 카드만 걷힌다 */
+  it('받아들임을 기다리는 사이 더한 입력과 첨부는 남음', async () => {
+    vi.mocked(uploadFile)
+      .mockResolvedValueOnce(attachment('a1'))
+      .mockResolvedValueOnce(attachment('a2'))
+    const settled = deferred<boolean>()
+    const onSend = vi.fn(() => settled.promise)
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+
+    pick(image('photo_0001.png'))
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    const box = screen.getByPlaceholderText('메시지를 입력하세요')
+    fireEvent.change(box, { target: { value: '첫 질문' } })
+    fireEvent.keyDown(box, { key: 'Enter' })
+    // 받아들여지기 전에는 비우지 않는다
+    expect(box).toHaveValue('첫 질문')
+
+    // 생성 왕복 중에 이어 쓰고 한 장 더 고른다
+    fireEvent.change(box, { target: { value: '다음 질문' } })
+    pick(image('photo_0002.png'))
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+
+    await act(async () => {
+      settled.resolve(true)
+      await settled.promise
+    })
+
+    expect(onSend).toHaveBeenCalledWith('첫 질문', [attachment('a1')])
+    expect(box).toHaveValue('다음 질문')
+    expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
+    expect(screen.getByAltText('photo_0002.png')).toBeInTheDocument()
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1)
+  })
+
+  /** #349 - 받아들임을 기다리는 동안 보낸 카드를 지워도 곧 메시지에 실릴 첨부를 서버에서 지우지 않는다 */
+  it('받아들임을 기다리는 동안 보낸 카드를 지워도 서버 첨부를 지우지 않음', async () => {
+    vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
+    const settled = deferred<boolean>()
+    const onSend = vi.fn(() => settled.promise)
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+
+    pick(image())
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    fireEvent.keyDown(screen.getByPlaceholderText('메시지를 입력하세요'), { key: 'Enter' })
+    expect(onSend).toHaveBeenCalledWith('', [attachment('a1')])
+
+    fireEvent.click(screen.getByLabelText('첨부 제거'))
+    expect(deleteAttachment).not.toHaveBeenCalled()
+
+    await act(async () => {
+      settled.resolve(true)
+      await settled.promise
+    })
+    expect(deleteAttachment).not.toHaveBeenCalled()
+    expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
+  })
+
   /** #323 F1 - 이력 로딩 · 대화 생성 중(busy)에는 Enter 도 버튼도 보내지 않고 입력을 지우지 않는다 */
   it('busy 이면 Enter · 버튼 모두 보내지 않고 입력이 남음', () => {
-    const onSend = vi.fn(() => true)
+    const onSend = vi.fn(async () => true)
     render(<Composer onSend={onSend} streaming={false} busy onStop={noop} />)
 
     const box = screen.getByPlaceholderText('메시지를 입력하세요')
@@ -275,7 +364,7 @@ describe('Composer', () => {
 
   it('텍스트 없이 첨부만으로도 전송됨', async () => {
     vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
-    const onSend = vi.fn(() => true)
+    const onSend = vi.fn(async () => true)
     render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
 
     pick(image())

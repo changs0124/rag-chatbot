@@ -85,7 +85,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - 스프링은 더 구체적인 핸들러를 먼저 고르므로, `@ExceptionHandler(Exception.class)` 를 두어도
   전용 핸들러가 있는 예외는 그쪽으로 간다. 폴백과 도메인 예외는 `GlobalExceptionFallbackTest` 가 잠근다
   (`ApiError` 모양 · 상관 ID · 내부 메시지 비노출 · 도메인 예외가 제 상태를 지킨다).
-  **Spring 내장 MVC 예외(본문 파싱 · 라우팅 · 업로드)는 전용 핸들러로 4xx 를 낸다** — TC-OPS-014~023 이 잠근다.
+  **Spring 내장 MVC 예외(본문 파싱 · 라우팅 · 업로드)는 전용 핸들러로 4xx 를 낸다** — TC-OPS-014~019 · 028~031 이 잠근다.
   용량 초과 413 은 더 구체적인 핸들러가 그대로 받는다.
 - **`ResponseEntityExceptionHandler` 를 상속하지 않는 것은 의도된 선택이다.** 상속하면 그쪽 기본 구현이
   Spring 6 의 `ProblemDetail`(RFC 7807 — `type`·`title`·`status`·`detail`·`instance`) 본문을 만들어
