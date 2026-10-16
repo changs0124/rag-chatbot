@@ -103,8 +103,8 @@ describe('useChat 이력 불러오는 중', () => {
 
     act(() => void result.current.selectConversation('c1'))
     let accepted: unknown
-    act(() => {
-      accepted = result.current.send('q', [])
+    await act(async () => {
+      accepted = await result.current.send('q', [])
     })
     await act(async () => a.resolve([msg('c1-1')]))
 
@@ -124,7 +124,7 @@ describe('useChat 이력 불러오는 중', () => {
 
     let accepted: unknown
     await act(async () => {
-      accepted = result.current.send('q', [])
+      accepted = await result.current.send('q', [])
     })
     expect(accepted).toBe(true)
     expect(streamChat).toHaveBeenCalledTimes(1)
@@ -141,7 +141,7 @@ describe('useChat 이력 불러오는 중', () => {
 
     let accepted: unknown
     await act(async () => {
-      accepted = result.current.send('q', [])
+      accepted = await result.current.send('q', [])
     })
     expect(accepted).toBe(true)
     expect(streamChat).toHaveBeenCalledTimes(1)

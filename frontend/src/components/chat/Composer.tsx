@@ -35,8 +35,8 @@ export default function Composer({
   busy = false,
   onStop,
 }: {
-  /** 받아들였으면 true - 거절된 전송은 입력과 첨부 초안을 그대로 둔다(#323) */
-  onSend: (text: string, attachments: Attachment[]) => boolean
+  /** 받아들였으면 true - 거절된 전송은 입력과 첨부 초안을 그대로 둔다(#323). 새 대화는 생성 왕복 뒤에 정해진다(#349) */
+  onSend: (text: string, attachments: Attachment[]) => Promise<boolean>
   streaming: boolean
   /** 이력 로딩 · 대화 생성 중 - 이때 보낸 것은 어차피 거절되므로 비우기 전에 막는다(#323) */
   busy?: boolean
@@ -186,22 +186,24 @@ export default function Composer({
   const pending = drafts.some((d) => d.status !== 'done')
   const failed = drafts.filter((d) => d.status === 'error')
 
-  function doSend() {
+  async function doSend() {
     if (streaming || pending || busy) return
     if (!text.trim() && drafts.length === 0) return
-    const accepted = onSend(
+    const sent = drafts
+    const accepted = await onSend(
       text.trim(),
-      drafts.map((d) => d.attachment).filter((a): a is Attachment => !!a),
+      sent.map((d) => d.attachment).filter((a): a is Attachment => !!a),
     )
     if (!accepted) return
-    setText('')
-    drafts.forEach((d) => URL.revokeObjectURL(d.previewUrl))
-    setDrafts([])
+    // 생성 왕복을 기다리는 사이 이어 쓴 글 · 더한 첨부는 남긴다 - 보낸 것만 걷는다
+    setText((cur) => (cur === text ? '' : cur))
+    sent.forEach((d) => URL.revokeObjectURL(d.previewUrl))
+    setDrafts((prev) => prev.filter((d) => !sent.includes(d)))
   }
 
   function submit(e: FormEvent) {
     e.preventDefault()
-    doSend()
+    void doSend()
   }
 
   const lightboxItems = drafts.map((d) => ({ src: d.previewUrl, name: d.file.name }))
@@ -263,7 +265,7 @@ export default function Composer({
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
-                doSend()
+                void doSend()
               }
             }}
             rows={1}

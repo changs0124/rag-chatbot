@@ -167,8 +167,9 @@ export function useChat() {
   }, [])
 
   const run = useCallback(
-    // 첨부는 입력창이 **고르는 즉시** 올려 두므로 여기서는 이미 올라간 것만 받음(업로드 책임이 컴포저에 있음)
-    async (text: string, attachments: Attachment[]) => {
+    // 첨부는 입력창이 **고르는 즉시** 올려 두므로 여기서는 이미 올라간 것만 받음(업로드 책임이 컴포저에 있음).
+    // settle 은 이 턴을 보냈는지를 생성 왕복이 끝나는 시점에 알린다(#349) - 스트림 완료는 기다리지 않는다
+    async (text: string, attachments: Attachment[], settle: (accepted: boolean) => void) => {
       setError(null)
 
       let convId = activeId
@@ -186,10 +187,14 @@ export function useChat() {
           // 고른 대화의 이력 위에 이 메시지가 얹히고, 사이드바는 새 대화를 가리키는데 본문은 남의
           // 것이 된다. 만들어진 대화는 목록에는 남긴다 - 서버에 실재하기 때문이다
           setConversations((prev) => [conv, ...prev])
-          if (generation.current !== mine) return
+          if (generation.current !== mine) {
+            settle(false)
+            return
+          }
           setActiveId(conv.id)
           convId = conv.id
         } catch (e) {
+          settle(false)
           if (generation.current !== mine) return
           setError(errorMessage(e, '대화를 만들 수 없습니다'))
           return
@@ -198,6 +203,7 @@ export function useChat() {
           setCreating(false)
         }
       }
+      settle(true)
 
       // 턴마다 고유 id - 오류/중단으로 끝난 이전 버블과 충돌하지 않게 함
       const assistantId = crypto.randomUUID()
@@ -282,17 +288,21 @@ export function useChat() {
   )
 
   /**
-   * 전송을 받아들였는지 **동기로** 돌려준다(#323). 입력창은 받아들였을 때만 입력과 첨부 초안을 비운다 -
+   * 전송을 받아들였는지 돌려준다(#323). 입력창은 받아들였을 때만 입력과 첨부 초안을 비운다 -
    * 조용히 버리면 입력이 사라지고 이미 올린 첨부는 회수 크론을 기다리는 고아가 된다.
+   *
+   * 기존 대화는 곧바로, 새 대화는 **생성 왕복이 끝난 뒤에** 정해진다(#349) - 생성이 실패하면 보낸 것이 없다.
+   * 거절 판정과 생성 중 표시는 같은 틱에 끝나므로 같은 틱의 두 번째 전송도 막힌다.
    *
    * 이력 로딩 중에도 거절한다. 받아 들이면 말풍선이 직전 대화의 목록에 붙고, 곧 도착한 이력이 목록을
    * 갈아 끼워 답 말풍선이 사라진다 - send 는 세대를 올리지 않으므로 그 이력은 버려지지 않는다.
    */
   const send = useCallback(
-    (text: string, attachments: Attachment[]): boolean => {
-      if (streaming || creatingRef.current || loadingRef.current) return false
-      void run(text, attachments)
-      return true
+    (text: string, attachments: Attachment[]): Promise<boolean> => {
+      if (streaming || creatingRef.current || loadingRef.current) return Promise.resolve(false)
+      return new Promise<boolean>((resolve) => {
+        void run(text, attachments, resolve)
+      })
     },
     [streaming, run],
   )
