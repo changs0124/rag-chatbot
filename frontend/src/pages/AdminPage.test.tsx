@@ -64,6 +64,12 @@ function renderPage() {
   )
 }
 
+/** 행의 「비밀번호 초기화」 → 확인 창의 「초기화」 (#325) */
+async function confirmReset() {
+  fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+  fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '초기화' }))
+}
+
 describe('관리자 화면', () => {
   beforeEach(() => {
     currentRole = 'admin'
@@ -235,7 +241,7 @@ describe('관리자 화면', () => {
     vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+    await confirmReset()
 
     expect(await screen.findByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
     expect(screen.getByText(/다시 확인할 수 없습니다/)).toBeInTheDocument()
@@ -253,8 +259,9 @@ describe('관리자 화면', () => {
     vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
-    const dialog = await screen.findByRole('dialog')
+    await confirmReset()
+    await screen.findByText('Xk7m-Qp29-Vr4t')
+    const dialog = screen.getByRole('dialog')
     // 배경 요소가 있으면 그것을, 없으면 덮개 자체를 누른다 - 어느 쪽이든 「창 바깥」 클릭이다
     fireEvent.click(dialog.querySelector('[aria-hidden="true"]') ?? dialog)
     expect(screen.getByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
@@ -262,9 +269,67 @@ describe('관리자 화면', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByText('Xk7m-Qp29-Vr4t')).not.toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: '비밀번호 초기화' }))
+    await confirmReset()
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '닫기' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  /** #325 : 초기화는 되돌릴 수 없어(기존 로그인 전부 해제) 문서 삭제처럼 확인 창을 거친다 */
+  it('비밀번호 초기화는 확인 창을 거친 뒤에만 요청한다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user', createdAt: '2026-08-19T00:00:00Z' },
+    ])
+    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText(/박사원/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/기존 로그인이 모두 해제됩니다/)).toBeInTheDocument()
+    expect(resetUserPassword).not.toHaveBeenCalled()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: '초기화' }))
+    await waitFor(() => expect(resetUserPassword).toHaveBeenCalledWith('u2'))
+    expect(resetUserPassword).toHaveBeenCalledTimes(1)
+  })
+
+  it('확인 창에서 취소하면 초기화를 요청하지 않는다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user', createdAt: '2026-08-19T00:00:00Z' },
+    ])
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '취소' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(resetUserPassword).not.toHaveBeenCalled()
+  })
+
+  /** #325 : 연타로 두 번 나가면 늦게 온 응답이 이미 덮어써진 비밀번호를 보여 줄 수 있다 */
+  it('초기화 요청 중에는 버튼이 비활성이고 연타해도 한 번만 요청한다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user', createdAt: '2026-08-19T00:00:00Z' },
+    ])
+    let resolve!: (v: { temporaryPassword: string }) => void
+    vi.mocked(resetUserPassword).mockReturnValue(new Promise((r) => (resolve = r)))
+    renderPage()
+
+    const rowButton = await screen.findByRole('button', { name: '비밀번호 초기화' })
+    fireEvent.click(rowButton)
+    const confirm = within(await screen.findByRole('dialog')).getByRole('button', { name: '초기화' })
+    fireEvent.click(confirm)
+    fireEvent.click(confirm)
+
+    await waitFor(() => expect(rowButton).toBeDisabled())
+    fireEvent.click(rowButton)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(resetUserPassword).toHaveBeenCalledTimes(1)
+
+    resolve({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    expect(await screen.findByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
+    expect(rowButton).toBeEnabled()
+    expect(resetUserPassword).toHaveBeenCalledTimes(1)
   })
 
   /** 자기 자신에게는 초기화 버튼을 띄우지 않는다 */
