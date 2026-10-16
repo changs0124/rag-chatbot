@@ -22,7 +22,7 @@ class RateLimiterKeyCapTest {
 	void key_count_stays_within_cap() {
 		var l = limiter(5);
 		for (int i = 0; i < 500; i++) {
-			l.recordLoginFailure("user" + i + "@b.com");
+			l.acquireLoginAttempt("user" + i + "@b.com");
 		}
 
 		assertThat(l.trackedKeys()).isLessThanOrEqualTo(5);
@@ -37,23 +37,49 @@ class RateLimiterKeyCapTest {
 		var l = limiter(1);
 		String victim = "victim@b.com";
 		for (int i = 0; i < 10; i++) {
-			l.recordLoginFailure(victim);
+			l.acquireLoginAttempt(victim);
 		}
-		assertThatThrownBy(() -> l.checkLoginAllowed(victim)).isInstanceOf(RateLimitException.class);
+		assertThatThrownBy(() -> l.acquireLoginAttempt(victim)).isInstanceOf(RateLimitException.class);
 
-		l.recordLoginFailure("attacker@b.com"); // 상한 1 이라 victim 이 밀려남
+		l.acquireLoginAttempt("attacker@b.com"); // 상한 1 이라 victim 이 밀려남
 
-		assertThatCode(() -> l.checkLoginAllowed(victim)).doesNotThrowAnyException();
+		assertThatCode(() -> l.acquireLoginAttempt(victim)).doesNotThrowAnyException();
+	}
+
+	/**
+	 * 로그인은 비밀번호를 보기 전에 한 칸을 선점한다(#359) - 확인과 계수가 따로면 병렬 요청이 같은 값을 읽는다.
+	 * 성공해 돌려준 칸은 다시 쓸 수 있다.
+	 */
+	@Test
+	void login_attempt_is_reserved_before_the_check_and_released_on_success() {
+		var l = limiter(100);
+		// 결과를 기록하지 않아도 칸이 찬다. 고정 윈도우라 상한(10)의 두 배 넘게 보내 분 경계를 넘어도 걸리게 한다
+		int rejected = 0;
+		for (int i = 0; i < 21; i++) {
+			try {
+				l.acquireLoginAttempt("r@b.com");
+			} catch (RateLimitException e) {
+				rejected++;
+			}
+		}
+		assertThat(rejected).isPositive();
+
+		var ok = limiter(100);
+		for (int i = 0; i < 30; i++) {
+			ok.acquireLoginAttempt("s@b.com");
+			ok.releaseLoginAttempt("s@b.com"); // 성공
+		}
+		assertThatCode(() -> ok.acquireLoginAttempt("s@b.com")).doesNotThrowAnyException();
 	}
 
 	@Test
 	void recently_used_key_survives_eviction() {
 		// 접근 순서 기반이라 계속 쓰이는 키는 남아야 함 - 아니면 상한이 사실상 무작위 초기화가 됨
 		var l = limiter(2);
-		l.recordLoginFailure("kept@b.com");
+		l.acquireLoginAttempt("kept@b.com");
 		for (int i = 0; i < 20; i++) {
-			l.recordLoginFailure("noise" + i + "@b.com");
-			l.checkLoginAllowed("kept@b.com"); // 계속 접근해 최근 사용으로 유지
+			l.acquireLoginAttempt("noise" + i + "@b.com");
+			l.releaseLoginAttempt("kept@b.com"); // 계속 접근해 최근 사용으로 유지
 		}
 
 		assertThat(l.trackedKeys()).isLessThanOrEqualTo(2);

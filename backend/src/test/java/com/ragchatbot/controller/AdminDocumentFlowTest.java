@@ -210,7 +210,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * TC-ADMIN-020 : MIME 이 등록되지 않은 환경에서 올린 .md 도 받는다.
+	 * TC-ADMIN-060 : MIME 이 등록되지 않은 환경에서 올린 .md 도 받는다.
 	 *
 	 * <p>브라우저는 {@code File.type} 을 <b>OS 의 MIME 레지스트리</b>에서 채운다. Windows 에서
 	 * {@code .md} 는 등록돼 있지 않은 경우가 흔하고, 그때 값이 비어 {@code application/octet-stream}
@@ -227,7 +227,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 	}
 
-	/** TC-ADMIN-021 : .docx 도 같다 - Office 가 없는 환경에서 octet-stream 으로 온다 */
+	/** TC-ADMIN-061 : .docx 도 같다 - Office 가 없는 환경에서 octet-stream 으로 온다 */
 	@Test
 	void docx_sent_as_octet_stream_is_accepted() {
 		String token = createAdminUser("doc-octet-docx@b.com");

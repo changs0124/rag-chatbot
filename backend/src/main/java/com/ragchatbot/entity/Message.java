@@ -12,8 +12,8 @@ import java.util.UUID;
  *
  * <p>{@code timedOut} 은 <b>서버가 스트림을 타임아웃으로 닫았음</b>을 뜻함(#84). {@code stopped} 와
  * 별개의 축인 이유는 타임아웃이 세 갈래로 갈리기 때문임 - 토큰이 흐르는 중이면 {@code stopped=true}
- * 로, 워커가 대기 중이었고 업스트림이 뒤늦게 응답하면 <b>전문이 그대로</b> {@code stopped=false} 로,
- * 끝내 무응답이면 {@code status=error} 로 저장됨. 이 플래그가 없으면 앞의 둘이 각각 「사용자 중단」과
+ * 로, 토큰을 다 보낸 뒤 완료 응답만 늦게 오면 <b>전문이 그대로</b> {@code stopped=false} 로,
+ * 끝내 무응답이거나 첫 토큰 전에 닫혔으면 {@code status=error} 로 저장됨. 이 플래그가 없으면 앞의 둘이 각각 「사용자 중단」과
  * 「정상 완료」를, 마지막이 「진짜 오류」를 사칭함.
  *
  * <p>{@code inputTokens}·{@code outputTokens} 는 <b>null 이 될 수 있음</b>(FEAT-OPS-001). 사용자 메시지 ·

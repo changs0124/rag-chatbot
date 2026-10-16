@@ -40,14 +40,14 @@ public class AuthService {
 
 	public AuthResponse login(LoginRequest req) {
 		String email = EmailDomainPolicy.normalize(req.email());
-		rateLimiter.checkLoginAllowed(email); // 실패 누적이 한도를 넘었으면 더 받지 않음
+		rateLimiter.acquireLoginAttempt(email); // 실패로 치고 선점, 한도를 넘었으면 더 받지 않음 - 성공하면 아래에서 돌려줌
 		var found = userRepository.findByEmail(email);
 		// 계정 유무와 비밀번호 불일치를 **같은 응답 본문·상태 코드**로 돌려줌(존재 은닉) + 실패만 계수.
 		// 응답 한정임 - 미존재 계정은 BCrypt 를 건너뛰어 응답 시간이 갈리는 타이밍 오라클이 남음(기존 동작)
 		if (found.isEmpty() || !passwordEncoder.matches(req.password(), found.get().passwordHash())) {
-			rateLimiter.recordLoginFailure(email);
 			throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않음");
 		}
+		rateLimiter.releaseLoginAttempt(email);
 		User user = found.get();
 		return new AuthResponse(jwtService.issue(user.id()),
 				new MeResponse(user.id(), user.email(), user.name(), user.role()));

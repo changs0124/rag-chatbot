@@ -72,6 +72,16 @@ class CitationFromMarkupTest {
 		assertThat(f.fileRefs()).containsExactly(new CitationMarkupFilter.FileRef(0, 1));
 	}
 
+	/** 자릿수가 터무니없는 참조는 세지 않고 넘긴다(#359) - parseInt 가 던지면 토큰을 보낸 스트림이 오류로 끝난다 */
+	@Test
+	void absurdly_long_ref_number_is_skipped_without_throwing() {
+		CitationMarkupFilter f = new CitationMarkupFilter();
+		String out = f.accept("가fileciteturn99999999999file0turn0file2나");
+
+		assertThat(out).isEqualTo("가나");
+		assertThat(f.fileRefs()).containsExactly(new CitationMarkupFilter.FileRef(0, 2));
+	}
+
 	@Test
 	void refs_split_across_deltas_are_collected() {
 		CitationMarkupFilter f = new CitationMarkupFilter();

@@ -224,6 +224,35 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
   })
 
   /**
+   * #359 - 답을 받는 중인 지금 대화를 다시 누르면 아무 일도 없다.
+   *
+   * 모바일에서 서랍을 열었다가 지금 대화를 눌러 돌아오는 것이 자연스럽다. 고치기 전에는 그 선택이
+   * 스트림을 끊어 답이 중단으로 저장되고, 이력을 다시 불러 부분 답이 사라졌다.
+   */
+  it('스트림 중 지금 대화를 다시 골라도 스트림을 끊지 않는다', async () => {
+    vi.mocked(createConversation).mockResolvedValue(conv('c1'))
+    let signal: AbortSignal | undefined
+    vi.mocked(streamChat).mockImplementation((_b, _h, s) => {
+      signal = s
+      return new Promise<void>(() => {})
+    })
+
+    const { result } = renderHook(() => useChat())
+    await act(async () => {
+      void result.current.send('질문', [])
+    })
+    expect(result.current.activeId).toBe('c1')
+
+    await act(async () => {
+      await result.current.selectConversation('c1')
+    })
+
+    expect(signal!.aborted).toBe(false)
+    expect(getMessages).not.toHaveBeenCalled()
+    expect(result.current.streaming).toBe(true)
+  })
+
+  /**
    * #77 - 삭제 실패가 화면에 드러난다.
    *
    * 확인 모달이 먼저 닫히므로, 실패를 표시하지 않으면 사용자는 「삭제를 눌렀는데 그대로다」만 보고

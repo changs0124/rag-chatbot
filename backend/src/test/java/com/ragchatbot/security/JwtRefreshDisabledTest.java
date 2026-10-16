@@ -14,7 +14,7 @@ import org.springframework.test.context.TestPropertySource;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * 슬라이딩 재발급을 끈 경우 (FEAT-OPS-003 · TC-OPS-021 · TC-OPS-023).
+ * 슬라이딩 재발급을 끈 경우 (FEAT-OPS-003 · TC-OPS-023).
  *
  * <p><b>별도 파일인 이유</b> : 임계값이 클래스 단위 프로퍼티라 한 클래스에 담을 수 없고,
  * 중첩 static 클래스로 두면 surefire 기본 include 패턴(`**&#47;*Test.java`)에 걸리지 않아

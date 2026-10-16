@@ -7,7 +7,10 @@
 
 ## 진행 중
 
-없음. 다음 할 일은 [backlog.md](./backlog.md) 에서 고른다.
+2026-10-16 오후 리뷰 두 건 — PR 을 올렸고 **merge 와 운영 배포는 사용자 몫**이다.
+
+- [#359](https://github.com/changs0124/rag-chatbot/issues/359) 코드 리뷰 수정(백엔드 6 · 프론트 5 · 주석 · 테스트 ID). 백엔드가 바뀌므로 merge 뒤 `scripts/deploy.sh` 로 배포한다
+- [#360](https://github.com/changs0124/rag-chatbot/issues/360) 문서 리뷰 · 코드 동기화. 문서만 바뀐다
 
 ## 블로커
 

@@ -9,6 +9,8 @@ import remarkGfm from 'remark-gfm'
  *
  * - **원시 HTML 은 그리지 않는다.** react-markdown 의 기본값(rehype-raw 를 붙이지 않음)이다 - 모델 출력이
  *   스크립트 · 이벤트 속성을 실어 오는 길이 되면 안 된다. `javascript:` 같은 위험한 링크 스킴은 기본 urlTransform 이 지운다
+ * - **마크다운 이미지(`![](url)`)는 그리지 않는다(#359).** 그리면 모델 출력에 실린 바깥 주소를 브라우저가 곧바로 불러
+ *   대화에서 뽑은 값이 쿼리로 새어 나갈 수 있다. 문서 그림은 이 경로가 아니라 그림 표식으로 온다
  * - 표는 가로로만 스크롤되는 상자에 넣는다 - 모바일 폭에서 화면 전체를 밀어내지 않게
  * - 그림 표식(`[[그림:키]]`)은 여기 오기 전에 잘려 나간다(splitFigures). 이 컴포넌트는 표식 사이의 글만 받는다
  * - **한국어 조사 앞의 굵게를 닫는다(#287).** 표준 강조 규칙은 닫는 `**` 앞이 문장부호 · 뒤가 글자면 안 닫는다 -
@@ -68,7 +70,12 @@ const components: Components = {
 
 export default function Markdown({ text }: { text: string }) {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm, remarkCjkFriendly]} components={components}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm, remarkCjkFriendly]}
+      components={components}
+      disallowedElements={['img']}
+      unwrapDisallowed
+    >
       {text}
     </ReactMarkdown>
   )

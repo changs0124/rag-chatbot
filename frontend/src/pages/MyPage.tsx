@@ -15,6 +15,9 @@ export default function MyPage() {
   const [name, setName] = useState(user?.name ?? '')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  // 변경 요청이 도는 동안 버튼을 막는다(#359) - 연타한 두 번째 요청은 바뀐 비밀번호로 401 이 되어,
+  // 이미 성공한 변경 위에 오류 문구를 덮는다
+  const [savingPassword, setSavingPassword] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -38,6 +41,7 @@ export default function MyPage() {
   }
 
   async function savePassword() {
+    setSavingPassword(true)
     try {
       // 서버가 변경 시각 이전 토큰을 전부 무효화함 - 새 토큰으로 갈아 끼우지 않으면
       // "변경했습니다"를 띄운 직후부터 모든 요청이 401 이 됨
@@ -49,6 +53,8 @@ export default function MyPage() {
       flash('비밀번호를 변경했습니다')
     } catch (e) {
       fail(e)
+    } finally {
+      setSavingPassword(false)
     }
   }
 
@@ -94,7 +100,7 @@ export default function MyPage() {
             />
             <button
               onClick={savePassword}
-              disabled={!currentPassword || newPassword.length < 8}
+              disabled={savingPassword || !currentPassword || newPassword.length < 8}
               className={primaryButtonClass}
             >
               비밀번호 변경

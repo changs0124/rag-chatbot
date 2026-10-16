@@ -1,0 +1,75 @@
+package com.ragchatbot.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import com.ragchatbot.dto.ChatDtos.ChatRequest;
+import com.ragchatbot.entity.Attachment;
+import com.ragchatbot.entity.Conversation;
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.repository.AttachmentRepository;
+import com.ragchatbot.repository.ConversationRepository;
+import com.ragchatbot.repository.MessageRepository;
+import com.ragchatbot.storage.FileStorage;
+
+/**
+ * 고아 회수와 전송이 같은 첨부를 두고 겹칠 때(#359).
+ *
+ * <p>둘 다 「읽고 나서 쓴다」라, 회수가 목록을 읽은 뒤 전송이 그 첨부를 싣거나 전송이 확인한 뒤 회수가 지우는 틈이 있다.
+ * 실제 두 스레드를 맞물리기는 어려워 저장소 대역으로 그 틈의 결과(0행)를 직접 만든다.
+ */
+class AttachmentLinkRaceTest {
+
+	private static final UUID USER = UUID.randomUUID();
+
+	private static Attachment draft(UUID id) {
+		return new Attachment(id, null, USER, "u/" + id + ".png", "image", null,
+				OffsetDateTime.now().minusHours(2));
+	}
+
+	/** 회수가 읽은 뒤 전송에 실려 조건부 삭제가 0행이면, 파일을 지우지 않고 회수 수에도 넣지 않는다 */
+	@Test
+	void orphan_cleanup_keeps_attachment_linked_after_it_was_listed() {
+		var storage = mock(FileStorage.class);
+		var repo = mock(AttachmentRepository.class);
+		var att = draft(UUID.randomUUID());
+		when(repo.findOrphans(any())).thenReturn(List.of(att));
+		when(repo.deleteDraftByIdAndUser(att.id(), USER)).thenReturn(0);
+
+		int removed = new FileService(storage, repo, null).cleanupOrphans(OffsetDateTime.now());
+
+		assertThat(removed).isZero();
+		verify(storage, never()).delete(any());
+	}
+
+	/** 전송이 확인한 뒤 첨부가 사라졌거나 다른 전송에 먼저 실려 연결이 0행이면, 답을 만들지 않고 거절한다 */
+	@Test
+	void send_rejects_attachment_that_could_not_be_linked() {
+		var conversations = mock(ConversationRepository.class);
+		var messages = mock(MessageRepository.class);
+		var repo = mock(AttachmentRepository.class);
+		UUID convId = UUID.randomUUID();
+		var att = draft(UUID.randomUUID());
+		when(conversations.findByIdAndUser(convId, USER)).thenReturn(Optional.of(
+				new Conversation(convId, USER, "t", null, OffsetDateTime.now(), OffsetDateTime.now())));
+		when(repo.findByIdAndUser(att.id(), USER)).thenReturn(Optional.of(att));
+		when(repo.linkToMessage(any(), any(), any())).thenReturn(0);
+
+		var service = new ChatService(conversations, messages, repo, null, null, 6000);
+
+		assertThatThrownBy(() -> service.prepare(USER, new ChatRequest(convId, "질문", List.of(att.id()))))
+				.isInstanceOf(BadRequestException.class);
+	}
+}

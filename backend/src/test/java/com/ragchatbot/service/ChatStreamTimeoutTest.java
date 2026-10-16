@@ -193,6 +193,29 @@ class ChatStreamTimeoutTest {
 	}
 
 	/**
+	 * 첫 토큰 전에 타임아웃 — 받은 것이 없어도 타임아웃 사실은 남긴다(#359).
+	 *
+	 * <p>종전에는 중단 분기의 「비었으면 저장하지 않음」에 걸려 아무 행도 남지 않았다 - 화면은 완료 이벤트 없이
+	 * 끊겨 오류로 보이는데 재조회하면 질문만 있다. 갈래 ③ 과 같은 모양({@code error} + {@code timedOut})으로 남긴다.
+	 */
+	@Test
+	void timeout_before_first_token_is_saved_as_timed_out_error() {
+		var persistence = new RecordingPersistence();
+		var emitter = new TimeoutableEmitter();
+		var service = chatService(
+				new HookedOpenAi(List.of("답"), 0, emitter::fireTimeout, null), persistence);
+
+		service.stream(UUID.randomUUID(), prepared(), emitter);
+
+		assertThat(persistence.saves).hasSize(1);
+		Saved saved = persistence.saves.get(0);
+		assertThat(saved.status()).isEqualTo("error");
+		assertThat(saved.stopped()).isFalse();
+		assertThat(saved.timedOut()).isTrue();
+		assertThat(saved.content()).isEmpty();
+	}
+
+	/**
 	 * 스트림이 완주한 뒤 저장이 실패하면 <b>손에 쥔 인용과 사용량을 재시도가 그대로 싣는다</b>(#97).
 	 *
 	 * <p>첫 저장이 던지면 {@code @Transactional} 이라 롤백되고 같은 id 로 재시도가 돈다. 종전에는 그

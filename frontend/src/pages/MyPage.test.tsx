@@ -77,6 +77,20 @@ describe('MyPage 비밀번호 변경', () => {
     expect(getToken()).toBe('new-token')
   })
 
+  // 연타한 두 번째 요청은 바뀐 비밀번호로 401 이 되어 성공한 변경 위에 오류 문구를 덮는다(#359)
+  it('변경 요청이 도는 동안 다시 누를 수 없다', async () => {
+    let finish!: (v: Awaited<ReturnType<typeof updatePassword>>) => void
+    vi.mocked(updatePassword).mockReturnValue(new Promise((r) => (finish = r)))
+    renderMyPage()
+    submitPasswordChange()
+    fireEvent.click(screen.getByRole('button', { name: '비밀번호 변경' }))
+
+    expect(updatePassword).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('button', { name: '비밀번호 변경' })).toBeDisabled()
+    finish({ token: 'new-token', user: { id: 'u1', email: 'a@b.com', name: '사용자', role: 'user' } })
+    await waitFor(() => expect(screen.getByText('비밀번호를 변경했습니다')).toBeInTheDocument())
+  })
+
   it('변경에 실패하면 토큰을 건드리지 않음', async () => {
     vi.mocked(updatePassword).mockRejectedValue(new Error('boom'))
     renderMyPage()

@@ -1,5 +1,6 @@
 package com.ragchatbot.service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -8,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ragchatbot.entity.User;
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.exception.ApiExceptions.UnauthorizedException;
 import com.ragchatbot.repository.UserRepository;
@@ -20,6 +22,9 @@ import com.ragchatbot.dto.AuthDtos.MeResponse;
  */
 @Service
 public class ProfileService {
+
+	/** BCrypt 가 받는 최대 입력. 넘으면 {@code encode} 가 {@link IllegalArgumentException} 을 던져 500 이 된다(#359) */
+	private static final int BCRYPT_MAX_BYTES = 72;
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
@@ -54,6 +59,10 @@ public class ProfileService {
 		User user = require(userId);
 		if (!passwordEncoder.matches(currentPassword, user.passwordHash())) {
 			throw new UnauthorizedException("현재 비밀번호가 올바르지 않음");
+		}
+		// 글자 수가 아니라 UTF-8 바이트로 잰다 - 한글 25자가 75바이트라 평범한 한글 문장이 걸린다
+		if (newPassword.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_BYTES) {
+			throw new BadRequestException("비밀번호가 너무 김(UTF-8 " + BCRYPT_MAX_BYTES + "바이트 이하, 한글은 24자까지)");
 		}
 		// 해시를 먼저 만들고 그 뒤에 기준선을 잼 - BCrypt 소요(0.1~0.5초)만큼 기준선이 과거로
 		// 밀리면 그 사이 발급된 옛 토큰의 생존 창이 그만큼 넓어짐

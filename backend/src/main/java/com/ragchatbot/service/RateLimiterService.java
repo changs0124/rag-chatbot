@@ -24,8 +24,9 @@ import com.ragchatbot.exception.ApiExceptions.RateLimitException;
  * 카운터를 밀어낼 수 있음. 로그인 상한은 대입 <b>지연</b> 장치이지 차단 장치가 아니므로 감수한 것이며,
  * 이 약화는 {@code docs/02_architecture/overview.md} 「알려진 제약」에 적혀 있음.
  *
- * <p>맵 접근을 전부 {@code synchronized} 로 감쌈 - LRU 축출은 원자 구간이 필요하고, 락 밖 읽기 가시성과
- * check-then-act 경합도 이것으로 막음.
+ * <p>맵 접근을 전부 {@code synchronized} 로 감쌈 - LRU 축출은 원자 구간이 필요하고 락 밖 읽기 가시성도
+ * 이것으로 지킴. 확인과 계수는 한 메서드({@link #increment}) 안에서 함께 해야 경합이 없다 - 따로 부르면
+ * 사이가 비어 병렬 요청이 같은 값을 읽는다(로그인이 그래서 선점 방식이다, #359).
  */
 @Service
 public class RateLimiterService {
@@ -96,18 +97,23 @@ public class RateLimiterService {
 	 * 로그인 시도 상한 - <b>실패 누적만</b> 봄(성공한 로그인은 세지 않음). 정상 사용자가 여러 번
 	 * 로그인해도 잠기지 않게 하려는 것임.
 	 *
+	 * <p><b>비밀번호를 보기 전에 한 칸을 선점하고, 성공하면 {@link #releaseLoginAttempt} 로 돌려준다(#359).</b>
+	 * 확인만 하고 실패 뒤에 세면, BCrypt(~100ms)가 도는 사이 병렬 요청이 모두 같은 카운터를 읽어
+	 * 실효 상한이 분당 10이 아니라 톰캣 스레드 수(200)가 됐다.
+	 *
 	 * <p>키가 정규화된 이메일이라 <b>대상 계정을 보호</b>하지만, 같은 이유로 <b>남의 계정을 잠글 지렛대</b>도 됨 -
 	 * 알려진 주소로 일부러 틀리면 그 주인이 그 분 동안 429를 받음. 출발지(IP) 기준이 아니라 여러 계정을
 	 * 훑는 살포형 시도도 걸리지 않음. 둘 다 단일 인스턴스 전제에서 감수한 한계임.
 	 */
-	public void checkLoginAllowed(String email) {
-		if (count("login:" + email) >= loginPerMinute) {
+	public void acquireLoginAttempt(String email) {
+		if (increment("login:" + email) > loginPerMinute) {
 			throw new RateLimitException("로그인 시도가 너무 많음 - 잠시 후 다시 시도");
 		}
 	}
 
-	public void recordLoginFailure(String email) {
-		increment("login:" + email);
+	/** 성공한 로그인의 선점분을 돌려줌. 분이 바뀌어 창이 새로 열렸으면 돌려줄 것이 없음 */
+	public void releaseLoginAttempt(String email) {
+		decrement("login:" + email);
 	}
 
 	private synchronized int increment(String key) {
@@ -121,11 +127,11 @@ public class RateLimiterService {
 		return ++cur.count;
 	}
 
-	private synchronized int count(String key) {
-		long minute = currentMinute();
-		sweep(minute);
+	private synchronized void decrement(String key) {
 		Window w = windows.get(key);
-		return w == null || w.minute != minute ? 0 : w.count;
+		if (w != null && w.minute == currentMinute() && w.count > 0) {
+			w.count--;
+		}
 	}
 
 	/** 테스트·운영 점검용 - 지금 추적 중인 키 수 */

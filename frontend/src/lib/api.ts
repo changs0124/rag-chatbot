@@ -53,10 +53,13 @@ export function handleUnauthorized(path: string): void {
  *
  * 서버가 CORS 노출 헤더에 등록하지 않으면 브라우저가 이 값을 숨겨 `null` 이 온다 - 그 경우
  * 조용히 아무 일도 일어나지 않으므로, 서버 쪽 등록을 케이스로 잠가 두었다.
+ *
+ * **로그아웃 뒤에 도착한 응답의 헤더는 버린다(#359).** 로그아웃 전에 떠난 요청이 늦게 돌아와 토큰을 다시 쓰면
+ * localStorage 에 남아, 새로고침하면 로그아웃한 세션으로 다시 들어간다.
  */
 export function adoptRefreshedToken(res: Response): void {
   const next = res.headers.get('X-Refresh-Token')
-  if (next) setToken(next)
+  if (next && token !== null) setToken(next)
 }
 
 /**

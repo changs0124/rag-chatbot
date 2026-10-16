@@ -76,6 +76,26 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 		assertThat(withNew.getBody().get("email")).isEqualTo("prof-pw3@b.com");
 	}
 
+	/**
+	 * TC-AUTH-012 : 새 비밀번호가 UTF-8 72바이트를 넘으면 400 이다(#359).
+	 *
+	 * <p>BCrypt 는 72바이트를 넘는 입력을 {@code encode} 에서 던져, 막지 않으면 500 이 된다. 글자 수 검증(8자 이상)만으로는
+	 * 못 막는다 - 한글 25자가 75바이트다.
+	 */
+	@Test
+	void update_password_over_72_bytes_is_400() {
+		String temporary = issueAccount("prof-pw-long@b.com");
+		String token = login("prof-pw-long@b.com", temporary);
+		var res = patch(token, "/api/profile/password",
+				Map.of("currentPassword", temporary, "newPassword", "가".repeat(25)), Map.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+		// 바뀌지 않았다 - 옛 비밀번호로 여전히 들어간다
+		var oldLogin = rest.postForEntity("/api/auth/login",
+				Map.of("email", "prof-pw-long@b.com", "password", temporary), Map.class);
+		assertThat(oldLogin.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
 	@Test
 	void update_password_wrong_current_401() {
 		String token = createUser("prof-pw2@b.com");

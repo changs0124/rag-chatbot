@@ -35,11 +35,13 @@
 		delete from attachments where id = #{id} and user_id = #{userId} and message_id is null
 	</delete>
 
+	<!-- 한 메시지의 이미지 순서를 업로드 순으로 고정(#359) - 순서를 안 정하면 재조회 때 바뀔 수 있다 -->
 	<select id="findByConversation" resultMap="attachmentResult">
 		select a.id, a.message_id, a.user_id, a.storage_path, a.file_type, a.openai_file_id, a.created_at
 		from attachments a
 		join messages m on a.message_id = m.id
 		where m.conversation_id = #{conversationId}
+		order by a.created_at, a.id
 	</select>
 
 	<select id="findOrphans" resultMap="attachmentResult">
@@ -47,10 +49,6 @@
 		from attachments
 		where message_id is null and created_at &lt; #{cutoff}
 	</select>
-
-	<delete id="deleteById">
-		delete from attachments where id = #{id}
-	</delete>
 
 	<select id="findAllStoragePaths" resultType="java.lang.String">
 		select storage_path from attachments
