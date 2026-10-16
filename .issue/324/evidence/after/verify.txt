@@ -1,0 +1,8 @@
+# #324 검증 요약 (2026-10-16, worktree fix/324-frontend-small-defects)
+cd frontend && npm run lint && npm test && npm run build   -> exit 0
+  lint (oxlint)          : 경고·오류 0
+  test (vitest)          : Test Files 23 passed (23) · Tests 162 passed (162)
+  build (tsc + vite)     : built OK
+bash scripts/check-case-floor.sh frontend  -> 실측 162 / 하한 157 OK  => 하한 157 -> 162(실측)
+bash scripts/check-all.sh docs             -> exit 0, 돌린 검사는 전부 통과 (shellcheck 없음으로 1건 건너뜀 - CI 에는 있음)
+전체 로그 : full-run.log · docs.log

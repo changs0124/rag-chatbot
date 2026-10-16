@@ -1,0 +1,24 @@
+ ❯ src/components/chat/Sidebar.test.tsx (1 test | 1 failed) 133ms
+     × 묶음은 로컬 자정 기준이다 - 어제 23시는 「지난 7일」 130ms
+ ❯ src/components/chat/ImageLightbox.test.tsx (6 tests | 2 failed) 485ms
+       × 응답이 실패면 저장하지 않음 48ms
+       × 이름이 없으면 받은 형식의 확장자를 붙여 저장함 83ms
+ ❯ src/pages/AdminPage.test.tsx (15 tests | 1 failed) 2810ms
+     × 폴링이 한 번 실패한 뒤 성공하면 목록 오류가 사라진다 1613ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/pages/AdminPage.test.tsx > 관리자 화면 > 폴링이 한 번 실패한 뒤 성공하면 목록 오류가 사라진다
+ ❯ src/pages/AdminPage.test.tsx:173:74
+ FAIL  src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 내려받기 > 응답이 실패면 저장하지 않음
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+Received:
+ ❯ src/components/chat/ImageLightbox.test.tsx:97:39
+ FAIL  src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 내려받기 > 이름이 없으면 받은 형식의 확장자를 붙여 저장함
+AssertionError: expected [ 'image' ] to deeply equal [ 'image.png' ]
+- Expected
++ Received
+ ❯ src/components/chat/ImageLightbox.test.tsx:109:21
+ FAIL  src/components/chat/Sidebar.test.tsx > Sidebar 시간 묶음 > 묶음은 로컬 자정 기준이다 - 어제 23시는 「지난 7일」
+TestingLibraryElementError: Unable to find an element with the text: 어제 밤. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+ ❯ src/components/chat/Sidebar.test.tsx:46:37
+ Test Files  3 failed (3)
+      Tests  4 failed | 18 passed (22)
