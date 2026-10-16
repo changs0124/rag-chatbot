@@ -1,0 +1,1051 @@
+13:14:47.379 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.config.AdminRoleSyncFlowTest]: AdminRoleSyncFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+13:14:47.583 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.config.AdminRoleSyncFlowTest
+13:14:47.695 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.config.AdminRoleSyncFlowTest]: AdminRoleSyncFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+13:14:47.695 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+13:14:47.703 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.config.AdminRoleSyncFlowTest
+13:14:47.775 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+13:14:47.779 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+13:14:47.882 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+13:14:48.887 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with Environment variables, system properties and defaults. Resolved dockerHost=npipe:////./pipe/dockerDesktopLinuxEngine
+13:14:48.888 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+13:14:48.912 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 29.8.2
+  API Version: 1.56
+  Operating System: Docker Desktop
+  Total Memory: 31942 MB
+  Labels: 
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+13:14:49.084 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+13:14:49.206 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/
+13:14:49.458 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: 9845787d7498a9e1c39d9dcc119b4cf752c123f1d075c6963fcb0d3811521540
+13:14:49.957 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT0.8736364S
+13:14:49.968 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+13:14:49.968 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+13:14:49.970 [main] INFO org.testcontainers.DockerClientFactory -- ?? Docker server version should be at least 1.6.0
+13:14:49.971 [main] INFO tc.postgres:16-alpine -- Creating container for image: postgres:16-alpine
+13:14:50.069 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine is starting: 20fcf9845b1a5a029efdf82ebb92f8639767dd77519c506cae0261bd6e8861b2
+13:14:51.893 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine started in PT1.9220297S
+13:14:51.894 [main] INFO tc.postgres:16-alpine -- Container is started (JDBC URL: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:14:52.469+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSyncFlowTest         : Starting AdminRoleSyncFlowTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:14:52.472+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSyncFlowTest         : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:14:55.291+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:14:55.309+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:14:55.310+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:14:55.381+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 2878 ms
+2026-10-16T13:14:55.976+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-16T13:14:56.172+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@160cf225
+2026-10-16T13:14:56.174+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-16T13:14:56.213+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:14:56.358+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-16T13:14:56.371+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.079s)
+2026-10-16T13:14:56.408+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-16T13:14:56.561+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-10-16T13:14:56.603+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - init"
+2026-10-16T13:14:56.708+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_users_updated_at" for relation "users" does not exist, skipping
+2026-10-16T13:14:56.714+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_conversations_updated_at" for relation "conversations" does not exist, skipping
+2026-10-16T13:14:56.820+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - auth hardening"
+2026-10-16T13:14:56.897+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - message stopped"
+2026-10-16T13:14:56.958+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - message token usage"
+2026-10-16T13:14:57.024+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - user role"
+2026-10-16T13:14:57.129+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - rag documents"
+2026-10-16T13:14:57.188+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - message timed out"
+2026-10-16T13:14:57.224+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - drop user theme"
+2026-10-16T13:14:57.260+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - rag documents alive file unique"
+2026-10-16T13:14:57.295+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 9 migrations to schema "public", now at version v9 (execution time 00:00.321s)
+2026-10-16T13:14:59.969+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 52947 (http) with context path '/'
+2026-10-16T13:14:59.982+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSyncFlowTest         : Started AdminRoleSyncFlowTest in 8.038 seconds (process running for 14.65)
+2026-10-16T13:15:00.183+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 계정 발급 : root@rag.test · 임시 비밀번호 w6nC-ZjnT-UvaQ (최초 로그인 후 마이페이지에서 변경할 것)
+2026-10-16T13:15:00.280+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 계정 발급 : boot-admin@b.com · 임시 비밀번호 fDXi-ezwm-daM7 (최초 로그인 후 마이페이지에서 변경할 것)
+2026-10-16T13:15:00.348+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 2건 · 생성 2건 · 승격 0건 · 강등 0건
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-10-16T13:15:01.103+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:15:01.104+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:15:01.105+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-16T13:15:02.819+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] s.c.a.AnnotationConfigApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'appModeGuard': Failed to instantiate [com.ragchatbot.config.AppModeGuard]: Constructor threw exception
+2026-10-16T13:15:02.837+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] s.c.a.AnnotationConfigApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'appModeGuard': Failed to instantiate [com.ragchatbot.config.AppModeGuard]: Constructor threw exception
+2026-10-16T13:15:02.857+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] s.c.a.AnnotationConfigApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'appModeGuard': Failed to instantiate [com.ragchatbot.config.AppModeGuard]: Constructor threw exception
+2026-10-16T13:15:02.893+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] s.c.a.AnnotationConfigApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'emailDomainPolicy': Failed to instantiate [com.ragchatbot.config.EmailDomainPolicy]: Constructor threw exception
+2026-10-16T13:15:02.903+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] s.c.a.AnnotationConfigApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'emailDomainPolicy': Failed to instantiate [com.ragchatbot.config.EmailDomainPolicy]: Constructor threw exception
+2026-10-16T13:15:02.918+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminDocumentFlowTest]: AdminDocumentFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:03.061+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminDocumentFlowTest
+2026-10-16T13:15:03.063+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminDocumentFlowTest]: AdminDocumentFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:03.063+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:03.069+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminDocumentFlowTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:15:03.109+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.AdminDocumentFlowTest     : Starting AdminDocumentFlowTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:15:03.111+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.AdminDocumentFlowTest     : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:15:04.045+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:15:04.046+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:15:04.047+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:15:04.076+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 963 ms
+2026-10-16T13:15:04.146+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-10-16T13:15:04.163+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@57dee2b9
+2026-10-16T13:15:04.163+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-10-16T13:15:04.165+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:15:04.207+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.018s)
+2026-10-16T13:15:04.244+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:15:04.246+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:15:04.678+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 52958 (http) with context path '/'
+2026-10-16T13:15:04.684+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.AdminDocumentFlowTest     : Started AdminDocumentFlowTest in 1.611 seconds (process running for 19.352)
+2026-10-16T13:15:04.700+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 1건
+2026-10-16T13:15:04.831+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-2-exec-2] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:15:04.832+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-2-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:15:04.834+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-2-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-10-16T13:15:13.030+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminDocumentSyncFlowTest]: AdminDocumentSyncFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:13.036+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminDocumentSyncFlowTest
+2026-10-16T13:15:13.037+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminDocumentSyncFlowTest]: AdminDocumentSyncFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:13.037+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:13.047+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminDocumentSyncFlowTest
+2026-10-16T13:15:13.401+09:00  WARN 32368 --- [rag-chatbot-backend] [o-auto-2-exec-9] c.r.service.AdminDocumentService         : 스토어 동기화 : 파일이 없는 스토어 연결 1건을 정리함
+2026-10-16T13:15:15.647+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminUserFlowTest]: AdminUserFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:15.655+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminUserFlowTest
+2026-10-16T13:15:15.656+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminUserFlowTest]: AdminUserFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:15.656+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:15.661+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminUserFlowTest
+2026-10-16T13:15:22.238+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AuthDomainAllowlistTest]: AuthDomainAllowlistTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:22.248+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AuthDomainAllowlistTest
+2026-10-16T13:15:22.249+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AuthDomainAllowlistTest]: AuthDomainAllowlistTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:22.250+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:22.259+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AuthDomainAllowlistTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:15:22.304+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.AuthDomainAllowlistTest   : Starting AuthDomainAllowlistTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:15:22.304+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.AuthDomainAllowlistTest   : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:15:22.772+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:15:22.773+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:15:22.775+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:15:22.810+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 502 ms
+2026-10-16T13:15:22.888+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-10-16T13:15:22.908+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection org.postgresql.jdbc.PgConnection@33bd86fe
+2026-10-16T13:15:22.909+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-10-16T13:15:22.911+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:15:22.959+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.019s)
+2026-10-16T13:15:22.994+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:15:22.996+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:15:23.378+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 54006 (http) with context path '/'
+2026-10-16T13:15:23.382+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.AuthDomainAllowlistTest   : Started AuthDomainAllowlistTest in 1.117 seconds (process running for 38.05)
+2026-10-16T13:15:23.396+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 33건
+2026-10-16T13:15:23.488+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-3-exec-1] o.a.c.c.C.[Tomcat-2].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:15:23.488+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-3-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:15:23.490+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-3-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-10-16T13:15:24.812+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AuthFlowTest]: AuthFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:24.818+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AuthFlowTest
+2026-10-16T13:15:24.819+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AuthFlowTest]: AuthFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:24.819+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:24.823+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AuthFlowTest
+2026-10-16T13:15:28.655+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatBackPressureTest]: ChatBackPressureTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:28.659+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatBackPressureTest
+2026-10-16T13:15:28.661+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatBackPressureTest]: ChatBackPressureTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:28.661+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:28.665+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatBackPressureTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:15:28.687+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.ChatBackPressureTest      : Starting ChatBackPressureTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:15:28.687+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.ChatBackPressureTest      : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:15:28.980+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:15:28.981+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:15:28.982+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:15:29.044+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 355 ms
+2026-10-16T13:15:29.113+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2026-10-16T13:15:29.138+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-4 - Added connection org.postgresql.jdbc.PgConnection@3514d1a4
+2026-10-16T13:15:29.139+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2026-10-16T13:15:29.142+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:15:29.196+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.021s)
+2026-10-16T13:15:29.246+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:15:29.248+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:15:29.549+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 57340 (http) with context path '/'
+2026-10-16T13:15:29.555+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.ChatBackPressureTest      : Started ChatBackPressureTest in 0.888 seconds (process running for 44.223)
+2026-10-16T13:15:29.565+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 0건
+2026-10-16T13:15:29.656+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-4-exec-1] o.a.c.c.C.[Tomcat-3].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:15:29.656+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-4-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:15:29.657+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-4-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-16T13:15:30.341+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatFlowTest]: ChatFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:30.347+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatFlowTest
+2026-10-16T13:15:30.348+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatFlowTest]: ChatFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:30.348+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:30.356+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatFlowTest
+2026-10-16T13:15:35.546+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatRejectionCounterTest]: ChatRejectionCounterTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:35.554+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatRejectionCounterTest
+2026-10-16T13:15:35.556+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatRejectionCounterTest]: ChatRejectionCounterTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:35.556+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:35.563+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatRejectionCounterTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:15:35.607+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.ChatRejectionCounterTest  : Starting ChatRejectionCounterTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:15:35.607+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.ChatRejectionCounterTest  : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:15:36.135+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:15:36.138+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:15:36.139+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:15:36.177+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 567 ms
+2026-10-16T13:15:36.229+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Starting...
+2026-10-16T13:15:36.249+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-5 - Added connection org.postgresql.jdbc.PgConnection@438bcdde
+2026-10-16T13:15:36.249+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Start completed.
+2026-10-16T13:15:36.251+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:15:36.298+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.018s)
+2026-10-16T13:15:36.340+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:15:36.342+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:15:36.661+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 57361 (http) with context path '/'
+2026-10-16T13:15:36.664+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.ChatRejectionCounterTest  : Started ChatRejectionCounterTest in 1.095 seconds (process running for 51.332)
+2026-10-16T13:15:36.673+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 0건
+2026-10-16T13:15:36.765+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-5-exec-1] o.a.c.c.C.[Tomcat-4].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:15:36.765+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-5-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:15:36.767+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-5-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-10-16T13:15:37.063+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatSseAcceptErrorTest]: ChatSseAcceptErrorTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:37.069+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatSseAcceptErrorTest
+2026-10-16T13:15:37.070+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatSseAcceptErrorTest]: ChatSseAcceptErrorTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:37.071+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:37.075+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatSseAcceptErrorTest
+2026-10-16T13:15:37.737+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatSseAcceptRateLimitTest]: ChatSseAcceptRateLimitTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:37.745+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatSseAcceptRateLimitTest
+2026-10-16T13:15:37.746+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatSseAcceptRateLimitTest]: ChatSseAcceptRateLimitTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:37.746+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:37.752+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatSseAcceptRateLimitTest
+2026-10-16T13:15:38.112+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStageHonestyTest]: ChatStageHonestyTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:38.124+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStageHonestyTest
+2026-10-16T13:15:38.126+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStageHonestyTest]: ChatStageHonestyTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:38.126+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:38.136+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStageHonestyTest
+2026-10-16T13:15:40.271+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStreamContractTest]: ChatStreamContractTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:40.277+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStreamContractTest
+2026-10-16T13:15:40.278+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStreamContractTest]: ChatStreamContractTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:40.279+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:40.284+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStreamContractTest
+2026-10-16T13:15:40.688+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStreamExceptionHandlerTest]: ChatStreamExceptionHandlerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:40.701+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+2026-10-16T13:15:40.702+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStreamExceptionHandlerTest]: ChatStreamExceptionHandlerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:40.703+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:40.709+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:15:40.754+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.c.ChatStreamExceptionHandlerTest     : Starting ChatStreamExceptionHandlerTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:15:40.755+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.c.ChatStreamExceptionHandlerTest     : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:15:42.100+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:15:42.106+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:15:42.109+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:15:42.183+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1426 ms
+2026-10-16T13:15:42.354+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Starting...
+2026-10-16T13:15:42.460+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-6 - Added connection org.postgresql.jdbc.PgConnection@557bf0f0
+2026-10-16T13:15:42.460+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-6 - Start completed.
+2026-10-16T13:15:42.466+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:15:42.533+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.029s)
+2026-10-16T13:15:42.597+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:15:42.600+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:15:43.409+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 57369 (http) with context path '/'
+2026-10-16T13:15:43.420+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.c.ChatStreamExceptionHandlerTest     : Started ChatStreamExceptionHandlerTest in 2.701 seconds (process running for 58.088)
+2026-10-16T13:15:43.436+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 0건
+2026-10-16T13:15:43.714+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-6-exec-1] o.a.c.c.C.[Tomcat-5].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:15:43.714+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-6-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:15:43.716+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-6-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-10-16T13:15:44.199+09:00 ERROR 32368 --- [rag-chatbot-backend] [o-auto-6-exec-6] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [731a01b0] POST /api/chat
+
+java.lang.IllegalStateException: upstream boom
+	at com.ragchatbot.controller.ChatStreamExceptionHandlerTest.lambda$stream_failure_keeps_error_log_but_writes_no_json$1(ChatStreamExceptionHandlerTest.java:134) ~[test-classes/:na]
+	at org.mockito.internal.stubbing.StubbedInvocationMatcher.answer(StubbedInvocationMatcher.java:42) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.handler.MockHandlerImpl.handle(MockHandlerImpl.java:103) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.handler.NullResultGuardian.handle(NullResultGuardian.java:29) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.handler.InvocationNotifierHandler.handle(InvocationNotifierHandler.java:34) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.creation.bytebuddy.access.MockMethodInterceptor.doIntercept(MockMethodInterceptor.java:84) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.creation.bytebuddy.access.MockMethodInterceptor.doIntercept(MockMethodInterceptor.java:58) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.creation.bytebuddy.access.MockMethodInterceptor$DispatcherDefaultingToRealMethod.interceptAbstract(MockMethodInterceptor.java:163) ~[mockito-core-5.23.0.jar:na]
+	at com.ragchatbot.openai.OpenAiService$MockitoMock$Bi2H4kux.streamChat(Unknown Source) ~[classes/:na]
+	at com.ragchatbot.service.ChatService.stream(ChatService.java:216) ~[classes/:na]
+	at jdk.internal.reflect.GeneratedMethodAccessor57.invoke(Unknown Source) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359) ~[spring-aop-7.0.9.jar:7.0.9]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:715) ~[spring-aop-7.0.9.jar:7.0.9]
+	at com.ragchatbot.service.ChatService$$SpringCGLIB$$0.stream(<generated>) ~[classes/:na]
+	at com.ragchatbot.controller.ChatController.lambda$chat$0(ChatController.java:62) ~[classes/:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+2026-10-16T13:15:44.317+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.r.exception.GlobalExceptionHandler     : 비동기 요청 타임아웃 POST /api/chat
+2026-10-16T13:15:44.318+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.r.exception.GlobalExceptionHandler     : 비동기 요청 타임아웃 POST /api/chat
+2026-10-16T13:15:47.422+09:00  WARN 32368 --- [rag-chatbot-backend] [o-auto-6-exec-2] c.r.exception.GlobalExceptionHandler     : 비동기 요청 타임아웃 POST /api/chat
+2026-10-16T13:15:47.494+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ConversationCrossAccessTest]: ConversationCrossAccessTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:47.513+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ConversationCrossAccessTest
+2026-10-16T13:15:47.514+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ConversationCrossAccessTest]: ConversationCrossAccessTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:47.515+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:47.530+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ConversationCrossAccessTest
+2026-10-16T13:15:49.655+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.DocFigureFlowTest]: DocFigureFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:49.665+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.DocFigureFlowTest
+2026-10-16T13:15:49.667+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.DocFigureFlowTest]: DocFigureFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:49.668+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:49.674+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.DocFigureFlowTest
+2026-10-16T13:15:50.609+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.FileFlowTest]: FileFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:50.620+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.FileFlowTest
+2026-10-16T13:15:50.622+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.FileFlowTest]: FileFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:50.622+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:50.631+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.FileFlowTest
+2026-10-16T13:15:57.217+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ProfileFlowTest]: ProfileFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:57.225+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ProfileFlowTest
+2026-10-16T13:15:57.226+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ProfileFlowTest]: ProfileFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:57.227+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:57.233+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ProfileFlowTest
+2026-10-16T13:15:59.504+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.UploadRateLimitTest]: UploadRateLimitTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:59.509+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.UploadRateLimitTest
+2026-10-16T13:15:59.510+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.UploadRateLimitTest]: UploadRateLimitTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:59.510+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:15:59.515+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.UploadRateLimitTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:15:59.555+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.UploadRateLimitTest       : Starting UploadRateLimitTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:15:59.556+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.UploadRateLimitTest       : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:15:59.877+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:15:59.878+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:15:59.879+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:15:59.911+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 352 ms
+2026-10-16T13:15:59.970+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Starting...
+2026-10-16T13:15:59.987+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-7 - Added connection org.postgresql.jdbc.PgConnection@54586e29
+2026-10-16T13:15:59.988+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-7 - Start completed.
+2026-10-16T13:15:59.990+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:16:00.026+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.016s)
+2026-10-16T13:16:00.054+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:16:00.055+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:16:00.332+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 50717 (http) with context path '/'
+2026-10-16T13:16:00.336+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.controller.UploadRateLimitTest       : Started UploadRateLimitTest in 0.818 seconds (process running for 75.005)
+2026-10-16T13:16:00.345+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 0건
+2026-10-16T13:16:00.429+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-7-exec-1] o.a.c.c.C.[Tomcat-6].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:16:00.430+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-7-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:16:00.431+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-7-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-16T13:16:01.918+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.exception.GlobalExceptionFallbackTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:16:01.967+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.e.GlobalExceptionFallbackTest        : Starting GlobalExceptionFallbackTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:16:01.967+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.e.GlobalExceptionFallbackTest        : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:16:02.436+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:16:02.437+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:16:02.438+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:16:02.477+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 505 ms
+2026-10-16T13:16:02.563+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-8 - Starting...
+2026-10-16T13:16:02.582+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-8 - Added connection org.postgresql.jdbc.PgConnection@3b858ed8
+2026-10-16T13:16:02.582+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-8 - Start completed.
+2026-10-16T13:16:02.586+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:16:02.631+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.018s)
+2026-10-16T13:16:02.679+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:16:02.681+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:16:03.104+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 50761 (http) with context path '/'
+2026-10-16T13:16:03.109+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.e.GlobalExceptionFallbackTest        : Started GlobalExceptionFallbackTest in 1.183 seconds (process running for 77.777)
+2026-10-16T13:16:03.120+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 0건
+2026-10-16T13:16:03.260+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-8-exec-1] o.a.c.c.C.[Tomcat-7].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:16:03.260+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-8-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:16:03.263+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-8-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+2026-10-16T13:16:04.364+09:00 ERROR 32368 --- [rag-chatbot-backend] [o-auto-8-exec-2] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [7b845747] GET /api/test-boom
+
+java.lang.IllegalStateException: select * from users
+	at com.ragchatbot.exception.GlobalExceptionFallbackTest$BoomController.boom(GlobalExceptionFallbackTest.java:47) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[tomcat-embed-websocket-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$2(FilterChainProxy.java:235) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:376) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:132) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:86) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at com.ragchatbot.security.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317) ~[spring-security-config-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:535) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:406) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1307) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2036) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:949) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:483) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+2026-10-16T13:16:04.661+09:00 ERROR 32368 --- [rag-chatbot-backend] [o-auto-8-exec-6] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [aad42b69] GET /api/test-boom
+
+java.lang.IllegalStateException: select * from users
+	at com.ragchatbot.exception.GlobalExceptionFallbackTest$BoomController.boom(GlobalExceptionFallbackTest.java:47) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[tomcat-embed-websocket-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$2(FilterChainProxy.java:235) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:376) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:132) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:86) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at com.ragchatbot.security.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317) ~[spring-security-config-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:535) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:406) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1307) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2036) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:949) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:483) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+2026-10-16T13:16:05.237+09:00  WARN 32368 --- [rag-chatbot-backend] [o-auto-8-exec-4] c.r.exception.GlobalExceptionHandler     : 요청 본문을 읽지 못함: Unrecognized token 'BROKEN': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); byte offset: #19]
+2026-10-16T13:16:06.066+09:00  WARN 32368 --- [rag-chatbot-backend] [o-auto-8-exec-6] c.r.exception.GlobalExceptionHandler     : 요청 본문을 읽지 못함: Invalid UTF-8 start byte 0xbf
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); byte offset: #7]
+2026-10-16T13:16:06.617+09:00  WARN 32368 --- [rag-chatbot-backend] [o-auto-8-exec-4] c.r.exception.GlobalExceptionHandler     : 요청 본문을 읽지 못함: Required request body is missing: public org.springframework.web.servlet.mvc.method.annotation.SseEmitter com.ragchatbot.controller.ChatController.chat(com.ragchatbot.dto.ChatDtos$ChatRequest)
+2026-10-16T13:16:06.895+09:00  WARN 32368 --- [rag-chatbot-backend] [o-auto-8-exec-8] c.r.exception.GlobalExceptionHandler     : 요청 본문을 읽지 못함: Unrecognized token 'BROKEN': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); byte offset: #19]
+2026-10-16T13:16:07.482+09:00 ERROR 32368 --- [rag-chatbot-backend] [o-auto-8-exec-6] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [aca96218] GET /api/test-boom
+
+java.lang.IllegalStateException: select * from users
+	at com.ragchatbot.exception.GlobalExceptionFallbackTest$BoomController.boom(GlobalExceptionFallbackTest.java:47) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[tomcat-embed-websocket-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$2(FilterChainProxy.java:235) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:376) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:132) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:86) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at com.ragchatbot.security.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317) ~[spring-security-config-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:535) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:406) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1307) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2036) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:949) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:483) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+2026-10-16T13:16:07.490+09:00 ERROR 32368 --- [rag-chatbot-backend] [o-auto-8-exec-7] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [71742276] GET /api/test-boom
+
+java.lang.IllegalStateException: select * from users
+	at com.ragchatbot.exception.GlobalExceptionFallbackTest$BoomController.boom(GlobalExceptionFallbackTest.java:47) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:892) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:622) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.9.jar:7.0.9]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.24.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:132) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:59) ~[tomcat-embed-websocket-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$2(FilterChainProxy.java:235) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:376) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:132) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:86) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at com.ragchatbot.security.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:72) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195) ~[spring-security-web-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317) ~[spring-security-config-7.1.1.jar:7.1.1]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.9.jar:7.0.9]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:111) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:535) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:86) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:71) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:347) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:406) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:71) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1307) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:2036) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:74) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:949) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:483) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:74) ~[tomcat-embed-core-11.0.24.jar:11.0.24]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+  POST /files  OpenAI-Beta=(없음)
+  POST /vector_stores/shared-store/files  OpenAI-Beta=assistants=v2
+  GET /vector_stores/shared-store/files/file-1  OpenAI-Beta=assistants=v2
+  DELETE /vector_stores/shared-store/files/file-1  OpenAI-Beta=assistants=v2
+  DELETE /files/file-1  OpenAI-Beta=(없음)
+  DELETE /vector_stores/conversation-store  OpenAI-Beta=assistants=v2
+  POST /files  OpenAI-Beta=(없음)
+  POST /vector_stores/shared-store/files  OpenAI-Beta=assistants=v2
+  GET /vector_stores/shared-store/files/file-1  OpenAI-Beta=assistants=v2
+  DELETE /vector_stores/shared-store/files/file-1  OpenAI-Beta=assistants=v2
+  DELETE /files/file-1  OpenAI-Beta=(없음)
+  DELETE /vector_stores/conversation-store  OpenAI-Beta=assistants=v2
+2026-10-16T13:16:07.669+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai vector_store_file 삭제 실패 file-1: 500 Internal Server Error: [no body]
+2026-10-16T13:16:07.670+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : 스토어 연결 해제 실패로 file file-1 은 지우지 않음 - 동기화하면 목록에 다시 보여 다시 지울 수 있음
+2026-10-16T13:16:07.697+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-16T13:16:07.705+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-16T13:16:07.713+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-16T13:16:07.722+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-16T13:16:07.729+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-16T13:16:07.938+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.openai.OpenAiServiceBoundaryTest]: OpenAiServiceBoundaryTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:07.961+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.openai.OpenAiServiceBoundaryTest
+2026-10-16T13:16:07.962+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.openai.OpenAiServiceBoundaryTest]: OpenAiServiceBoundaryTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:07.963+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:07.969+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.openai.OpenAiServiceBoundaryTest
+2026-10-16T13:16:08.030+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.repository.UserRepositoryDuplicateKeyTest]: UserRepositoryDuplicateKeyTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:08.048+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.repository.UserRepositoryDuplicateKeyTest
+2026-10-16T13:16:08.048+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.repository.UserRepositoryDuplicateKeyTest]: UserRepositoryDuplicateKeyTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:08.050+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:08.059+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.repository.UserRepositoryDuplicateKeyTest
+2026-10-16T13:16:08.073+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.repository.UserRepositoryUuidTest]: UserRepositoryUuidTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:08.079+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.repository.UserRepositoryUuidTest
+2026-10-16T13:16:08.080+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.repository.UserRepositoryUuidTest]: UserRepositoryUuidTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:08.080+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:08.087+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.repository.UserRepositoryUuidTest
+2026-10-16T13:16:08.111+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.security.JwtRefreshDisabledTest]: JwtRefreshDisabledTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:08.125+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.security.JwtRefreshDisabledTest
+2026-10-16T13:16:08.128+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.security.JwtRefreshDisabledTest]: JwtRefreshDisabledTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:08.128+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:08.134+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.security.JwtRefreshDisabledTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:16:08.166+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.security.JwtRefreshDisabledTest      : Starting JwtRefreshDisabledTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:16:08.166+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.security.JwtRefreshDisabledTest      : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:16:08.470+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:16:08.471+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:16:08.472+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:16:08.502+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 333 ms
+2026-10-16T13:16:08.564+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-9 - Starting...
+2026-10-16T13:16:08.580+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-9 - Added connection org.postgresql.jdbc.PgConnection@5ea34883
+2026-10-16T13:16:08.580+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-9 - Start completed.
+2026-10-16T13:16:08.582+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:16:08.615+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.013s)
+2026-10-16T13:16:08.642+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:16:08.643+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:16:08.901+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 50831 (http) with context path '/'
+2026-10-16T13:16:08.905+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.security.JwtRefreshDisabledTest      : Started JwtRefreshDisabledTest in 0.767 seconds (process running for 83.574)
+2026-10-16T13:16:08.916+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 0건
+2026-10-16T13:16:09.003+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-9-exec-1] o.a.c.c.C.[Tomcat-8].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:16:09.004+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-9-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:16:09.005+09:00  INFO 32368 --- [rag-chatbot-backend] [o-auto-9-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-16T13:16:09.282+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.security.JwtRefreshFarFromExpiryTest]: JwtRefreshFarFromExpiryTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:09.289+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.security.JwtRefreshFarFromExpiryTest
+2026-10-16T13:16:09.290+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.security.JwtRefreshFarFromExpiryTest]: JwtRefreshFarFromExpiryTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:09.290+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:09.298+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.security.JwtRefreshFarFromExpiryTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:16:09.341+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.s.JwtRefreshFarFromExpiryTest        : Starting JwtRefreshFarFromExpiryTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:16:09.341+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.s.JwtRefreshFarFromExpiryTest        : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:16:09.699+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:16:09.700+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:16:09.700+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:16:09.733+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 390 ms
+2026-10-16T13:16:09.774+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-10 - Starting...
+2026-10-16T13:16:09.794+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-10 - Added connection org.postgresql.jdbc.PgConnection@412dd71b
+2026-10-16T13:16:09.794+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-10 - Start completed.
+2026-10-16T13:16:09.797+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:16:09.837+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.017s)
+2026-10-16T13:16:09.874+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:16:09.876+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:16:10.147+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 50837 (http) with context path '/'
+2026-10-16T13:16:10.151+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.s.JwtRefreshFarFromExpiryTest        : Started JwtRefreshFarFromExpiryTest in 0.849 seconds (process running for 84.819)
+2026-10-16T13:16:10.159+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 0건
+2026-10-16T13:16:10.246+09:00  INFO 32368 --- [rag-chatbot-backend] [-auto-10-exec-1] o.a.c.c.C.[Tomcat-9].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:16:10.246+09:00  INFO 32368 --- [rag-chatbot-backend] [-auto-10-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:16:10.247+09:00  INFO 32368 --- [rag-chatbot-backend] [-auto-10-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-16T13:16:10.497+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] s.c.a.AnnotationConfigApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'jwtService': Failed to instantiate [com.ragchatbot.security.JwtService]: Constructor threw exception
+2026-10-16T13:16:10.500+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] s.c.a.AnnotationConfigApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'fileAccessTokenService': Failed to instantiate [com.ragchatbot.security.FileAccessTokenService]: Constructor threw exception
+2026-10-16T13:16:10.510+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] s.c.a.AnnotationConfigApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'jwtService': Failed to instantiate [com.ragchatbot.security.JwtService]: Constructor threw exception
+2026-10-16T13:16:10.520+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.security.JwtSlidingRefreshTest]: JwtSlidingRefreshTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:10.525+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.security.JwtSlidingRefreshTest
+2026-10-16T13:16:10.526+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.security.JwtSlidingRefreshTest]: JwtSlidingRefreshTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:10.526+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-16T13:16:10.530+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.security.JwtSlidingRefreshTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-16T13:16:10.553+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.security.JwtSlidingRefreshTest       : Starting JwtSlidingRefreshTest using Java 17.0.19 with PID 32368 (started by User in D:\dev\rag-chatbot\.issue\worktrees\329-backend-cleanup\backend)
+2026-10-16T13:16:10.553+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.security.JwtSlidingRefreshTest       : No active profile set, falling back to 1 default profile: "default"
+2026-10-16T13:16:10.767+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-16T13:16:10.767+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-16T13:16:10.768+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-16T13:16:10.793+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 239 ms
+2026-10-16T13:16:10.840+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-11 - Starting...
+2026-10-16T13:16:10.854+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-11 - Added connection org.postgresql.jdbc.PgConnection@1b1d094a
+2026-10-16T13:16:10.855+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-11 - Start completed.
+2026-10-16T13:16:10.856+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:51765/test?loggerLevel=OFF (PostgreSQL 16.14)
+2026-10-16T13:16:10.888+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.012s)
+2026-10-16T13:16:10.915+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+2026-10-16T13:16:10.916+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-16T13:16:11.125+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 50843 (http) with context path '/'
+2026-10-16T13:16:11.127+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.security.JwtSlidingRefreshTest       : Started JwtSlidingRefreshTest in 0.594 seconds (process running for 85.795)
+2026-10-16T13:16:11.135+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 0건
+2026-10-16T13:16:11.209+09:00  INFO 32368 --- [rag-chatbot-backend] [-auto-11-exec-1] o.a.c.c.C.[Tomcat-10].[localhost].[/]    : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-16T13:16:11.209+09:00  INFO 32368 --- [rag-chatbot-backend] [-auto-11-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-16T13:16:11.209+09:00  INFO 32368 --- [rag-chatbot-backend] [-auto-11-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-10-16T13:16:12.253+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.r.service.AdminDocumentService         : 문서 DB 기록 실패 - OpenAI 리소스 회수 시도 file_id=file-abc store=vs-shared
+2026-10-16T13:16:12.558+09:00  WARN 32368 --- [rag-chatbot-backend] [           main] c.r.service.OrphanCleanupScheduler       : 고아 첨부 회수 실패 - 다음 주기에 재시도
+
+java.lang.IllegalStateException: 1차 실패
+	at com.ragchatbot.service.FileService.cleanupOrphans(FileService.java:151) ~[classes/:na]
+	at com.ragchatbot.service.OrphanCleanupScheduler.cleanup(OrphanCleanupScheduler.java:36) ~[classes/:na]
+	at com.ragchatbot.service.OrphanCleanupSchedulerTest.lambda$second_pass_runs_even_if_first_fails$0(OrphanCleanupSchedulerTest.java:42) ~[test-classes/:na]
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:66) ~[assertj-core-3.27.7.jar:na]
+	at org.assertj.core.api.AssertionsForClassTypes.catchThrowable(AssertionsForClassTypes.java:908) ~[assertj-core-3.27.7.jar:na]
+	at org.assertj.core.api.AssertionsForClassTypes.assertThatCode(AssertionsForClassTypes.java:879) ~[assertj-core-3.27.7.jar:na]
+	at org.assertj.core.api.Assertions.assertThatCode(Assertions.java:1396) ~[assertj-core-3.27.7.jar:na]
+	at com.ragchatbot.service.OrphanCleanupSchedulerTest.second_pass_runs_even_if_first_fails(OrphanCleanupSchedulerTest.java:42) ~[test-classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:701) ~[junit-platform-commons-6.0.3.jar:6.0.3]
+	at org.junit.platform.commons.support.ReflectionSupport.invokeMethod(ReflectionSupport.java:502) ~[junit-platform-commons-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.support.MethodReflectionUtils.invoke(MethodReflectionUtils.java:45) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:61) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:124) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:163) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:148) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:123) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:105) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:99) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:66) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:47) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:39) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:104) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:98) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invokeVoid(InterceptingExecutableInvoker.java:71) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$0(TestMethodTestDescriptor.java:219) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:215) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:157) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:70) ~[junit-jupiter-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:176) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511) ~[na:na]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:42) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$2(NodeTestTask.java:180) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$1(NodeTestTask.java:166) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:138) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$0(NodeTestTask.java:164) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:74) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:163) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:116) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:36) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:52) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:58) ~[junit-platform-engine-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.executeEngine(EngineExecutionOrchestrator.java:246) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.failOrExecuteEngine(EngineExecutionOrchestrator.java:218) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:179) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:108) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:66) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:157) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:65) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:125) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:114) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:58) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.InterceptingLauncher.lambda$execute$2(InterceptingLauncher.java:57) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.ClasspathAlignmentCheckingLauncherInterceptor.intercept(ClasspathAlignmentCheckingLauncherInterceptor.java:25) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.InterceptingLauncher.execute(InterceptingLauncher.java:56) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:58) ~[junit-platform-launcher-6.0.3.jar:6.0.3]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.apache.maven.surefire.api.util.ReflectionUtils.invokeMethodWithArray(ReflectionUtils.java:125) ~[surefire-api-3.5.6.jar:3.5.6]
+	at org.apache.maven.surefire.junitplatform.LauncherAdapter.executeWithCancellationToken(LauncherAdapter.java:68) ~[surefire-junit-platform-3.5.6.jar:3.5.6]
+	at org.apache.maven.surefire.junitplatform.LauncherAdapter.execute(LauncherAdapter.java:54) ~[surefire-junit-platform-3.5.6.jar:3.5.6]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:203) ~[surefire-junit-platform-3.5.6.jar:3.5.6]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:168) ~[surefire-junit-platform-3.5.6.jar:3.5.6]
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:136) ~[surefire-junit-platform-3.5.6.jar:3.5.6]
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385) ~[surefire-booter-3.5.6.jar:3.5.6]
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162) ~[surefire-booter-3.5.6.jar:3.5.6]
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507) ~[surefire-booter-3.5.6.jar:3.5.6]
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495) ~[surefire-booter-3.5.6.jar:3.5.6]
+
+2026-10-16T13:16:12.583+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.service.OrphanCleanupScheduler       : 고아 첨부 1건 회수(유예 60분)
+2026-10-16T13:16:12.585+09:00  INFO 32368 --- [rag-chatbot-backend] [           main] c.r.service.OrphanCleanupScheduler       : 참조 없는 첨부 파일 2건 회수(유예 60분)
+EXIT=0
