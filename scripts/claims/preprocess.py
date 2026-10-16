@@ -244,7 +244,12 @@ def claims_to_md(xlsx, terms):
         "### 알람 코드별 건수와 최종원인 (불량 내용 기준)", "",
         "집계 기준 : 「불량 내용」에 그 코드가 한 번이라도 나온 클레임 수. `AL.2144` · `AL2144` · `L.2144` · `al2144` · 접두 없는 `2144`",
         "같은 표기 변형은 하나로 셌다. 한 클레임에 코드가 여럿이면 각 코드에 하나씩 센다(합이 총 건수보다 크다).", "",
-        *breakdown(by_alarm, min_count=2, with_nums=True), "",
+        *breakdown(by_alarm, min_count=2), "",
+        # 번호 목록은 따로 둔다 - 위 표에 붙이면 AL.2144 한 줄에 번호가 115개라 조각이 숫자로 채워져, 「AL.2146 사례」 같은
+        # 질문에서 이 표가 검색에서 밀렸다(#321 측정 F2 : 7건 분포를 3회 모두 못 찾음)
+        "### 알람 코드별 클레임 번호 (위 알람 표의 각 줄이 어느 클레임인지)", "",
+        *[f"- {k} : 클레임 {nums(rs)}" for k, rs in sorted(by_alarm.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+          if len(rs) >= 2], "",
         "### 알람 코드 × 입고 연도별 건수와 최종원인 (위 알람 표를 입고일자의 연도로 나눈 것)", "",
         *breakdown({k: v for k, v in by_alarm_year.items() if len(by_alarm[k.split(" · ")[0]]) >= 2},
                    by_name=True, with_nums=True), "",
