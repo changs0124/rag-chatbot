@@ -1,0 +1,55 @@
+Using Node v24.19.0
+
+[1m▶ 셸 구문 검사[0m
+Using Node v24.19.0
+셸 구문 검사 12개
+셸 구문 검사 통과
+[32m  ✓ 셸 구문 검사[0m
+
+[1m▶ 셸 정적 분석[0m
+[33m  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다[0m
+
+[1m▶ 병합 충돌 표시[0m
+Using Node v24.19.0
+충돌 표시 검사 통과 (파일 877개)
+[32m  ✓ 병합 충돌 표시[0m
+
+[1m▶ 문서 참조 실재[0m
+Using Node v24.19.0
+참조 수집 301건 · 실재 검사 283건
+문서 참조 검사 통과
+[32m  ✓ 문서 참조 실재[0m
+
+[1m▶ 문서 섹션 이름 대조[0m
+Using Node v24.19.0
+섹션 참조 31 건 대조
+섹션 참조 검사 통과
+[32m  ✓ 문서 섹션 이름 대조[0m
+
+[1m▶ 응답 계약 대조[0m
+Using Node v24.19.0
+AdminDtos.DocumentResponse   id filename byteSize status uploadedByName createdAt
+summaryResult <arg column>   id filename byteSize status uploadedByName createdAt
+types.ts RagDocument         id filename byteSize status uploadedByName createdAt
+AdminPage.test.tsx doc()     id filename byteSize status uploadedByName createdAt
+✓ 응답 계약 4곳 일치 (6필드)
+[32m  ✓ 응답 계약 대조[0m
+
+[1m▶ 런타임 버전 대조(java)[0m
+Using Node v24.19.0
+java : pom.xml java.version=17 / 실행 중=17.0.19
+OK
+[32m  ✓ 런타임 버전 대조(java)[0m
+
+[1m▶ 런타임 버전 대조(node)[0m
+Using Node v24.19.0
+node : .nvmrc=24 / engines.node=24.x / 실행 중=24.19.0
+OK
+[32m  ✓ 런타임 버전 대조(node)[0m
+
+────────────────────────────
+[32m돌린 검사는 전부 통과[0m
+[33m
+건너뜀 1건 - 이 검사들은 돌지 않았다:[0m
+[33m  - 셸 정적 분석 - shellcheck 없음 - CI 러너에는 기본 설치돼 있다[0m
+[33m도구를 설치하고 다시 돌리기 전까지 이 항목은 "통과"가 아니라 "모름"이다.[0m

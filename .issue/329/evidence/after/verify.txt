@@ -1,0 +1,71 @@
+after: 80aa9e3 (rebased on origin/main) + review fixes, ./mvnw -q clean verify EXIT=0
+main floor BACKEND_MIN=297 -> measured 297 (no test added/removed/merged)
+Flyway: 'Migrating schema' appears 9x in verify-full.log (spring.flyway block removed, migrations still run)
+check-all docs=0 quick=0 (shellcheck absent locally -> unknown)
+
+Completion-criteria notes:
+- fileType(): criterion narrowed to AttachmentRef/openai. 'git grep -n fileType() backend/src/main/java/com/ragchatbot/openai' = 0 hits and AttachmentRef has no fileType.
+  'git grep fileType() backend/src/main' still hits ConversationService:83 (Attachment entity -> AttachmentResponse.fileType, REST contract) - out of scope, not claimed 0.
+- orphan-cleanup-cron: inline @Scheduled default removed; the remaining hit is the yml key itself (application.yml).
+- Local compose boot skipped: application.yml always defines app.file.orphan-cleanup-cron (${ORPHAN_CLEANUP_CRON:0 0 * * * *}) so removing the inline default cannot leave it unresolved,
+  and flyway keys equal Boot defaults; every integration test boots the full context from application.yml (Flyway migrated). Compose from this worktree would also replace the user's local stack/volumes.
+
+suites=58 tests=297 failures=0 errors=0 skipped=0 counted(tests-skipped)=297
+  com.ragchatbot.config.AdminRoleSyncFlowTest 6
+  com.ragchatbot.config.AdminRoleSynchronizerTest 3
+  com.ragchatbot.config.AppModeGuardTest 6
+  com.ragchatbot.config.ChatExecutorPoolBindingTest 2
+  com.ragchatbot.config.EmailDomainPolicyBindingTest 5
+  com.ragchatbot.config.EmailDomainPolicyTest 12
+  com.ragchatbot.controller.AdminDocumentFlowTest 21
+  com.ragchatbot.controller.AdminDocumentSyncFlowTest 7
+  com.ragchatbot.controller.AdminUserFlowTest 12
+  com.ragchatbot.controller.AuthDomainAllowlistTest 6
+  com.ragchatbot.controller.AuthFlowTest 16
+  com.ragchatbot.controller.ChatBackPressureTest 2
+  com.ragchatbot.controller.ChatFlowTest 15
+  com.ragchatbot.controller.ChatRejectionCounterTest 1
+  com.ragchatbot.controller.ChatSseAcceptErrorTest 2
+  com.ragchatbot.controller.ChatSseAcceptRateLimitTest 1
+  com.ragchatbot.controller.ChatStageHonestyTest 6
+  com.ragchatbot.controller.ChatStreamContractTest 1
+  com.ragchatbot.controller.ChatStreamExceptionHandlerTest 3
+  com.ragchatbot.controller.ConversationCrossAccessTest 5
+  com.ragchatbot.controller.DocFigureFlowTest 4
+  com.ragchatbot.controller.FileFlowTest 16
+  com.ragchatbot.controller.HealthControllerTest 1
+  com.ragchatbot.controller.ProfileFlowTest 6
+  com.ragchatbot.controller.UploadRateLimitTest 3
+  com.ragchatbot.exception.GlobalExceptionFallbackTest 14
+  com.ragchatbot.openai.CitationFromMarkupTest 6
+  com.ragchatbot.openai.CitationMarkupFilterTest 7
+  com.ragchatbot.openai.OpenAiMockFigureTest 2
+  com.ragchatbot.openai.OpenAiRealBetaHeaderTest 2
+  com.ragchatbot.openai.OpenAiRealDeleteDocumentTest 3
+  com.ragchatbot.openai.OpenAiRealDeleteResourcesTest 2
+  com.ragchatbot.openai.OpenAiRealInstructionsTest 5
+  com.ragchatbot.openai.OpenAiRealStageMappingTest 4
+  com.ragchatbot.openai.OpenAiRealStoreFilesTest 3
+  com.ragchatbot.openai.OpenAiRealStreamingSpikeTest 1
+  com.ragchatbot.openai.OpenAiRealTimeoutBoundaryTest 4
+  com.ragchatbot.openai.OpenAiRealUsageTest 3
+  com.ragchatbot.openai.OpenAiServiceBoundaryTest 2
+  com.ragchatbot.openai.OpenAiServiceModeSelectionTest 3
+  com.ragchatbot.openai.SnippetPickTest 6
+  com.ragchatbot.repository.UserRepositoryDuplicateKeyTest 1
+  com.ragchatbot.repository.UserRepositoryUuidTest 2
+  com.ragchatbot.security.JwtRefreshDisabledTest 1
+  com.ragchatbot.security.JwtRefreshFarFromExpiryTest 1
+  com.ragchatbot.security.JwtSecretLengthContextTest 4
+  com.ragchatbot.security.JwtSecretPolicyTest 6
+  com.ragchatbot.security.JwtSlidingRefreshTest 6
+  com.ragchatbot.service.AdminDocumentStatusRefreshTest 6
+  com.ragchatbot.service.AdminDocumentUploadCompensationTest 2
+  com.ragchatbot.service.AdminUserCreateRaceTest 1
+  com.ragchatbot.service.ChatConcurrencyLimiterTest 5
+  com.ragchatbot.service.ChatHistoryTest 11
+  com.ragchatbot.service.ChatStreamAbortTest 4
+  com.ragchatbot.service.ChatStreamTimeoutTest 6
+  com.ragchatbot.service.DocFigureServiceTest 6
+  com.ragchatbot.service.OrphanCleanupSchedulerTest 3
+  com.ragchatbot.service.RateLimiterKeyCapTest 3
