@@ -1,0 +1,62 @@
+# git grep (CHANGELOG, .issue 제외) - 변경 전
+backend/src/main/java/com/ragchatbot/config/CorsConfig.java:30:		// 눈에 띄지 않는 형태라 케이스(TC-OPS-024)로 잠가 둠
+backend/src/main/java/com/ragchatbot/exception/GlobalExceptionHandler.java:107:	 * 클라이언트에서 이 경로를 밟았다(TC-OPS-014~016).
+backend/src/main/java/com/ragchatbot/exception/GlobalExceptionHandler.java:110:	 * {@link #handleUnexpected} 와 같은 이유로 노출 대상이 아님(TC-OPS-018).
+backend/src/main/java/com/ragchatbot/exception/GlobalExceptionHandler.java:123:	 * 받아 500 이었다(#217, TC-OPS-022~023).
+backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java:76:	 * TC-OPS-025 : SSE 타임아웃은 WARN 한 줄이고 스트림에 JSON 이 섞이지 않는다.
+backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java:124:	 * TC-OPS-026 : 스트림 도중 오류는 {@code error} 이벤트로 끝나고 JSON 이 섞이지 않는다.
+backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java:146:	 * TC-OPS-027 : 커밋 전 비동기 타임아웃은 503 JSON, 커밋 뒤에는 아무것도 쓰지 않는다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:24: * 예외 최종 폴백 (FEAT-OPS-002 · TC-OPS-010~013).
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:56:	/** TC-OPS-010 : 예상하지 못한 예외가 ApiError 형태로 나간다 */
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:68:	/** TC-OPS-011 : 응답에 상관 ID가 실린다 - 이 번호로 서버 로그를 찾는다 */
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:83:	 * TC-OPS-012 : 내부 예외 메시지가 응답에 노출되지 않는다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:97:	 * TC-OPS-013 : 도메인 예외는 폴백에 걸리지 않는다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:122:	 * TC-OPS-014 : 문법이 깨진 JSON 본문은 400 이다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:139:	 * TC-OPS-015 : 인코딩이 어긋난 본문도 400 이다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:159:	 * TC-OPS-016 : 본문이 아예 없어도 400 이다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:175:	 * TC-OPS-017 : 경로 변수의 타입이 어긋나도 400 이다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:191:	 * TC-OPS-018 : 400 으로 내려도 내부 정보는 여전히 새지 않는다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:194:	 * 그것을 그대로 실어 보내면 TC-OPS-012 로 막아 둔 노출이 다른 문으로 되살아난다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:210:	 * TC-OPS-019 : 없는 URL 은 404 다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:227:	 * TC-OPS-020 : 미지원 메서드는 405 이고 Allow 헤더를 단다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:246:	 * TC-OPS-021 : 미지원 미디어 타입은 415 다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:248:	 * <p>본문을 읽을 수 없는 것(400·TC-OPS-014)과 다른 사건이다. 이쪽은 본문에 닿기 전, 협상 단계에서
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:265:	 * TC-OPS-022 : 멀티파트인데 {@code file} 파트가 없으면 400 이다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:285:	 * TC-OPS-023 : 멀티파트가 아닌 요청을 업로드 경로로 보내도 400 이다.
+backend/src/test/java/com/ragchatbot/exception/GlobalExceptionFallbackTest.java:288:	 * {@code MultipartException} 이 난다. TC-OPS-022 와 같은 「업로드 형식이 틀림」 한 갈래다.
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealUsageTest.java:16: * 완료 이벤트의 사용량 파싱 (FEAT-OPS-001 · TC-OPS-001~002).
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealUsageTest.java:38:	/** TC-OPS-001 : 완료 응답의 사용량이 결과에 실린다 */
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealUsageTest.java:58:	 * TC-OPS-002 : 사용량이 없으면 null 로 남는다.
+backend/src/test/java/com/ragchatbot/security/JwtRefreshDisabledTest.java:17: * 슬라이딩 재발급을 끈 경우 (FEAT-OPS-003 · TC-OPS-021 · TC-OPS-023).
+backend/src/test/java/com/ragchatbot/security/JwtRefreshDisabledTest.java:29:	/** TC-OPS-023 : 임계가 0이면 재발급하지 않는다 - 되돌리기 경로가 실제로 동작하는지 */
+backend/src/test/java/com/ragchatbot/security/JwtRefreshFarFromExpiryTest.java:17: * 만료가 아직 먼 토큰 (FEAT-OPS-003 · TC-OPS-021).
+backend/src/test/java/com/ragchatbot/security/JwtRefreshFarFromExpiryTest.java:20: * "매 요청 재발급" 하는 구현도 TC-OPS-020 을 통과해 버린다 - 서명 연산이 요청마다 붙고
+backend/src/test/java/com/ragchatbot/security/JwtSlidingRefreshTest.java:24: * 세션 슬라이딩 재발급 (FEAT-OPS-003 · TC-OPS-020~024).
+backend/src/test/java/com/ragchatbot/security/JwtSlidingRefreshTest.java:45:	/** TC-OPS-020 : 만료가 가까우면 새 토큰이 헤더로 온다 */
+backend/src/test/java/com/ragchatbot/security/JwtSlidingRefreshTest.java:57:	 * TC-OPS-022 : 재발급된 토큰으로 인증된다.
+backend/src/test/java/com/ragchatbot/security/JwtSlidingRefreshTest.java:121:	 * TC-OPS-024 : 노출 헤더에 재발급 헤더가 등록돼 있다.
+docs/02_architecture/backend.md:84:  도중 오류는 폴백의 `ERROR` 그대로다 — 후자는 실제 원인의 유일한 서버 기록이다. TC-OPS-025~027 이 잠근다.
+docs/02_architecture/backend.md:88:  **Spring 내장 MVC 예외(본문 파싱 · 라우팅 · 업로드)는 전용 핸들러로 4xx 를 낸다** — TC-OPS-014~023 이 잠근다.
+frontend/src/lib/refresh.test.ts:6: * 세션 슬라이딩 재발급 수신 (FEAT-OPS-003 · TC-OPS-025).
+
+# 정의(javadoc 선두 'TC-OPS-NNN :') 집계
+      1 TC-OPS-001
+      1 TC-OPS-002
+      1 TC-OPS-010
+      1 TC-OPS-011
+      1 TC-OPS-012
+      1 TC-OPS-013
+      1 TC-OPS-014
+      1 TC-OPS-015
+      1 TC-OPS-016
+      1 TC-OPS-017
+      1 TC-OPS-018
+      1 TC-OPS-019
+      2 TC-OPS-020
+      1 TC-OPS-021
+      2 TC-OPS-022
+      2 TC-OPS-023
+      1 TC-OPS-024
+      1 TC-OPS-025
+      1 TC-OPS-026
+      1 TC-OPS-027
