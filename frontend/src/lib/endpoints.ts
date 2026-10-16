@@ -1,4 +1,4 @@
-import { adoptRefreshedToken, api, API_BASE, authHeaders, toApiError } from './api'
+import { adoptRefreshedToken, api, API_BASE, authHeaders, getToken, toApiError } from './api'
 import type {
   AdminUser,
   Attachment,
@@ -79,6 +79,7 @@ export async function streamChat(
   handlers: ChatStreamHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
+  const sentWith = getToken()
   const res = await fetch(API_BASE + '/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -86,7 +87,7 @@ export async function streamChat(
     signal,
   })
   // 이 경로는 api 래퍼를 안 거치므로 토큰 갱신·만료 처리를 여기서 직접 물림
-  adoptRefreshedToken(res)
+  adoptRefreshedToken(res, sentWith)
   if (!res.ok || !res.body) {
     const err = await toApiError(res, '/api/chat')
     handlers.onError?.(err.message)

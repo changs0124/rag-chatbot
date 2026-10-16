@@ -56,10 +56,13 @@ export function handleUnauthorized(path: string): void {
  *
  * **로그아웃 뒤에 도착한 응답의 헤더는 버린다(#359).** 로그아웃 전에 떠난 요청이 늦게 돌아와 토큰을 다시 쓰면
  * localStorage 에 남아, 새로고침하면 로그아웃한 세션으로 다시 들어간다.
+ *
+ * **보낸 세션과 지금 세션이 다르면 버린다(#363).** `sentWith` 는 요청을 보낼 때의 토큰 - A 로 보낸 요청이
+ * 로그아웃 → B 로그인 뒤에 돌아오면 A 의 새 토큰이 B 세션을 덮는다. 로그아웃(지금 `null`)도 같은 비교로 걸린다.
  */
-export function adoptRefreshedToken(res: Response): void {
+export function adoptRefreshedToken(res: Response, sentWith: string | null): void {
   const next = res.headers.get('X-Refresh-Token')
-  if (next && token !== null) setToken(next)
+  if (next && token !== null && token === sentWith) setToken(next)
 }
 
 /**
@@ -108,6 +111,7 @@ export function authHeaders(): Record<string, string> {
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const sentWith = token
   const headers = authHeaders()
 
   let body: BodyInit | undefined
@@ -124,7 +128,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body,
     signal: options.signal,
   })
-  adoptRefreshedToken(res)
+  adoptRefreshedToken(res, sentWith)
   if (!res.ok) throw await toApiError(res, path)
   if (res.status === 204) return undefined as T
   const contentType = res.headers.get('content-type') ?? ''
