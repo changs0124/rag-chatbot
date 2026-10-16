@@ -61,7 +61,7 @@ class AdminRoleSyncFlowTest extends AbstractPgIntegrationTest {
 	void listed_account_matches_case_insensitively() {
 		createUser("mixed-case@b.com");
 
-		userRepository.promoteAdmins(AdminRoleSynchronizer.parse("Mixed-Case@B.COM"));
+		userRepository.promoteAdmins(EmailDomainPolicy.parseList("Mixed-Case@B.COM"));
 
 		assertThat(roleOf("mixed-case@b.com")).isEqualTo("admin");
 	}

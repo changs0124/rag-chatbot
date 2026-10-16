@@ -188,7 +188,7 @@ public class OpenAiRealService implements OpenAiService {
 		body.put("input", buildInput(input));
 		body.put("stream", true);
 		// 공용 Store 미설정이면 file_search 없이 일반 응답(출처 빈 리스트 → noSource=true)
-		if (sharedVectorStoreId != null && !sharedVectorStoreId.isBlank()) {
+		if (hasSharedVectorStore()) {
 			body.put("tools", List.of(Map.of(
 					"type", "file_search",
 					"vector_store_ids", List.of(sharedVectorStoreId))));
@@ -223,8 +223,7 @@ public class OpenAiRealService implements OpenAiService {
 	 */
 	private Object buildInput(ChatInput input) {
 		String text = input.userMessage() == null ? "" : input.userMessage();
-		List<AttachmentRef> images = input.attachments() == null ? List.of()
-				: input.attachments().stream().filter(a -> "image".equals(a.fileType())).toList();
+		List<AttachmentRef> images = input.attachments() == null ? List.of() : input.attachments();
 		List<Turn> history = input.history() == null ? List.of() : input.history();
 
 		if (history.isEmpty() && images.isEmpty()) {

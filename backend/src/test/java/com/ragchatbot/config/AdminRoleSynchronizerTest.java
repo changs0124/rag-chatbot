@@ -17,21 +17,21 @@ class AdminRoleSynchronizerTest {
 	/** TC-ADMIN-005 : 미설정이면 관리자가 0명 */
 	@Test
 	void blank_list_yields_no_admins() {
-		assertThat(AdminRoleSynchronizer.parse(null)).isEmpty();
-		assertThat(AdminRoleSynchronizer.parse("")).isEmpty();
-		assertThat(AdminRoleSynchronizer.parse("   ")).isEmpty();
+		assertThat(EmailDomainPolicy.parseList(null)).isEmpty();
+		assertThat(EmailDomainPolicy.parseList("")).isEmpty();
+		assertThat(EmailDomainPolicy.parseList("   ")).isEmpty();
 	}
 
 	/** TC-ADMIN-003 : 대소문자를 가리지 않는다 */
 	@Test
 	void emails_are_lowercased() {
-		assertThat(AdminRoleSynchronizer.parse("OPS@Company.com"))
+		assertThat(EmailDomainPolicy.parseList("OPS@Company.com"))
 				.containsExactly("ops@company.com");
 	}
 
 	@Test
 	void list_is_split_trimmed_and_deduped() {
-		assertThat(AdminRoleSynchronizer.parse(" a@b.com , A@B.com ,, c@d.com "))
+		assertThat(EmailDomainPolicy.parseList(" a@b.com , A@B.com ,, c@d.com "))
 				.isEqualTo(List.of("a@b.com", "c@d.com"));
 	}
 }

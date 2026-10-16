@@ -1,5 +1,6 @@
 package com.ragchatbot.config;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -28,7 +29,7 @@ public class EmailDomainPolicy {
 			@Value("${app.auth.allowed-email-domains}") String allowedDomains,
 			@Value("${app.admin.emails}") String adminEmails) {
 		this.allowedDomains = parseDomains(allowedDomains);
-		this.adminEmails = AdminRoleSynchronizer.parse(adminEmails);
+		this.adminEmails = parseList(adminEmails);
 		if ("live".equals(AppModeGuard.normalize(mode)) && this.allowedDomains.isEmpty()) {
 			throw new IllegalStateException(
 					"APP_MODE=live 인데 ALLOWED_EMAIL_DOMAINS 가 비어 있음. 계정 허용 도메인을 env로 주입할 것");
@@ -43,9 +44,24 @@ public class EmailDomainPolicy {
 		return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
 	}
 
+	/**
+	 * 콤마 목록(이메일·도메인 명단)을 {@link #normalize} 눈금으로 파싱한다. 명단 비교가 {@code lower(email)}
+	 * 기준이므로 정규화와 한 클래스에 두어야 대소문자만 다른 명단도 맞는다
+	 */
+	public static List<String> parseList(String raw) {
+		if (raw == null || raw.isBlank()) {
+			return List.of();
+		}
+		return Arrays.stream(raw.split(","))
+				.map(EmailDomainPolicy::normalize)
+				.filter(s -> !s.isEmpty())
+				.distinct()
+				.toList();
+	}
+
 	/** 도메인 명단 파싱. {@code @} 를 붙여 적어도 받아 준다 - 헷갈리기 쉬운 표기라 기동을 막을 이유가 없다 */
 	static List<String> parseDomains(String raw) {
-		return AdminRoleSynchronizer.parse(raw).stream()
+		return parseList(raw).stream()
 				.map(s -> s.startsWith("@") ? s.substring(1) : s)
 				.filter(s -> !s.isEmpty())
 				.distinct()

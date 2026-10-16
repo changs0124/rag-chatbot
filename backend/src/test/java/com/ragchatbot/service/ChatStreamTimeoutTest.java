@@ -1,9 +1,10 @@
 package com.ragchatbot.service;
 
+import static com.ragchatbot.service.ChatStreamTestSupport.chatService;
+import static com.ragchatbot.service.ChatStreamTestSupport.prepared;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -12,8 +13,9 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.ragchatbot.openai.OpenAiService;
-import com.ragchatbot.service.ChatService.PreparedChat;
+import com.ragchatbot.service.ChatStreamTestSupport.ChatOnlyOpenAi;
+import com.ragchatbot.service.ChatStreamTestSupport.RecordingPersistence;
+import com.ragchatbot.service.ChatStreamTestSupport.Saved;
 
 /**
  * 서버 타임아웃이 저장에 흔적을 남기는지 (#84).
@@ -79,7 +81,7 @@ class ChatStreamTimeoutTest {
 	 * <p>훅에서 타임아웃을 내면 「스트림 도중 타임아웃」(갈래 ①)이 되고, 토큰을 다 흘린 뒤에 내면
 	 * 「워커가 대기 중 타임아웃 → 뒤늦게 완료」(갈래 ②)가 된다.
 	 */
-	private static final class HookedOpenAi implements OpenAiService {
+	private static final class HookedOpenAi extends ChatOnlyOpenAi {
 		private final List<String> tokens;
 		private final int hookAfterTokens;
 		private final Runnable hook;
@@ -90,11 +92,6 @@ class ChatStreamTimeoutTest {
 			this.hookAfterTokens = hookAfterTokens;
 			this.hook = hook;
 			this.failure = failure;
-		}
-
-		@Override
-		public String stageLabel(Stage stage, List<String> sources) {
-			return stage.name();
 		}
 
 		@Override
@@ -117,73 +114,6 @@ class ChatStreamTimeoutTest {
 			return new ChatCompletion(String.join("", tokens),
 					List.of(new CitationData(1, "이용 정책 문서", "발췌")), false, 100, 20);
 		}
-
-		@Override
-		public void deleteResources(String vectorStoreId, List<String> openaiFileIds) {
-		}
-
-		@Override
-		public boolean hasSharedVectorStore() {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-
-		@Override
-		public UploadedDocument uploadDocument(String filename, byte[] content) {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-
-		@Override
-		public String documentStatus(String vectorStoreId, String openaiFileId) {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-
-		@Override
-		public void deleteDocument(String vectorStoreId, String openaiFileId) {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-
-		@Override
-		public List<StoreFile> listStoreFiles(java.util.function.Predicate<String> needsDetail) {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-	}
-
-	private record Saved(String content, String status, boolean stopped, boolean timedOut,
-			List<OpenAiService.CitationData> citations, Integer inputTokens, Integer outputTokens) {
-	}
-
-	private static final class RecordingPersistence extends ChatPersistenceService {
-		private final List<Saved> saves = new ArrayList<>();
-		/** 첫 저장을 던지게 함 - 스트림 완주 뒤 저장 실패 경로를 만드는 데 씀(#97) */
-		private int failFirst;
-
-		RecordingPersistence() {
-			super(null, null, null);
-		}
-
-		RecordingPersistence failingFirstSave() {
-			this.failFirst = 1;
-			return this;
-		}
-
-		@Override
-		public void saveAssistant(UUID conversationId, UUID userId, UUID assistantMsgId, String content, String status,
-				boolean stopped, boolean timedOut, List<OpenAiService.CitationData> citations, Integer inputTokens,
-				Integer outputTokens) {
-			if (failFirst > 0) {
-				failFirst--;
-				throw new IllegalStateException("DB 커넥션 끊김");
-			}
-			saves.add(new Saved(content, status, stopped, timedOut, citations, inputTokens, outputTokens));
-		}
-	}
-
-	private static PreparedChat prepared() {
-		return new PreparedChat(UUID.randomUUID(), "질문", List.of(), List.of());
-	}
-
-	private static ChatService chatService(OpenAiService openAi, ChatPersistenceService persistence) {
-		return new ChatService(null, null, null, openAi, persistence, 6000);
 	}
 
 	/**

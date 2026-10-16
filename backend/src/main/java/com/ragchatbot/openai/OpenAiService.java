@@ -12,7 +12,7 @@ import java.util.function.Predicate;
 public interface OpenAiService {
 
 	/** 첨부 참조 - 비전 이미지(첨부는 이미지뿐이다) */
-	record AttachmentRef(String fileType, String storagePath) {
+	record AttachmentRef(String storagePath) {
 	}
 
 	/**

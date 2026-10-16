@@ -1,6 +1,5 @@
 package com.ragchatbot.config;
 
-import java.util.Arrays;
 import java.util.List;
 
 import java.util.UUID;
@@ -44,27 +43,12 @@ public class AdminRoleSynchronizer {
 
 	private static final Logger log = LoggerFactory.getLogger(AdminRoleSynchronizer.class);
 
-	/**
-	 * 명단을 소문자로 정규화해 돌려준다. 비교가 {@code lower(email)} 기준이므로
-	 * <b>앱의 이메일 정규화와 같은 눈금</b>이어야 대소문자만 다른 명단도 맞는다.
-	 */
-	public static List<String> parse(String raw) {
-		if (raw == null || raw.isBlank()) {
-			return List.of();
-		}
-		return Arrays.stream(raw.split(","))
-				.map(EmailDomainPolicy::normalize)
-				.filter(s -> !s.isEmpty())
-				.distinct()
-				.toList();
-	}
-
 	@Bean
 	ApplicationRunner syncAdminRoles(UserRepository userRepository, PasswordEncoder passwordEncoder,
 			TemporaryPasswordGenerator temporaryPasswords,
 			@Value("${app.admin.emails}") String adminEmails) {
 		return args -> {
-			List<String> emails = parse(adminEmails);
+			List<String> emails = EmailDomainPolicy.parseList(adminEmails);
 			// 계정이 없는 관리자를 먼저 만든다. 뒤의 승격이 그 계정까지 한 번에 훑도록 순서를 이렇게 둔다
 			int created = 0;
 			for (String email : emails) {

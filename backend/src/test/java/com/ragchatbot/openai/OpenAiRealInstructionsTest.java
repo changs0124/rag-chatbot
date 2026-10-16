@@ -29,11 +29,6 @@ import com.ragchatbot.openai.OpenAiService.ChatInput;
  */
 class OpenAiRealInstructionsTest {
 
-	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
-	private static final long STREAM_READ_MS = 540_000;
-	private static final long REQUEST_MS = 30_000;
-	private static final long SSE_MS = 600_000;
-
 	private HttpServer server;
 	private final List<String> bodies = new CopyOnWriteArrayList<>();
 	private String baseUrl;
@@ -57,7 +52,7 @@ class OpenAiRealInstructionsTest {
 	}
 
 	private void chat(String storeId) {
-		var service = new OpenAiRealService("test-key", "gpt-6-sol", storeId, baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
+		var service = OpenAiRealTestSupport.against(baseUrl, storeId);
 		try {
 			service.streamChat(new ChatInput("연차는 언제 소멸하나요?", List.of(), List.of()),
 					token -> {

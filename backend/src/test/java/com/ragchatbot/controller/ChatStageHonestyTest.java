@@ -1,5 +1,6 @@
 package com.ragchatbot.controller;
 
+import static com.ragchatbot.support.SseTestSupport.eventNames;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
@@ -28,17 +29,6 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 				String.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
 		return res.getBody();
-	}
-
-	/** SSE 본문에서 이벤트 이름을 등장 순서대로 뽑음 */
-	private static List<String> eventNames(String sse) {
-		List<String> names = new ArrayList<>();
-		for (String line : sse.split("\n")) {
-			if (line.startsWith("event:")) {
-				names.add(line.substring(6).trim());
-			}
-		}
-		return names;
 	}
 
 	/** `data:{"stage":"searching",...}` 에서 stage 키를 등장 순서대로 뽑음 */
