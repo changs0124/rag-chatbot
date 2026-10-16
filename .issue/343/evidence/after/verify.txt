@@ -1,0 +1,3 @@
+mvnw clean verify : 294 tests, 0 failures (80s)
+ChatBackPressureTest 1.1s · ChatRejectionCounterTest 0.8s · ChatSseAcceptRateLimitTest 0.3s
+최악 연결 : 컨텍스트 9 x 풀 4 = 36 (상한 97)
