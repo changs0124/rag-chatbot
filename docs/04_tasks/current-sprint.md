@@ -7,9 +7,7 @@
 
 ## 진행 중
 
-10-16 리뷰 후속 [#359](https://github.com/changs0124/rag-chatbot/issues/359) · [#360](https://github.com/changs0124/rag-chatbot/issues/360) · [#363](https://github.com/changs0124/rag-chatbot/issues/363) · [#365](https://github.com/changs0124/rag-chatbot/issues/365) 은 merge 했고 운영 배포까지 마쳤다(2026-10-16, main `0e88492`).
-
-- [#367](https://github.com/changs0124/rag-chatbot/issues/367) `cleanupUnreferencedFiles` 루프가 파일 삭제 실패에서 멈추는 것(#365 와 같은 구조). 백엔드가 바뀌므로 merge 뒤 `scripts/deploy.sh` 로 배포한다
+없음. 10-16 리뷰 후속 [#359](https://github.com/changs0124/rag-chatbot/issues/359) · [#360](https://github.com/changs0124/rag-chatbot/issues/360) · [#363](https://github.com/changs0124/rag-chatbot/issues/363) · [#365](https://github.com/changs0124/rag-chatbot/issues/365) 은 merge 했고 운영 배포까지 마쳤다(2026-10-16, main `0e88492`). 후속 [#367](https://github.com/changs0124/rag-chatbot/issues/367) `cleanupUnreferencedFiles` 루프 중단도 merge · 운영 배포했다(2026-10-16, main `b63b498`).
 
 그 밖은 [backlog.md](./backlog.md) 에서 고른다.
 
