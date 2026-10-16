@@ -408,9 +408,8 @@ public class OpenAiRealService implements OpenAiService {
 		int seq = 1;
 		for (String name : citedFiles.keySet()) {
 			String snippet = truncate(pickSnippet(chunksByFile.getOrDefault(name, List.of()), answer));
-			// file_search 인용은 브라우징 가능한 URI가 없음. non-null 유지(ChatService Map.of가 null 불가, mock 파리티).
 			// 인용은 파일명으로 묶는다 - 이름이 같은 문서가 둘이면 한 출처로 합쳐진다(annotation 의 file_id 로 묶으면 피할 수 있다)
-			citations.add(new CitationData(seq++, name, snippet, ""));
+			citations.add(new CitationData(seq++, name, snippet));
 		}
 		return citations;
 	}

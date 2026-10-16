@@ -233,7 +233,7 @@ public class ChatService {
 			List<Map<String, Object>> citationPayload = new ArrayList<>();
 			for (var c : completion.citations()) {
 				citationPayload.add(Map.of("seq", c.seq(), "sourceName", c.sourceName(),
-						"snippet", c.snippet(), "uri", c.uri()));
+						"snippet", c.snippet()));
 			}
 			sendQuietly(emitter, "citations", Map.of("items", citationPayload));
 			sendQuietly(emitter, "done", Map.of("finishReason", "stop", "noSource", completion.noSource()));

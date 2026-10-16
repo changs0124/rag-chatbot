@@ -19,6 +19,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import com.ragchatbot.openai.OpenAiMockService;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
+import tools.jackson.databind.ObjectMapper;
+
 /**
  * Phase 5 : SSE 스트리밍 채팅 + 레이트리밋.
  * 무자료(REQ-RAG-003) · 출처 저장·재조회(REQ-RAG-002) · 429(REQ-OPS-003) · 리소스 정리 · 첨부 전달 · 이미지 단독 질문.
@@ -100,6 +102,41 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 
 		assertThat((List<?>) withSource.get("citations")).hasSize(2);
 		assertThat((List<?>) withoutSource.get("citations")).isEmpty();
+	}
+
+	/**
+	 * 출처 객체에 {@code uri} 가 없다(#328). 읽는 곳 없이 레코드 → SSE → DB → REST 를 관통하던 필드라 뺐다 -
+	 * 실시간(SSE)과 재조회(REST) 두 경로를 다 본다. 한쪽만 보면 다른 쪽에 남아도 초록이다
+	 */
+	@Test
+	@SuppressWarnings("unchecked")
+	void citation_objects_carry_no_uri() {
+		String token = createUser("chat-cite-nouri@b.com");
+		String convId = createConversation(token);
+
+		String sse = chat(token, Map.of("conversationId", convId, "message", "환불 정책 알려줘")).getBody();
+		List<Map<String, Object>> streamed = (List<Map<String, Object>>) new ObjectMapper()
+				.readValue(sseData(sse, "citations"), Map.class).get("items");
+		assertThat(streamed).hasSize(2).allSatisfy(c -> assertThat(c)
+				.containsOnlyKeys("seq", "sourceName", "snippet"));
+
+		var messages = rest.exchange("/api/conversations/" + convId + "/messages", HttpMethod.GET,
+				new HttpEntity<>(bearer(token)), List.class);
+		List<Map<String, Object>> list = messages.getBody();
+		var assistant = list.stream().filter(m -> "assistant".equals(m.get("role"))).findFirst().orElseThrow();
+		assertThat((List<Map<String, Object>>) assistant.get("citations")).hasSize(2)
+				.allSatisfy(c -> assertThat(c).containsOnlyKeys("seq", "sourceName", "snippet"));
+	}
+
+	/** 이름이 {@code event} 인 SSE 이벤트의 data 줄 */
+	private static String sseData(String sse, String event) {
+		String[] lines = sse.split("\n");
+		for (int i = 0; i < lines.length - 1; i++) {
+			if (lines[i].equals("event:" + event) && lines[i + 1].startsWith("data:")) {
+				return lines[i + 1].substring(5);
+			}
+		}
+		throw new AssertionError("이벤트를 찾지 못함: " + event);
 	}
 
 	private static Map<String, Object> pickAssistant(List<Map<String, Object>> messages, String contentPart) {

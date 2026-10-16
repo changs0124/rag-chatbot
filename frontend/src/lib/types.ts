@@ -23,7 +23,6 @@ export interface Citation {
   seq: number
   sourceName: string
   snippet: string
-  uri: string
 }
 
 export interface ChatMessage {

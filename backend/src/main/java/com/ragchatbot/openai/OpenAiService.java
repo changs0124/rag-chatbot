@@ -32,7 +32,7 @@ public interface OpenAiService {
 	}
 
 	/** 출처 데이터 (응답 annotations 에 대응) */
-	record CitationData(int seq, String sourceName, String snippet, String uri) {
+	record CitationData(int seq, String sourceName, String snippet) {
 	}
 
 	/**

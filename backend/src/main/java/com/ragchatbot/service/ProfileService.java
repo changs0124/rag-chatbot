@@ -63,7 +63,7 @@ public class ProfileService {
 		OffsetDateTime changedAt = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 		userRepository.updatePasswordHash(userId, hash, changedAt);
 		// 갱신되는 값은 해시뿐이라 다시 읽지 않음
-		return new AuthResponse(jwtService.issue(userId, user.email()), toResponse(user));
+		return new AuthResponse(jwtService.issue(userId), toResponse(user));
 	}
 
 	private User require(UUID userId) {

@@ -49,7 +49,7 @@ public class AuthService {
 			throw new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않음");
 		}
 		User user = found.get();
-		return new AuthResponse(jwtService.issue(user.id(), user.email()),
+		return new AuthResponse(jwtService.issue(user.id()),
 				new MeResponse(user.id(), user.email(), user.name(), user.role()));
 	}
 }

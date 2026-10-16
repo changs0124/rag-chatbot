@@ -174,7 +174,7 @@ erDiagram
 | seq | integer | N | - | 각주 번호(1-base). 인용 순서 |
 | source_name | text | N | - | 자료명. 화면 각주에 뜨는 값 |
 | snippet | text | Y | NULL | 발췌. 200자로 자른다 |
-| uri | text | Y | NULL | `file_search` 인용은 브라우징 가능한 URI가 없어 빈 문자열이다 |
+| uri | text | Y | NULL | **앱이 읽지도 쓰지도 않는다**(#328) — 새 행은 NULL, 그 전 행은 빈 문자열(목업은 `corpus://…`). 컬럼 삭제는 마이그레이션이 필요해 보류 |
 | created_at | timestamptz | N | `now()` | |
 
 **출처를 영속화하는 이유** : 대화를 다시 열어도 각주가 남아야 한다(REQ-RAG-002).

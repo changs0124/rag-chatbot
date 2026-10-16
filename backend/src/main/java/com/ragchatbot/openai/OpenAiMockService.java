@@ -89,8 +89,8 @@ public class OpenAiMockService implements OpenAiService {
 			fullText = imagePrefix + "문의하신 내용에 대한 안내는 다음과 같음 [1][2]."
 					+ (figure ? "\n[[그림:mock-sample]]\n위 그림은 목업 견본임 [1]." : "");
 			citations = List.of(
-					new CitationData(1, "이용 정책 문서", "정책 관련 발췌 스니펫", "corpus://policy#1"),
-					new CitationData(2, "FAQ 문서", "자주 묻는 질문 발췌", "corpus://faq#2"));
+					new CitationData(1, "이용 정책 문서", "정책 관련 발췌 스니펫"),
+					new CitationData(2, "FAQ 문서", "자주 묻는 질문 발췌"));
 			noSource = false;
 		} else {
 			fullText = imagePrefix + "일반적인 관점에서 이렇게 볼 수 있음.";
