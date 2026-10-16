@@ -46,11 +46,7 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
 @ExtendWith(OutputCaptureExtension.class)
 @TestPropertySource(properties = {
 		// 도중 오류 케이스(026)가 넉넉히 끝날 만큼 길게 두고, 타임아웃 케이스(025)는 래치로 그보다 오래 붙잡는다
-		"app.chat.sse-timeout-ms=2000",
-		// 목 빈 + 짧은 타임아웃이라 컨텍스트를 따로 띄우고 캐시에 남는다. 기본 풀(10)이면 공유 컨테이너의 연결
-		// 상한(100)을 넘겨 뒤 클래스가 「too many clients」로 기동에 실패했다. @DirtiesContext 로 닫으면 그다음
-		// 새 컨텍스트가 멈춘 웹앱 클래스로더로 mapper/ 를 읽다 실패해(순서에 따라) 풀을 줄이는 쪽을 택한다
-		"spring.datasource.hikari.maximum-pool-size=2" })
+		"app.chat.sse-timeout-ms=2000" })
 class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 
 	@MockitoBean
