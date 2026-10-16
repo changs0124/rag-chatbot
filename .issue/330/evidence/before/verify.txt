@@ -1,0 +1,14 @@
+# before (68281d6)
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/330-frontend-cleanup/frontend
+
+
+ Test Files  23 passed (23)
+      Tests  165 passed (165)
+   Start at  10:25:11
+   Duration  8.46s (transform 9.78s, setup 10.76s, import 17.89s, tests 9.77s, environment 40.70s)
+
+dist/assets/PretendardVariable.subset.2-dCZkyKLw.woff2    43.92 kB
+dist/assets/index-BbuPJWf2.css                            78.58 kB │ gzip:  22.23 kB
+dist/assets/index-B6wAfsCy.js                            467.54 kB │ gzip: 146.99 kB
+
+[32m✓ built in 469ms[39m
