@@ -1,0 +1,17 @@
+     × 임시 비밀번호 발급이 두 가지 사실을 함께 알린다 114ms
+     × 일회용 비밀번호 창은 배경 클릭으로 닫히지 않고 Esc · 닫기로 닫힌다 88ms
+     × 비밀번호 초기화는 확인 창을 거친 뒤에만 요청한다 73ms
+     × 확인 창에서 취소하면 초기화를 요청하지 않는다 55ms
+     × 초기화 요청 중에는 버튼이 비활성이고 연타해도 한 번만 요청한다 1053ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/pages/AdminPage.test.tsx > 관리자 화면 > 임시 비밀번호 발급이 두 가지 사실을 함께 알린다
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "초기화"
+ FAIL  src/pages/AdminPage.test.tsx > 관리자 화면 > 일회용 비밀번호 창은 배경 클릭으로 닫히지 않고 Esc · 닫기로 닫힌다
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "초기화"
+ FAIL  src/pages/AdminPage.test.tsx > 관리자 화면 > 비밀번호 초기화는 확인 창을 거친 뒤에만 요청한다
+TestingLibraryElementError: Unable to find an element with the text: /기존 로그인이 모두 해제됩니다/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+ FAIL  src/pages/AdminPage.test.tsx > 관리자 화면 > 확인 창에서 취소하면 초기화를 요청하지 않는다
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "취소"
+ FAIL  src/pages/AdminPage.test.tsx > 관리자 화면 > 초기화 요청 중에는 버튼이 비활성이고 연타해도 한 번만 요청한다
+TestingLibraryElementError: Unable to find role="dialog"
+      Tests  5 failed | 13 passed (18)
