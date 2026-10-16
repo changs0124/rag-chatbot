@@ -1,3 +1,4 @@
+# 명령 : cd backend && ./mvnw test -Dtest='AttachmentLinkRaceTest#unreferenced_cleanup_continues_when_a_file_delete_fails' (출력 CP949 → UTF-8 변환 후 WARN·결과 줄만 추림)
 21:43:44.761 [main] WARN com.ragchatbot.service.FileService -- 미참조 파일 삭제 실패 - 다음 주기에 다시 시도함. path=u/broken.png
 [INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.255 s -- in com.ragchatbot.service.AttachmentLinkRaceTest
 [INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0

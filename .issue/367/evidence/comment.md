@@ -14,7 +14,7 @@
 | 경고 로그 | — (예외가 그대로 샘) | `WARN FileService -- 미참조 파일 삭제 실패 - 다음 주기에 다시 시도함. path=u/broken.png` (`after/log-warn.txt`) |
 | 백엔드 케이스 수 | 307 | **308** (하한 307 → 308) |
 
-원본 : `.issue/367/evidence/before/test.txt` · `after/test.txt` · `after/log-warn.txt` · `after/check-all.txt`(요약만 — 테스트 로그는 뺐다), 변경 전 코드는 `before/code.txt`.
+원본 : `.issue/367/evidence/before/test.txt` · `after/test.txt` · `after/log-warn.txt` · `after/check-all.txt`, 변경 전 코드는 `before/code.txt`.
 
 ## 변경 파일
 
@@ -26,6 +26,8 @@
 
 - 테스트를 먼저 넣고 변경 전 코드에서 실패하는 것을 확인한 뒤 고쳤습니다
 - `bash scripts/check-all.sh` 통과(백엔드 308 / 프론트 184). shellcheck · gitleaks · trivy 는 로컬에 없어 건너뛰었고 CI 에서 돕니다
+
+> 증거 로그에서 테스트 컨테이너용 임시 관리자 비밀번호 줄(`AdminRoleSynchronizer`)을 뺐습니다. 실행마다 새로 만들어지고 테스트 DB 와 함께 사라지는 계정이라 실제 자격 증명은 아니라고 판단했습니다. 앞선 증거 커밋 이력에는 남아 있습니다.
 
 ## 남은 이슈
 
