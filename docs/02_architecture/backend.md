@@ -456,10 +456,10 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 **CI 는 이미지를 만들지 않는다.** `docker` 잡은 종전대로 **빌드만 하고 버린다** — 배포 산출물이
 조용히 썩는 것을 막는 검증이다. 배포본을 만드는 것은 `scripts/deploy.sh` 뿐이다.
 
-**감수하는 약점** : 레지스트리에 이미지 이력이 남지 않는다. `deploy.sh` 는 load 직전 마지막 정상 이미지를
+**감수하는 약점** : 레지스트리에 이미지 이력이 남지 않는다. `deploy.sh` 는 load 직전 롤백용 이미지(아래 세 단계 순서로 고른다)를
 `rag-chatbot-backend:previous` 로 태그해 두고, **헬스체크가 실패하면** 그 태그로 되돌리는 명령을 출력한다.
-태그 원본은 `latest` 가 아니다(#350) — healthy 로 실행 중인 app 의 이미지, 없으면 지난 실패 배포가 남긴 `:previous` 를 그대로,
-그것도 없으면(첫 배포 등) `latest` 를 쓰고 그 사실을 찍는다. 그래서 load 뒤에서 실패한 배포를 몇 번 다시 돌려도
+태그 원본은 `latest` 가 아니다(#350) — healthy 로 실행 중인 app 의 이미지(compose healthcheck 에 기댄다), 없으면 남아 있는 `:previous` 를 그대로
+(보통 지난 실패 배포가 남긴 것이라 두 이미지 ID 를 함께 찍는다), 그것도 없으면 `latest` 를 쓰고 그 사실을 찍는다. `latest` 도 없으면(첫 배포) 되돌릴 이미지가 없다고 찍는다. 그래서 load 뒤에서 실패한 배포를 몇 번 다시 돌려도
 한 번도 정상 실행되지 않은 이미지가 `:previous` 를 덮지 않는다(순서의 근거는 `deploy.sh` 4단계 주석).
 **헬스체크가 통과하면 `:previous` 를 지운다** — 성공한 배포 뒤에 되돌리려면 배포 전에 손으로 남긴 태그
 (예 : `sudo docker tag rag-chatbot-backend:latest rag-chatbot-backend:prev-<sha>`)가 있어야 하고,

@@ -176,13 +176,15 @@ scp -q "$TMP/$TARBALL" docker-compose.yml "$HOST:$REMOTE_DIR/"
 # 것은 태그를 잃고 dangling 이 된다. 헬스체크 실패 시 되돌릴 유일한 자산인데 이름이 없으면
 # 사람이 찾아 쓰기 어렵다 - 레지스트리를 안 쓰기로 한 설계의 대가다.
 #
-# **태그 원본은 `latest` 라는 이름이 아니라 마지막 정상 이미지다(#350).** load 뒤에서 실패하면(compose 오류 ·
+# **태그 원본은 `latest` 라는 이름이 아니다(#350).** load 뒤에서 실패하면(compose 오류 ·
 # 기동 실패 · 헬스 실패) `latest` 는 한 번도 정상 실행되지 않은 이미지라, 재실행이 그것으로 `:previous` 를 덮으면
 # 롤백 자산이 사라진다. 그래서 순서대로 본다 :
-#   1) app 이 실행 중이고 healthy 면 그 컨테이너의 이미지 ID
+#   1) app 이 실행 중이고 healthy 면 그 컨테이너의 이미지 ID. compose 의 app healthcheck 에 기댄다 -
+#      healthcheck 가 없으면 상태가 none 으로 찍히고 늘 2) · 3) 으로 간다
 #   2) 아니면 남아 있는 `:previous` 를 그대로 둔다 - 6단계가 헬스 통과 뒤에만 지우므로 남아 있다는 것은
-#      지난 배포가 실패했다는 뜻이고, 그 태그가 아직 마지막 정상 이미지다
-#   3) 둘 다 없으면(첫 배포 등) 종전대로 `latest` 를 쓰고 그 사실을 찍는다
+#      보통 지난 배포가 실패했다는 뜻이고, 그러면 그 태그가 마지막 정상 이미지다. 아닐 수 있어(6단계 rmi 실패 등)
+#      그 태그와 실행 중 app 의 이미지 ID 를 함께 찍는다
+#   3) 둘 다 없으면 종전대로 `latest` 를 쓰고 그 사실을 찍는다. `latest` 도 없으면(첫 배포) 되돌릴 이미지가 없다고 찍는다
 # 「실행 중」만 보면 모자란다 - 새 app 이 unhealthy 로 살아 있으면 그 이미지가, 죽었으면 3) 의 `latest` 가 실패 이미지다.
 #
 # **원격 명령 문자열 안에는 `#` 주석을 쓰지 않는다(#129).** 원격 셸이 Windows 에서 넘긴 개행을
@@ -193,10 +195,11 @@ say "서버에서 로드 후 재기동"
 ssh_run "set -e;
 cd '$REMOTE_DIR';
 cid=\$(sudo docker compose ps -q app 2>/dev/null || true);
-health=''; if [ -n \"\$cid\" ]; then health=\$(sudo docker inspect -f '{{.State.Health.Status}}' \"\$cid\" 2>/dev/null || true); fi;
-if [ \"\$health\" = 'healthy' ]; then sudo docker tag \"\$(sudo docker inspect -f '{{.Image}}' \"\$cid\")\" '$PREV'; echo '  $PREV <- 실행 중(healthy)인 app 의 이미지';
-elif sudo docker image inspect '$PREV' >/dev/null 2>&1; then echo '  app 이 healthy 로 실행 중이 아니다 - 지난 배포가 남긴 $PREV 를 그대로 둔다';
-elif sudo docker image inspect '$IMAGE' >/dev/null 2>&1; then sudo docker tag '$IMAGE' '$PREV'; echo '  app 이 healthy 로 실행 중이 아니다 - $IMAGE 를 $PREV 로 남긴다'; fi;
+health='app 없음'; running='-'; if [ -n \"\$cid\" ]; then health=\$(sudo docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' \"\$cid\" 2>/dev/null || true); running=\$(sudo docker inspect -f '{{.Image}}' \"\$cid\" 2>/dev/null || true); fi;
+if [ \"\$health\" = 'healthy' ]; then sudo docker tag \"\$running\" '$PREV'; echo '  $PREV <- 실행 중(healthy)인 app 의 이미지';
+elif sudo docker image inspect '$PREV' >/dev/null 2>&1; then echo \"  app 헬스체크 상태 \$health - 남아 있는 $PREV(\$(sudo docker image inspect -f '{{.Id}}' '$PREV'))를 그대로 둔다. 실행 중 app 이미지 : \$running\";
+elif sudo docker image inspect '$IMAGE' >/dev/null 2>&1; then sudo docker tag '$IMAGE' '$PREV'; echo \"  app 헬스체크 상태 \$health - $IMAGE 를 $PREV 로 남긴다\";
+else echo '  $IMAGE 가 없다(첫 배포) - 되돌릴 이미지를 만들지 않았다'; fi;
 sudo docker load -i '$TARBALL';
 rm -f '$TARBALL';
 want=\$(sudo docker image inspect -f '{{.Id}}' '$IMAGE');
@@ -223,8 +226,7 @@ sudo docker compose logs --tail=60 app;
 echo '--- 종료 코드 137 이면 OOM 이다 ---';
 free -h | head -2;
 echo '';
-echo '되돌리려면 (마지막 정상 이미지를 $PREV 로 남겨 두었다) :';
-echo \"  cd $REMOTE_DIR && sudo docker tag $PREV $IMAGE && sudo docker compose up -d\";
+if sudo docker image inspect '$PREV' >/dev/null 2>&1; then echo '되돌리려면 (load 전에 $PREV 로 태그한 이미지) :'; echo \"  cd $REMOTE_DIR && sudo docker tag $PREV $IMAGE && sudo docker compose up -d\"; else echo '$PREV 가 없어 되돌릴 이미지가 없다 - 고친 커밋을 다시 배포할 것'; fi;
 exit 1"
 
 # 6. 옛 이미지 정리 ---------------------------------------------------------
