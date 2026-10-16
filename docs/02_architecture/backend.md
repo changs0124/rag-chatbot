@@ -81,7 +81,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   비동기 디스패치로 다시 넘기기 때문이다. 그때 응답은 이미 커밋돼 있으므로 **본문을 쓰지 않는다**(null `ResponseEntity`) —
   쓰면 열린 이벤트 스트림에 JSON 을 넣으려다 변환기가 실패해 연결이 깨진다. 사용자에게 알리는 것은 `ChatService` 의
   `event: error` 이고, 타임아웃은 아무 이벤트 없이 끝난다(api.md API-POST-005 의 세 번째 종료 경로). 로그는 타임아웃이 `WARN` 한 줄,
-  도중 오류는 폴백의 `ERROR` 그대로다 — 후자는 실제 원인의 유일한 서버 기록이다. TC-OPS-025~027 이 잠근다.
+  도중 오류는 폴백의 `ERROR` 그대로다 — 후자는 실제 원인의 유일한 서버 기록이다. TC-OPS-032~034 이 잠근다.
 - 스프링은 더 구체적인 핸들러를 먼저 고르므로, `@ExceptionHandler(Exception.class)` 를 두어도
   전용 핸들러가 있는 예외는 그쪽으로 간다. 폴백과 도메인 예외는 `GlobalExceptionFallbackTest` 가 잠근다
   (`ApiError` 모양 · 상관 ID · 내부 메시지 비노출 · 도메인 예외가 제 상태를 지킨다).

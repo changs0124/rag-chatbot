@@ -73,7 +73,7 @@ class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * TC-OPS-025 : SSE 타임아웃은 WARN 한 줄이고 스트림에 JSON 이 섞이지 않는다.
+	 * TC-OPS-032 : SSE 타임아웃은 WARN 한 줄이고 스트림에 JSON 이 섞이지 않는다.
 	 *
 	 * <p>첫 토큰 전에 업스트림이 응답하지 않는 모양이다. 시간으로 재지 않고 래치로 붙잡아, 응답이 끝난 뒤에야
 	 * 놓는다 - 잠자는 시간과 타임아웃의 대소에 결과가 걸리지 않는다.
@@ -121,7 +121,7 @@ class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * TC-OPS-026 : 스트림 도중 오류는 {@code error} 이벤트로 끝나고 JSON 이 섞이지 않는다.
+	 * TC-OPS-033 : 스트림 도중 오류는 {@code error} 이벤트로 끝나고 JSON 이 섞이지 않는다.
 	 *
 	 * <p>ERROR 로그는 남아야 한다 - {@code completeWithError} 경로에서는 이 로그가 실제 원인의
 	 * 유일한 서버 기록이다.
@@ -143,7 +143,7 @@ class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * TC-OPS-027 : 커밋 전 비동기 타임아웃은 503 JSON, 커밋 뒤에는 아무것도 쓰지 않는다.
+	 * TC-OPS-034 : 커밋 전 비동기 타임아웃은 503 JSON, 커밋 뒤에는 아무것도 쓰지 않는다.
 	 *
 	 * <p>SSE 는 헤더를 먼저 내보내 늘 커밋돼 있으므로 HTTP 로는 앞 갈래를 만들 수 없다. 처리기를 직접 부른다.
 	 */
