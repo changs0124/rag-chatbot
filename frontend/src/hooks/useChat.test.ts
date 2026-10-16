@@ -8,7 +8,6 @@ vi.mock('../lib/endpoints', () => ({
   createConversation: vi.fn().mockResolvedValue({
     id: 'c1',
     title: '새 대화',
-    createdAt: '',
     updatedAt: '',
   }),
   getMessages: vi.fn().mockResolvedValue([]),

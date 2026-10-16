@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
 import { setToken } from '../lib/api'
 import AdminPage from './AdminPage'
+import { primaryButtonClass } from '../components/primaryButton'
 import type { RagDocument } from '../lib/types'
 
 vi.mock('../lib/endpoints', () => ({
@@ -80,7 +81,6 @@ describe('관리자 화면', () => {
   })
 
   afterEach(() => {
-    cleanup()
     setToken(null)
     vi.clearAllMocks()
     vi.useRealTimers()
@@ -129,17 +129,21 @@ describe('관리자 화면', () => {
    * 가짜 타이머를 **렌더 전에** 건다 - 나중에 걸면 이미 실제 타이머로 만들어진 interval 을
    * 제어하지 못해 "폴링을 안 한다"는 잘못된 결론이 나온다. `shouldAdvanceTime` 이 있어야
    * 그 사이 프로미스(목록 조회)도 해소된다.
+   *
+   * #330 : 폴링은 문서 목록만 다시 읽는다 - 지켜보는 것은 인덱싱 상태뿐이라 사용자 목록까지 받을 이유가 없다.
    */
-  it('인덱싱 중이면 폴링한다', async () => {
+  it('인덱싱 중이면 문서 목록만 폴링한다', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.mocked(listDocuments).mockResolvedValue([doc({ status: 'in_progress' })])
     renderPage()
     await screen.findByText('처리중')
     const before = vi.mocked(listDocuments).mock.calls.length
+    const usersBefore = vi.mocked(listAdminUsers).mock.calls.length
 
     await vi.advanceTimersByTimeAsync(6000)
 
     expect(vi.mocked(listDocuments).mock.calls.length).toBeGreaterThan(before)
+    expect(vi.mocked(listAdminUsers).mock.calls.length).toBe(usersBefore)
   })
 
   /**
@@ -236,7 +240,7 @@ describe('관리자 화면', () => {
   /** 임시 비밀번호는 "다시 못 본다"와 "대상이 로그아웃된다"를 함께 알려야 한다 */
   it('임시 비밀번호 발급이 두 가지 사실을 함께 알린다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user', createdAt: '2026-08-19T00:00:00Z' },
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
     ])
     vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     renderPage()
@@ -254,7 +258,7 @@ describe('관리자 화면', () => {
    */
   it('일회용 비밀번호 창은 배경 클릭으로 닫히지 않고 Esc · 닫기로 닫힌다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user', createdAt: '2026-08-19T00:00:00Z' },
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
     ])
     vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     renderPage()
@@ -274,10 +278,24 @@ describe('관리자 화면', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
+  /** #330 : 발급 창 「닫기」도 주요 버튼이라 44px(h-11) 공용 클래스를 쓴다 - 종전에는 py-2.5 로 40px 였다 */
+  it('발급 창 「닫기」는 44px 주요 버튼이다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
+    ])
+    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    renderPage()
+
+    await confirmReset()
+    const close = within(await screen.findByRole('dialog')).getByRole('button', { name: '닫기' })
+    expect(close).toHaveClass('h-11')
+    expect(close.className).toContain(primaryButtonClass)
+  })
+
   /** #325 : 초기화는 되돌릴 수 없어(기존 로그인 전부 해제) 문서 삭제처럼 확인 창을 거친다 */
   it('비밀번호 초기화는 확인 창을 거친 뒤에만 요청한다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user', createdAt: '2026-08-19T00:00:00Z' },
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
     ])
     vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     renderPage()
@@ -295,7 +313,7 @@ describe('관리자 화면', () => {
 
   it('확인 창에서 취소하면 초기화를 요청하지 않는다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user', createdAt: '2026-08-19T00:00:00Z' },
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
     ])
     renderPage()
 
@@ -309,7 +327,7 @@ describe('관리자 화면', () => {
   /** #325 : 연타로 두 번 나가면 늦게 온 응답이 이미 덮어써진 비밀번호를 보여 줄 수 있다 */
   it('초기화 요청 중에는 버튼이 비활성이고 연타해도 한 번만 요청한다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user', createdAt: '2026-08-19T00:00:00Z' },
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
     ])
     let resolve!: (v: { temporaryPassword: string }) => void
     vi.mocked(resetUserPassword).mockReturnValue(new Promise((r) => (resolve = r)))
@@ -335,7 +353,7 @@ describe('관리자 화면', () => {
   /** 자기 자신에게는 초기화 버튼을 띄우지 않는다 */
   it('자기 자신에게는 초기화 버튼이 없다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u1', email: 'a@b.com', name: '관리자', role: 'admin', createdAt: '2026-08-19T00:00:00Z' },
+      { id: 'u1', email: 'a@b.com', name: '관리자', role: 'admin' },
     ])
     renderPage()
 

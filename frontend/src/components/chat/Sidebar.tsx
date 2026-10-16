@@ -19,7 +19,7 @@ function groupByRecency(conversations: Conversation[]) {
     { label: '이전', items: [] },
   ]
   for (const c of conversations) {
-    const t = new Date(c.updatedAt || c.createdAt).getTime()
+    const t = new Date(c.updatedAt).getTime()
     const bucket = t >= startOfToday ? 0 : t >= startOfToday - 6 * day ? 1 : 2
     groups[bucket].items.push(c)
   }

@@ -5,6 +5,19 @@
 ## [Unreleased]
 
 ### Changed
+- **프론트 죽은 코드 · 복사본을 정리했다(#330).** 2026-10-16 전체 리뷰 F7 · F8 · F9 · F10 · F11 · F12.
+  화면 변화는 의도한 둘뿐이다 — 마이페이지 주요 버튼의 비활성 투명도 40 → 50(관리자 · 로그인과 같게), 발급 창 「닫기」 40 → 44px.
+  - 주요 버튼 클래스 4벌을 `primaryButtonClass` 하나로 · 뒤로가기 링크 · 페이지 골격 2벌을 `BackLink` · `PageShell` 로 ·
+    관리자 행 동작 버튼 3개를 지역 상수 `actionBtn` 으로
+  - 인덱싱 중 5초 폴링은 문서 목록만 읽는다(종전에는 사용자 목록도 매번 받았다). 첫 로드 · 변경 뒤는 그대로 둘 다 읽는다
+  - 죽은 코드 : `Sidebar` 의 `updatedAt || createdAt` 폴백(`updated_at` 은 not null) · 읽히지 않던 `Conversation.createdAt` ·
+    `ChatMessage.createdAt`(`useChat` 의 쓰기 포함) · `AdminUser.createdAt` · 관리 · 마이 페이지 테스트에 남은 `cleanup()`(#219 이후 `test/setup.ts` 가 건다)
+  - **하지 않은 것** : `Citation.uri` 는 계약 필드 제거 이슈 몫
+  - 테스트 : 폴링 케이스가 사용자 목록 호출이 늘지 않음을 단언(변경 전 실패 확인) · 「닫기」 44px 케이스 1건 추가. **프론트 하한 171 → 172**(실측)
+    `AdminUser.createdAt` · 관리 · 마이 페이지 테스트에 남은 `cleanup()`(#219 이후 `test/setup.ts` 가 건다)
+  - **하지 않은 것** : `ChatMessage.createdAt` 은 쓰는 곳이 `useChat.ts` 라 그 파일을 고치는 다른 작업과 겹치지 않게 남겼다.
+    `Citation.uri` 는 계약 필드 제거 이슈 몫
+  - 테스트 : 폴링 케이스가 사용자 목록 호출이 늘지 않음을 단언(변경 전 실패 확인) · 「닫기」 44px 케이스 1건 추가. **프론트 하한 165 → 166**(실측)
 - **스크립트 · CI 의 중복과 쓰지 않는 설정을 걷었다(#331).** 동작은 그대로다(같은 리뷰의 I4 · I7~I14).
   - `ci.yml` : `deps (프론트)` 잡의 `npm ci` 제거 — `npm audit` 는 `package-lock.json` 만 읽는다(node_modules 없이 `found 0 vulnerabilities` 확인).
     `setup-node` 두 곳은 `node-version: '24'` 대신 `node-version-file: .nvmrc`

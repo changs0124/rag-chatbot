@@ -15,7 +15,6 @@ export interface AuthResponse {
 export interface Conversation {
   id: string
   title: string
-  createdAt: string
   updatedAt: string
 }
 
@@ -33,7 +32,6 @@ export interface ChatMessage {
   // 사용자가 끊어 **출처 판정 전에** 끝난 답변임. status 는 complete 그대로이고,
   // 이 플래그가 무자료 배너를 억제함 - 없으면 중단된 답변마다 "자료 없음"이 거짓으로 붙음
   stopped?: boolean
-  createdAt: string
   citations: Citation[]
   // 재조회 응답에도 실림 - URL 은 조회 시점에 새로 서명된 값임.
   // 전송 직후에는 로컬 낙관적 표시로 먼저 채워짐
@@ -57,7 +55,6 @@ export interface AdminUser {
   email: string
   name: string
   role: 'user' | 'admin'
-  createdAt: string
 }
 
 export interface Attachment {
