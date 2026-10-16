@@ -10,6 +10,7 @@
 #   - 이름 없이 숫자만 적힌 서술("4.1 로 올렸다"). 이름에 붙어 있어야 잡는다
 #   - `docs/06_changelog/**` — 이력 서술이라 당시 값이 맞다. 일부러 제외한다
 #   - 버전을 아예 안 적은 서술("Spring Boot + Java 17" 의 Spring Boot). 없는 주장은 틀릴 수 없다
+#   - 버전이 아닌 목록형 서술(CI 잡 목록 · 게이트 목록) — 이름 + 숫자만 본다(#172)
 #
 # 왜 backend CI 잡에 붙나 : JUnit 은 `pom.xml` 에 없고 **Spring Boot BOM 이 관리**한다. BOM 을 읽으려면
 # 로컬 m2 저장소가 채워져 있어야 하므로 `./mvnw verify` 뒤에 돌려야 한다. `static` 잡은 checkout 과 bash

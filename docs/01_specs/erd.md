@@ -149,7 +149,7 @@ erDiagram
 
 **`timed_out` 을 또 따로 둔 이유** : 서버 타임아웃 하나가 마지막 토큰의 타이밍에 따라 **세 가지 모양**으로
 갈렸고, 그 셋이 각각 다른 사건과 구분되지 않았다. `status` 에 값을 추가하면 `check (status in
-('complete','error'))` 를 깨야 하고, 전부 `error` 로 통일하면 위 `stopped` 의 오표시가 되살아난다.
+('complete','error'))` 를 깨야 하고, 전부 `error` 로 통일하면 「중단은 실패가 아니다」(위 `stopped` 절)를 되돌린다.
 축을 하나 더 두면 여섯 갈래가 유일하게 갈린다 :
 
 | 무슨 일이 있었나 | status | stopped | timed_out |

@@ -10,6 +10,7 @@
 
 - [ ] **Spring Boot 4.1 의 OSS 지원은 2027-07 까지다** — #48 로 4.1.1 에 올렸다. 3.5 때처럼 기한이 지난 뒤에 알아채지 않도록 그 전에 다시 판단한다. 근거 : <https://www.danvega.dev/blog/spring-boot-end-of-life>
 - [ ] **`postgresql` 드라이버 버전 하한을 주장하는 것이 없다** — #48 에서 수동 고정을 뺐다(현재 BOM 해석값 42.7.13 이라 노출 없음). BOM 이 낮은 버전을 관리하면 CVE-2026-54291 대역으로 조용히 내려갈 수 있다.
+  Trivy 는 BOM 해석에 기대고 `list-all-pkgs` 는 실패시키지 않아 다른 게이트도 이 하한을 지키지 않는다.
   고르는 것 : enforcer 규칙 / `check-doc-versions.sh` 검사표 확장 / 재고정 — **근거가 한 건뿐이라 게이트는 만들지 않고 기록만 둔다**(#55 기준)
 - [ ] **`postgres:16-alpine` 은 움직이는 태그다** — `cloudflared` 는 다이제스트로 고정했지만(#130) DB 이미지는 그대로다. 고정할지 판단한다(`backend.md` 「배포」 하드닝)
 

@@ -164,7 +164,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - **스트림 수명은 SSE emitter 타임아웃이 단독으로 정한다**(기본 10분). MVC async 타임아웃은 꺼 둔다.
   emitter 가 닫힌 뒤의 `send` 는 `IllegalStateException` 이라 `done` 도 `error` 도 실을 수 없다 —
   api.md 의 **세 번째 종료 경로**(종료 이벤트 없이 끊김)가 여기서 생긴다.
-- **중단은 `stopped`, 서버 타임아웃은 `timed_out` 으로 따로 남긴다**(#84). 인용은 스트림 끝에 오므로 중단 시점에는 늘 0건이라
+- **중단(사용자 정지 · 연결 끊김)은 실패가 아니다** — 받은 데까지 `status=complete` + `stopped=true`, 서버 타임아웃은 `timed_out` 으로 따로 남긴다(#84). 인용은 스트림 끝에 오므로 중단 시점에는 늘 0건이라
   `stopped` 가 없으면 무자료 배너가 거짓으로 붙고, `timed_out` 이 없으면 타임아웃이 마지막 토큰 타이밍에 따라 중단 · 완료 · 오류를 사칭한다.
   저장 조합은 `docs/01_specs/erd.md` 「messages」 가 정본이다. 자원 반납은 읽기 타임아웃이 맡는다(아래 「유량 제어」).
 - **저장 텍스트는 화면에 닿은 것과 같다.** 토큰을 보낸 **뒤에** 버퍼에 담아, 전송 실패한 토큰은 남기지 않는다.
@@ -358,6 +358,7 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 
 스키마는 기동 시 Flyway 가 적용하므로 별도 마이그레이션 단계가 필요 없다.
 헬스체크 경로는 `GET /api/health`(인증 불필요)다.
+첨부는 compose `uploads` 볼륨에 있다 — 소실 조건은 [overview](./overview.md) 「알려진 제약」.
 
 ### 상시 공개 - 자체 호스팅 서버
 

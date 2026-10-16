@@ -120,7 +120,7 @@
   주간 실행은 우리 커밋이 아니라 **바깥**(취약점 DB)이 바뀐 것을 잡는다.
 - **CI 7잡 전부가 `main` 의 required status checks 다**(#166, `main: CI must pass` ruleset) — `backend` · `frontend` · `docker` ·
   `static` · `secrets` · `deps (백엔드)` · `deps (프론트)`. **이 목록은 축약이다**(#172) — 실제 context 는 `ci.yml` 잡 `name:` 전체 문자열이고,
-  여기에 옮겨 적지 않는다. 무엇을 넣고 뺐는지의 이유는 CHANGELOG #166 이다.
+  여기에 옮겨 적지 않는다. 무엇을 넣고 뺐는지의 이유는 CHANGELOG #166 이다(`secrets` · `deps` 가 필수인 근거는 위 #135).
 
   **ruleset 을 복원해야 하면 문서를 보지 말고 정본에서 뽑는다.**
 
