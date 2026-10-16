@@ -1,0 +1,4 @@
+# 검증 (#355)
+- 정의 중복 : 변경 전 TC-OPS-025 2건(refresh.test.ts · ChatStreamExceptionHandlerTest) -> 변경 후 0건 (after/tc-ids.txt 의 정의 집계 전부 1건)
+- cd backend && ./mvnw -B verify : Tests run: 297, Failures: 0, Errors: 0, Skipped: 0 / BUILD SUCCESS (수 변화 없음)
+- bash scripts/check-all.sh docs : 돌린 검사 전부 통과 (shellcheck 미설치로 1건 건너뜀 - 이 변경과 무관)
