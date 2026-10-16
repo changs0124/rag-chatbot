@@ -10,6 +10,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +23,6 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
@@ -42,10 +44,13 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  * TestRestTemplate 의 변환을 거치지 않는다.
  */
 @ExtendWith(OutputCaptureExtension.class)
-// 목 빈 + 짧은 타임아웃이라 다른 클래스와 컨텍스트를 나눠 쓰지 못한다. 캐시에 남기면 그 Hikari 풀(10)이
-// 공유 컨테이너의 연결 상한(100)을 넘겨 뒤 클래스가 「too many clients」로 기동에 실패했다 - 끝나면 닫는다
-@DirtiesContext
-@TestPropertySource(properties = "app.chat.sse-timeout-ms=300")
+@TestPropertySource(properties = {
+		// 도중 오류 케이스(026)가 넉넉히 끝날 만큼 길게 두고, 타임아웃 케이스(025)는 래치로 그보다 오래 붙잡는다
+		"app.chat.sse-timeout-ms=2000",
+		// 목 빈 + 짧은 타임아웃이라 컨텍스트를 따로 띄우고 캐시에 남는다. 기본 풀(10)이면 공유 컨테이너의 연결
+		// 상한(100)을 넘겨 뒤 클래스가 「too many clients」로 기동에 실패했다. @DirtiesContext 로 닫으면 그다음
+		// 새 컨텍스트가 멈춘 웹앱 클래스로더로 mapper/ 를 읽다 실패해(순서에 따라) 풀을 줄이는 쪽을 택한다
+		"spring.datasource.hikari.maximum-pool-size=2" })
 class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 
 	@MockitoBean
@@ -74,22 +79,49 @@ class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 	/**
 	 * TC-OPS-025 : SSE 타임아웃은 WARN 한 줄이고 스트림에 JSON 이 섞이지 않는다.
 	 *
-	 * <p>첫 토큰 전에 타임아웃(300ms)보다 오래 잔다. 운영에서 업스트림이 응답하지 않는 모양이다.
+	 * <p>첫 토큰 전에 업스트림이 응답하지 않는 모양이다. 시간으로 재지 않고 래치로 붙잡아, 응답이 끝난 뒤에야
+	 * 놓는다 - 잠자는 시간과 타임아웃의 대소에 결과가 걸리지 않는다.
 	 */
 	@Test
 	void sse_timeout_writes_no_json_and_logs_no_error(CapturedOutput output) throws Exception {
+		CountDownLatch upstream = new CountDownLatch(1);
 		when(openAi.streamChat(any(), any(), any())).thenAnswer(inv -> {
-			Thread.sleep(1500);
+			upstream.await(30, TimeUnit.SECONDS);
 			return new ChatCompletion("늦은 답", List.of(), true, null, null);
 		});
 		String token = createUser("sse-timeout@b.com");
+		String convId = createConversation(token);
 
-		String body = rawChat(token, createConversation(token));
+		String body;
+		try {
+			body = rawChat(token, convId);
+		} finally {
+			upstream.countDown();
+		}
 
 		assertThat(body).contains("event:meta");
 		assertThat(body).doesNotContain("INTERNAL_ERROR");
 		assertThat(output).doesNotContain("처리되지 않은 예외");
-		assertThat(output).contains("SSE 스트림 타임아웃");
+		assertThat(output).contains("비동기 요청 타임아웃");
+		awaitTimedOutSave(convId);
+	}
+
+	/**
+	 * 놓아 준 워커가 저장까지 마칠 때를 기다린다 - 워커 스레드가 테스트(와 컨텍스트)보다 오래 살지 않게 한다.
+	 * 뒤늦은 완료라 timed_out=true 로 남는다(#84 갈래 ②)
+	 */
+	private void awaitTimedOutSave(String convId) throws InterruptedException {
+		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+		while (System.nanoTime() < deadline) {
+			Integer n = jdbc.queryForObject(
+					"select count(*) from messages where conversation_id = ? and role = 'assistant' and timed_out",
+					Integer.class, UUID.fromString(convId));
+			if (n != null && n > 0) {
+				return;
+			}
+			Thread.sleep(50);
+		}
+		throw new AssertionError("타임아웃 뒤 워커가 저장을 마치지 않음");
 	}
 
 	/**

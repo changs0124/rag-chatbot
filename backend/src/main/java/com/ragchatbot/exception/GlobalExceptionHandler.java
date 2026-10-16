@@ -204,7 +204,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(AsyncRequestTimeoutException.class)
 	public ResponseEntity<ApiError> handleAsyncTimeout(AsyncRequestTimeoutException ex, HttpServletRequest request,
 			HttpServletResponse response) {
-		log.warn("SSE 스트림 타임아웃 {} {}", request.getMethod(), request.getRequestURI());
+		log.warn("비동기 요청 타임아웃 {} {}", request.getMethod(), request.getRequestURI());
 		if (response.isCommitted()) {
 			return null;
 		}
