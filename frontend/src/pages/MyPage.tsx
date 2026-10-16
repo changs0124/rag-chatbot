@@ -2,8 +2,11 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
+import BackLink from '../components/BackLink'
+import PageShell from '../components/PageShell'
 import TextInput from '../components/TextInput'
-import { IconChevronLeft, IconChevronRight, IconFile } from '../components/icons'
+import { IconChevronRight, IconFile } from '../components/icons'
+import { primaryButtonClass } from '../components/primaryButton'
 import { errorMessage, setToken } from '../lib/api'
 import { updateName, updatePassword } from '../lib/endpoints'
 
@@ -50,86 +53,75 @@ export default function MyPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] overflow-y-auto bg-canvas">
-      <div className="mx-auto max-w-2xl px-4 pt-2 pb-8 md:px-6 md:pt-8">
-        <Link
-          to="/"
-          className="-ml-2 inline-flex h-11 items-center gap-1 rounded-xl px-2 text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink md:ml-0 md:h-auto md:rounded-none md:px-0"
-        >
-          <IconChevronLeft className="h-4 w-4" />
-          채팅으로
-        </Link>
+    <PageShell maxWidth="max-w-2xl">
+      <BackLink to="/">채팅으로</BackLink>
 
-        <h1 className="mt-4 mb-1 text-2xl font-semibold text-ink">설정</h1>
-        <p className="mb-6 text-sm text-ink-muted">{user?.email}</p>
+      <h1 className="mt-4 mb-1 text-2xl font-semibold text-ink">설정</h1>
+      <p className="mb-6 text-sm text-ink-muted">{user?.email}</p>
 
-        {notice && (
-          <p className="mb-4 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-accent">{notice}</p>
-        )}
-        {error && (
-          <p className="mb-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</p>
-        )}
+      {notice && (
+        <p className="mb-4 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-accent">{notice}</p>
+      )}
+      {error && (
+        <p className="mb-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</p>
+      )}
 
-        <div className="space-y-4">
-          <Card title="이름">
-            <div className="flex gap-2">
-              <TextInput value={name} onChange={(e) => setName(e.target.value)} />
-              <button onClick={saveName} disabled={!name.trim()} className={btnClass}>
-                저장
-              </button>
-            </div>
+      <div className="space-y-4">
+        <Card title="이름">
+          <div className="flex gap-2">
+            <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+            <button onClick={saveName} disabled={!name.trim()} className={primaryButtonClass}>
+              저장
+            </button>
+          </div>
+        </Card>
+
+        <Card title="비밀번호">
+          <div className="space-y-2.5">
+            <TextInput
+              type="password"
+              placeholder="현재 비밀번호"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+            <TextInput
+              type="password"
+              placeholder="새 비밀번호 (8자 이상)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+            <button
+              onClick={savePassword}
+              disabled={!currentPassword || newPassword.length < 8}
+              className={primaryButtonClass}
+            >
+              비밀번호 변경
+            </button>
+          </div>
+        </Card>
+
+        {/* 관리자에게만 렌더한다 — 눌러서 404 를 만나는 것보다 없는 편이 낫다.
+            이 판단은 노출용이고, 실제 차단은 서버가 404 로 한다 */}
+        {user?.role === 'admin' && (
+          <Card title="관리">
+            <Link
+              to="/admin"
+              className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas"
+            >
+              <span className="inline-flex items-center gap-2">
+                <IconFile className="h-4 w-4 text-ink-muted" />
+                문서 관리
+              </span>
+              <IconChevronRight className="h-4 w-4 text-ink-muted" />
+            </Link>
           </Card>
-
-          <Card title="비밀번호">
-            <div className="space-y-2.5">
-              <TextInput
-                type="password"
-                placeholder="현재 비밀번호"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-              <TextInput
-                type="password"
-                placeholder="새 비밀번호 (8자 이상)"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-              <button
-                onClick={savePassword}
-                disabled={!currentPassword || newPassword.length < 8}
-                className={btnClass}
-              >
-                비밀번호 변경
-              </button>
-            </div>
-          </Card>
-
-          {/* 관리자에게만 렌더한다 — 눌러서 404 를 만나는 것보다 없는 편이 낫다.
-              이 판단은 노출용이고, 실제 차단은 서버가 404 로 한다 */}
-          {user?.role === 'admin' && (
-            <Card title="관리">
-              <Link
-                to="/admin"
-                className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <IconFile className="h-4 w-4 text-ink-muted" />
-                  문서 관리
-                </span>
-                <IconChevronRight className="h-4 w-4 text-ink-muted" />
-              </Link>
-            </Card>
-          )}
-        </div>
+        )}
       </div>
-    </div>
+    </PageShell>
   )
 }
-
-const btnClass =
-  'h-11 shrink-0 rounded-full bg-accent px-5 text-sm font-medium text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 disabled:opacity-40'
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (

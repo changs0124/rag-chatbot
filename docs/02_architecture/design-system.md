@@ -210,6 +210,9 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - **활성 대화** : `accent-soft` 배경 + `accent` 글자. 선을 두르지 않는다.
 - **사이드바 폭** : `ResizableSidebar` 가 관장한다(200~420px, 기본 260px, `localStorage`). 범위 밖 저장값은 무시하고 기본값으로 연다.
   손잡이는 `role="separator"` 로 키보드에서도 조절된다. 모바일 드로어에는 손잡이가 없다.
+- **주요 버튼은 `components/primaryButton.ts` 의 `primaryButtonClass` 하나다**(#330) — accent 알약 · `h-11`(44px) ·
+  비활성 `opacity-50`. 호출부는 바깥 여백만 덧붙인다. 마이페이지 · 관리자 · 발급 창 「닫기」 · 오류 화면이 쓴다
+  (로그인 버튼은 `h-12` 전폭이라 따로다). 마이페이지 · 관리자 상단의 뒤로가기와 페이지 골격은 `BackLink` · `PageShell` 이 가진다
 - **이중 테두리(double-bezel)는 모달과 로그인 폼에만** 쓴다. 대화 버블·첨부 카드에는 과하다.
 - **아이콘** : 지금의 자체 SVG 세트(`frontend/src/components/icons.tsx`)를 계속 쓴다. 굵기 1.8 유지.
   **이모지·장식 기호(📄 ⚠ ● ← → 등)를 화면에 쓰지 않는다**(#192) — 글꼴·OS 마다 모양이 다르고 일부는 컬러 이모지로 떠서
@@ -389,6 +392,7 @@ s.save('frontend/public/favicon.ico',sizes=[(16,16),(32,32),(48,48)])"
 | `frontend/src/pages/LoginPage.tsx` · `MyPage.tsx` | Editorial Split · 카드 · **#151** 로그인 좌측 상단 로고(알약 텍스트 대체) · **#155** `MyPage` 오류 배너를 `danger-soft` 로(#151 이 `AdminPage` 만 고쳤다) |
 | `frontend/src/pages/AdminPage.tsx` | **#151** 오류 배너를 `danger-soft` 로 — accent 가 파랑이 되며 연파랑 위 빨간 글씨로 깨지던 자리다 |
 | `frontend/src/components/ErrorBoundary.tsx` | 토큰 · `100dvh` · accent 알약 버튼 |
+| `frontend/src/components/primaryButton.ts` · `BackLink.tsx` · `PageShell.tsx` | **#330 신규** — 주요 버튼 4벌 · 뒤로가기 · 페이지 골격 2벌을 한 곳으로. 비활성 `opacity-50` 통일 · 발급 창 「닫기」 40 → 44px |
 | `frontend/index.html` · `frontend/public/` | 파비콘 4종 · `theme-color` · `lang="ko"`(문서는 한국어인데 `en` 으로 선언돼 있었음) · **#151** 아이콘을 D 마크로 교체 |
 
 화면 코드에 남은 `zinc-*` 색은 0건이고, **화면이 쓰는 색은 아래 「색 리터럴이 허용되는 자리」 밖에서는 전부 토큰이다.**

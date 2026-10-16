@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, Navigate } from 'react-router'
+import { Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
+import BackLink from '../components/BackLink'
 import ConfirmModal from '../components/ConfirmModal'
+import PageShell from '../components/PageShell'
 import TextInput from '../components/TextInput'
-import { IconAlert, IconCheck, IconChevronLeft, IconClock } from '../components/icons'
+import { IconAlert, IconCheck, IconClock } from '../components/icons'
+import { primaryButtonClass } from '../components/primaryButton'
 import { errorMessage } from '../lib/api'
 import {
   createAdminUser,
@@ -40,6 +43,10 @@ const STATUS_CLASS: Record<RagDocument['status'], string> = {
 }
 
 const ACCEPT = '.pdf,.txt,.md,.docx'
+
+// 행 끝의 작은 동작 버튼(동기화 · 삭제 · 초기화). 모바일만 44px 로 키운다(design-system 「7. 모바일」). hover 글자색만 호출부가 덧붙인다
+const actionBtn =
+  'min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised disabled:opacity-60 md:min-h-0'
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -98,14 +105,24 @@ export default function AdminPage() {
     if (isAdmin) void refresh()
   }, [isAdmin, refresh])
 
+  // 폴링이 지켜보는 것은 인덱싱 상태뿐이다 - 사용자 목록은 첫 로드와 변경 뒤에만 다시 읽는다(#330)
+  const pollDocuments = useCallback(async () => {
+    try {
+      setDocuments(await listDocuments())
+      setListError(null)
+    } catch (e) {
+      setListError(errorMessage(e, '목록을 불러오지 못했습니다'))
+    }
+  }, [])
+
   // 인덱싱 중인 문서가 하나라도 있을 때만 다시 읽는다. 전부 종료 상태면 멈춘다 —
   // 안 멈추면 화면을 열어둔 내내 배경에서 계속 돈다
   useEffect(() => {
     if (!isAdmin) return
     if (!documents.some((d) => d.status === 'in_progress')) return
-    const timer = setInterval(() => void refresh(), POLL_MS)
+    const timer = setInterval(() => void pollDocuments(), POLL_MS)
     return () => clearInterval(timer)
-  }, [isAdmin, documents, refresh])
+  }, [isAdmin, documents, pollDocuments])
 
   // 일회용 비밀번호 창은 Esc 와 「닫기」로만 닫는다(#253). 배경 클릭으로 닫히면 「지금만 볼 수 있는」 값이
   // 한 번의 헛클릭에 사라져 비밀번호를 다시 초기화해야 한다 - 그래서 이 창만 배경 닫기를 두지 않는다
@@ -203,164 +220,157 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] overflow-y-auto bg-canvas">
-      <div className="mx-auto max-w-3xl px-4 pt-2 pb-8 md:px-6 md:pt-8">
-        <Link
-          to="/me"
-          className="-ml-2 inline-flex h-11 items-center gap-1 rounded-xl px-2 text-sm text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:text-ink md:ml-0 md:h-auto md:rounded-none md:px-0"
-        >
-          <IconChevronLeft className="h-4 w-4" />
-          마이페이지
-        </Link>
+    <PageShell maxWidth="max-w-3xl">
+      <BackLink to="/me">마이페이지</BackLink>
 
-        <h1 className="mt-6 text-xl font-semibold text-ink">문서 관리</h1>
-        <p className="mt-1 text-sm leading-relaxed text-ink-muted">
-          답변 근거로 쓰이는 사내 문서입니다. 여기 없는 내용은 답변에 출처로 붙지 않습니다.
-        </p>
+      <h1 className="mt-6 text-xl font-semibold text-ink">문서 관리</h1>
+      <p className="mt-1 text-sm leading-relaxed text-ink-muted">
+        답변 근거로 쓰이는 사내 문서입니다. 여기 없는 내용은 답변에 출처로 붙지 않습니다.
+      </p>
 
-        {[listError, error].map(
-          (m, i) =>
-            m && (
-              <p key={i} className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
-                {m}
-              </p>
-            ),
-        )}
+      {[listError, error].map(
+        (m, i) =>
+          m && (
+            <p key={i} className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
+              {m}
+            </p>
+          ),
+      )}
 
-        <section className="mt-6">
-          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-surface px-6 py-8 text-center transition duration-150 ease-[var(--ease-out-quint)] hover:border-accent">
-            <span className="text-sm text-ink">
-              {uploading ? '올리는 중…' : '파일을 선택해 올립니다'}
-            </span>
-            <span className="text-xs text-ink-muted">PDF · TXT · MD · DOCX · 최대 25MB</span>
-            <input
-              type="file"
-              accept={ACCEPT}
-              className="hidden"
-              disabled={uploading}
-              onChange={onPick}
-            />
-          </label>
-        </section>
+      <section className="mt-6">
+        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-surface px-6 py-8 text-center transition duration-150 ease-[var(--ease-out-quint)] hover:border-accent">
+          <span className="text-sm text-ink">
+            {uploading ? '올리는 중…' : '파일을 선택해 올립니다'}
+          </span>
+          <span className="text-xs text-ink-muted">PDF · TXT · MD · DOCX · 최대 25MB</span>
+          <input
+            type="file"
+            accept={ACCEPT}
+            className="hidden"
+            disabled={uploading}
+            onChange={onPick}
+          />
+        </label>
+      </section>
 
-        <section className="mt-8">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-medium text-ink-muted">문서 {documents.length}건</h2>
-            <button
-              onClick={() => void onSync()}
-              disabled={syncing}
-              className="min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink disabled:opacity-60 md:min-h-0"
-            >
-              {syncing ? '맞추는 중…' : '스토어와 동기화'}
-            </button>
+      <section className="mt-8">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-medium text-ink-muted">문서 {documents.length}건</h2>
+          <button
+            onClick={() => void onSync()}
+            disabled={syncing}
+            className={actionBtn + ' hover:text-ink'}
+          >
+            {syncing ? '맞추는 중…' : '스토어와 동기화'}
+          </button>
+        </div>
+        {syncNotice && <p className="mt-2 text-xs text-ink-muted">{syncNotice}</p>}
+
+        {loaded && documents.length === 0 ? (
+          <div className="mt-3 rounded-2xl bg-surface px-6 py-10 text-center">
+            <p className="text-sm text-ink">아직 문서가 없습니다</p>
+            {/* 0건은 "검색했는데 없다"가 아니라 **아직 시작하지 않은** 상태다. 그 차이를 밝힌다 */}
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+              지금은 모든 답변이 &lsquo;자료 없음&rsquo; 으로 표시됩니다.
+              <br />
+              문서를 올리면 답변에 출처가 붙기 시작합니다.
+            </p>
           </div>
-          {syncNotice && <p className="mt-2 text-xs text-ink-muted">{syncNotice}</p>}
-
-          {loaded && documents.length === 0 ? (
-            <div className="mt-3 rounded-2xl bg-surface px-6 py-10 text-center">
-              <p className="text-sm text-ink">아직 문서가 없습니다</p>
-              {/* 0건은 "검색했는데 없다"가 아니라 **아직 시작하지 않은** 상태다. 그 차이를 밝힌다 */}
-              <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-                지금은 모든 답변이 &lsquo;자료 없음&rsquo; 으로 표시됩니다.
-                <br />
-                문서를 올리면 답변에 출처가 붙기 시작합니다.
-              </p>
-            </div>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {documents.map((doc) => (
-                <li
-                  key={doc.id}
-                  className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 md:gap-4"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-ink">{doc.filename}</p>
-                    <p className="mt-0.5 text-xs text-ink-muted">
-                      <StatusLabel status={doc.status} />
-                      {' · '}
-                      {formatSize(doc.byteSize)} · {doc.uploadedByName} · {formatDate(doc.createdAt)}
-                    </p>
-                    {/* 아이콘만 두면 "올라갔으니 됐다"고 읽는다 — REQ-ADMIN-003 이 막으려는 오독 */}
-                    {doc.status === 'failed' && (
-                      <p className="mt-1 text-xs text-danger">
-                        인덱싱에 실패해 답변 근거로 쓰이지 않습니다
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setPendingDelete(doc)}
-                    className="min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-danger md:min-h-0"
-                  >
-                    삭제
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="mt-10">
-          <h2 className="text-sm font-medium text-ink-muted">사용자 {users.length}명</h2>
-          {/* 스스로 가입하는 경로가 없으므로 계정은 여기서만 태어난다 */}
-          <form onSubmit={onCreate} className="mt-3 rounded-2xl bg-surface px-4 py-3 md:flex md:items-end md:gap-3">
-            <label className="block flex-1">
-              <span className="text-xs text-ink-muted">이메일</span>
-              <TextInput
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                required
-                autoComplete="off"
-              />
-            </label>
-            <label className="mt-3 block flex-1 md:mt-0">
-              <span className="text-xs text-ink-muted">이름</span>
-              <TextInput
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                required
-                autoComplete="off"
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={creating}
-              className="mt-3 h-11 shrink-0 rounded-full bg-accent px-5 text-sm font-medium text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 disabled:opacity-50 md:mt-0"
-            >
-              {creating ? '발급 중…' : '계정 추가'}
-            </button>
-          </form>
+        ) : (
           <ul className="mt-3 space-y-2">
-            {users.map((person) => (
+            {documents.map((doc) => (
               <li
-                key={person.id}
+                key={doc.id}
                 className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 md:gap-4"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-ink">
-                    {person.name}
-                    <span className="ml-2 text-xs text-ink-muted">
-                      {person.role === 'admin' ? '관리자' : '사용자'}
-                    </span>
+                  <p className="truncate text-sm text-ink">{doc.filename}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    <StatusLabel status={doc.status} />
+                    {' · '}
+                    {formatSize(doc.byteSize)} · {doc.uploadedByName} · {formatDate(doc.createdAt)}
                   </p>
-                  <p className="mt-0.5 truncate text-xs text-ink-muted">{person.email}</p>
+                  {/* 아이콘만 두면 "올라갔으니 됐다"고 읽는다 — REQ-ADMIN-003 이 막으려는 오독 */}
+                  {doc.status === 'failed' && (
+                    <p className="mt-1 text-xs text-danger">
+                      인덱싱에 실패해 답변 근거로 쓰이지 않습니다
+                    </p>
+                  )}
                 </div>
-                {/* 자기 자신은 대상이 아니다 — 마이페이지에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
-                {person.id !== user?.id && (
-                  <button
-                    onClick={() => setPendingReset(person)}
-                    disabled={resettingId !== null}
-                    className="min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink disabled:opacity-60 md:min-h-0"
-                  >
-                    비밀번호 초기화
-                  </button>
-                )}
+                <button
+                  onClick={() => setPendingDelete(doc)}
+                  className={actionBtn + ' hover:text-danger'}
+                >
+                  삭제
+                </button>
               </li>
             ))}
           </ul>
-        </section>
-      </div>
+        )}
+      </section>
 
+      <section className="mt-10">
+        <h2 className="text-sm font-medium text-ink-muted">사용자 {users.length}명</h2>
+        {/* 스스로 가입하는 경로가 없으므로 계정은 여기서만 태어난다 */}
+        <form onSubmit={onCreate} className="mt-3 rounded-2xl bg-surface px-4 py-3 md:flex md:items-end md:gap-3">
+          <label className="block flex-1">
+            <span className="text-xs text-ink-muted">이메일</span>
+            <TextInput
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              required
+              autoComplete="off"
+            />
+          </label>
+          <label className="mt-3 block flex-1 md:mt-0">
+            <span className="text-xs text-ink-muted">이름</span>
+            <TextInput
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              required
+              autoComplete="off"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={creating}
+            className={primaryButtonClass + ' mt-3 md:mt-0'}
+          >
+            {creating ? '발급 중…' : '계정 추가'}
+          </button>
+        </form>
+        <ul className="mt-3 space-y-2">
+          {users.map((person) => (
+            <li
+              key={person.id}
+              className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 md:gap-4"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-ink">
+                  {person.name}
+                  <span className="ml-2 text-xs text-ink-muted">
+                    {person.role === 'admin' ? '관리자' : '사용자'}
+                  </span>
+                </p>
+                <p className="mt-0.5 truncate text-xs text-ink-muted">{person.email}</p>
+              </div>
+              {/* 자기 자신은 대상이 아니다 — 마이페이지에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
+              {person.id !== user?.id && (
+                <button
+                  onClick={() => setPendingReset(person)}
+                  disabled={resettingId !== null}
+                  className={actionBtn + ' hover:text-ink'}
+                >
+                  비밀번호 초기화
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* 모달은 fixed 라 골격 안에 두어도 화면 기준으로 뜬다 */}
       {pendingDelete && (
         <ConfirmModal
           title={`'${pendingDelete.filename}' 를 삭제할까요?`}
@@ -404,7 +414,7 @@ export default function AdminPage() {
                 <button
                   autoFocus
                   onClick={() => setIssued(null)}
-                  className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.02] active:scale-[0.98]"
+                  className={primaryButtonClass}
                 >
                   닫기
                 </button>
@@ -413,7 +423,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   )
 }
 

@@ -5,7 +5,7 @@ import Sidebar from './Sidebar'
 import type { Conversation } from '../../lib/types'
 
 function conv(id: string, at: Date): Conversation {
-  return { id, title: id, createdAt: at.toISOString(), updatedAt: at.toISOString() }
+  return { id, title: id, updatedAt: at.toISOString() }
 }
 
 function groupOf(title: string) {

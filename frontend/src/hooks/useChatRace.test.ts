@@ -24,7 +24,7 @@ function deferred<T>() {
   return { promise, resolve }
 }
 
-const conv = (id: string): Conversation => ({ id, title: id, createdAt: '', updatedAt: '' })
+const conv = (id: string): Conversation => ({ id, title: id, updatedAt: '' })
 
 const msg = (id: string): ChatMessage => ({
   id,

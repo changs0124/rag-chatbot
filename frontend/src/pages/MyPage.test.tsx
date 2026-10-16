@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
 import { getToken, setToken } from '../lib/api'
@@ -57,7 +57,6 @@ describe('MyPage 비밀번호 변경', () => {
     currentRole = 'user'
   })
   afterEach(() => {
-    cleanup()
     setToken(null)
     vi.clearAllMocks()
   })

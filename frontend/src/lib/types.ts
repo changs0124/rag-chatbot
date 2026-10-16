@@ -15,7 +15,6 @@ export interface AuthResponse {
 export interface Conversation {
   id: string
   title: string
-  createdAt: string
   updatedAt: string
 }
 
@@ -57,7 +56,6 @@ export interface AdminUser {
   email: string
   name: string
   role: 'user' | 'admin'
-  createdAt: string
 }
 
 export interface Attachment {
