@@ -1,0 +1,25 @@
+#349 검증 요약 (2026-10-16, 워크트리 349-keep-draft-on-create-failure)
+
+[frontend] npm run lint (oxlint)
+  exit 0 - 출력 없음(경고 · 오류 0)
+
+[frontend] npm test (vitest run --reporter=default --reporter=json --outputFile.json=vitest-report.json)
+  Test Files  23 passed (23)
+  Tests       175 passed (175)
+  - 변경 전 main 534807a : 172 passed
+  - 추가 3건 : useChatRace 「생성 요청이 실패하면 send 가 false 로 끝나고 오류를 띄운다」
+               Composer 「onSend 가 나중에 받지 않음으로 끝나면 입력과 첨부 카드가 남음」
+               Composer 「받아들임을 기다리는 사이 더한 입력과 첨부는 남음」
+  - 앞 2건은 변경 전 소스에서 실패 확인(evidence/before/regression-test.txt)
+  - 3번째는 Composer 를 「전부 비우기」로 되돌리면 실패함을 확인(변경으로 생긴 대기 구간을 지키는 케이스)
+  - #323 기존 케이스(useChatLoading 3건 · useChatRace F2 · Composer 2건)는 반환값을 await 해 판정하도록만 맞췄고 기대값은 그대로
+
+[frontend] npm run build (tsc -b && vite build)
+  ✓ built - 타입 오류 없음
+
+[root] bash scripts/check-case-floor.sh frontend
+  케이스 수(frontend) : 실측 175 / 하한 175 - OK  (FRONTEND_MIN 172 → 175)
+
+[root] bash scripts/check-all.sh docs
+  exit 0 - 돌린 검사는 전부 통과(문서 참조 실재 · 섹션 이름 대조 · 충돌 표시 · 셸 구문)
+  건너뜀 1건 : 셸 정적 분석(로컬에 shellcheck 없음, CI 러너에는 있음)
