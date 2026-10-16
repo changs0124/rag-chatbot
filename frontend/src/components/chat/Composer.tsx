@@ -32,10 +32,14 @@ let draftSeq = 0
 export default function Composer({
   onSend,
   streaming,
+  busy = false,
   onStop,
 }: {
-  onSend: (text: string, attachments: Attachment[]) => void
+  /** 받아들였으면 true - 거절된 전송은 입력과 첨부 초안을 그대로 둔다(#323) */
+  onSend: (text: string, attachments: Attachment[]) => boolean
   streaming: boolean
+  /** 이력 로딩 · 대화 생성 중 - 이때 보낸 것은 어차피 거절되므로 비우기 전에 막는다(#323) */
+  busy?: boolean
   onStop: () => void
 }) {
   const [text, setText] = useState('')
@@ -183,12 +187,13 @@ export default function Composer({
   const failed = drafts.filter((d) => d.status === 'error')
 
   function doSend() {
-    if (streaming || pending) return
+    if (streaming || pending || busy) return
     if (!text.trim() && drafts.length === 0) return
-    onSend(
+    const accepted = onSend(
       text.trim(),
       drafts.map((d) => d.attachment).filter((a): a is Attachment => !!a),
     )
+    if (!accepted) return
     setText('')
     drafts.forEach((d) => URL.revokeObjectURL(d.previewUrl))
     setDrafts([])
@@ -284,7 +289,7 @@ export default function Composer({
               aria-label="보내기"
               className="grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10 bg-accent text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97] disabled:scale-100 disabled:opacity-35"
               // 올라가지 않은(또는 실패한) 첨부를 둔 채 보내면 그 이미지가 빠진 줄 모르고 보내게 됨
-              disabled={pending || (!text.trim() && drafts.length === 0)}
+              disabled={busy || pending || (!text.trim() && drafts.length === 0)}
               // 비활성 버튼은 이유를 말하지 않으면 고장으로 읽힌다(#101)
               title={
                 failed.length > 0
