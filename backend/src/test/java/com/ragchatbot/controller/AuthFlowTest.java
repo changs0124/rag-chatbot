@@ -99,8 +99,7 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 	private static com.auth0.jwt.JWTCreator.Builder authClaims() {
 		return JWT.create()
 				.withAudience("auth")
-				.withSubject(UUID.randomUUID().toString())
-				.withClaim("email", "sig@b.com");
+				.withSubject(UUID.randomUUID().toString());
 	}
 
 	/** 다른 시크릿으로 정상 서명한 well-formed 토큰 - 서명 검증이 없으면 통과해 버림 */

@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Removed
+- **아무도 읽지 않던 계약 필드 둘을 뺐다 — 출처 `uri` 와 JWT `email` 클레임(#328).**
+  - 출처 `uri` : 레코드 → SSE `citations` → DB insert/select → REST `CitationResponse` → 프론트 `Citation` 타입까지 실려 다녔지만 읽는 곳이 없었다
+    (live 는 늘 `""`, 목업은 가짜 `corpus://…`). **DB `citations.uri` 컬럼은 남기고 마이그레이션은 하지 않는다** — nullable 이라 insert 에서 빼면 새 행은 NULL
+  - JWT `email` : 발급 때 쓰고 갱신 때 옮겨 적으려고만 읽었다 — 모든 bearer 토큰이 이메일을 싣고 다녔다. `JwtService.issue(UUID)` 로 줄였다.
+    검증은 서명 · 만료 · subject · 비밀번호 변경 기준선만 보므로 **이미 발급된 email 클레임 토큰도 그대로 인증 · 갱신된다**(갱신본에는 email 이 없다)
+  - 테스트 3건(변경 전 3건 실패 확인) : SSE · 재조회 출처 객체의 키가 `seq` · `sourceName` · `snippet` 뿐, 새 · 갱신 토큰에 email 없음, 옛 형식 토큰 인증 · 갱신.
+    **백엔드 하한 291 → 294**(실측)
+
 ### Changed
 - **관리자 비밀번호 초기화에 확인 창을 두고 연타를 막았다(#325).** 2026-10-16 전체 리뷰 F5. 클릭 한 번에 대상의 기존 로그인이 전부 끊기고 되돌릴 수 없었으며,
   연타하면 요청이 두 번 나가 늦게 온 응답이 이미 무효가 된 비밀번호를 보여 줄 수 있었다.

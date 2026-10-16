@@ -14,7 +14,7 @@ describe('MessageList', () => {
         content: '안내는 다음과 같음 [1]',
         status: 'complete',
         createdAt: '',
-        citations: [{ seq: 1, sourceName: '이용 정책 문서', snippet: '발췌', uri: 'corpus://1' }],
+        citations: [{ seq: 1, sourceName: '이용 정책 문서', snippet: '발췌' }],
       },
     ]
     render(<MessageList messages={messages} />)
@@ -66,7 +66,7 @@ describe('MessageList', () => {
         content: '안내는 다음과 같음 [1]',
         status: 'complete',
         createdAt: '',
-        citations: [{ seq: 1, sourceName: '이용 정책 문서', snippet: '발췌', uri: 'corpus://1' }],
+        citations: [{ seq: 1, sourceName: '이용 정책 문서', snippet: '발췌' }],
       },
     ]
     render(<MessageList messages={messages} />)
@@ -201,7 +201,7 @@ describe('MessageList', () => {
         content,
         status: 'complete',
         createdAt: '',
-        citations: [{ seq: 1, sourceName: '매뉴얼', snippet: '', uri: '' }],
+        citations: [{ seq: 1, sourceName: '매뉴얼', snippet: '' }],
       },
     ]
 
@@ -245,7 +245,7 @@ describe('MessageList', () => {
       content,
       status: 'complete',
       createdAt: '',
-      citations: role === 'assistant' ? [{ seq: 1, sourceName: '매뉴얼', snippet: '', uri: '' }] : [],
+      citations: role === 'assistant' ? [{ seq: 1, sourceName: '매뉴얼', snippet: '' }] : [],
     })
 
     it('굵게 · 목록 · 표를 기호가 아니라 서식으로 그린다', () => {

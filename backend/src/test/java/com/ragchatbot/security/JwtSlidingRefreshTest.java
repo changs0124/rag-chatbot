@@ -2,10 +2,12 @@ package com.ragchatbot.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,9 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
@@ -28,6 +33,9 @@ class JwtSlidingRefreshTest extends AbstractPgIntegrationTest {
 
 	@Autowired
 	private CorsConfigurationSource corsConfigurationSource;
+
+	@Value("${app.jwt.secret}")
+	private String jwtSecret;
 
 	@SuppressWarnings("rawtypes")
 	private org.springframework.http.ResponseEntity<Map> me(String token) {
@@ -60,6 +68,44 @@ class JwtSlidingRefreshTest extends AbstractPgIntegrationTest {
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(res.getBody().get("email")).isEqualTo("slide-usable@b.com");
+	}
+
+	/** 로그인 · 갱신으로 새로 나가는 토큰에 email 클레임이 없다(#328) - 읽는 곳 없이 bearer 마다 개인정보를 실었다 */
+	@Test
+	void new_and_refreshed_tokens_carry_no_email_claim() {
+		String token = createUser("slide-noemail@b.com");
+		String refreshed = me(token).getHeaders().getFirst(JwtAuthenticationFilter.REFRESH_HEADER);
+
+		assertThat(JWT.decode(token).getClaim("email").isMissing()).isTrue();
+		assertThat(JWT.decode(refreshed).getClaim("email").isMissing()).isTrue();
+	}
+
+	/**
+	 * email 클레임이 든 옛 형식 토큰도 인증 · 갱신을 통과한다(#328). 배포 시점에 이미 나가 있는 토큰이
+	 * 한꺼번에 401 이 되면 전원이 강제 로그아웃된다. 갱신본에는 email 이 옮겨 적히지 않는다.
+	 *
+	 * <p>iat 는 실제 로그인 토큰 것을 그대로 쓴다 - 비밀번호 변경 기준 시각 검사가 클레임 모양과 무관하게
+	 * 같은 판정을 내리도록, 다른 것은 email 클레임 하나뿐이게 한다.
+	 */
+	@Test
+	void legacy_token_with_email_claim_authenticates_and_refreshes() {
+		DecodedJWT current = JWT.decode(createUser("slide-legacy@b.com"));
+		String legacy = JWT.create()
+				.withAudience("auth")
+				.withSubject(current.getSubject())
+				.withClaim("email", "slide-legacy@b.com")
+				.withIssuedAt(current.getIssuedAtAsInstant())
+				.withExpiresAt(Instant.now().plusSeconds(600))
+				.sign(Algorithm.HMAC256(jwtSecret));
+
+		var res = me(legacy);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(res.getBody().get("email")).isEqualTo("slide-legacy@b.com");
+		String refreshed = res.getHeaders().getFirst(JwtAuthenticationFilter.REFRESH_HEADER);
+		assertThat(refreshed).isNotBlank();
+		assertThat(JWT.decode(refreshed).getClaim("email").isMissing()).isTrue();
+		assertThat(me(refreshed).getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
 	/** 무효한 토큰은 갱신해 주지 않는다 - 갱신해 주면 만료가 무의미해진다 */

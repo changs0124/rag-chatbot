@@ -10,18 +10,17 @@
 			<arg column="seq" javaType="_int"/>
 			<arg column="source_name" javaType="java.lang.String"/>
 			<arg column="snippet" javaType="java.lang.String"/>
-			<arg column="uri" javaType="java.lang.String"/>
 			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
 		</constructor>
 	</resultMap>
 
 	<insert id="insert" parameterType="com.ragchatbot.entity.Citation">
-		insert into citations (id, message_id, seq, source_name, snippet, uri)
-		values (#{id}, #{messageId}, #{seq}, #{sourceName}, #{snippet}, #{uri})
+		insert into citations (id, message_id, seq, source_name, snippet)
+		values (#{id}, #{messageId}, #{seq}, #{sourceName}, #{snippet})
 	</insert>
 
 	<select id="findByConversation" resultMap="citationResult">
-		select c.id, c.message_id, c.seq, c.source_name, c.snippet, c.uri, c.created_at
+		select c.id, c.message_id, c.seq, c.source_name, c.snippet, c.created_at
 		from citations c
 		join messages m on c.message_id = m.id
 		where m.conversation_id = #{conversationId}

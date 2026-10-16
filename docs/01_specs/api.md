@@ -238,7 +238,7 @@
 | `meta` | `{ messageId, conversationId }` | 스트림 개시 |
 | `stage` | `{ stage, label }` | 진행 단계. **실제로 지난 경계에서만 온다** |
 | `token` | `{ delta }` | 답변 조각 |
-| `citations` | `{ items: [{ seq, sourceName, snippet, uri }] }` | 출처 |
+| `citations` | `{ items: [{ seq, sourceName, snippet }] }` | 출처 |
 | `done` | `{ finishReason, noSource }` | 완료. `finishReason` 은 항상 `stop` 이다. `noSource=true` 면 인용 0건 |
 | `error` | `{ code, message }` | 스트림 도중 오류. `code: "STREAM_ERROR"` · `message: "응답 생성 중 오류"` 로 고정 |
 

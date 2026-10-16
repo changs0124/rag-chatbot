@@ -85,7 +85,7 @@ public class ConversationService {
 		Map<UUID, List<CitationResponse>> citationsByMessage = new LinkedHashMap<>();
 		for (Citation c : citationRepository.findByConversation(conversationId)) {
 			citationsByMessage.computeIfAbsent(c.messageId(), k -> new ArrayList<>())
-					.add(new CitationResponse(c.seq(), c.sourceName(), c.snippet(), c.uri()));
+					.add(new CitationResponse(c.seq(), c.sourceName(), c.snippet()));
 		}
 
 		return messageRepository.listByConversation(conversationId).stream()

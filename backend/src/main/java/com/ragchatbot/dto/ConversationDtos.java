@@ -23,7 +23,7 @@ public final class ConversationDtos {
 	public record ConversationResponse(UUID id, String title, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
 	}
 
-	public record CitationResponse(int seq, String sourceName, String snippet, String uri) {
+	public record CitationResponse(int seq, String sourceName, String snippet) {
 	}
 
 	/**

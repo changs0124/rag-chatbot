@@ -12,6 +12,5 @@ public record Citation(
 		int seq,
 		String sourceName,
 		String snippet,
-		String uri,
 		OffsetDateTime createdAt) {
 }

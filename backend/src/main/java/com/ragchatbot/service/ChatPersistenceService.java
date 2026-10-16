@@ -50,7 +50,7 @@ public class ChatPersistenceService {
 				timedOut, inputTokens, outputTokens, null));
 		for (CitationData c : citations) {
 			citationRepository.insert(new Citation(UUID.randomUUID(), assistantMsgId, c.seq(), c.sourceName(),
-					c.snippet(), c.uri(), null));
+					c.snippet(), null));
 		}
 		conversationRepository.touch(conversationId, userId);
 	}

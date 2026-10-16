@@ -115,7 +115,7 @@ class ChatStreamTimeoutTest {
 				throw failure;
 			}
 			return new ChatCompletion(String.join("", tokens),
-					List.of(new CitationData(1, "이용 정책 문서", "발췌", "corpus://policy")), false, 100, 20);
+					List.of(new CitationData(1, "이용 정책 문서", "발췌")), false, 100, 20);
 		}
 
 		@Override
