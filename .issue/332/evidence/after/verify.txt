@@ -1,0 +1,148 @@
+# #332 검증 - 2026-10-16, base origin/main 6378879
+
+## 항목별 처리 (현재 코드에서 다시 찾은 위치 기준 - 원문은 before/items.txt)
+
+A. 낡음 · 틀림 (9) - 고침 9
+C1  fixed  ci.yml:120 「셋 다 남긴다」 → 「스텝은 합치지 않는다」
+C2  fixed  application.yml:50-53 「가입」 → 계정 발급 · 근거는 EmailDomainPolicy 머리 주석, mock 줄의 「매 케이스 가입」 삭제
+C3  fixed  AdminRoleSynchronizer:27-29 「첫 가입자 자동 승격 … 기각」 삭제 (+ 같은 문장의 「(2026-08-19 결정)」 태그도 삭제 - 추가분)
+C4  fixed  OpenAiRealService:96 → 「실측과 판단은 live-integration.md 3-2」
+C5  fixed  AdminDocumentService:189-191 → 스토어 동기화(#193)가 되살려 다시 지울 수 있다(#271)
+C6  fixed  OpenAiService:66 · OpenAiMockService:105 「Phase 5 SSE」 → ChatService 가 SSE 로 내보냄
+C7  fixed  Composer.test.tsx:62 「두 제품과 같은 구분 -」 삭제
+C8  fixed  docker-compose.yml:210 → 「2026.10.0 이상이 지원한다」
+C9  fixed  preprocess.py:29 · 42-43 · 271 원본 자료 건수(212 · 115 · 8 · 143) 제거
+
+B. 정의 없는 태그 (9) - 고침 9
+C10 fixed  가이드 괄호 7곳 (check-case-floor 2·35, check-doc-refs 2·31·74, check-doc-sections 2, check-doc-versions 2)
+C11 fixed  check-runtime-versions:2 「0-A에서 4단계로」 · case-floors.env:1 「4단계」
+C12 fixed  preprocess.py:270 · 271 · 283 (QA E3)×2 · (QA D2) → (#267)
+C13 fixed  (2026-07-28 결정) 7곳 (JwtAuthenticationFilter · ChatConcurrencyLimiter · ChatController · FileService:148 · OrphanCleanupScheduler · FileStorage · ChatService:243)
+C14 fixed  ChatService:36 (SSE) · User:7 (BCrypt) · OpenAiRealService:41 「1단계 채택」 삭제 · smoke.test 「하네스 스모크」
+C15 fixed  ConversationService:107 · ProfileService:60 · useChat.test:198 · MyPage.test:66 재리뷰 태그
+C16 fixed  application.yml:78 「참조 착지값」
+C17 fixed  Markdown.tsx:15 삭제 · MessageList.test:260 → (Markdown.tsx 머리 주석, #287)
+C18 fixed  useChat.test:156 (2026-07-28 정책)
+
+C. 중복 (18) - 고침 18
+C19 fixed  ci.yml 4중 「주간 스케줄에서는 뺀다」 삭제 (on.schedule 주석이 설명)
+C20 fixed  ci.yml 3중 「변경마다 + 주 1회(#135)」 첫 줄 삭제, 잡별 고유 이유는 유지
+C21 fixed  정본 check-merge-markers.sh 머리 1줄(#210), ci.yml 은 가리키기, check-all 은 「깨진 문서다」까지
+C22 fixed  ci.yml → 「이유는 scripts/check-all.sh 의 같은 자리 주석」(「종전에는 …」 포함 삭제), check-all 쪽이 정본
+C23 fixed  check-shell-syntax 13-15 · check-all 82-84 → 정본 check-shell-lint.sh 머리 가리키기
+C24 fixed  check-all.sh docker 절 → 「CI 의 docker 잡과 같다 - 이유는 ci.yml 의 같은 잡 주석」
+C25 fixed  docker-compose 17-18 삭제, 97-98 → 「build 키가 없는 이유는 머리 주석」
+C26 fixed  정본 OpenAiService#deleteDocument(복구 경로까지 담게 보강). AdminDocumentService 172-173 · 209-210 · OpenAiRealService 658-660 은 가리키기.
+           AdminDocumentService 224-225(sync javadoc)는 유지 - 정본이 가리키는 동기화 구현 자신의 동작 설명이라 중복이 아님
+C27 fixed  ChatService 199-200 · 253-256 한 줄로 savePartial 가리키기, 282 삭제 (savePartial @param 만 유지)
+C28 fixed  OpenAiMockService 26-28 → OpenAiService.ChatCompletion 참고, OpenAiService:10 날짜 문장 삭제
+C29 fixed  ConversationService 132-133(현재 위치) 삭제 - delete javadoc 이 같은 내용, OrphanCleanupScheduler:43 → FileService#cleanupUnreferencedFiles 참고
+C30 fixed  OpenAiRealService 691-692 상대 경로 주석 삭제 (202행이 같은 설명)
+C31 fixed  AdminDocumentService 46-48 → yml 주석 가리키기(#35) · application.yml:69 → OpenAiRealService.restClient 주석 ·
+           RagDocumentRepository.xml:62 삭제(#300 태그는 RagDocumentRepository.java:41 javadoc 으로 옮김)
+C32 fixed  Composer.tsx:347 꼬리 「파일명은 버튼의 aria-label 로 남는다」 삭제
+C33 fixed  MyPage.tsx:105-106 · App.tsx:28 「서버가 404 로 막는다」 삭제 (MyPage 는 「접근 제어는 Me.role 주석」 가리키기, 정본 types.ts:5-6)
+C34 fixed  api.ts:65-66 → adoptRefreshedToken 주석의 세 곳 가리키기
+C35 fixed  useChat.test 203-205 · useChatRace.test 122-124 · Composer.test 392-394 · stream.test 66-68 · scroll.test 58-61 → 구현 주석 가리키기
+           (Composer.test 원래 지목 349-351 은 줄이 밀려, 지금 392-394 의 언마운트 블록이 Composer.tsx 121-123 과 겹치는 곳)
+C36 fixed  check-response-contract.sh 15-22 8줄 → 2줄
+
+D. 경위 서술 과다 (16) - 고침 16
+C37 fixed  preprocess.py 255-256 → 조각 안정성 이유만(#321), 건수 제거
+C38 fixed  docker-compose 46-57 12줄 → 결론 · 전제 · 검증법 6줄(#130). 「chown -R 를 한다」와 「CHOWN 은 넣지 않는다」가 모순처럼
+           읽히던 것을 「신규 named volume 은 이미 postgres 소유라 chown 이 바꿀 것이 없다」로 해소
+C39 fixed  docker-compose 75-77 · 86-89 「종전에는」 · 자기 반성 삭제
+C40 fixed  docker-compose 193-199 날짜 비교 일화 · 240-243 「이 이슈」 · 증거 절차 삭제
+C41 fixed  ci.yml 116-118 소요 시간 수치 · 146-147 「#28 에서 실제로 통과했다」 삭제
+C42 fixed  ci.yml 31-38 9줄 → 2줄(#129)
+C43 fixed  check-case-floor.sh 5-7 날짜 일화 삭제
+C44 fixed  check-doc-refs 5-6 · check-doc-versions 5-7 · check-doc-sections 4-6 → 한 줄 why + 이슈 번호,
+           13 「(#52 에서 같은 판단)」 삭제, 21 「(#65 에서 판단)」 → (#65)
+C45 fixed  check-shell-lint.sh 39-40 도입 시점 12건 집계 삭제
+C47 fixed  Dockerfile:19 「이 이슈의 증상」 줄 삭제
+C48 fixed  RateLimiterService:64 「종전에는 …」 삭제
+C49 fixed  OpenAiRealService 62-69 · 297-300 · 419-420 실측 일화 · Jackson 2 비교 · 날짜 순위 → 현재형 + (#37) · (#63) · (#268)
+C50 fixed  ChatService 242-243 → 「화면도 complete 로 다루므로 재조회와 어긋나지 않음」, 258-259 저장소 논평 꼬리 삭제
+C51 fixed  ChatController 52-56 · ChatExecutorConfig 14-15 · AuthController 23 · AdminDocumentService 217-218 → 현재형 why
+C52 fixed  「종전에는」 8건 (index.css 19 · 85, Composer.tsx 272, setup.ts 6, theme-tokens.test 12, Composer.test 305 · 343-345, useChatRace.test 209-210)
+C53 fixed  Logo.tsx 15-18 픽셀 대조 보고 → 2줄 (대조는 design-system.md 7-3)
+
+이 이슈에서 뺀 것 (이슈 본문 그대로)
+C46             already handled by #331 - deploy.sh 62-67 이 「터널 토큰은 secrets/ 파일에 있다」 · 「기억은 잊힌다」로 이미 다시 쓰임
+「배열로 받는다」 already handled by #331 - DOC_PATHS 제거로 두 블록이 사라짐(git grep 0건)
+TC-OPS ID 겹침  범위 밖(주석 아님)
+
+교차 중복 5그룹 - 고침 5
+G1 토큰 null  정본 Message.java(+OpenAiService ChatCompletion). ChatPersistenceService 42-43 → 한 줄 + 태그, ChatService 255 · 282 삭제(C27).
+              나머지(OpenAiRealService 280 · 346-349, OpenAiMockService 122, MessageRepository.xml 17, ChatService 101)는 이미 한 줄 + 태그이거나
+              그 자리 고유 이유(asInt 의 0, _int 매핑)라 유지
+G2 timedOut   정본 Message.java. ChatPersistenceService 36-40 · ConversationDtos 33-34 · ChatService 226-227 → 가리키기.
+              ChatService 131-135(buildHistory)는 유지 - 이력에서 왜 빼는지라는 그 자리 고유 규칙
+G3 기준 시각  정본 UserRepository.java. ProfileService 51-52 · UserRepository.xml 68-69 → 가리키기
+G4 풀 = 상한  정본 application.yml(app.chat.max-concurrent-streams). ChatExecutorConfig · ChatConcurrencyLimiter → 가리키기,
+              그 문장을 인용하던 ChatExecutorPoolBindingTest javadoc 도 출처를 yml 로 고침
+G5 grep 기반  ci.yml 쪽만 한 줄로 정리(이슈 표의 권고). 스크립트 3곳 한 줄씩은 유지
+
+## 추가분 (오늘 merge 분이 더한 주석 + 완료 기준 grep)
+- 경위 서술 5곳 : primaryButton.ts 머리 「네 곳이 각자 들고 있다가 … 이미 갈렸다」 · BackLink.tsx 「각자 들고 있었다」 ·
+  OpenAiRealTestSupport · ChatStreamTestSupport 「종전에는 …」 · AdminPage.test.tsx:281 「종전에는 py-2.5 로 40px 였다」 → 현재형
+- scroll.test.ts 머리 7-9 「판정이 없던 동안에는 …」 → 현재형 (C35 와 같은 파일)
+- AdminRoleSynchronizer 「(2026-08-19 결정)」 (C3 와 같은 문장, C13 과 같은 종류)
+- JwtAuthenticationFilter 27 「살아 있었음」 → 「대조하지 않으면 … 살아 있음」 (C13 과 같은 문장)
+- 완료 기준 grep 이 backend/src 전체(테스트 포함)를 보므로 테스트 주석의 같은 태그 25곳 :
+  AppModeGuardTest · ChatExecutorPoolBindingTest · EmailDomainPolicyBindingTest · AuthFlowTest ×3 · ChatBackPressureTest · ChatFlowTest ×3 ·
+  ChatStageHonestyTest · ChatStreamContractTest · FileFlowTest ×3 · HealthControllerTest · ProfileFlowTest ×2 · OpenAiRealStageMappingTest ·
+  OpenAiServiceBoundaryTest · UserRepositoryUuidTest · JwtSecretLengthContextTest · ChatConcurrencyLimiterTest · ChatStreamAbortTest · RateLimiterKeyCapTest
+- 손대지 않고 남긴 관찰 : docs/02_architecture/backend.md:570 도 「고정한 이미지(2026.10.0)」 문구 - docs 는 이 이슈 범위 밖(지금은 사실이라 거짓은 아님)
+
+## 완료 기준 grep
+$ git grep -nE '<완료 기준 패턴>' -- backend/src frontend/src scripts .github
+backend/src/main/resources/db/migration/V1__init.sql:1:-- rag-chatbot 초기 스키마 (Phase 1)
+backend/src/main/resources/db/migration/V3__message_stopped.sql:1:-- 2026-07-28 중단 표시 (PR #7 재리뷰 지적 2)
+backend/src/main/resources/db/migration/V7__message_timed_out.sql:19:-- check (status in ('complete','error')) 를 깨야 하고, 전부 error 로 통일하는 것은 2026-07-28 결정
+-> 남은 3건은 전부 Flyway SQL(backend/src/main/resources/db/migration) - 이슈 범위 · 작업 규칙상 수정 금지
+$ git grep -nE '<완료 기준 패턴>' -- backend/src frontend/src scripts .github ':!backend/src/main/resources/db/migration'
+(rc=1 : 0건)
+$ git grep -n 가입 backend/src/main/resources/application.yml
+(rc=1 : 0건)
+
+## 코드 무변경 검사 (check_comment_only.py, base=HEAD 6378879, docs/ 제외 - CHANGELOG 만 의도된 문서 변경)
+base=HEAD changed files=79
+[1] comment-stripped code identical : OK (79/79)
+[2] changed lines not starting with a comment marker : 3
+     backend/src/main/resources/mapper/UserRepository.xml: -	     시각은 앱이 넘김 - JWT iat 와 같은 시계를 써야 새 토큰이 자기 기준선에 걸리지 않음 -->
+     backend/src/main/resources/mapper/UserRepository.xml: +	     시각을 앱이 넘기는 이유는 UserRepository#updatePasswordHash -->
+     frontend/src/pages/MyPage.tsx: -            이 판단은 노출용이고, 실제 차단은 서버가 404 로 한다 */}
+-> [2] 의 줄은 모두 여러 줄 주석의 연속 줄(XML <!-- … --> · JSX {/* … */}) 이며 [1] 이 주석을 걷은 코드 동일을 보증
+-> 검사기 자체 확인 : ChatExecutorConfig 의 newFixedThreadPool 을 일부러 바꾸면 [1] FAIL 이 났다(확인 후 원복)
+$ git diff --name-only | grep -c db/migration
+0
+$ git diff -U0 -- scripts .github | grep -cE '^[+-].*shellcheck (disable|source)'
+0
+$ git diff --stat | tail -1
+ 80 files changed, 206 insertions(+), 288 deletions(-)
+
+## 빌드 · 테스트
+$ cd backend && ./mvnw -q -DskipTests compile test-compile  -> rc=0
+$ cd backend && ./mvnw -B verify  -> rc=0
+[INFO] Tests run: 297, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+$ bash scripts/check-case-floor.sh backend
+케이스 수(backend) : 실측 297 / 하한 297
+OK
+$ cd frontend && npm ci && npm run lint && npm run build && npm test  -> rc=0 (oxlint 출력 없음)
+ Test Files  23 passed (23)
+      Tests  172 passed (172)
+$ bash scripts/check-all.sh docs
+셸 구문 검사 통과
+  ✓ 셸 구문 검사
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+  ✓ 병합 충돌 표시
+문서 참조 검사 통과
+  ✓ 문서 참조 실재
+섹션 참조 검사 통과
+  ✓ 문서 섹션 이름 대조
+돌린 검사는 전부 통과
+건너뜀 1건 - 이 검사들은 돌지 않았다:
+  - 셸 정적 분석 - shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+-> shellcheck 는 이 개발기에 없어 「모름」(CI 러너에는 있음). 바뀐 셸 줄은 전부 주석이고 shellcheck 지시 주석은 건드리지 않았다(위 0건)
