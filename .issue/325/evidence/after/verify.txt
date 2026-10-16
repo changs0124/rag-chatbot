@@ -1,0 +1,7 @@
+#325 검증 요약 (2026-10-16, worktree feat/325-reset-confirm)
+- frontend: npm run lint  -> exit 0 (oxlint)
+- frontend: npm test      -> Test Files 23 passed, Tests 165 passed (165)
+- frontend: npm run build -> exit 0 (built)
+- bash scripts/check-all.sh docs -> 돌린 검사 전부 통과 (shellcheck 미설치로 1건 건너뜀)
+- scripts/case-floors.env: FRONTEND_MIN 162 -> 165 (실측)
+- AdminPage.test.tsx: 변경 전 5 failed / 13 passed -> 변경 후 18 passed
