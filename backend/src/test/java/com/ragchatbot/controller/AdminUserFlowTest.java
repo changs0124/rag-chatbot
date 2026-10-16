@@ -171,7 +171,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void issued_name_is_trimmed() {
 		String adminToken = createAdminUser("trim-admin@b.com");
-		issueRaw("trim-target@b.com", "  관리자 ");
+		assertThat(issueRaw("trim-target@b.com", "  관리자 ").getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
 		ResponseEntity<List> res = rest.exchange("/api/admin/users", HttpMethod.GET,
 				new HttpEntity<>(bearer(adminToken)), List.class);
