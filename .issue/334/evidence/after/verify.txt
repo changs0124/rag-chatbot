@@ -1,0 +1,130 @@
+# #334 verify — 항목별 처리 · 정본
+# applied = 적용, partial = 일부 적용(사유), skipped = 미적용(사유). 줄 번호는 이 브랜치 기준(#333 반영 후)
+
+R1  applied  CONVENTIONS 게이트별 사고 이력 · 「못 잡는 것」 삭제, 무엇을 보는지 1~2줄. 정본: 각 scripts/check-*.sh 머리 주석 · CHANGELOG(#136 #138 #145 #210 #60 #52 #59). case-floor `clean` · vitest-report 재생성 경고 · shellcheck 경고 0/억제 규칙 · engines.node 는 유지
+R2  applied  필수 체크 3줄(축약 7개 · 복원 명령 · name: 바꾸면 ruleset 같이). docker/secrets/Vercel 근거 → CHANGELOG #166, 축약 이유 → #172
+R3  applied  관리자 우회 · strict 1줄, 검증 방법 1줄 → CHANGELOG #166
+R4  applied  INDEX 기술 스택 표 → README 「기술 스택」. FileStorage→S3 는 overview 「외부 연동」. check-doc-versions 24건 통과(README · backend.md:3 · overview 가 버전 주장 유지)
+R5  applied  INDEX 실행 → README 「로컬 실행」, APP_MODE 가드 → backend.md 「실행 모드」, mvnw/.env → README · backend.md 「배포」 데모
+R6  applied  INDEX 배포 준비 표 → 「2026-10-06 운영 시작」 + backend 「배포」 · frontend 「배포 (Vercel)」. Lightsail 4GB · deploy.sh · DEPLOY_HOST 는 backend.md 「배포」, env 는 .env.example 셋, Vector Store 없이 → README env 표
+R10 applied  INDEX 빈 폴더 설명 2줄
+R11 applied  backlog 체크리스트 단일 인스턴스 · S3 삭제 → overview 「알려진 제약」 · backlog 표(다중 인스턴스 · 첨부 영속성)
+R12 applied  postgresql 드라이버 하한 2줄(42.7.13 · CVE 대역 · 세 선택지 · #55 기준 유지)
+R13 applied  current-sprint 「완료」 절 삭제(:5 가 같은 말). 날짜 2026-10-16
+R14 applied  api 타임아웃 조합 → erd.md 「messages」 표(참조 유지)
+R15 applied  api 도메인 순서 · 일반 사용자 → features.md FEAT-AUTH-001 처리 흐름 4 · 5(포인터)
+R16 applied  「(2026-09-07)」 · signup 401 경위 삭제. 미인증 없는 URL=401 은 api 오류 코드 표 NOT_FOUND 행에 남음
+R17 applied  PAYLOAD_TOO_LARGE 칸 단축(약 32MB · 연결 끊김 유지 — Composer.test.tsx · AdminDocumentFlowTest · application.yml:42 가 이 표를 가리킴). 메커니즘 → application.yml 멀티파트 주석
+R18 applied  업로드 · 비밀번호 변경 상한 산문 → RATE_LIMIT 행(대상 넷 + 값은 backend 「유량 제어」). 비싼 경로 근거 → CHANGELOG #95, 비밀번호 변경 429 는 엔드포인트 표에 기존
+R19 applied  erd 「V6 로 나중에」 · 「2026-07-28 결정의 재발」(→ 이유 문장으로) · 「FEAT-OPS-001이 들어간 뒤」 · 집계 화면(→ overview 「알려진 제약」 포인터)
+R20 applied  backend 유량 제어 : 「종전 8」 · 9명째 · 「순서가 반대였을 때」 · 10분 동일 경합 · 클라이언트 하나 시절 삭제. 규칙 · 현재 값 · 실측 표 유지, Hikari 는 실측 단락 한 곳(compose 주석이 「유량 제어」를 가리킴). CL #278 #96 #76 #92
+R21 applied  backend SSE timed_out/stopped 두 항목 → 1항목(이유) + erd 「messages」
+R22 applied  #248 · #305 · #271 「종전에는」 · 런칭 포인터(#213) 삭제. CL 각 항목
+R23 applied  1GB 서버 Maven 경위 · GHCR 되돌림 추측 삭제, Maven 이미지 근거 8줄 → backend/Dockerfile 머리 주석 포인터
+R24 applied  메모리 상한 · 하드닝 : 「메모리 상한」 라벨 + 현재 값 1단락, 하드닝 요약 표 유지, cap_add · 볼륨 검증 · VM 실측 · 네트워크 · cloudflared 확인 · 다이제스트 → docker-compose.yml 주석 한 줄 포인터(+ .issue/130 원본 경로). postgres 이미지 TODO → backlog.md 보통. 스왑 라벨 · 39.1초 유지
+R25 applied  「#203 에서 옮겼다」 3중 삭제, 「터널 토큰은 파일로 넘긴다」 라벨 + 2줄. 644/700/65532 → docker-compose.yml secrets 주석
+R26 applied  리허설 4단계만(번호 목록). 소요 시간 · 기동 시간 · 「전부 일치」 · 3초 실측 · 옛 GCS 포인터 → CHANGELOG #255
+R27 applied  「첨부 파일은 로컬 디스크」 단락 삭제 → overview 「알려진 제약」(uploads 볼륨 · 소실) · 「외부 연동」(FileStorage S3)
+R28 applied  overview 머리 → 「구조가 바뀌면 함께 갱신한다」
+R29 applied  단일 인스턴스 → 「알려진 제약」 한 곳(구조도 아래는 포인터), Spring Boot 3.5/4.0 경위 → CHANGELOG(#48 항목), 모델명 → 「외부 연동」
+R30 applied  §0 헤딩 유지 + 2줄, 머리 인용 단축. 검증 관측 원본 경로는 3절 머리로
+R31 applied  ADMIN_EMAILS 면제는 1절 첫 등장만, 401/403 은 머리 curl 아래만, 「기동이 근거」 1절만, 대시보드 업로드 서술 5절 1단락, 채팅 첨부 허용 목록 삭제(→ backend 「RAG 문서 (관리자)」)
+R32 partial  「확인됨」 칸 삭제 · 증상만, 3절 머리 1줄에 「A~E 확인 · F 무해(#184 · #37)」를 남김 — OpenAiRealService.java:50 · OpenAiService.java:10 · OpenAiRealStageMappingTest 가 3절을 관측 정본으로 가리켜서. #281 빈도 → CL #281, 부착률 표는 현재 모델(gpt-6-sol) 행만, terra 행 · #269 → CL #181 · #269, 「2026-08 기준」 삭제, 사용량 SQL → erd §6
+R33 applied  「런칭 때 실제로 그랬다」 · 일회성 단계 삭제, 동기화 고아 정리 1줄 + 로그 줄. CL #271
+R34 applied  클레임 요약 표 → 「`## 전체 요약 (집계)` 절이 정본」(#333 이 이미 목록을 걷었고 남은 「평균 사용일 · #321」 삭제)
+R35 applied  상태 칸 → 「반영됨 (변경 경위는 CHANGELOG)」, v1.0/v2.1 인용 → 목표 2줄(로고 실재 값만 · 홈페이지 값), #151~#190 accent · 오렌지 경위 · Warm Editorial 행 삭제. 강조색 규칙 유지. CL #151 #190 #229 #296
+R36 applied  #198 미달 목록 · #299 이동 · 워드마크 교체 경위 · 종전 h-7 · 「168px」 · #235 헤더 서술 삭제. 규칙(h-9=149px ⊂ 152px · h-10 166px · 모바일 헤더에 로고 없음) 유지
+R37 applied  §8 파일별 변경 표 삭제. 헤딩 · :394 문단 · 「색 리터럴이 허용되는 자리」 유지
+R38 applied  design-system §7 100dvh → frontend.md 「화면 골격」 포인터
+R39 applied  번들 증가량 · 답 비율 수치 삭제, 마크다운 규칙만. CL #270 #287
+R40 applied  문서 그림 · 첨부 명세 재서술 → features FEAT-CHAT-001~004 포인터(S20 = 미리보기 못 그리는 카드 #317 을 포인터에 명시). 남긴 프론트 전용 규칙 : 전송 차단 · #100 · #101 · #77/#78 · #75 · #94 · 회수 테스트 게이트 · `+`/accept image/* · touch-action · 드래그 카운트 · 그림 키 캐시
+R41 applied  죽은 예시(#191 테마 · #289 카메라) 삭제, 「Tailwind 만」 → CONVENTIONS 「스타일」, VITE_API_BASE_URL 증상 → frontend/.env.example, 「배포 (Vercel)」 아래 토큰 · 401 메모 → 「API 통신」(CREDENTIAL_PATHS)
+R42 applied  features v1.1~v2.1 버전 노트 삭제(CL)
+R43 applied  #35 경위 삭제(불변식 「코드 상한 < 멀티파트」 유지) · FEAT-OPS-002 「도입 전 상태」 표 삭제 · FEAT-AUTH-001 결정 번복 표 → 이유 2줄 + CL #24 · 범위 밖 날짜 메모 삭제
+R44 applied  REQ-AUTH-003 → overview 「알려진 제약」 포인터, 「사용량 집계 화면 없음」 삭제(overview), 마일스톤 표 → 「Phase 1~9 완료(2026-10-06 런칭)」
+R7 R8 R9  skipped  사용자 결정 — README 표 유지
+
+# 유지 확인(git grep, CHANGELOG 제외 건수)
+3	데이터 흐름
+1	색 — 토큰으로만 쓴다
+3	색 리터럴이 허용되는 자리
+1	현재는 공용 스토어를 쓰므로 비어 있다
+1	현재 미사용
+2	메모리 상한
+3	터널 토큰은 파일로 넘긴다
+2	업로드 부하에서 스왑을 금지하기로 정했다
+1	## 7. 모바일
+1	## 7-2
+1	API-GET-003
+1	API-PATCH-003
+1	파비콘 전용 SVG
+1	39.1초
+1	#105 는 대기 항목이 아니다
+1	## 0. 지금 상태
+1	### 2-1
+1	### 3-1
+1	### 3-2
+1	### 5-1
+1	### 5-2
+2	PAYLOAD_TOO_LARGE
+1	약 32MB
+1	clean` 후
+1	vitest-report.json
+
+# 섹션 참조(check-doc-sections 대상) — 이전 33건 중 사라진 것 :
+(없음)
+새로 생긴 것 :
+README.md 「기술 스택」
+README.md 「로컬 실행」
+backend.md 「실행 모드」
+frontend.md 「화면 골격」
+
+# bash scripts/check-doc-versions.sh
+문서 버전 주장 24 건 대조
+문서 버전 대조 통과
+
+# bash scripts/check-all.sh docs
+
+▶ 셸 구문 검사
+셸 구문 검사 12개
+셸 구문 검사 통과
+  ✓ 셸 구문 검사
+
+▶ 셸 정적 분석
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+
+▶ 병합 충돌 표시
+충돌 표시 검사 통과 (파일 887개)
+  ✓ 병합 충돌 표시
+
+▶ 문서 참조 실재
+참조 수집 275건 · 실재 검사 260건
+문서 참조 검사 통과
+  ✓ 문서 참조 실재
+
+▶ 문서 섹션 이름 대조
+섹션 참조 37 건 대조
+섹션 참조 검사 통과
+  ✓ 문서 섹션 이름 대조
+
+────────────────────────────
+돌린 검사는 전부 통과
+
+건너뜀 1건 - 이 검사들은 돌지 않았다:
+  - 셸 정적 분석 - shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+도구를 설치하고 다시 돌리기 전까지 이 항목은 "통과"가 아니라 "모름"이다.
+
+# 줄 수 변화(before → after)
+docs/01_specs/api.md 435 -> 422 (-13)
+docs/01_specs/features.md 648 -> 618 (-30)
+docs/01_specs/live-integration.md 329 -> 293 (-36)
+docs/01_specs/requirements.md 153 -> 145 (-8)
+docs/02_architecture/backend.md 653 -> 578 (-75)
+docs/02_architecture/design-system.md 421 -> 390 (-31)
+docs/02_architecture/frontend.md 242 -> 217 (-25)
+docs/02_architecture/overview.md 163 -> 160 (-3)
+docs/04_tasks/backlog.md 38 -> 34 (-4)
+docs/04_tasks/current-sprint.md 22 -> 18 (-4)
+docs/CONVENTIONS.md 234 -> 182 (-52)
+docs/INDEX.md 96 -> 57 (-39)
+total 6497 -> 6177 (-320)
