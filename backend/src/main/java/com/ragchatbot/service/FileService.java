@@ -191,8 +191,13 @@ public class FileService {
 			if (referenced.contains(file.storagePath()) || !file.lastModified().isBefore(effective)) {
 				continue;
 			}
-			fileStorage.delete(file.storagePath());
-			removed++;
+			// 파일 하나가 실패해도 나머지는 이 회차에 회수한다(#367) - 못 지운 파일은 남아 다음 주기에 다시 대상이 된다
+			try {
+				fileStorage.delete(file.storagePath());
+				removed++;
+			} catch (RuntimeException e) {
+				log.warn("미참조 파일 삭제 실패 - 다음 주기에 다시 시도함. path={}", file.storagePath(), e);
+			}
 		}
 		return removed;
 	}
