@@ -1,0 +1,35 @@
+# 변경 전(main 8a54bce) 문서 주장과 코드 근거
+
+## docs/01_specs/features.md:475
+| SSE 스트림 도중 오류 | 대상 아님. 응답이 이미 시작돼 손댈 수 없고, `ChatService` 가 `event: error` 로 이미 처리한다 |
+
+## docs/01_specs/api.md:229-231
+**종료 경로는 셋이다.** 위 둘에 더해 **서버 타임아웃**이 있는데, 그때는 **아무 이벤트도 오지 않고
+연결만 끊긴다**(`app.chat.sse-timeout-ms`, 기본 10분). emitter 가 닫힌 뒤에는 애플리케이션 코드가
+한 줄도 실행되지 않아 종료 이벤트를 만들 수단이 없다. **클라이언트는 `done`·`error` 어느 쪽도 받지
+
+## docs/02_architecture/design-system.md:190
+- **속성** : `transform` · `opacity` · `background-color` 만. 레이아웃을 흔드는 속성에 트랜지션을 걸지 않는다
+
+## docs/02_architecture/overview.md:123-124
+env 로 빠지지 않은 값 하나만 적는다 — **업로드 하드 한도**는 yml 고정값으로 파일 26MB · 요청 31MB 이고,
+타입별 상한(이미지 10MB · 문서 25MB)은 코드가 400 으로 선검사한다.
+
+## README.md:64
+| Database | PostgreSQL 16 (운영 compose 이미지 `postgres:16-alpine`) |
+
+## README.md:130
+| `frontend` | oxlint · Vitest · tsc + vite 빌드 · 케이스 수 하한 |
+
+## 코드 근거
+207:		log.warn("비동기 요청 타임아웃 {} {}", request.getMethod(), request.getRequestURI());
+227:	 * <p><b>SSE 스트림 도중의 오류도 여기 온다</b>(#326). ChatService 가 {@code event: error} 를 보낸 뒤
+frontend/src/components/chat/Composer.tsx:240:        <div className="flex items-end gap-2
+frontend/src/components/TextInput.tsx:20:  'transition-[border-color,box-shadow] duration-
+frontend/src/components/BackLink.tsx:1
+frontend/src/components/chat/ResizableSidebar.tsx:1
+frontend/src/components/chat/Sidebar.tsx:4
+frontend/src/pages/ChatPage.tsx:3
+43:    max-swallow-size: 32MB
+32:    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+83:        run: bash ../scripts/check-runtime-versions.sh node
