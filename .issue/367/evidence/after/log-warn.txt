@@ -1,0 +1,4 @@
+21:43:44.761 [main] WARN com.ragchatbot.service.FileService -- 미참조 파일 삭제 실패 - 다음 주기에 다시 시도함. path=u/broken.png
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.255 s -- in com.ragchatbot.service.AttachmentLinkRaceTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
