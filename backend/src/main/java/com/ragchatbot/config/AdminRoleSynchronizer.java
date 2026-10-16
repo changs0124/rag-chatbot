@@ -43,17 +43,12 @@ public class AdminRoleSynchronizer {
 
 	private static final Logger log = LoggerFactory.getLogger(AdminRoleSynchronizer.class);
 
-	/** 관리자 명단 파싱 - 파서는 {@link EmailDomainPolicy#parseList} 하나다(정규화와 같은 눈금) */
-	public static List<String> parse(String raw) {
-		return EmailDomainPolicy.parseList(raw);
-	}
-
 	@Bean
 	ApplicationRunner syncAdminRoles(UserRepository userRepository, PasswordEncoder passwordEncoder,
 			TemporaryPasswordGenerator temporaryPasswords,
 			@Value("${app.admin.emails}") String adminEmails) {
 		return args -> {
-			List<String> emails = parse(adminEmails);
+			List<String> emails = EmailDomainPolicy.parseList(adminEmails);
 			// 계정이 없는 관리자를 먼저 만든다. 뒤의 승격이 그 계정까지 한 번에 훑도록 순서를 이렇게 둔다
 			int created = 0;
 			for (String email : emails) {

@@ -83,15 +83,15 @@
   - 테스트 5건(F4 업로드 오류 유지 케이스를 뺀 4건은 변경 전 실패 확인). **프론트 하한 157 → 162**(실측)
 
 ### Changed
-- **백엔드에 남은 죽은 코드 · 중복 · 테스트 대역 중복을 걷었다(#329).** 동작 변경 없음 — 백엔드 케이스 290 → 290(스위트별 수까지 동일), 하한 그대로.
+- **백엔드에 남은 죽은 코드 · 중복 · 테스트 대역 중복을 걷었다(#329).** 동작 변경 없음 — 백엔드 케이스 297 → 297(스위트별 수까지 동일), 하한 그대로.
   - `AttachmentRef.fileType` 제거 : 초안 첨부는 `FileService.upload` 가 이미지로만 만들어 `"image"` 필터 둘이 늘 참이었다(#299 의 `AllowedType.fileType` 과 같은 이유)
   - `FileService` 상한을 `MAX_SIZE` 하나로(네 형식 모두 10MB, 오류 문구 그대로) · 고아 회수 cron 의 `@Scheduled` 인라인 기본값 제거(yml 하나, #300) ·
-    `application.yml` 의 Boot 기본값 `spring.flyway.enabled` · `locations` 제거(Boot 4.1.1 `FlywayProperties` 기본값과 같음) ·
+    `application.yml` 의 `spring.flyway` 블록 제거(`enabled` · `locations` 가 Boot 4.1.1 `FlywayProperties` 기본값과 같음, 주석만 남김) ·
     `OpenAiRealService` 의 스토어 판정을 `hasSharedVectorStore()` 로
   - 콤마 명단 파서를 `EmailDomainPolicy.parseList` 로 옮겨 `EmailDomainPolicy` ↔ `AdminRoleSynchronizer` 상호 의존을 끊었다(도메인 명단을 관리자 이메일 파서로 읽던 모양).
-    `AdminRoleSynchronizer.parse` 는 위임만 남겼다 — `AdminUserService` 가 아직 부른다(#327 과 같은 파일이라 이번에 손대지 않음)
+    `AdminRoleSynchronizer.parse` 는 지웠고 `AdminRoleSynchronizer` · `AdminUserService` · 테스트가 `parseList` 를 부른다
   - 테스트 : 채팅 전용 OpenAI 대역 · 저장 기록 대역을 `ChatStreamTestSupport` 로, `new OpenAiRealService(...)` 14곳과 타임아웃 상수 재선언을
-    `OpenAiRealTestSupport` 로, SSE `eventNames` 를 `ChatStreamContractTest` 하나로 모았다
+    `OpenAiRealTestSupport` 로, SSE `eventNames` 를 `support/SseTestSupport` 로 모았다(테스트 클래스끼리 서로 기대지 않게)
 - **클레임 전처리 산출물 머리에 전수 집계 표를 더했다(#321).** 10-16 운영 고난도 QA 에서 212건 전체를 세야 하는 질문만 실패했다 —
   file_search 가 가져오는 조각 몇 개로는 셀 수 없어 「확인 불가」로 답하거나(X3 · X5 · X9), 부분 결과를 총계로 단정하고(같은 호기 재발 9대 → 「1대」, X14),
   연속 대화에서는 첫 턴의 불완전한 목록이 다음 턴들로 번졌다(S1). 지어낸 숫자는 0건.

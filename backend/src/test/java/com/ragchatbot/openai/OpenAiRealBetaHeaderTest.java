@@ -26,7 +26,6 @@ import com.sun.net.httpserver.HttpServer;
  */
 class OpenAiRealBetaHeaderTest {
 
-	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
 	/** 관측한 요청 한 건. beta 가 null 이면 헤더가 없었다는 뜻 */
 	private record Seen(String method, String path, String beta) {
 		@Override

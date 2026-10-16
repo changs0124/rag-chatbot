@@ -17,8 +17,7 @@ spring:
       # 사용자는 무엇이 문제인지 밝히는 400 대신 413 만 받는다(#35). 1MB 여유가 그 역할이다
       max-file-size: 26MB
       max-request-size: 31MB
-  flyway:
-    # 스키마의 소유자는 마이그레이션 SQL. 기동 시 자동 적용
+  # Flyway : 스키마의 소유자는 마이그레이션 SQL. 기동 시 자동 적용 - 켜기 · 위치(db/migration)가 Boot 기본값이라 키를 두지 않는다
 
 # MyBatis - snake_case DB 컬럼 ↔ camelCase 자바 프로퍼티, uuid 전용 TypeHandler 등록
 mybatis:

@@ -1,5 +1,6 @@
 package com.ragchatbot.controller;
 
+import static com.ragchatbot.support.SseTestSupport.eventNames;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
@@ -85,7 +86,7 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void no_stage_event_after_first_token() {
-		List<String> names = ChatStreamContractTest.eventNames(chat(createUser("stage-after@b.com"), "배송 정책"));
+		List<String> names = eventNames(chat(createUser("stage-after@b.com"), "배송 정책"));
 		int firstToken = names.indexOf("token");
 		assertThat(firstToken).as("token 이벤트가 있어야 함").isGreaterThanOrEqualTo(0);
 		assertThat(names.subList(firstToken, names.size())).doesNotContain("stage");

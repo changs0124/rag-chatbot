@@ -34,7 +34,6 @@ import com.sun.net.httpserver.HttpServer;
  */
 class OpenAiRealStreamingSpikeTest {
 
-	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
 	private HttpServer server;
 	private final CountDownLatch firstTokenSeen = new CountDownLatch(1);
 	private final AtomicBoolean serverSawSignal = new AtomicBoolean(false);

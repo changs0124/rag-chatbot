@@ -29,7 +29,6 @@ import com.ragchatbot.openai.OpenAiService.ChatInput;
  */
 class OpenAiRealInstructionsTest {
 
-	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
 	private HttpServer server;
 	private final List<String> bodies = new CopyOnWriteArrayList<>();
 	private String baseUrl;

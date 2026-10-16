@@ -20,7 +20,6 @@ import com.ragchatbot.openai.OpenAiService.Stage;
  */
 class OpenAiRealUsageTest {
 
-	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
 	private static InputStream sse(String body) {
 		return new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
 	}

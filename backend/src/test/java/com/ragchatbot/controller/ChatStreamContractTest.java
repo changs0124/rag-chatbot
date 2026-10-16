@@ -1,8 +1,8 @@
 package com.ragchatbot.controller;
 
+import static com.ragchatbot.support.SseTestSupport.eventNames;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,16 +19,6 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  * 기존 수신부가 의존하는 이벤트가 사라지지 않아야 함.
  */
 class ChatStreamContractTest extends AbstractPgIntegrationTest {
-
-	static List<String> eventNames(String sse) {
-		List<String> names = new ArrayList<>();
-		for (String line : sse.split("\n")) {
-			if (line.startsWith("event:")) {
-				names.add(line.substring(6).trim());
-			}
-		}
-		return names;
-	}
 
 	@Test
 	void sse_event_order_holds_with_stage_added() {

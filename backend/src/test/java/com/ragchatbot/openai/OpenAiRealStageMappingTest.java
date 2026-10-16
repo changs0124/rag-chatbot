@@ -21,7 +21,6 @@ import com.ragchatbot.openai.OpenAiService.Stage;
  */
 class OpenAiRealStageMappingTest {
 
-	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
 	/** 공용 Store가 없어 file_search 도구를 안 붙인 응답 - 검색 이벤트가 아예 오지 않음 */
 	private static final String SSE_WITHOUT_SEARCH = """
 			data:{"type":"response.created"}
