@@ -1,0 +1,22 @@
+# #323 고치기 전 - 새 회귀 테스트 4건 실패 (main 78b4dbe 코드 + 새 테스트)
+
+ FAIL  src/hooks/useChatLoading.test.ts > useChat 이력 불러오는 중 > 불러오는 중에 보낸 메시지는 받지 않는다
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+Received:
+ FAIL  src/hooks/useChatRace.test.ts > useChat 대화 컨텍스트 경쟁 > 생성 왕복 중 두 번째 전송은 false 를 돌려주고 creating 이 켜져 있다
+AssertionError: expected undefined to be true // Object.is equality
+- Expected:
++ Received:
+ FAIL  src/components/chat/Composer.test.tsx > Composer > onSend 가 받지 않으면 입력과 첨부 카드가 남음
+Expected the element to have value:
+Received:
+ FAIL  src/components/chat/Composer.test.tsx > Composer > busy 이면 Enter · 버튼 모두 보내지 않고 입력이 남음
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+Received:
+
+
+ Test Files  3 failed (3)
+      Tests  4 failed | 39 passed (43)
+   Start at  10:14:45
+   Duration  2.87s (transform 353ms, setup 924ms, import 852ms, tests 939ms, environment 3.22s)
+

@@ -1,0 +1,9 @@
+# #323 고친 뒤 전체 검증 (fix/323-send-during-load, 2026-10-16, 리뷰 반영 후)
+
+cd frontend && npm run lint        -> oxlint 경고 · 오류 0
+cd frontend && npm test            -> Test Files 22 passed (22) · Tests 163 passed (163)
+cd frontend && npm run build       -> tsc -b 통과 · vite build ✓
+bash scripts/check-case-floor.sh frontend -> 케이스 수(frontend) : 실측 163 / 하한 163 · OK (하한 157 -> 163)
+bash scripts/check-all.sh docs     -> 돌린 검사는 전부 통과 (셸 구문 · 충돌 표시 · 문서 참조 · 섹션 이름)
+                                      건너뜀 1건 : 셸 정적 분석(shellcheck 로컬 미설치, CI 러너에는 있음)
+변이 확인 : selectConversation 의 loadingRef 해제 줄을 지우면 새 해제 테스트 2건이 실패함(되돌린 뒤 통과)
