@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,6 +30,8 @@ import com.ragchatbot.dto.FileDtos.AttachmentResponse;
  */
 @Service
 public class FileService {
+
+	private static final Logger log = LoggerFactory.getLogger(FileService.class);
 
 	private static final long MB = 1024 * 1024;
 
@@ -154,7 +158,12 @@ public class FileService {
 		int removed = 0;
 		for (Attachment a : attachmentRepository.findOrphans(effective)) {
 			if (attachmentRepository.deleteDraftByIdAndUser(a.id(), a.userId()) == 1) {
-				fileStorage.delete(a.storagePath());
+				// 파일 하나가 실패해도 나머지는 이 회차에 회수한다(#365) - 행은 이미 지워져 남은 파일은 저장소 스캔 회수가 가져간다
+				try {
+					fileStorage.delete(a.storagePath());
+				} catch (RuntimeException e) {
+					log.warn("고아 첨부 파일 삭제 실패 - 저장소 스캔 회수가 다음 주기에 지움. path={}", a.storagePath(), e);
+				}
 				removed++;
 			}
 		}

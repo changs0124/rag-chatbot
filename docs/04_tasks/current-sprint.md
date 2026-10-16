@@ -12,6 +12,7 @@
 - [#359](https://github.com/changs0124/rag-chatbot/issues/359) 코드 리뷰 수정(백엔드 6 · 프론트 5 · 주석 · 테스트 ID). 백엔드가 바뀌므로 merge 뒤 `scripts/deploy.sh` 로 배포한다
 - [#360](https://github.com/changs0124/rag-chatbot/issues/360) 문서 리뷰 · 코드 동기화. 문서만 바뀐다
 - [#363](https://github.com/changs0124/rag-chatbot/issues/363) 늦게 도착한 재발급 토큰이 다른 계정 세션을 덮던 것(독립 리뷰 MEDIUM). 프론트만 바뀐다
+- [#365](https://github.com/changs0124/rag-chatbot/issues/365) 독립 리뷰 LOW 5건(고아 회수 계속 · 첨부 잠금 순서 · 로그인 반환 창 · 마크다운 이미지 alt · 축출 테스트). 백엔드가 바뀌므로 merge 뒤 `scripts/deploy.sh` 로 배포한다
 
 ## 블로커
 
