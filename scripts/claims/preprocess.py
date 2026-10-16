@@ -135,15 +135,25 @@ def claims_to_md(xlsx, terms):
         c = collections.Counter(fmt(r[key]) or "(비어 있음)" for r in recs)
         return [f"- {k} : {n}건" for k, n in c.most_common(top)]
 
-    def breakdown(groups, min_count=1, by_name=False):
-        """그룹 → 최종원인 분포. 기본은 건수 순, 연도처럼 순서가 있는 그룹은 이름 순"""
+    def nums(rs):
+        return "·".join(fmt(r["순번"]) for r in sorted(rs, key=lambda r: r["순번"]))
+
+    def breakdown(groups, min_count=1, by_name=False, avg=False, with_nums=False):
+        """그룹 → 최종원인 분포. 기본은 건수 순, 연도처럼 순서가 있는 그룹은 이름 순.
+        avg 는 평균 사용일, with_nums 는 클레임 번호 목록을 덧붙인다 - 「평균 며칠」·「어떤 건」은 건수만으로 답이 안 된다(#321)"""
         lines = []
         order = (lambda kv: kv[0]) if by_name else (lambda kv: (-len(kv[1]), kv[0]))
         for name, rs in sorted(groups.items(), key=order):
             if len(rs) < min_count:
                 continue
             fin = collections.Counter(fmt(r["최종원인"]) or "(비어 있음)" for r in rs)
-            lines.append(f"- {name} : {len(rs)}건 — " + " · ".join(f"{k} {n}" for k, n in fin.most_common()))
+            line = f"- {name} : {len(rs)}건 — " + " · ".join(f"{k} {n}" for k, n in fin.most_common())
+            days = [r["사용일"] for r in rs if isinstance(r["사용일"], (int, float))]
+            if avg and days:
+                line += f" · 평균 사용일 {sum(days) / len(days):.1f}일"
+            if with_nums:
+                line += f" · 클레임 {nums(rs)}"
+            lines.append(line)
         return lines
 
     def group(key_fn):
@@ -156,11 +166,56 @@ def claims_to_md(xlsx, terms):
     by_year = group(lambda r: [f"{r['입고일자'].year}년"] if isinstance(r["입고일자"], dt.datetime) else ["(입고일자 없음)"])
     by_model = group(lambda r: [fmt(r["기종"]) or "(비어 있음)"])
     by_alarm = group(lambda r: [f"AL.{c}" for c in alarm_codes(r["불량내용"])])
+    by_part = group(lambda r: [fmt(r["품번"]) or "(비어 있음)"])
+    year_of = lambda r: f"{r['입고일자'].year}년" if isinstance(r["입고일자"], dt.datetime) else "(입고일자 없음)"
+    by_year_part = group(lambda r: [f"{year_of(r)} · {fmt(r['품번']) or '(비어 있음)'}"])
+    by_year_model = group(lambda r: [f"{year_of(r)} · {fmt(r['기종']) or '(비어 있음)'}"])
+    by_alarm_year = group(lambda r: [f"AL.{c} · {year_of(r)}" for c in alarm_codes(r["불량내용"])])
+    by_customer = group(lambda r: [fmt(r["업체명"]) or "(비어 있음)"])
+    by_machine = group(lambda r: [fmt(r["호기정보"])] if fmt(r["호기정보"]) else [])
     with_uu = [r for r in recs if UU.search(fmt(r["불량내용"]))]
     with_2144_or_uu = [r for r in recs if "2144" in alarm_codes(r["불량내용"]) or UU.search(fmt(r["불량내용"]))]
 
     dates = sorted(r["입고일자"] for r in recs if isinstance(r["입고일자"], dt.datetime))
     usage = [r["사용일"] for r in recs if isinstance(r["사용일"], (int, float))]
+
+    def customer_lines():
+        lines = []
+        for name, rs in sorted(by_customer.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+            if len(rs) < 2:
+                continue
+            models = collections.Counter(fmt(r["기종"]) or "(비어 있음)" for r in rs)
+            lines.append(f"- {name} : {len(rs)}건 — 클레임 {nums(rs)} · 기종 " +
+                         " · ".join(f"{k} {n}" for k, n in models.most_common()))
+        return lines
+
+    def machine_lines():
+        """같은 호기에서 2건 이상. 간격은 고장일 차이 - 「재발까지 며칠」을 매 턴 날짜 계산으로 미루지 않는다"""
+        lines = []
+        for name, rs in sorted(by_machine.items(), key=lambda kv: min(r["고장일"] for r in kv[1] if r["고장일"])):
+            if len(rs) < 2:
+                continue
+            rs = sorted(rs, key=lambda r: r["고장일"])
+            gaps = [(b["고장일"] - a["고장일"]).days for a, b in zip(rs, rs[1:])]
+            customers = list(dict.fromkeys(fmt(r["업체명"]) for r in rs))
+            lines.append(f"- 호기 {name} · {' / '.join(customers)} · {fmt(rs[0]['기종'])} : {len(rs)}건 — " +
+                         " → ".join(f"클레임 {fmt(r['순번'])}({fmt(r['고장일'])})" for r in rs) +
+                         " · 간격 " + " · ".join(f"{g}일" for g in gaps))
+        return lines
+
+    def usage_lines():
+        bands = [(0, 30), (31, 90), (91, 180), (181, 365), (366, 730), (731, None)]
+        lines = []
+        for lo, hi in bands:
+            rs = [r for r in recs if isinstance(r["사용일"], (int, float)) and r["사용일"] >= lo and (hi is None or r["사용일"] <= hi)]
+            label = f"{lo}~{hi}일" if hi else f"{lo}일 이상"
+            # 짧은 구간은 건마다 사용일까지 - 「제일 빨리 고장 난 건」을 바로 답하게
+            detail = (" · ".join(f"클레임 {fmt(r['순번'])}({r['사용일']}일)" for r in sorted(rs, key=lambda r: r["사용일"]))
+                      if hi and hi <= 90 else f"클레임 {nums(rs)}")
+            lines.append(f"- {label} : {len(rs)}건 — {detail}")
+        return lines
+
+    machines = machine_lines()
     out = [
         "# 필드 클레임 현황 (서보 드라이브 불량 분석 통합리스트)",
         "",
@@ -171,20 +226,38 @@ def claims_to_md(xlsx, terms):
         "",
         "## 전체 요약 (집계)",
         "",
+        f"아래 표는 {len(recs)}건 전체를 미리 센 값이다. 건수 · 「전부」 · 평균 · 재발 질문은 상세 절을 세지 말고 이 표로 답한다.",
+        "",
         f"- 총 {len(recs)}건 · 입고일자 {dates[0].date()} ~ {dates[-1].date()}",
         f"- 출하 후 고장까지 사용일 : 평균 {sum(usage) / len(usage):.0f}일 · 최소 {min(usage)}일 · 최대 {max(usage)}일",
         "",
         "### 최종원인별 건수", "", *count("최종원인"), "",
         "### 불량유형별 건수", "", *count("불량유형"), "",
         "### 소손 및 불량소자별 건수 (상위 15)", "", *count("소손및불량소자", 15), "",
-        "### 품번별 건수", "", *count("품번"), "",
-        "### 입고 연도별 건수와 최종원인 (입고일자의 연도 기준)", "", *breakdown(by_year, by_name=True), "",
+        "### 품번별 건수와 최종원인 · 평균 사용일", "", *breakdown(by_part, avg=True), "",
+        "### 입고 연도별 건수와 최종원인 (입고일자의 연도 기준)", "", *breakdown(by_year, by_name=True, avg=True), "",
+        "### 입고 연도 × 품번별 건수와 최종원인", "", *breakdown(by_year_part, by_name=True, avg=True), "",
         "### 기종별 건수와 최종원인 (전체 기종, 기종 이름이 조금만 달라도 다른 기종 — 예 : T 4000 과 T 4000L)", "",
-        *breakdown(by_model), "",
+        *breakdown(by_model, avg=True), "",
+        "### 입고 연도 × 기종별 건수와 최종원인 (기종 이름이 조금만 달라도 다른 기종)", "",
+        *breakdown(by_year_model, by_name=True, with_nums=True), "",
         "### 알람 코드별 건수와 최종원인 (불량 내용 기준)", "",
         "집계 기준 : 「불량 내용」에 그 코드가 한 번이라도 나온 클레임 수. `AL.2144` · `AL2144` · `L.2144` · `al2144` · 접두 없는 `2144`",
         "같은 표기 변형은 하나로 셌다. 한 클레임에 코드가 여럿이면 각 코드에 하나씩 센다(합이 총 건수보다 크다).", "",
         *breakdown(by_alarm, min_count=2), "",
+        # 번호 목록은 따로 둔다 - 위 표는 #321 이전과 글자 하나 다르지 않게 두어, 이 표로 답하던 질문이 같은 조각을 받게 한다
+        # (표에 붙이면 AL.2144 한 줄에 번호가 115개다)
+        "### 알람 코드별 클레임 번호 (위 알람 표의 각 줄이 어느 클레임인지)", "",
+        *[f"- {k} : 클레임 {nums(rs)}" for k, rs in sorted(by_alarm.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+          if len(rs) >= 2], "",
+        "### 알람 코드 × 입고 연도별 건수와 최종원인 (위 알람 표를 입고일자의 연도로 나눈 것)", "",
+        *breakdown({k: v for k, v in by_alarm_year.items() if len(by_alarm[k.split(" · ")[0]]) >= 2},
+                   by_name=True, with_nums=True), "",
+        f"### 고객사별 건수 (2건 이상인 고객사 전부 · 전체 고객사 {len(by_customer)}곳 중 "
+        f"{sum(len(rs) >= 2 for rs in by_customer.values())}곳, 나머지는 1건씩)", "", *customer_lines(), "",
+        f"### 같은 호기 재발 (호기정보가 같은 클레임이 2건 이상인 장비 전부 · {len(machines)}대)", "",
+        "고객사가 둘로 적힌 호기는 원본에 그렇게 기록된 것이다.", "", *machines, "",
+        "### 출하 후 고장까지 사용일 구간별 건수", "", *usage_lines(), "",
         "### 드라이브 표시 UU (저전압) 언급 건수", "",
         # 분포까지 함께 둔다 - 건수만 있으면 모델이 이 숫자를 들고 최종원인 분포를 지어냈다(QA E3)
         # AL.2144 만의 줄을 합집합 바로 곁에 둔다 - 이 절만 검색되면 모델이 합집합(143)을 AL.2144 건수로 읽었다(QA E3)
