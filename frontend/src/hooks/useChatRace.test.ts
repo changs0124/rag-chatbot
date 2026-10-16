@@ -154,8 +154,8 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
 
     const { result } = renderHook(() => useChat())
 
-    let first: unknown
-    let second: unknown
+    let first!: Promise<boolean>
+    let second!: Promise<boolean>
     act(() => {
       first = result.current.send('첫 질문', [])
     })
@@ -164,14 +164,36 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
       second = result.current.send('두 번째 질문', [])
     })
 
-    expect(first).toBe(true)
-    expect(second).toBe(false)
+    expect(await second).toBe(false)
 
     await act(async () => {
       created.resolve(conv('new-1'))
       await created.promise
     })
+    // 첫 전송은 생성 왕복이 끝난 뒤에 받아들여진다(#349)
+    expect(await first).toBe(true)
     expect(result.current.creating).toBe(false)
+  })
+
+  /**
+   * #349 - 생성 요청이 실패하면 「받지 않았다」로 끝난다.
+   *
+   * 고치기 전에는 생성을 부르기 전에 `true` 를 돌려줘, 생성이 실패해도 입력창은 이미 입력과 첨부 초안을 비운 뒤였다.
+   */
+  it('생성 요청이 실패하면 send 가 false 로 끝나고 오류를 띄운다', async () => {
+    vi.mocked(createConversation).mockRejectedValue(new Error('down'))
+
+    const { result } = renderHook(() => useChat())
+
+    let accepted: unknown
+    await act(async () => {
+      accepted = await result.current.send('첫 질문', [])
+    })
+
+    expect(accepted).toBe(false)
+    expect(result.current.error).toBe('대화를 만들 수 없습니다')
+    expect(result.current.creating).toBe(false)
+    expect(streamChat).not.toHaveBeenCalled()
   })
 
   /**
