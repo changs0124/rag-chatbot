@@ -60,7 +60,7 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 | [OpenAI 실 연동 투입 절차](./01_specs/live-integration.md) | `mock` → `live` 전환 절차와 비용 발생 지점 |
 | [Architecture](./02_architecture/overview.md) | 시스템 전체 구조 · API 맵 · 데이터 흐름 · 알려진 제약 |
 | [Frontend](./02_architecture/frontend.md) | 라우팅 · 상태관리 · 스트리밍 UI · 첨부 UI 계약 |
-| [Backend](./02_architecture/backend.md) | 레이어 · 인증 · SSE 계약 · 유량 제어 · **배포와 호스트 선정 근거** |
+| [Backend](./02_architecture/backend.md) | 레이어 · 인증 · SSE 계약 · 유량 제어 · 배포 |
 | [디자인 시스템](./02_architecture/design-system.md) | 색 토큰 · 타이포 · 모션 · 컴포넌트 규칙 |
 | [Conventions](./CONVENTIONS.md) | 코드 스타일 & 패턴 규칙 |
 | [Feedback](./FEEDBACK.md) | 다건 수정 요청을 모아 한 번에 전달 · **지금 비어 있음** |
@@ -80,7 +80,7 @@ cd frontend && npm ci && npm run dev     # http://localhost:5173
 
 **두지 않는 것** : 정보구조도 · 플로우차트 · 와이어프레임 · 시나리오 케이스 · 역할 매트릭스 ·
 기술 스택 결정서. 1인 개발에서는 구현과 위 문서가 정본이라 별도 문서가 곧 낡은 사본이 된다.
-각 문서의 판단 근거는 남겼다 — 호스트 선정과 역할 설계는 `docs/02_architecture/backend.md`,
+각 문서의 판단 근거는 남겼다 — 호스트 선정 경위는 [CHANGELOG](./06_changelog/CHANGELOG.md) #243, 역할 설계는 `docs/02_architecture/backend.md` 「인증」,
 리스크는 `docs/02_architecture/overview.md` 「알려진 제약」이다.
 
 ## AI 사용 가이드

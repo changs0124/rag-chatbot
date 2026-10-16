@@ -579,6 +579,8 @@ compose `secrets`(파일)로 마운트한다. 고정한 이미지(2026.10.0)가 
 한도를 넘기면 디스크를 녹이는 대신 빨리 죽고 재시작한다. `app` 은 `mem_limit`/`memswap_limit` 모두 1g 다.
 원본 수치는 이슈 [#202](https://github.com/changs0124/rag-chatbot/issues/202) 코멘트에 있다.
 
+#### 백업
+
 **백업은 Lightsail 자동 일일 스냅샷이다(#243).** 단일 인스턴스 · 단일 디스크라
 `pgdata` · `uploads` · 이미지 · 로그가 같은 80GB 에 있다. 2026-10-12 결정으로 콘솔에서 **자동 스냅샷**(매일 · 최근 7개 보관 ·
 GB-월 과금)을 켜고, 종전 GCS 백업 스크립트는 삭제했다.
@@ -602,7 +604,7 @@ GB-월 과금)을 켜고, 종전 GCS 백업 스크립트는 삭제했다.
 - `create-instances-from-snapshot --use-latest-restorable-auto-snapshot` 에 **launch script**(user-data)로 `secrets/tunnel_token` 이름 바꾸기 ·
   `docker update --restart=no deploy-cloudflared-1` · `docker stop deploy-cloudflared-1` 을 넘긴다. 스크립트는 **ASCII 만** — 한글 주석이 있으면 Windows AWS CLI 가 파일을 못 읽는다
 - **launch script 는 docker 보다 늦게 돈다.** 실측 : 부팅 뒤 cloudflared 가 연결 4개를 먼저 등록했고 스크립트가 끊기까지 **약 3초 운영 터널에 같이 붙었다.**
-  그 사이 들어온 요청은 시험 서버(스냅샷 시점 DB)로 갈 수 있으므로 **사용자가 없는 시간에** 하고, 접속 즉시 `docker ps` 로 cloudflared 가 꺼졌는지 본다
+  그 사이 들어온 요청은 시험 서버(스냅샷 시점 DB)로 갈 수 있으므로 **사용자가 없는 시간에** 하고, 접속 즉시 `sudo docker ps` 로 cloudflared 가 꺼졌는지 본다
 - 확인 : `127.0.0.1:8080/api/health` 200 · 표 7개 행 수를 운영의 **스냅샷 시각 이전 생성분**(`created_at`/`installed_on` < 스냅샷 `createdAt`)과 대조 — 2026-10-15 전부 일치.
   요청부터 헬스 200 까지 **2분 13초**, 앱 기동은 58초(운영 9초 — 스냅샷 디스크의 첫 읽기가 느리다)
 - 끝나면 인스턴스를 지우고 `get-instances` · `get-static-ips` · `get-disks` 로 남은 것이 없는지 본다. 고정 IP 는 붙이지 않는다(분리된 고정 IP 는 과금)

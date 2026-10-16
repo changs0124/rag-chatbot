@@ -34,7 +34,7 @@
 ```
 frontend/   React SPA (Vercel 배포)
 backend/    Spring Boot API · Flyway 마이그레이션 · Dockerfile
-scripts/    품질 게이트 · 배포 스크립트 · 문서 그림 전처리
+scripts/    품질 게이트 · 배포 스크립트 · 문서 그림 · 클레임 전처리
 docs/       명세 · 아키텍처 · 태스크 · 변경 이력 (진입점 docs/INDEX.md)
 ```
 
@@ -64,7 +64,7 @@ flowchart LR
 | Database | PostgreSQL 16 (운영 compose 이미지 `postgres:16-alpine`) |
 | 외부 연동 | OpenAI Responses API + Vector Store · 모델은 `OPENAI_MODEL`(기본 `gpt-6-sol`) |
 | 테스트 | 백엔드 JUnit 6 + Testcontainers 2.0(실 PostgreSQL) · 프론트 Vitest 4.1 + Testing Library |
-| Lint | oxlint 1.71 (프론트) |
+| Lint | oxlint 1.75 (프론트) |
 
 툴체인 고정 : Node 는 `.nvmrc`(24) · Maven 은 Wrapper(`backend/mvnw`, 3.9.16)로 로컬과 CI 가 같은 버전을 쓴다.
 **도커 이미지 빌드만 `mvnw` 대신 `maven:3.9.16-eclipse-temurin-17-alpine` 을 쓴다** — wrapper 는 빌드마다 Maven 배포판을
@@ -131,7 +131,8 @@ GitHub Actions(`.github/workflows/ci.yml`)는 변경마다 7잡을 전부 돌린
 | `docker` | 백엔드 이미지 빌드(푸시 없음) |
 | `static` | 셸 구문 · shellcheck · DTO · resultMap · 프론트 타입 필드 대조 · 병합 충돌 표시 · 문서 참조 · 섹션 이름 |
 | `secrets` | gitleaks 시크릿 스캔 |
-| `deps-backend` · `deps-frontend` | Trivy 의존성 취약점 스캔 |
+| `deps-backend` | Trivy 의존성 취약점 스캔(`backend`) |
+| `deps-frontend` | `npm audit --audit-level=high` 의존성 취약점 검사 |
 
 `secrets` · `deps` 셋은 **주 1회 스케줄로도** 돈다 — 코드가 그대로여도 취약점 DB 가 바뀌면 답이 달라지기 때문이다.
 
@@ -156,7 +157,7 @@ GitHub Actions(`.github/workflows/ci.yml`)는 변경마다 7잡을 전부 돌린
 |------|---------|
 | [요구사항정의서](docs/01_specs/requirements.md) | `REQ-` ID 정본 |
 | [기능명세서](docs/01_specs/features.md) | `FEAT-` ID · 처리 흐름 · 예외 · 범위 밖 |
-| [ERD 설계서](docs/01_specs/erd.md) | 테이블 · 인덱스 · 마이그레이션 이력 |
+| [ERD 설계서](docs/01_specs/erd.md) | 테이블 정의 · 인덱스 · 설계 원칙 · 사용량 조회 SQL |
 | [API 명세서](docs/01_specs/api.md) | `API-` ID · 공통 규칙 · SSE 이벤트 · 에러 코드 |
 | [OpenAI 실 연동 투입 절차](docs/01_specs/live-integration.md) | `mock` → `live` 전환과 비용 발생 지점 |
 | [Architecture](docs/02_architecture/overview.md) | 시스템 구조 · 데이터 흐름 · 알려진 제약 |

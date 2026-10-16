@@ -20,6 +20,19 @@
   - `AbstractPgIntegrationTest` 공통 속성에 `spring.datasource.hikari.maximum-pool-size=4` — 최악 36 연결. 동시성 테스트 포함 294건 통과, 테스트 수 변화 없음
 
 ### Changed
+- **문서가 코드 · 설정과 다르게 말하던 곳을 고쳤다(#333).** 2026-10-16 문서 리뷰 표 A. 사실 정정만 했고 서술 축약은 #334 다.
+  - README : `deps-frontend` 는 Trivy 가 아니라 `npm audit` · ERD 설계서 설명(마이그레이션 이력 절은 없다) · oxlint 1.75(잠금 파일) · `scripts/` 에 클레임 전처리
+  - INDEX : backend.md 의 「호스트 선정 근거」(#297 에서 CHANGELOG #243 으로 옮김)
+  - api : 배포 행(운영 중 · 선정 근거 없음) · 로그인 429 는 **실패** 누적 상한 · 비밀번호 변경 400 · 429 행 · 초기화의 자기 자신 400 행 ·
+    동기화의 고아 연결 정리(#271)와 `total` 정의
+  - erd : `conversations.updated_at` 은 제목 변경에도 오른다(V1 트리거)
+  - live-integration : 운영 서버 로그 명령에 `sudo`(`~/deploy`) · 클레임 집계 표 목록은 스크립트 `## 전체 요약` 이 정본
+  - backend : 「백업」을 헤딩으로(같은 문서 「아래 「백업」」 참조 두 곳) · 복구 리허설의 `sudo docker ps`
+  - design-system : 모션은 150ms 하나 · 이중 테두리는 모달 · 로그인 폼에만(§6 표) · 보조 글자 크기 실측 · MyPage 오류 배너는 같은 색 조합
+  - frontend · features : 미리보기를 못 그리는 첨부 카드(#317) · `VITE_API_BASE_URL` 누락은 실행 시 콘솔 오류 · 번들 수치 모순 제거 ·
+    토큰 교체 세 곳은 frontend 「API 통신」으로 · 동기화 400 문구 · 업로드 400 인용 · 정의 없는 `SCR-` 화면 ID 를 경로로 ·
+    초기화 자기 자신은 API 가 400
+  - 고친 명세 문서의 헤더 버전 · 최종 수정일(api · features · erd · live-integration · design-system)
 - **프론트 죽은 코드 · 복사본을 정리했다(#330).** 2026-10-16 전체 리뷰 F7 · F8 · F9 · F10 · F11 · F12.
   화면 변화는 의도한 둘뿐이다 — 마이페이지 주요 버튼의 비활성 투명도 40 → 50(관리자 · 로그인과 같게), 발급 창 「닫기」 40 → 44px.
   - 주요 버튼 클래스 4벌을 `primaryButtonClass` 하나로 · 뒤로가기 링크 · 페이지 골격 2벌을 `BackLink` · `PageShell` 로 ·

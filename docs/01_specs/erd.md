@@ -3,8 +3,8 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 | rag-chatbot |
-| 문서 버전 | v1.1 |
-| 최종 수정일 | 2026-10-15 |
+| 문서 버전 | v1.2 |
+| 최종 수정일 | 2026-10-16 |
 | 작성자 | changs0124 |
 | 상태 | `반영됨` (2026-10-06 런칭) |
 
@@ -123,7 +123,7 @@ erDiagram
 | title | text | N | `'새 대화'` | |
 | vector_store_id | text | Y | NULL | 대화 전용 스토어. **현재는 공용 스토어를 쓰므로 비어 있다** |
 | created_at | timestamptz | N | `now()` | |
-| updated_at | timestamptz | N | `now()` | 마지막 답변 시각. 목록 정렬 기준 |
+| updated_at | timestamptz | N | `now()` | 마지막 답변 또는 제목 변경 시각. 목록 정렬 기준 |
 
 ### messages (메시지)
 
