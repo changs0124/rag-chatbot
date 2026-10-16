@@ -1,0 +1,83 @@
+# ë³€ê²½ ì „ (fix ë¯¸ì ìš©) : cd backend && ./mvnw -q test -Dtest=ChatStreamExceptionHandlerTest
+# ì„œë²„ ë¡œê·¸ ë°œì·Œ (ì½˜ì†” ì¸ì½”ë”© íƒ“ì— í•œê¸€ ë¡œê·¸ëŠ” ê¹¨ì ¸ ë³´ì„ - 'ì²˜ë¦¬ë˜ì§€ ì•Šì€ ì˜ˆì™¸' ì¤„)
+73:2026-10-16T10:17:25.473+09:00 ERROR 30216 --- [rag-chatbot-backend] [o-auto-1-exec-1] c.r.exception.GlobalExceptionHandler     : Ã³¸®µÇÁö ¾ÊÀº ¿¹¿Ü [7834f79e] POST /api/chat
+100:org.springframework.http.converter.HttpMessageNotWritableException: No converter for [class com.ragchatbot.exception.GlobalExceptionHandler$ApiError] with preset Content-Type 'text/event-stream'
+192:2026-10-16T10:17:25.492+09:00 ERROR 30216 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] threw exception
+242:2026-10-16T10:17:25.498+09:00 ERROR 30216 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] threw exception
+311:2026-10-16T10:17:25.500+09:00 ERROR 30216 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost]           : Exception Processing [ErrorPage[errorCode=0, location=/error]]
+383:2026-10-16T10:17:26.495+09:00 ERROR 30216 --- [rag-chatbot-backend] [o-auto-1-exec-2] c.r.exception.GlobalExceptionHandler     : Ã³¸®µÇÁö ¾ÊÀº ¿¹¿Ü [e9712ee3] POST /api/chat
+406:org.springframework.http.converter.HttpMessageNotWritableException: No converter for [class com.ragchatbot.exception.GlobalExceptionHandler$ApiError] with preset Content-Type 'text/event-stream'
+601:2026-10-16T10:17:26.495+09:00 ERROR 30216 --- [rag-chatbot-backend] [o-auto-1-exec-2] c.r.exception.GlobalExceptionHandler     : Ã³¸®µÇÁö ¾ÊÀº ¿¹¿Ü [e9712ee3] POST /api/chat
+624:org.springframework.http.converter.HttpMessageNotWritableException: No converter for [class com.ragchatbot.exception.GlobalExceptionHandler$ApiError] with preset Content-Type 'text/event-stream'
+790:2026-10-16T10:17:26.495+09:00 ERROR 30216 --- [rag-chatbot-backend] [o-auto-1-exec-2] c.r.exception.GlobalExceptionHandler     : Ã³¸®µÇÁö ¾ÊÀº ¿¹¿Ü [e9712ee3] POST /api/chat
+813:org.springframework.http.converter.HttpMessageNotWritableException: No converter for [class com.ragchatbot.exception.GlobalExceptionHandler$ApiError] with preset Content-Type 'text/event-stream'
+
+# surefire ìš”ì•½ (tail)
+[ERROR] Tests run: 2, Failures: 1, Errors: 1, Skipped: 0, Time elapsed: 27.67 s <<< FAILURE! -- in com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+[ERROR] com.ragchatbot.controller.ChatStreamExceptionHandlerTest.stream_failure_keeps_error_log_but_writes_no_json(CapturedOutput) -- Time elapsed: 1.646 s <<< ERROR!
+java.io.IOException: chunked transfer encoding, state: READING_LENGTH
+	at java.net.http/jdk.internal.net.http.HttpClientImpl.send(HttpClientImpl.java:917)
+	at java.net.http/jdk.internal.net.http.HttpClientFacade.send(HttpClientFacade.java:133)
+	at com.ragchatbot.controller.ChatStreamExceptionHandlerTest.rawChat(ChatStreamExceptionHandlerTest.java:60)
+	at com.ragchatbot.controller.ChatStreamExceptionHandlerTest.stream_failure_keeps_error_log_but_writes_no_json(ChatStreamExceptionHandlerTest.java:101)
+Caused by: java.io.IOException: chunked transfer encoding, state: READING_LENGTH
+	at java.net.http/jdk.internal.net.http.common.Utils.wrapWithExtraDetail(Utils.java:375)
+	at java.net.http/jdk.internal.net.http.Http1Response$BodyReader.onReadError(Http1Response.java:660)
+	at java.net.http/jdk.internal.net.http.Http1AsyncReceiver.checkForErrors(Http1AsyncReceiver.java:302)
+	at java.net.http/jdk.internal.net.http.Http1AsyncReceiver.flush(Http1AsyncReceiver.java:268)
+	at java.net.http/jdk.internal.net.http.common.SequentialScheduler$LockingRestartableTask.run(SequentialScheduler.java:205)
+	at java.net.http/jdk.internal.net.http.common.SequentialScheduler$CompleteRestartableTask.run(SequentialScheduler.java:149)
+	at java.net.http/jdk.internal.net.http.common.SequentialScheduler$SchedulableTask.run(SequentialScheduler.java:230)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+Caused by: java.io.EOFException: EOF reached while reading
+	at java.net.http/jdk.internal.net.http.Http1AsyncReceiver$Http1TubeSubscriber.onComplete(Http1AsyncReceiver.java:597)
+	at java.net.http/jdk.internal.net.http.SocketTube$InternalReadPublisher$ReadSubscription.signalCompletion(SocketTube.java:648)
+	at java.net.http/jdk.internal.net.http.SocketTube$InternalReadPublisher$InternalReadSubscription.read(SocketTube.java:853)
+	at java.net.http/jdk.internal.net.http.SocketTube$SocketFlowTask.run(SocketTube.java:181)
+	at java.net.http/jdk.internal.net.http.common.SequentialScheduler$SchedulableTask.run(SequentialScheduler.java:230)
+	at java.net.http/jdk.internal.net.http.common.SequentialScheduler.runOrSchedule(SequentialScheduler.java:303)
+	at java.net.http/jdk.internal.net.http.common.SequentialScheduler.runOrSchedule(SequentialScheduler.java:256)
+	at java.net.http/jdk.internal.net.http.SocketTube$InternalReadPublisher$InternalReadSubscription.signalReadable(SocketTube.java:782)
+	at java.net.http/jdk.internal.net.http.SocketTube$InternalReadPublisher$ReadEvent.signalEvent(SocketTube.java:965)
+	at java.net.http/jdk.internal.net.http.SocketTube$SocketFlowEvent.handle(SocketTube.java:253)
+	at java.net.http/jdk.internal.net.http.HttpClientImpl$SelectorManager.handleEvent(HttpClientImpl.java:1402)
+	at java.net.http/jdk.internal.net.http.HttpClientImpl$SelectorManager.lambda$run$3(HttpClientImpl.java:1347)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.net.http/jdk.internal.net.http.HttpClientImpl$SelectorManager.run(HttpClientImpl.java:1347)
+
+[ERROR] com.ragchatbot.controller.ChatStreamExceptionHandlerTest.sse_timeout_writes_no_json_and_logs_no_error(CapturedOutput) -- Time elapsed: 0.970 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual:
+  "10:16:59.659 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+10:16:59.664 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+10:16:59.778 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+...
+
+2026-10-16T10:17:26.500+09:00  WARN 30216 --- [rag-chatbot-backend] [o-auto-1-exec-2] .w.s.m.s.DefaultHandlerExceptionResolver : Ignoring exception, response committed already: org.springframework.web.context.request.async.AsyncRequestTimeoutException
+2026-10-16T10:17:26.501+09:00  WARN 30216 --- [rag-chatbot-backend] [o-auto-1-exec-2] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.context.request.async.AsyncRequestTimeoutException]
+"
+not to contain:
+  "Ã³¸®µÇÁö ¾ÊÀº ¿¹¿Ü"
+
+	at com.ragchatbot.controller.ChatStreamExceptionHandlerTest.sse_timeout_writes_no_json_and_logs_no_error(ChatStreamExceptionHandlerTest.java:82)
+
+[ERROR] Failures: 
+[ERROR]   ChatStreamExceptionHandlerTest.sse_timeout_writes_no_json_and_logs_no_error:82 
+Expecting actual:
+  "10:16:59.659 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+10:16:59.664 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+10:16:59.778 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+10:17:01.167 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with Environment variables, system properties and defaults. Resolved dockerHost=npipe:////./pipe/dockerDesktopLinuxEngine
+10:17:01.170 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+10:17:01.248 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 29.8.2
+  API Version: 1.56
+  Operating System: Docker Desktop
+  Total Memory: 31942 MB
+  Labels: 
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+10:17:01.652 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+10:17:02.704 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/

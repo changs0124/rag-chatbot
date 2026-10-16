@@ -1,0 +1,16 @@
+# 변경 후 (리뷰 반영 · origin/main 위로 rebase) : cd backend && ./mvnw -q test -Dtest='ChatStreamExceptionHandlerTest,GlobalExceptionFallbackTest' -> exit 0
+# surefire (clean verify 기준)
+name="com.ragchatbot.controller.ChatStreamExceptionHandlerTest" time="5.851" tests="3" errors="0" skipped="0" failures="0"
+name="com.ragchatbot.exception.GlobalExceptionFallbackTest" time="4.552" tests="14" errors="0" skipped="0" failures="0"
+<testcase name="stream_failure_keeps_error_log_but_writes_no_json(CapturedOutput)"
+<testcase name="async_timeout_handler_branches_on_commit"
+<testcase name="sse_timeout_writes_no_json_and_logs_no_error(CapturedOutput)"
+
+# ChatStreamExceptionHandlerTest 의 /api/chat 서버 로그 (surefire XML, UTF-8)
+# ERROR = TC-OPS-026 도중 오류(유지), WARN '비동기 요청 타임아웃' = TC-OPS-027 직접 호출 2줄(main) + TC-OPS-025 실제 타임아웃 1줄
+# 변경 전과 달리 HttpMessageNotWritableException · 'Servlet.service() ... threw exception' · DefaultHandlerExceptionResolver 줄 없음
+2026-10-16T10:35:37.467+09:00 ERROR 15620 --- [rag-chatbot-backend] [o-auto-6-exec-6] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [6350af42] POST /api/chat
+2026-10-16T10:35:37.572+09:00  WARN 15620 --- [rag-chatbot-backend] [           main] c.r.exception.GlobalExceptionHandler     : 비동기 요청 타임아웃 POST /api/chat
+2026-10-16T10:35:37.572+09:00  WARN 15620 --- [rag-chatbot-backend] [           main] c.r.exception.GlobalExceptionHandler     : 비동기 요청 타임아웃 POST /api/chat
+2026-10-16T10:35:40.873+09:00  WARN 15620 --- [rag-chatbot-backend] [o-auto-6-exec-2] c.r.exception.GlobalExceptionHandler     : 비동기 요청 타임아웃 POST /api/chat
+HttpMessageNotWritable 건수: 0
