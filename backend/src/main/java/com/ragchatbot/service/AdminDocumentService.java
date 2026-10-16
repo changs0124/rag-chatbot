@@ -185,8 +185,8 @@ public class AdminDocumentService {
 	 * 삭제(소프트). OpenAI 정리가 실패해도 {@code deleted_at} 은 채운다.
 	 *
 	 * <p>실패를 이유로 목록에 남겨두면 관리자가 계속 지우기를 시도하는데, 그 사이 검색에서는
-	 * 이미 빠져 있을 수 있어 상태가 더 헷갈린다. 정리에 실패한 파일은 스토어 동기화(#193)가 행을 되살려
-	 * 다시 지울 수 있다(#271).
+	 * 이미 빠져 있을 수 있어 상태가 더 헷갈린다. 연결 해제에 실패한 파일은 스토어 동기화(#193)가
+	 * 행을 되살려 다시 지울 수 있다(복구 경로는 OpenAiService#deleteDocument).
 	 */
 	public void delete(UUID documentId) {
 		RagDocument doc = documentRepository.findAliveById(documentId)

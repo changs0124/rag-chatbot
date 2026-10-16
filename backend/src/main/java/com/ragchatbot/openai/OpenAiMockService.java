@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnExpression("T(com.ragchatbot.config.AppModeGuard).normalize('${app.mode:}') == 'mock'")
 public class OpenAiMockService implements OpenAiService {
 
-	// 무자료 판정 규칙은 OpenAiService.ChatCompletion 참고(REQ-RAG-003)
+	// 무자료 판정 규칙은 OpenAiService.ChatCompletion, 접두 대신 플래그인 이유는 OpenAiRealService 머리 주석 참고(REQ-RAG-003)
 
 	/** 목업 고정 코퍼스 키워드 */
 	private static final List<String> CORPUS_KEYWORDS = List.of("환불", "배송", "정책", "가격", "이용", "약관");
