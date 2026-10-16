@@ -1,0 +1,46 @@
+# #365 after - 수정 뒤 같은 회귀 테스트와 전체 게이트
+# cd backend && ./mvnw test -Dtest='AttachmentLinkRaceTest,RateLimiterKeyCapTest'
+
+-------------------------------------------------------------------------------
+Test set: com.ragchatbot.service.AttachmentLinkRaceTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.131 s -- in com.ragchatbot.service.AttachmentLinkRaceTest
+-------------------------------------------------------------------------------
+Test set: com.ragchatbot.service.RateLimiterKeyCapTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.ragchatbot.service.RateLimiterKeyCapTest
+
+# cd frontend && npx vitest run src/components/chat/MessageList.test.tsx -> 21 passed (21) (아래 게이트 출력에 포함)
+
+# bash scripts/check-all.sh (exit 0) 요약
+  ✓ 셸 구문 검사
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+  ✓ 병합 충돌 표시
+  ✓ 문서 참조 실재
+  ✓ 문서 섹션 이름 대조
+  ✓ 응답 계약 대조
+  ✓ 런타임 버전 대조(java)
+  ✓ 런타임 버전 대조(node)
+[INFO] Tests run: 307, Failures: 0, Errors: 0, Skipped: 0
+  ✓ 백엔드 clean verify
+▶ 백엔드 케이스 수 하한
+케이스 수(backend) : 실측 307 / 하한 307
+  ✓ 백엔드 케이스 수 하한
+  ✓ 문서 버전 주장 대조
+  ✓ 프론트 의존성 설치
+  ✓ 프론트 lint
+      Tests  184 passed (184)
+  ✓ 프론트 test
+  ✓ 프론트 build
+▶ 프론트 케이스 수 하한
+케이스 수(frontend) : 실측 184 / 하한 184
+  ✓ 프론트 케이스 수 하한
+  ✓ 백엔드 이미지 빌드
+  - 건너뜀: gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것
+  ✓ 프론트 의존성 audit
+  - 건너뜀: trivy 없음
+돌린 검사는 전부 통과
+건너뜀 3건 - 이 검사들은 돌지 않았다:
+  - 셸 정적 분석 - shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+  - 시크릿 스캔 - gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것
+  - 백엔드 의존성 스캔 - trivy 없음

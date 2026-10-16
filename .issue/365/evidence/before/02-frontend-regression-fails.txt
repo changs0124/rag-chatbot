@@ -1,0 +1,15 @@
+# #365 before - 프론트 회귀 테스트를 변경 전 Markdown.tsx(origin/main b61f4a4)에서 실행
+# cd frontend && npx vitest run src/components/chat/MessageList.test.tsx
+# (DOM 덤프는 생략)
+
+       × 마크다운 이미지 자리에 alt 문구를 남기고 이미지 링크도 글자를 갖는다 6ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/components/chat/MessageList.test.tsx > MessageList > 답변 마크다운 (#270) > 마크다운 이미지 자리에 alt 문구를 남기고 이미지 링크도 글자를 갖는다
+TestingLibraryElementError: Unable to find an element with the text: /결선도 요약/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+    303|       )
+    304|       expect(container.querySelector('img')).toBeNull()
+    305|       expect(screen.getByText(/결선도 요약/)).toBeInTheDocument()
+    306|       expect(screen.getByRole('link', { name: '배지' })).toHaveAttribute…
+    307|     })
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)

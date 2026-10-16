@@ -1,0 +1,42 @@
+# #365 before - 백엔드 회귀 테스트를 변경 전 프로덕션 코드(origin/main b61f4a4)에서 실행
+# 단, RateLimiterService 에 테스트용 Clock 주입 생성자만 먼저 넣음(동작 변경 없음 - 분 경계를 결정적으로 넘기기 위함)
+# cd backend && ./mvnw test -Dtest='AttachmentLinkRaceTest,RateLimiterKeyCapTest'
+
+-------------------------------------------------------------------------------
+Test set: com.ragchatbot.service.AttachmentLinkRaceTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 1, Errors: 1, Skipped: 0, Time elapsed: 1.553 s <<< FAILURE! -- in com.ragchatbot.service.AttachmentLinkRaceTest
+com.ragchatbot.service.AttachmentLinkRaceTest.orphan_cleanup_continues_when_a_file_delete_fails -- Time elapsed: 0.065 s <<< ERROR!
+java.lang.IllegalStateException: 디스크 오류
+
+com.ragchatbot.service.AttachmentLinkRaceTest.send_links_attachments_in_id_order_but_keeps_ref_order -- Time elapsed: 0.032 s <<< FAILURE!
+org.mockito.exceptions.verification.VerificationInOrderFailure: 
+
+Verification in order failure
+Wanted but not invoked:
+attachmentRepository.linkToMessage(
+    00000000-0000-0000-0000-000000000002,
+    <any>,
+    74b06655-9bc2-44a2-9319-8cbc2e5eec66
+);
+-> at com.ragchatbot.service.AttachmentLinkRaceTest.send_links_attachments_in_id_order_but_keeps_ref_order(AttachmentLinkRaceTest.java:125)
+Wanted anywhere AFTER following interaction:
+attachmentRepository.linkToMessage(
+    00000000-0000-0000-0000-000000000001,
+    8a1bf7d8-5c1c-4ffb-9ee2-30e5ad6ca2e7,
+    74b06655-9bc2-44a2-9319-8cbc2e5eec66
+);
+-> at com.ragchatbot.service.ChatService.prepare(ChatService.java:107)
+
+
+
+-------------------------------------------------------------------------------
+Test set: com.ragchatbot.service.RateLimiterKeyCapTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.070 s <<< FAILURE! -- in com.ragchatbot.service.RateLimiterKeyCapTest
+com.ragchatbot.service.RateLimiterKeyCapTest.release_after_minute_boundary_does_not_touch_the_new_window -- Time elapsed: 0.029 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting code to raise a throwable.
+
+
