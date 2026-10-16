@@ -47,7 +47,7 @@ import com.ragchatbot.storage.FileStorage;
  *
  * <p><b>실 응답으로 검증됨(REQ-RAG-005, 2026-09-22)</b> : 실키 · 공용 Vector Store 로 스트리밍 · 검색 단계 이벤트 ·
  * 완료 이벤트 · {@code file_citation} 인용 · 결과 스니펫 · 이미지 입력 · 문서 업로드/삭제를 확인함.
- * 가정별 관측과 날짜는 {@code docs/01_specs/live-integration.md} 3절이 정본임(#184).
+ * 가정별 확인 결과는 {@code docs/01_specs/live-integration.md} 3절, 관측 원본은 {@code .issue/184/evidence/}(#184).
  */
 @Service
 // 판정은 AppModeGuard.normalize 하나로(#248) - Mock 쪽 주석 참고

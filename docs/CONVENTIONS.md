@@ -96,66 +96,31 @@
     (시계 해상도가 거친 OS 에서는 우연히 통과하고 높은 OS 에서는 늘 실패한다).
 - `scripts/case-floors.env`의 케이스 수 하한(래칫)은 **테스트를 늘린 PR 에서 그 시점 실측값으로 함께 올린다.**
   올리지 않으면 새로 넣은 케이스가 래칫의 보호를 못 받는다. 내릴 때는 무엇이 줄었는지 `docs/06_changelog/CHANGELOG.md` 에 남긴다.
-- 그 하한을 집행하는 것이 `scripts/check-case-floor.sh` 다 — **실측 케이스 수가 하한 미만이면 실패한다.**
-  테스트 명령은 케이스가 삭제돼도 통과하므로 수를 따로 잰다. 위 항목이 "언제 올리고 내리는가"(사람이
-  지킬 규칙)라면, 이쪽은 "무엇을 검사하는가"(게이트의 동작)다.
-  **못 잡는 것** : 케이스의 **내용**. 수만 세므로 단언을 지우고 빈 테스트를 남겨도 통과한다.
-  그리고 **측정 입력이 낡으면 조용히 속는다** — 백엔드는 `target/` 에 지운 클래스의 surefire XML 이
-  남아 계수되므로 **`clean` 후 재야 하고**(2026-07-28 에 실제로 6건 부풀려졌다), 프론트는 이 스크립트가
-  `vitest-report.json` 을 **읽기만 하고 만들지 않으므로** 리포트를 먼저 다시 만들어야 한다.
-  `check-all.sh` 는 두 함정을 다 피해서 부른다.
-- `scripts/check-shell-syntax.sh` 가 **추적되는 셸 전부**(`git ls-files '*.sh'` + `case-floors.env`)에
-  `bash -n` 을 돌린다(#136). 종전에는 셸을 보는 게이트가 아예 없어, 게이트를 만드는 `check-*.sh`
-  들이 정작 아무 게이트도 받지 않았다. **목록은 손으로 관리하지 않는다** — 새 스크립트가 저절로
-  포함되고, 스크립트가 **검사한 개수를 출력해** 대상이 0이 되어도 "통과"로 보이지 않는다.
-  `check-all.sh` 와 CI `static` 잡 **양쪽에서 제일 먼저** 돈다 — 아래 검사들이 전부 셸이라,
-  하나가 깨지면 그 검사만 죽고 나머지는 통과해 부분적인 초록불이 나오기 때문이다.
-  **못 잡는 것** : 의미 오류. 그쪽은 아래 정적 분석이 본다.
-- `scripts/check-shell-lint.sh` 가 같은 대상에 **`shellcheck -x`** 를 돌린다(#145).
-  `#138` 의 버그(`printf` 가 인자를 버리던 것)는 `bash -n` 을 통과했고 **shellcheck 만 SC2182
-  로 잡았다** — 둘은 서로 다른 것을 잡으므로 스크립트도 나눠 두었다(실패 신호가 섞이지 않게).
-  **경고 0 을 유지한다.** 억제는 이유 한 줄과 함께 쓴다(`# shellcheck disable=SCxxxx` 바로 위에 한국어 한 줄).
-  `ubuntu-latest` 러너에는 기본 설치돼 있고, 로컬에 없으면 **"통과"가 아니라 "모름"** 으로 찍힌다.
-- `scripts/check-merge-markers.sh` 가 **병합 충돌 표시**(줄 맨 앞의 `<<<<<<< ` · `>>>>>>> ` · `||||||| `)를
-  추적 중인 파일 전체와 추적 전 새 파일에서 찾는다(#210). `overview.md` 에 표시가 약 3주 동안 커밋돼 있었는데
-  다른 게이트는 전부 통과했다(#207). **못 잡는 것** : 단독 `=======` 줄 — setext 제목 밑줄과 모양이 같아 일부러
-  뺐다. 충돌이면 위아래 표시가 함께 있으므로 그 둘로 충분하다.
+- 아래 게이트마다 **무엇을 보는지**만 적는다. 무엇을 못 잡는지와 도입 경위는 각 스크립트 머리 주석과 CHANGELOG 가 정본이다.
+- `scripts/check-case-floor.sh` 가 그 하한을 집행한다 — **실측 케이스 수가 하한 미만이면 실패한다**(수만 세므로 케이스의 내용은 못 본다).
+  **측정 입력이 낡으면 조용히 속는다** — 백엔드는 지운 클래스의 surefire XML 이 `target/` 에 남으므로 **`clean` 후 재고**,
+  프론트는 이 스크립트가 `vitest-report.json` 을 **읽기만 하므로** 리포트를 먼저 다시 만든다. `check-all.sh` 는 두 함정을 다 피해서 부른다.
+- `scripts/check-shell-syntax.sh` 가 **추적되는 셸 전부**(`git ls-files '*.sh'` + `case-floors.env`)에 `bash -n` 을 돌린다(#136).
+  목록은 손으로 관리하지 않고, 검사한 개수를 출력한다. `check-all.sh` 와 CI `static` 잡 **양쪽에서 제일 먼저** 돈다.
+- `scripts/check-shell-lint.sh` 가 같은 대상에 **`shellcheck -x`** 를 돌린다(#145). **경고 0 을 유지한다.**
+  억제는 이유 한 줄과 함께 쓴다(`# shellcheck disable=SCxxxx` 바로 위에 한국어 한 줄). 로컬에 없으면 **"통과"가 아니라 "모름"** 으로 찍힌다.
+- `scripts/check-merge-markers.sh` 가 줄 맨 앞의 **병합 충돌 표시**(`<<<<<<< ` · `>>>>>>> ` · `||||||| `)를 추적 중인 파일과 추적 전 새 파일에서 찾는다(#210).
 - `scripts/check-doc-refs.sh`가 `docs/`·`README.md`의 참조 실재를 검사한다. **없는 파일 경로를 문서에 적으면 CI가 실패한다.**
-- `scripts/check-doc-sections.sh` 가 **섹션 이름**을 본다(#60). 위 검사는 파일이 있으면 통과하므로 없는 섹션을
-  가리켜도 초록이었다 — #28 에서 실제로 그렇게 통과했다. **파일 참조가 바로 앞에 붙은** 「섹션」만 검사하고,
-  헤딩의 번호 접두(`## 2. API 목록`)와 접미(`## 배포 (Vercel)`)를 견딘다.
-  **못 잡는 것** : 같은 문서 안 참조(대상 파일이 없다) · 별명으로 부르는 것("백로그 「…」") ·
-  섹션이 아닌 강조(「자료 없음」은 UI 배너 이름) · `docs/06_changelog/**`.
+- `scripts/check-doc-sections.sh` 가 **파일 참조가 바로 앞에 붙은** 「섹션」 이름이 대상 파일 헤딩에 있는지 본다(#60).
 - `scripts/check-runtime-versions.sh`가 `.nvmrc`·`backend/pom.xml`의 런타임 버전과 CI 설정이 갈리지 않는지 대조한다.
-  node 쪽은 `frontend/package.json`의 `engines.node` 까지 같이 본다 — **Vercel 은 `.nvmrc` 가 아니라 `engines.node` 로 빌드하므로**,
-  이것을 빼면 `.nvmrc` 만 올리고 `engines.node` 를 빠뜨려도 CI 는 통과하고 배포만 조용히 다른 런타임을 쓴다(실제로 있었던 일이다).
-- `scripts/check-doc-versions.sh` 가 **문서가 주장하는 버전**(`INDEX.md` 기술 스택 표 · `backend.md` 머리줄 ·
-  `overview.md` 등)을 `pom.xml` · `frontend/package.json` · Spring Boot BOM 의 실제 값과 대조한다.
-  문서 값이 실제의 **접두**면 통과한다 — 문서는 메이저만 적기도 하기 때문이다(`React 19` ↔ `19.2.7`).
-  **`backend` 잡에서 돈다** : JUnit 은 `pom.xml` 에 없고 Boot BOM 이 관리해서 `./mvnw verify` 로 m2 가
-  채워진 뒤에만 읽을 수 있다. checkout 과 bash 뿐인 `static` 잡에 붙였으면 정작 잡아야 할 것을 못 잡았다.
-  **못 잡는 것** : 스크립트 안의 표에 없는 라이브러리, 이름 없이 숫자만 적힌 서술, `docs/06_changelog/**`(이력이라
-  당시 값이 맞아 일부러 제외), 그리고 **버전이 아닌 목록형 서술**(CI 잡 목록·이 게이트 목록 자체가 그렇다).
+  node 쪽은 `frontend/package.json` 의 `engines.node` 까지 본다 — **Vercel 은 `.nvmrc` 가 아니라 `engines.node` 로 빌드한다.**
+- `scripts/check-doc-versions.sh` 가 **문서가 주장하는 버전**(README 「기술 스택」 표 · `backend.md` 머리줄 · `overview.md` 등)을
+  `pom.xml` · `frontend/package.json` · Spring Boot BOM 의 실제 값과 대조한다(문서 값이 실제의 **접두**면 통과).
+  JUnit 이 Boot BOM 에 있어 m2 가 채워진 뒤에야 읽히므로 **`backend` 잡에서 돈다.**
 - `scripts/check-response-contract.sh` 가 `AdminDtos.DocumentResponse` · `summaryResult` 의 `<arg>` · 프론트 `RagDocument` ·
-  `AdminPage.test.tsx` 의 `doc()` 픽스처, **네 곳의 필드 이름**을 대조한다. record 와 `resultMap` 은 순서까지, 프론트 쪽은
-  이름 집합만 본다 — MyBatis 는 위치로 생성자를 찾지만 TS 의 필드 순서는 런타임 의미가 없다.
-  **픽스처를 따로 보는 이유** : 종전에는 `tsconfig.app.json` 이 테스트 파일을 exclude 하고 vitest 는 타입을 보지 않아
-  픽스처가 **어느 게이트도 거치지 않았다.** #59 에서 exclude 를 걷어 이제 `tsc -b` 가 픽스처의 타입을 본다.
-  **그래도 이 게이트를 지우지 않는다** — 타입 검사는 `RagDocument` 와 픽스처가 서로 맞는지만 보고,
-  그 타입이 **백엔드 record · resultMap 과 맞는지**는 보지 못한다. 서로 다른 것을 잡는다.
-  이름이 아니라 **값**이 제 컬럼에서 왔는지는 `AdminDocumentFlowTest` 가 본다. 이름만 보면 결선이 어긋나도 통과하고,
-  값만 보면 프론트가 따로 놀아도 통과한다.
+  `AdminPage.test.tsx` 의 `doc()` 픽스처, **네 곳의 필드 이름**을 대조한다(record ↔ `resultMap` 은 순서까지).
+  `tsc -b` 가 픽스처 타입을 봐도 **지우지 않는다** — 백엔드와의 대조는 이 게이트만 한다. 값의 출처는 `AdminDocumentFlowTest` 가 본다.
 - 시크릿 스캔(gitleaks)·의존성 취약점 스캔(Trivy · `npm audit`)은 **변경마다 + 주 1회** 돈다(#135).
   공개 저장소는 **시크릿이 한 번 들어오면 회수가 불가능**하므로 merge 전에 돌아야 한다.
   주간 실행은 우리 커밋이 아니라 **바깥**(취약점 DB)이 바뀐 것을 잡는다.
-- **위 7잡은 `main` 에서 required status checks 다**(#166). 빨간불이면 merge 가 **막힌다** —
-  `main: CI must pass` ruleset 이 집행한다. 필수인 것은 CI 7잡 **전부**다 :
-  `backend` · `frontend` · `docker` · `static` · `secrets` · `deps (백엔드)` · `deps (프론트)`.
-  **위 목록은 축약이다(#172).** 실제 ruleset 의 context 는 `ci.yml` 의 잡 `name:` **전체 문자열**이다
-  (예 : `backend` 가 아니라 `backend (test + build + 케이스 수 하한)`). **여기에 그 전체 문자열을
-  옮겨 적지 않는다** — 지금 그것이 사는 곳은 `ci.yml` 과 ruleset 둘뿐이고, 문서에 적으면 셋이 되는데
-  **그 사본을 지킬 게이트가 없다**(아래 `check-doc-versions.sh` 항목이 「목록형 서술」을 일부러 제외한다).
-  #105 가 허용 목록을 놓고 같은 거래를 이미 거절했다.
+- **CI 7잡 전부가 `main` 의 required status checks 다**(#166, `main: CI must pass` ruleset) — `backend` · `frontend` · `docker` ·
+  `static` · `secrets` · `deps (백엔드)` · `deps (프론트)`. **이 목록은 축약이다**(#172) — 실제 context 는 `ci.yml` 잡 `name:` 전체 문자열이고,
+  여기에 옮겨 적지 않는다. 무엇을 넣고 뺐는지의 이유는 CHANGELOG #166 이다(`secrets` · `deps` 가 필수인 근거는 위 #135).
 
   **ruleset 을 복원해야 하면 문서를 보지 말고 정본에서 뽑는다.**
 
@@ -165,13 +130,7 @@
   ```
 
   규칙이 사라져 그것조차 못 읽는 상황이면 `ci.yml` 의 잡 `name:` 값을 그대로 쓴다.
-  **`docker` 를 빼지 않았다** — 빼도 잡은 어차피 모든 PR 에서 도니 걸리는 시간이 줄지 않고,
-  얻는 것 없이 Dockerfile 게이트만 잃는다. **`secrets` · `deps` 도 필수다** — 공개 저장소는
-  시크릿이 한 번 들어오면 회수가 불가능하다는 위 #135 항목의 근거가 필수에서 빼는 순간 거짓이 된다.
-  **Vercel 은 넣지 않았다** : #161 에서 「Vercel 만 green」이 오독의 원인이었고, 외부 앱 체크는
-  배포가 건너뛰어지면 아예 보고되지 않아 필수로 걸면 pending 으로 남아 merge 를 영영 막는다.
-  **필수 체크는 잡의 `name:` 문자열로 대조된다** — `ci.yml` 의 `name:` 을 고치면 ruleset 의
-  context 가 그 즉시 영영 pending 이 되어 merge 가 완전히 막힌다. **둘은 같이 고쳐야 한다.**
+  **`ci.yml` 의 `name:` 을 고치면 ruleset context 도 같이 고친다** — 하나만 바꾸면 체크가 영영 pending 이 되어 merge 가 막힌다.
 - **체크가 「어긋난 것」과 「아예 없는 것」은 증상이 같고 고치는 법이 다르다**(#170).
   둘 다 merge 가 영구 차단된 모습으로 보이므로 먼저 어느 쪽인지 가린다.
 
@@ -195,15 +154,7 @@
   ```
 
   **`gh workflow run` 으로는 풀리지 않는다** — PR 의 required checks 는 `workflow_dispatch` 로 생긴 체크를 세지 않는다.
-- **관리자 우회는 남겨 두었다**(`bypass_actors` = Repository admin / always, #166). 잠그지 않은
-  이유가 취향이 아니라 구체적 파손이다 — required checks 는 PR merge 뿐 아니라 **그 브랜치로의
-  직접 푸시도 막는데**, 증거 미러 커밋은 `.issue/**` 만 바꿔 바로 아래 항목대로 CI 를 건너뛰므로
-  **체크가 영영 붙지 않는다.** 관리자까지 강제하면 그 푸시가 영구 차단되고, 탈출구는 보호를 통째로
-  끄는 것뿐이라 그 순간 모든 게이트가 같이 사라진다. 우회를 남겨도 게이트는 산다 — merge 박스는
-  관리자에게도 `BLOCKED` 으로 막히고, 우회는 `--admin` 이라는 **별도의 명시적 동작**이라 기록이 남는다.
-  **「최신 `main` 위에 있어야 한다」(strict)는 끄고 간다** : 증거 미러 커밋이 `main` 에 직접
-  올라가는 워크플로라, 켜면 증거를 푸시할 때마다 열려 있는 모든 PR 이 낡아져 매번 rebase 와 7잡
-  재실행을 요구한다.
+- **관리자 우회(`bypass_actors` = Repository admin / always)는 유지하고 strict(최신 `main` 위)는 끈다**(#166) — 이유는 CHANGELOG #166.
 - **무엇이 필수인지 확인하는 명령은 하나다.**
 
   ```bash
@@ -213,10 +164,7 @@
   레거시 branch protection 과 ruleset 을 **둘 다** 모아 보여준다. `branches/main` 의
   `.protection.required_status_checks.enforcement_level` 로는 **ruleset 이 안 보인다**(`off` 로 나온다) —
   그 명령으로 판단하면 걸려 있는데 없다고 읽는다.
-- **게이트를 걸었다고 API 응답만 보고 판단하지 않는다.** #161 이 정확히 그렇게 새어 나갔다.
-  **일부러 깨뜨린 PR 로 merge 가 실제로 거부되는지** 확인한다(#166 에서 그렇게 검증했다 —
-  우회 없는 임시 ruleset 을 버릴 브랜치에 걸고 `gh pr merge` 를 실제로 시도해 거부를 받았다.
-  관리자 우회가 켜진 `main` 에서 시도하면 그냥 성공해 아무것도 증명하지 못한다).
+- **게이트는 API 응답이 아니라 일부러 깨뜨린 PR 의 merge 거부로 검증한다**(관리자 우회가 없는 임시 ruleset 에서. 방법은 CHANGELOG #166).
 - **`.issue/**` 만 바뀐 푸시는 CI 를 건너뛴다**(`paths-ignore`). 증거 미러 커밋은 코드가 한 줄도
   바뀌지 않는다. `pull_request` 에는 넣지 않았다 — 건너뛴 워크플로는 required checks 에서
   pending 으로 남아 merge 를 막는다.

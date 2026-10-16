@@ -1,6 +1,6 @@
 # Current Sprint
 
-> 마지막 업데이트 : 2026-10-15
+> 마지막 업데이트 : 2026-10-16
 
 여기에는 **아직 안 끝난 것만** 둔다. 끝난 일의 경위는 [CHANGELOG](../06_changelog/CHANGELOG.md) 가 정본이다.
 아직 착수하지 않은 항목은 [backlog.md](./backlog.md) 에 있다.
@@ -8,10 +8,6 @@
 ## 진행 중
 
 없음. 다음 할 일은 [backlog.md](./backlog.md) 에서 고른다.
-
-## 완료
-
-이 파일에는 두지 않는다. 끝난 일은 [CHANGELOG](../06_changelog/CHANGELOG.md) 가 정본이다.
 
 ## 블로커
 
