@@ -1,0 +1,13 @@
+# #365 before - 강화한 recently_used_key_survives_eviction 이 실제로 축출을 잡는지 확인(뮤테이션)
+# RateLimiterService 의 LinkedHashMap accessOrder 를 true -> false(삽입 순서 축출)로 잠시 바꿔 실행, 확인 후 원복
+# 종전 단언(trackedKeys() <= 2)은 이 뮤테이션에서도 통과한다 - 키 수는 어느 순서로 축출해도 2 이하다
+
+-------------------------------------------------------------------------------
+Test set: com.ragchatbot.service.RateLimiterKeyCapTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.110 s <<< FAILURE! -- in com.ragchatbot.service.RateLimiterKeyCapTest
+com.ragchatbot.service.RateLimiterKeyCapTest.recently_used_key_survives_eviction -- Time elapsed: 0.091 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting code to raise a throwable.
+
