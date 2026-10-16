@@ -551,7 +551,8 @@ chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 �
 `OPENAI_API_KEY` · `DB_PASSWORD` 가 평문으로 있고(터널 토큰은 #203 에서 `secrets/` 파일로 옮겼다 — 아래),
 기본 umask 로 만들면 644 가
 되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
-프리플라이트에서 확인하고 고치며, 무엇을 바꿨는지 출력한다.
+프리플라이트에서 확인하고 고치며, 무엇을 바꿨는지 출력한다. **파일이 없으면 빌드 전에 exit 3 으로 멈춘다(#331)** —
+경고만 하고 넘어가면 빌드 · 전송 뒤 `compose up` 에서야 죽고, `.env` 를 고쳐 재실행하면 한 번도 돌지 않은 이미지가 `:previous` 를 덮는다.
 
 **장애 대응 중 `docker inspect` 출력을 그대로 공유하지 말 것(#130).** `env_file` 과
 `environment:` 로 넘어간 값은 `/var/lib/docker/containers/<id>/config.v2.json` 에 평문으로 굳어

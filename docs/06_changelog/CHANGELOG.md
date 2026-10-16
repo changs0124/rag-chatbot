@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Fixed
+- **스크립트 · CI 결함 넷을 고쳤다(#331).** 2026-10-16 전체 리뷰(인프라 I1 · I2 · I3 · I6, 전부 재현 확인).
+  - 프론트 테스트(`ci.yml` · `check-all.sh`) : `--reporter=json` 만 주면 기본 리포터가 꺼져, 테스트가 깨져도 로그에 `JSON report written to …` 한 줄뿐이었다.
+    `--reporter=default --reporter=json --outputFile.json=vitest-report.json` 로 실패 상세와 리포트를 함께 남긴다. 리포트 경로는 그대로라 `check-case-floor.sh` 는 계속 읽는다
+  - `check-doc-sections.sh` : 실패 힌트의 헤딩 목록을 `paste -sd' · '` 가 바이트 단위로 쪼개 깨진 UTF-8 을 냈다. `awk` 로 잇는다
+  - `deploy.sh` : 서버에 `.env` · `backend/.env` 가 없으면 경고만 하고 빌드 · 전송까지 간 뒤 `compose up` 에서 죽었고, 고쳐서 재실행하면
+    한 번도 돌지 않은 이미지가 `:previous`(유일한 롤백 자산)를 덮었다. 사전 확인에서 exit 3 으로 멈춘다(권한 고정은 그대로)
+  - `scripts/claims/preprocess.py` : 고장일이 빈 호기 · 텍스트 고장일이 하나라도 있으면 호기 타임라인 정렬에서 `ValueError` · `TypeError` 로 죽었다.
+    고장일이 날짜인 행만 호기 그룹에 넣는다. 현재 원본의 산출물은 수정 전후 바이트 동일
 ### Removed
 - **아무도 읽지 않던 계약 필드 둘을 뺐다 — 출처 `uri` 와 JWT `email` 클레임(#328).**
   - 출처 `uri` : 레코드 → SSE `citations` → DB insert/select → REST `CitationResponse` → 프론트 `Citation` 타입까지 실려 다녔지만 읽는 곳이 없었다

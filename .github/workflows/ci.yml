@@ -93,7 +93,8 @@ jobs:
       - name: Lint (oxlint)
         run: npm run lint
       - name: Test (vitest)
-        run: npm test -- --reporter=json --outputFile=vitest-report.json
+        # 기본 리포터를 함께 켬(#331) - json 만 주면 기본 리포터가 꺼져, 무엇이 왜 깨졌는지 로그에 안 남음
+        run: npm test -- --reporter=default --reporter=json --outputFile.json=vitest-report.json
       - name: Build (tsc + vite)
         run: npm run build
       - name: 케이스 수 하한

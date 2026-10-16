@@ -172,7 +172,8 @@ def claims_to_md(xlsx, terms):
     by_year_model = group(lambda r: [f"{year_of(r)} · {fmt(r['기종']) or '(비어 있음)'}"])
     by_alarm_year = group(lambda r: [f"AL.{c} · {year_of(r)}" for c in alarm_codes(r["불량내용"])])
     by_customer = group(lambda r: [fmt(r["업체명"]) or "(비어 있음)"])
-    by_machine = group(lambda r: [fmt(r["호기정보"])] if fmt(r["호기정보"]) else [])
+    # 고장일이 날짜인 행만 호기 타임라인에 넣는다(#331) - 공란 · 텍스트가 섞이면 아래 min() · 정렬 · 뺄셈이 예외로 죽는다
+    by_machine = group(lambda r: [fmt(r["호기정보"])] if fmt(r["호기정보"]) and isinstance(r["고장일"], dt.datetime) else [])
     with_uu = [r for r in recs if UU.search(fmt(r["불량내용"]))]
     with_2144_or_uu = [r for r in recs if "2144" in alarm_codes(r["불량내용"]) or UU.search(fmt(r["불량내용"]))]
 

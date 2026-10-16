@@ -135,7 +135,8 @@ if [ -n "$matches" ]; then
 		checked=$((checked + 1))
 		if ! has_section "$target" "$section"; then
 			echo "FAIL: $src:$line — $target 에 「$section」 헤딩이 없음"
-			echo "      있는 헤딩: $(headings "$target" | paste -sd' · ' -)"
+			# paste -d 는 구분자를 바이트 단위로 돌려 써 2바이트 「·」 를 쪼갠다(#331) - awk 로 잇는다
+			echo "      있는 헤딩: $(headings "$target" | awk 'NR>1{printf " · "}{printf "%s",$0}')"
 			fail=1
 		fi
 	done <<< "$matches"
