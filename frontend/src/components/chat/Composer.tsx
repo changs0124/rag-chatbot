@@ -296,7 +296,9 @@ export default function Composer({
                   ? '실패한 첨부를 재시도하거나 지워야 보낼 수 있습니다'
                   : pending
                     ? '업로드가 끝나면 보낼 수 있습니다'
-                    : undefined
+                    : busy
+                      ? '대화를 준비하는 중에는 보낼 수 없습니다'
+                      : undefined
               }
             >
               <IconArrowUp />

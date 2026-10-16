@@ -202,6 +202,8 @@ describe('Composer', () => {
     fireEvent.change(box, { target: { value: '남아야 함' } })
     fireEvent.keyDown(box, { key: 'Enter' })
     expect(screen.getByLabelText('보내기')).toBeDisabled()
+    // 이유 없는 회색 버튼은 고장으로 읽힌다(#101)
+    expect(screen.getByLabelText('보내기')).toHaveAttribute('title', '대화를 준비하는 중에는 보낼 수 없습니다')
     fireEvent.click(screen.getByLabelText('보내기'))
     fireEvent.submit(box.closest('form')!)
 

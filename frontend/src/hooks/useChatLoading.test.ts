@@ -113,4 +113,38 @@ describe('useChat 이력 불러오는 중', () => {
     expect(result.current.messages.map((m) => m.id)).toEqual(['c1-1'])
     expect(accepted).toBe(false)
   })
+
+  /** 반대편 - 이력이 도착하면 막음이 풀려 전송을 받는다(#323) */
+  it('이력이 도착한 뒤에는 전송을 받는다', async () => {
+    const a = deferred<ChatMessage[]>()
+    vi.mocked(getMessages).mockReturnValueOnce(a.promise)
+    const { result } = renderHook(() => useChat())
+
+    act(() => void result.current.selectConversation('c1'))
+    await act(async () => a.resolve([msg('c1-1')]))
+
+    let accepted: unknown
+    await act(async () => {
+      accepted = result.current.send('q', [])
+    })
+    expect(accepted).toBe(true)
+    expect(streamChat).toHaveBeenCalledTimes(1)
+  })
+
+  /** 불러오기가 실패해도 막음이 풀린다 - 안 풀리면 그 대화에서는 영영 보낼 수 없다(#323) */
+  it('불러오기가 실패해도 그 뒤 전송을 받는다', async () => {
+    const a = deferred<ChatMessage[]>()
+    vi.mocked(getMessages).mockReturnValueOnce(a.promise)
+    const { result } = renderHook(() => useChat())
+
+    act(() => void result.current.selectConversation('c1'))
+    await act(async () => a.reject(new Error('down')))
+
+    let accepted: unknown
+    await act(async () => {
+      accepted = result.current.send('q', [])
+    })
+    expect(accepted).toBe(true)
+    expect(streamChat).toHaveBeenCalledTimes(1)
+  })
 })
