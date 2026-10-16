@@ -41,7 +41,7 @@ ITEM_HEAD = re.compile(r"^(\(\d+\)|\d+\)|[▶■●※-])")
 
 
 def clean(s):
-    return re.sub(r"[ \t ]+", " ", str(s)).strip()
+    return re.sub(r"[ \t\u00a0]+", " ", str(s)).strip()
 
 
 def bands(rects, prose):

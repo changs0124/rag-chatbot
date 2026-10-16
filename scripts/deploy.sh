@@ -24,6 +24,7 @@ HOST="${DEPLOY_HOST:-}"
 # **홈 상대 경로로 둔다(#129)** - 어느 계정으로 붙든 그 홈 아래를 가리킨다
 REMOTE_DIR="${DEPLOY_DIR:-deploy}"
 IMAGE="rag-chatbot-backend:latest"
+PREV="rag-chatbot-backend:previous"
 TARBALL="backend-image.tar.gz"
 
 SKIP_BUILD=0
@@ -183,7 +184,7 @@ scp -q "$TMP/$TARBALL" docker-compose.yml "$HOST:$REMOTE_DIR/"
 say "서버에서 로드 후 재기동"
 ssh_run "set -e;
 cd '$REMOTE_DIR';
-if sudo docker image inspect '$IMAGE' >/dev/null 2>&1; then sudo docker tag '$IMAGE' 'rag-chatbot-backend:previous'; fi;
+if sudo docker image inspect '$IMAGE' >/dev/null 2>&1; then sudo docker tag '$IMAGE' '$PREV'; fi;
 sudo docker load -i '$TARBALL';
 rm -f '$TARBALL';
 want=\$(sudo docker image inspect -f '{{.Id}}' '$IMAGE');
@@ -210,14 +211,14 @@ sudo docker compose logs --tail=60 app;
 echo '--- 종료 코드 137 이면 OOM 이다 ---';
 free -h | head -2;
 echo '';
-echo '되돌리려면 (이전 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :';
-echo \"  cd $REMOTE_DIR && sudo docker tag rag-chatbot-backend:previous $IMAGE && sudo docker compose up -d\";
+echo '되돌리려면 (이전 이미지를 $PREV 로 남겨 두었다) :';
+echo \"  cd $REMOTE_DIR && sudo docker tag $PREV $IMAGE && sudo docker compose up -d\";
 exit 1"
 
 # 6. 옛 이미지 정리 ---------------------------------------------------------
 # **헬스체크가 통과한 뒤에야 옛 이미지를 버린다(#129)** - 레지스트리가 없어 서버의 옛 이미지가 유일한 롤백 자산이다.
 say "옛 이미지 정리"
-ssh_run "sudo docker rmi rag-chatbot-backend:previous 2>/dev/null || true;
+ssh_run "sudo docker rmi $PREV 2>/dev/null || true;
 sudo docker image prune -f"
 
 say "배포 완료"

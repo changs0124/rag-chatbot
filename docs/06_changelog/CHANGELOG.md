@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+### Changed
+- **스크립트 · CI 의 중복과 쓰지 않는 설정을 걷었다(#331).** 동작은 그대로다(같은 리뷰의 I4 · I7~I14).
+  - `ci.yml` : `deps (프론트)` 잡의 `npm ci` 제거 — `npm audit` 는 `package-lock.json` 만 읽는다(node_modules 없이 `found 0 vulnerabilities` 확인).
+    `setup-node` 두 곳은 `node-version: '24'` 대신 `node-version-file: .nvmrc`
+  - `scripts/claims/preprocess.py` : `by_year` 가 `year_of` 를 쓰고, 알람 코드는 행마다 한 번만 뽑으며, 저전압 합집합은 이미 있는 두 집합을 합친다.
+    현재 원본의 산출물은 수정 전후 바이트 동일
+  - `check-doc-refs.sh` · `check-doc-sections.sh` · `check-doc-versions.sh` : 아무도 설정하지 않는 `DOC_PATHS` · `M2_REPO` 덮어쓰기와 닿지 않는 `grep` 가드를 지우고 대상 `docs README.md` 를 세 곳 같은 값으로
+  - `deploy.sh` : `rag-chatbot-backend:previous` 리터럴 4곳을 `PREV` 하나로. `.gitignore` : 넓은 패턴이 이미 덮는 3줄 삭제.
+    `doc-figures/preprocess.py` : 정규식의 NBSP 리터럴을 ` ` 이스케이프로
+
 ### Fixed
 - **스크립트 · CI 결함 넷을 고쳤다(#331).** 2026-10-16 전체 리뷰(인프라 I1 · I2 · I3 · I6, 전부 재현 확인).
   - 프론트 테스트(`ci.yml` · `check-all.sh`) : `--reporter=json` 만 주면 기본 리포터가 꺼져, 테스트가 깨져도 로그에 `JSON report written to …` 한 줄뿐이었다.

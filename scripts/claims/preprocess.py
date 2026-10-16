@@ -163,19 +163,23 @@ def claims_to_md(xlsx, terms):
                 g[k].append(r)
         return g
 
-    by_year = group(lambda r: [f"{r['입고일자'].year}년"] if isinstance(r["입고일자"], dt.datetime) else ["(입고일자 없음)"])
-    by_model = group(lambda r: [fmt(r["기종"]) or "(비어 있음)"])
-    by_alarm = group(lambda r: [f"AL.{c}" for c in alarm_codes(r["불량내용"])])
-    by_part = group(lambda r: [fmt(r["품번"]) or "(비어 있음)"])
     year_of = lambda r: f"{r['입고일자'].year}년" if isinstance(r["입고일자"], dt.datetime) else "(입고일자 없음)"
+    # 알람 코드는 정규식 두 벌을 도는 계산이라 행마다 한 번만 뽑는다
+    codes = {id(r): alarm_codes(r["불량내용"]) for r in recs}
+    by_year = group(lambda r: [year_of(r)])
+    by_model = group(lambda r: [fmt(r["기종"]) or "(비어 있음)"])
+    by_alarm = group(lambda r: [f"AL.{c}" for c in codes[id(r)]])
+    by_part = group(lambda r: [fmt(r["품번"]) or "(비어 있음)"])
     by_year_part = group(lambda r: [f"{year_of(r)} · {fmt(r['품번']) or '(비어 있음)'}"])
     by_year_model = group(lambda r: [f"{year_of(r)} · {fmt(r['기종']) or '(비어 있음)'}"])
-    by_alarm_year = group(lambda r: [f"AL.{c} · {year_of(r)}" for c in alarm_codes(r["불량내용"])])
+    by_alarm_year = group(lambda r: [f"AL.{c} · {year_of(r)}" for c in codes[id(r)]])
     by_customer = group(lambda r: [fmt(r["업체명"]) or "(비어 있음)"])
     # 고장일이 날짜인 행만 호기 타임라인에 넣는다(#331) - 공란 · 텍스트가 섞이면 아래 min() · 정렬 · 뺄셈이 예외로 죽는다
     by_machine = group(lambda r: [fmt(r["호기정보"])] if fmt(r["호기정보"]) and isinstance(r["고장일"], dt.datetime) else [])
     with_uu = [r for r in recs if UU.search(fmt(r["불량내용"]))]
-    with_2144_or_uu = [r for r in recs if "2144" in alarm_codes(r["불량내용"]) or UU.search(fmt(r["불량내용"]))]
+    # 두 집합의 합 - recs 순서를 지키고 겹치는 건은 한 번만
+    either = {id(r) for r in by_alarm.get("AL.2144", []) + with_uu}
+    with_2144_or_uu = [r for r in recs if id(r) in either]
 
     dates = sorted(r["입고일자"] for r in recs if isinstance(r["입고일자"], dt.datetime))
     usage = [r["사용일"] for r in recs if isinstance(r["사용일"], (int, float))]

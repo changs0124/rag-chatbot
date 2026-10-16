@@ -62,7 +62,7 @@ pkg_version() {
 # Spring Boot BOM 이 관리하는 버전. m2 의 spring-boot-dependencies pom 을 직접 읽음
 bom_property() {
 	local boot="$1" prop="$2"
-	local bom="${M2_REPO:-$HOME/.m2/repository}/org/springframework/boot/spring-boot-dependencies/$boot/spring-boot-dependencies-$boot.pom"
+	local bom="$HOME/.m2/repository/org/springframework/boot/spring-boot-dependencies/$boot/spring-boot-dependencies-$boot.pom"
 	[ -f "$bom" ] || die "BOM 을 못 찾음 : $bom
       backend 빌드를 먼저 돌려 m2 를 채울 것 — cd backend && ./mvnw -B verify"
 	grep -o "<$prop>[^<]*" "$bom" | head -1 | sed "s/<$prop>//"
