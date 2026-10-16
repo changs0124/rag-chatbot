@@ -61,7 +61,7 @@ flowchart LR
 |------|------|
 | Frontend | React 19.2 · TypeScript 6.0 · Vite 8.1 · React Router 8.3 · Tailwind CSS 4.3 · react-markdown |
 | Backend | Java 17 · Spring Boot 4.1.1 · Spring Security · MyBatis 4.1.0 · Flyway 12.4 |
-| Database | PostgreSQL 16 (운영 compose 이미지 `postgres:16-alpine`) |
+| Database | PostgreSQL 16 (운영 compose 이미지 `postgres:16-alpine`, 다이제스트 고정) |
 | 외부 연동 | OpenAI Responses API + Vector Store · 모델은 `OPENAI_MODEL`(기본 `gpt-6-sol`) |
 | 테스트 | 백엔드 JUnit 6 + Testcontainers 2.0(실 PostgreSQL) · 프론트 Vitest 4.1 + Testing Library |
 | Lint | oxlint 1.75 (프론트) |
@@ -127,7 +127,7 @@ GitHub Actions(`.github/workflows/ci.yml`)는 변경마다 7잡을 전부 돌린
 | 잡 | 하는 일 |
 |----|---------|
 | `backend` | `mvnw verify` · 케이스 수 하한 · 런타임/문서 버전 대조 |
-| `frontend` | oxlint · Vitest · tsc + vite 빌드 · 케이스 수 하한 |
+| `frontend` | 런타임 버전 대조(node) · oxlint · Vitest · tsc + vite 빌드 · 케이스 수 하한 |
 | `docker` | 백엔드 이미지 빌드(푸시 없음) |
 | `static` | 셸 구문 · shellcheck · DTO · resultMap · 프론트 타입 필드 대조 · 병합 충돌 표시 · 문서 참조 · 섹션 이름 |
 | `secrets` | gitleaks 시크릿 스캔 |

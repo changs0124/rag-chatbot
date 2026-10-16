@@ -187,7 +187,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - **이징 한 가지** : `cubic-bezier(0.16, 1, 0.3, 1)` — `--ease-out-quint` 로 두고 전 컴포넌트가 쓴다.
   `linear` · `ease-in-out` 금지.
 - **지속** : 150ms 하나(`duration-150`) — 상태 변화 · 모달 모두
-- **속성** : `transform` · `opacity` · `background-color` 만. 레이아웃을 흔드는 속성에 트랜지션을 걸지 않는다
+- **속성** : `transform` · `opacity` · 색(`transition-colors`) · 입력 포커스 테두리(`border-color` · `box-shadow`)만. 레이아웃을 흔드는 속성(폭 · 높이 · 여백)에 트랜지션을 걸지 않는다
 - **누르는 느낌** : 버튼 `hover:scale-[1.02]` / `active:scale-[0.98]`
 - **끄는 중에는 트랜지션을 끈다** : 사이드바 폭 드래그처럼 값이 매 프레임 바뀌는 동작에 트랜지션이 걸리면
   손가락보다 늦게 따라와 고무줄처럼 보인다
