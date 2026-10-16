@@ -16,7 +16,8 @@ image=sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea he
 before: id=213055581d7c… started=2026-10-16T09:13:09Z
 after:  id=d7296dec92e1… started=2026-10-16T09:13:16Z
   → 이미지는 같아도 image 문자열이 바뀌어 db 컨테이너는 한 번 재생성된다(수 초, 볼륨 데이터 유지).
-    app 의 depends_on 에 restart: true 가 없어 app 은 재시작되지 않고 Hikari 가 재연결한다.
+    (추론 · 미실측) app 의 depends_on 에 restart: true 가 없어 app 은 재시작 대상이 아니고 Hikari 가 재연결할 것이다.
+    이 시험은 db 만 띄웠다.
     compose 주석 · CHANGELOG 에 그대로 적었다.
 
 ## 검증 파일과 커밋 대상의 차이
