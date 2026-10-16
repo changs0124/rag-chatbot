@@ -1,0 +1,5 @@
+# shellcheck 0.11.0 (shellcheck-py 휠에서 꺼낸 바이너리, 스크래치에서만 PATH 에 둠)
+$ bash scripts/check-shell-lint.sh
+셸 정적 분석 11개
+셸 정적 분석 통과
+exit=0

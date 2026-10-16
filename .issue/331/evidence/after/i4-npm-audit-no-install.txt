@@ -1,0 +1,15 @@
+$ ls  (빈 디렉터리에 package.json + package-lock.json 만 복사)
+package-lock.json
+package.json
+
+$ npm audit --audit-level=high
+found 0 vulnerabilities
+exit=0
+
+$ ls node_modules
+ls: cannot access 'node_modules': No such file or directory
+
+$ python -c yaml.safe_load(ci.yml)
+yaml ok · deps-frontend steps: ['actions/checkout@v4', 'Set up Node 24', 'npm audit (high 이상 0건)']
+frontend setup-node with: {'node-version-file': '.nvmrc', 'cache': 'npm', 'cache-dependency-path': 'frontend/package-lock.json'}
+deps-frontend setup-node with: {'node-version-file': '.nvmrc'}

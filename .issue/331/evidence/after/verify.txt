@@ -1,0 +1,24 @@
+# origin/main(f1e532f) 위로 rebase 한 뒤 HEAD 6cd1234 — shellcheck 0.11.0 은 스크래치 PATH 로 제공
+
+## bash scripts/check-all.sh quick  → exit=0
+셸 구문 검사 12개
+  ✓ 셸 구문 검사
+셸 정적 분석 11개
+  ✓ 셸 정적 분석
+  ✓ 병합 충돌 표시
+  ✓ 문서 참조 실재
+  ✓ 문서 섹션 이름 대조
+  ✓ 응답 계약 대조
+  ✓ 런타임 버전 대조(java)
+  ✓ 런타임 버전 대조(node)
+
+## bash scripts/check-all.sh docs  → exit=0
+셸 구문 검사 12개
+  ✓ 셸 구문 검사
+셸 정적 분석 11개
+  ✓ 셸 정적 분석
+  ✓ 병합 충돌 표시
+  ✓ 문서 참조 실재
+  ✓ 문서 섹션 이름 대조
+
+## 이전 실행(rebase 전, 커밋 1+2) : bash scripts/check-all.sh (전체) → exit=0 — 백엔드 clean verify · 이미지 빌드 · audit 포함 통과, gitleaks · trivy 미설치로 건너뜀

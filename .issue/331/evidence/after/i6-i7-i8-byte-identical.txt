@@ -1,0 +1,5 @@
+# 최종(I6 + 제외 안내 줄 + I7 + I8) 실제 원본으로 다시 만든 산출물 vs 현재 운영 스토어에 올라간 파일 (내용은 찍지 않는다)
+$ python -I -X utf8 scripts/claims/preprocess.py <원본 필드클레임현황.xlsx> <scratch>/out.md --mask-terms <전처리/mask-terms.txt>
+exit=0
+$ cmp <scratch>/out.md <전처리/필드클레임현황.md>
+identical

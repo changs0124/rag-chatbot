@@ -1,0 +1,9 @@
+# 시뮬레이션 : before 와 같은 가짜 ssh · scp · sudo · docker 로 실제 scripts/deploy.sh 실행(최종 상태). 서버 접속 없음. backend/.env 만 없음.
+
+
+▶ 사전 확인
+  .env 권한 644 -> 600 으로 고쳤다
+  backend/.env 가 서버에 없다 - compose 기동이 실패한다. .env.example 을 참고해 만들 것
+deploy.sh exit=3
+--- 가짜 docker/scp 호출 기록 ---
+--- 「빌드」 로그 수 : 0 · :previous 재태그 수 : 0

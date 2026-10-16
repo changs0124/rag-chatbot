@@ -1,0 +1,10 @@
+$ npm test -- --reporter=json --outputFile=vitest-report.json   (ci.yml:96 · check-all.sh:132 현재 명령, 일부러 깨뜨린 src/zz-i331-broken.test.ts 포함)
+
+> rag-chatbot-frontend@0.0.1 test
+> vitest run --reporter=json --outputFile=vitest-report.json
+
+JSON report written to D:/dev/rag-chatbot/.issue/worktrees/331-scripts-ci-fixes/frontend/vitest-report.json
+exit=1
+
+# 콘솔에 실패 테스트 이름 grep:
+0

@@ -1,0 +1,22 @@
+# 합성 픽스처(가짜 값) : M-OK 2건(날짜 정상) + blank=고장일 공란 1건 / text=고장일 텍스트 1건 / mixed=둘 다
+
+$ python -I -X utf8 scripts/claims/preprocess.py fixture-blank.xlsx out-blank.md --mask-terms mask-terms.txt
+  File "scripts\claims\preprocess.py", line 195, in <lambda>
+    for name, rs in sorted(by_machine.items(), key=lambda kv: min(r["고장일"] for r in kv[1] if r["고장일"])):
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: min() arg is an empty sequence
+exit=1
+
+$ python -I -X utf8 scripts/claims/preprocess.py fixture-text.xlsx out-text.md --mask-terms mask-terms.txt
+  File "scripts\claims\preprocess.py", line 195, in machine_lines
+    for name, rs in sorted(by_machine.items(), key=lambda kv: min(r["고장일"] for r in kv[1] if r["고장일"])):
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'str' and 'datetime.datetime'
+exit=1
+
+$ python -I -X utf8 scripts/claims/preprocess.py fixture-mixed.xlsx out-mixed.md --mask-terms mask-terms.txt
+  File "scripts\claims\preprocess.py", line 195, in <lambda>
+    for name, rs in sorted(by_machine.items(), key=lambda kv: min(r["고장일"] for r in kv[1] if r["고장일"])):
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: min() arg is an empty sequence
+exit=1

@@ -1,0 +1,29 @@
+# 시뮬레이션 : PATH 앞에 가짜 ssh(원격 문자열을 로컬 임시 디렉터리에서 bash 로 실행) · scp · sudo · docker 를 두고
+# 실제 scripts/deploy.sh 를 돌린다. 서버 접속 없음. 서버 쪽 backend/.env 만 일부러 없다.
+
+
+▶ 사전 확인
+  .env 권한 644 -> 600 으로 고쳤다
+  경고: backend/.env 가 서버에 없다 - compose 기동이 실패한다
+  secrets/ 권한 755 -> 700 으로 고쳤다
+
+▶ 이미지 빌드
+
+▶ 이미지 저장 (gzip)
+  크기: 20
+
+▶ 서버로 전송
+
+▶ 서버에서 로드 후 재기동
+env file .env not found
+deploy.sh exit=1
+--- 가짜 docker/scp 호출 기록 ---
+docker build -t rag-chatbot-backend:latest backend
+docker save rag-chatbot-backend:latest
+scp -q /tmp/tmp.DsOl3q9hhU/backend-image.tar.gz docker-compose.yml sim-host:deploy/
+docker image inspect rag-chatbot-backend:latest
+docker tag rag-chatbot-backend:latest rag-chatbot-backend:previous
+docker load -i backend-image.tar.gz
+docker image inspect -f {{.Id}} rag-chatbot-backend:latest
+docker compose up -d
+--- 「빌드」 로그 수 : 1 · :previous 재태그 수 : 1

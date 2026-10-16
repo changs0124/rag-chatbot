@@ -1,0 +1,50 @@
+$ rm -f vitest-report.json && npm test -- --reporter=default --reporter=json --outputFile.json=vitest-report.json   (일부러 깨뜨린 src/zz-i331-broken.test.ts 포함)
+
+> rag-chatbot-frontend@0.0.1 test
+> vitest run --reporter=default --reporter=json --outputFile.json=vitest-report.json
+
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/331-scripts-ci-fixes/frontend
+
+ ❯ src/zz-i331-broken.test.ts (1 test | 1 failed) 18ms
+   × i331 일부러 깨뜨린 테스트 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/zz-i331-broken.test.ts > i331 일부러 깨뜨린 테스트
+AssertionError: expected { a: 1 } to deeply equal { a: 2 }
+
+- Expected
++ Received
+
+  {
+-   "a": 2,
++   "a": 1,
+  }
+
+ ❯ src/zz-i331-broken.test.ts:4:20
+      2|
+      3| test('i331 일부러 깨뜨린 테스트', () => {
+      4|   expect({ a: 1 }).toEqual({ a: 2 })
+       |                    ^
+      5| })
+      6|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 22 passed (23)
+      Tests  1 failed | 157 passed (158)
+   Start at  10:17:48
+   Duration  6.42s (transform 4.94s, setup 9.38s, import 10.66s, tests 6.80s, environment 30.54s)
+
+JSON report written to D:/dev/rag-chatbot/.issue/worktrees/331-scripts-ci-fixes/frontend/vitest-report.json
+exit=1
+
+$ ls -l vitest-report.json
+54938 vitest-report.json
+
+$ bash scripts/check-case-floor.sh frontend   (같은 경로의 리포트를 그대로 읽는다)
+케이스 수(frontend) : 실측 158 / 하한 157
+OK
+exit=0

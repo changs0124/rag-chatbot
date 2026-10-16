@@ -1,0 +1,23 @@
+# I14 : doc-figures clean() 의 NBSP 이스케이프가 같은 동작인지
+old 'a b c' · new 'a b c' · same True
+$ grep -c NBSP(c2 a0) scripts/doc-figures/preprocess.py
+0
+
+# I11 : 지운 줄의 대상이 여전히 무시되는지
+$ git check-ignore -v backend/uploads/x application-secret.yml application-secret.yaml backend/src/main/resources/application-secret.yml
+.gitignore:30:uploads/	backend/uploads/x
+.gitignore:8:*-secret*.yml	application-secret.yml
+.gitignore:9:*-secret*.yaml	application-secret.yaml
+.gitignore:8:*-secret*.yml	backend/src/main/resources/application-secret.yml
+
+# I12
+$ git grep -n 'rag-chatbot-backend:previous' scripts/deploy.sh
+scripts/deploy.sh:27:PREV="rag-chatbot-backend:previous"
+
+# I9 · I10
+$ git grep -n -e DOC_PATHS -e M2_REPO -e "command -v grep" -- scripts
+(매치 수 0)
+
+$ bash scripts/check-shell-syntax.sh
+셸 구문 검사 12개
+셸 구문 검사 통과
