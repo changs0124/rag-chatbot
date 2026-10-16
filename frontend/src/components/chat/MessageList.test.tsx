@@ -7,13 +7,12 @@ import { resetFigureCache } from '../../lib/docFigures'
 describe('MessageList', () => {
   it('renders assistant content with its citations', () => {
     const messages: ChatMessage[] = [
-      { id: 'u1', role: 'user', content: '환불 정책', status: 'complete', createdAt: '', citations: [] },
+      { id: 'u1', role: 'user', content: '환불 정책', status: 'complete', citations: [] },
       {
         id: 'a1',
         role: 'assistant',
         content: '안내는 다음과 같음 [1]',
         status: 'complete',
-        createdAt: '',
         citations: [{ seq: 1, sourceName: '이용 정책 문서', snippet: '발췌' }],
       },
     ]
@@ -30,7 +29,6 @@ describe('MessageList', () => {
         role: 'assistant',
         content: '일반적인 관점에서 이렇게 볼 수 있음.',
         status: 'complete',
-        createdAt: '',
         citations: [],
       },
     ]
@@ -49,7 +47,6 @@ describe('MessageList', () => {
         content: '답변을 쓰다가',
         status: 'complete',
         stopped: true,
-        createdAt: '',
         citations: [],
       },
     ]
@@ -65,7 +62,6 @@ describe('MessageList', () => {
         role: 'assistant',
         content: '안내는 다음과 같음 [1]',
         status: 'complete',
-        createdAt: '',
         citations: [{ seq: 1, sourceName: '이용 정책 문서', snippet: '발췌' }],
       },
     ]
@@ -80,7 +76,6 @@ describe('MessageList', () => {
       role: 'user',
       content: '이 사진들 설명해줘',
       status: 'complete',
-      createdAt: '',
       citations: [],
       attachments: Array.from({ length: count }, (_, i) => ({
         id: `f${i + 1}`,
@@ -142,8 +137,8 @@ describe('MessageList', () => {
 
   // 진행 단계 표시(REQ-CHAT-005)
   const pending: ChatMessage[] = [
-    { id: 'u1', role: 'user', content: '환불 정책', status: 'complete', createdAt: '', citations: [] },
-    { id: 'a1', role: 'assistant', content: '', status: 'streaming', createdAt: '', citations: [] },
+    { id: 'u1', role: 'user', content: '환불 정책', status: 'complete', citations: [] },
+    { id: 'a1', role: 'assistant', content: '', status: 'streaming', citations: [] },
   ]
 
   it('shows the stage label in a status region separated from the log', () => {
@@ -200,7 +195,6 @@ describe('MessageList', () => {
         role: 'assistant',
         content,
         status: 'complete',
-        createdAt: '',
         citations: [{ seq: 1, sourceName: '매뉴얼', snippet: '' }],
       },
     ]
@@ -244,7 +238,6 @@ describe('MessageList', () => {
       role,
       content,
       status: 'complete',
-      createdAt: '',
       citations: role === 'assistant' ? [{ seq: 1, sourceName: '매뉴얼', snippet: '' }] : [],
     })
 

@@ -31,7 +31,6 @@ const msg = (id: string): ChatMessage => ({
   role: 'user',
   content: id,
   status: 'complete',
-  createdAt: '',
   citations: [],
 })
 

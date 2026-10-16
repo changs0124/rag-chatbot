@@ -11,6 +11,9 @@
     관리자 행 동작 버튼 3개를 지역 상수 `actionBtn` 으로
   - 인덱싱 중 5초 폴링은 문서 목록만 읽는다(종전에는 사용자 목록도 매번 받았다). 첫 로드 · 변경 뒤는 그대로 둘 다 읽는다
   - 죽은 코드 : `Sidebar` 의 `updatedAt || createdAt` 폴백(`updated_at` 은 not null) · 읽히지 않던 `Conversation.createdAt` ·
+    `ChatMessage.createdAt`(`useChat` 의 쓰기 포함) · `AdminUser.createdAt` · 관리 · 마이 페이지 테스트에 남은 `cleanup()`(#219 이후 `test/setup.ts` 가 건다)
+  - **하지 않은 것** : `Citation.uri` 는 계약 필드 제거 이슈 몫
+  - 테스트 : 폴링 케이스가 사용자 목록 호출이 늘지 않음을 단언(변경 전 실패 확인) · 「닫기」 44px 케이스 1건 추가. **프론트 하한 171 → 172**(실측)
     `AdminUser.createdAt` · 관리 · 마이 페이지 테스트에 남은 `cleanup()`(#219 이후 `test/setup.ts` 가 건다)
   - **하지 않은 것** : `ChatMessage.createdAt` 은 쓰는 곳이 `useChat.ts` 라 그 파일을 고치는 다른 작업과 겹치지 않게 남겼다.
     `Citation.uri` 는 계약 필드 제거 이슈 몫

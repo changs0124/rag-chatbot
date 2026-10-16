@@ -201,13 +201,11 @@ export function useChat() {
 
       // 턴마다 고유 id - 오류/중단으로 끝난 이전 버블과 충돌하지 않게 함
       const assistantId = crypto.randomUUID()
-      const now = new Date().toISOString()
       const userMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'user',
         content: text,
         status: 'complete',
-        createdAt: now,
         citations: [],
         attachments,
       }
@@ -216,7 +214,6 @@ export function useChat() {
         role: 'assistant',
         content: '',
         status: 'streaming',
-        createdAt: now,
         citations: [],
       }
       setMessages((prev) => [...prev, userMsg, assistantMsg])
