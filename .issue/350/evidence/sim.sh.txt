@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# #350 모의 : 가짜 ssh · scp · sudo · docker · curl · sleep · free 로 deploy.sh 를 서버 접속 없이 돌린다.
+# 가짜 ssh 는 원격 명령을 로컬 bash 로 돌리고, 가짜 docker 는 태그 · 컨테이너 상태를 파일에 둔다.
+#
+# 사용법 : bash sim.sh.txt <저장소 루트>    (그 저장소의 scripts/deploy.sh 를 돌린다)
+# 확장자를 .txt 로 둔 것은 main 의 `git ls-files '*.sh'` 셸 게이트 대상에 들어가지 않게 하려는 것이다
+#
+# 이미지 ID 는 이름으로 읽히게 둔다 : sha256:old(처음 실행 중) · sha256:new1 · sha256:new2(새로 load) · sha256:stray
+set -uo pipefail
+REPO="$(cd "${1:?저장소 루트를 넘길 것}" && pwd)"
+SIM="$(mktemp -d)"
+trap 'rm -rf "$SIM"' EXIT
+BIN="$SIM/bin"; STATE="$SIM/state"; HOME_DIR="$SIM/home"
+mkdir -p "$BIN" "$STATE"
+
+# --- 가짜 명령 ------------------------------------------------------------------
+cat >"$BIN/ssh" <<'EOF'
+#!/usr/bin/env bash
+cd "$SIM_HOME" && exec bash -c "$2"
+EOF
+cat >"$BIN/scp" <<'EOF'
+#!/usr/bin/env bash
+args=(); for a in "$@"; do [ "$a" = -q ] || args+=("$a"); done
+dest="${args[-1]#*:}"; unset 'args[-1]'
+cp "${args[@]}" "$SIM_HOME/$dest"
+EOF
+cat >"$BIN/sudo" <<'EOF'
+#!/usr/bin/env bash
+exec "$@"
+EOF
+cat >"$BIN/sleep" <<'EOF'
+#!/usr/bin/env bash
+:
+EOF
+cat >"$BIN/free" <<'EOF'
+#!/usr/bin/env bash
+echo '              total        used        free'
+echo 'Mem:           1.9Gi       0.5Gi       1.4Gi'
+EOF
+# 헬스 : app 이 running 이고 health 가 healthy 일 때만 200
+cat >"$BIN/curl" <<'EOF'
+#!/usr/bin/env bash
+read -r _ _ health status <"$SIM_STATE/app" 2>/dev/null || { printf 000; exit 0; }
+if [ "$status" = running ] && [ "$health" = healthy ]; then printf 200; else printf 000; fi
+EOF
+cat >"$BIN/docker" <<'EOF'
+#!/usr/bin/env bash
+S="$SIM_STATE"
+echo "docker $*" >>"$S/calls"
+tag_id() { awk -v n="$1" '$1==n{print $2}' "$S/tags"; }
+resolve() { case "$1" in sha256:*) echo "$1" ;; *) tag_id "$1" ;; esac; }
+set_tag() { { awk -v n="$1" '$1!=n' "$S/tags"; echo "$1 $2"; } >"$S/tags.n"; mv "$S/tags.n" "$S/tags"; }
+app() { cat "$S/app" 2>/dev/null; }
+case "$1" in
+	build) exit 0 ;;
+	save) printf 'fake-image' ;;
+	tag)
+		id="$(resolve "$2")"; [ -n "$id" ] || { echo "No such image: $2" >&2; exit 1; }
+		set_tag "$3" "$id"; echo "tag $3 <- $id" >>"$S/tag-history" ;;
+	load) set_tag rag-chatbot-backend:latest "$(cat "$S/next_load")"; echo "Loaded image: rag-chatbot-backend:latest" ;;
+	rmi) id="$(tag_id "$2")"; [ -n "$id" ] || exit 1; awk -v n="$2" '$1!=n' "$S/tags" >"$S/tags.n"; mv "$S/tags.n" "$S/tags" ;;
+	image)
+		case "$2" in
+			prune) exit 0 ;;
+			inspect)
+				shift 2; fmt=''; [ "$1" = -f ] && { fmt="$2"; shift 2; }
+				id="$(resolve "$1")"; [ -n "$id" ] || { echo "No such image: $1" >&2; exit 1; }
+				[ -n "$fmt" ] && echo "$id" || echo "[{\"Id\":\"$id\"}]" ;;
+		esac ;;
+	inspect)
+		[ "$2" = -f ] || [ "$2" = --format ] || exit 1
+		fmt="$3"; cid="${4:-}"
+		[ -n "$cid" ] || { echo '"docker inspect" requires at least 1 argument.' >&2; exit 1; }
+		read -r id img health status < <(app)
+		[ "$cid" = "$id" ] || { echo "No such object: $cid" >&2; exit 1; }
+		case "$fmt" in
+			'{{.Image}}') echo "$img" ;;
+			'{{.State.Health.Status}}') echo "$health" ;;
+			'{{.State.Status}}') echo "$status" ;;
+			*) echo "모의가 모르는 형식: $fmt" >&2; exit 1 ;;
+		esac ;;
+	stats) echo 'NAME MEM USAGE MEM %' ;;
+	compose)
+		shift
+		case "$1" in
+			up)
+				[ -f "$S/compose_fail" ] && { echo 'service "app" refers to undefined volume x: invalid compose project' >&2; exit 1; }
+				latest="$(tag_id rag-chatbot-backend:latest)"
+				read -r id img _ _ < <(app)
+				if [ "$img" != "$latest" ] || [[ " $* " == *" --force-recreate "* ]]; then
+					case "$(cat "$S/outcome")" in
+						healthy)   echo "c-${latest#sha256:} $latest healthy running" >"$S/app" ;;
+						unhealthy) echo "c-${latest#sha256:} $latest unhealthy running" >"$S/app" ;;
+						crash)     echo "c-${latest#sha256:} $latest unhealthy exited" >"$S/app" ;;
+					esac
+				fi ;;
+			ps)
+				shift; all=0; q=0; running_only=0
+				while [ $# -gt 0 ]; do case "$1" in -a) all=1 ;; -q) q=1 ;; --status) running_only=1; shift ;; esac; shift; done
+				read -r id img health status < <(app)
+				[ -n "${id:-}" ] || exit 0
+				if [ "$q" = 1 ]; then
+					if [ "$all" = 1 ] || [ "$status" = running ]; then echo "$id"; fi
+				else
+					echo "NAME           IMAGE                       STATUS"
+					echo "deploy-app-1   rag-chatbot-backend:latest  $status ($health) [$img]"
+				fi ;;
+			logs) echo 'app  | (모의 로그)' ;;
+		esac ;;
+	*) echo "모의가 모르는 docker 명령: $*" >&2; exit 1 ;;
+esac
+EOF
+chmod +x "$BIN"/*
+export SIM_HOME="$HOME_DIR" SIM_STATE="$STATE"
+
+# --- 서버 초기 상태 -------------------------------------------------------------
+# app 은 sha256:old 로 healthy 실행 중, latest = old, :previous 없음, 사전 확인 파일은 다 있다
+reset_server() {
+	rm -rf "$HOME_DIR" "$STATE"; mkdir -p "$HOME_DIR/deploy/backend" "$HOME_DIR/deploy/secrets" "$STATE"
+	echo x >"$HOME_DIR/deploy/.env"; echo x >"$HOME_DIR/deploy/backend/.env"; echo t >"$HOME_DIR/deploy/secrets/tunnel_token"
+	echo "rag-chatbot-backend:latest sha256:old" >"$STATE/tags"
+	echo "c-old sha256:old healthy running" >"$STATE/app"
+	: >"$STATE/calls"; : >"$STATE/tag-history"
+}
+# deploy <load 할 이미지> <새 app 의 결과 healthy|unhealthy|crash>
+deploy() {
+	echo "$1" >"$STATE/next_load"; echo "$2" >"$STATE/outcome"
+	: >"$STATE/tag-history"
+	( cd "$REPO" && PATH="$BIN:$PATH" DEPLOY_HOST=sim-host bash scripts/deploy.sh --skip-build ) >"$STATE/out" 2>&1
+	local rc=$?
+	echo "    exit=$rc  load=$1  새 app=$2"
+	grep -E ':previous|실행 중이 아니|되돌리려면|sudo docker tag' "$STATE/out" | grep -v deploy-app-1 | sed 's/\x1b\[[0-9;]*m//g; s/^/    | /'
+	sed 's/^/    태그 기록 : /' "$STATE/tag-history"
+	echo "    → :previous = $(awk '$1=="rag-chatbot-backend:previous"{print $2}' "$STATE/tags" | grep . || echo '(없음)') · latest = $(awk '$1=="rag-chatbot-backend:latest"{print $2}' "$STATE/tags") · app = $(cat "$STATE/app" 2>/dev/null || echo '(없음)')"
+}
+prev() { awk '$1=="rag-chatbot-backend:previous"{print $2}' "$STATE/tags" | grep . || echo '(없음)'; }
+verdict() { if [ "$(prev)" = "$1" ]; then echo "  판정 : :previous = $1 (기대대로)"; else echo "  판정 : :previous = $(prev) - 기대 $1 와 다르다 (롤백 지점 잃음)"; fi; }
+
+echo "# deploy.sh : $REPO/scripts/deploy.sh ($(cd "$REPO" && git rev-parse --short HEAD) · 작업 트리 변경 $(cd "$REPO" && git status --short scripts/deploy.sh | wc -l)건)"
+echo "# 초기 상태 : app = sha256:old healthy 실행 중, latest = sha256:old, :previous 없음"
+echo
+
+echo "## A1. 헬스 실패(새 app 이 죽음) → 재실행"
+reset_server
+echo "  1차 배포"; deploy sha256:new1 crash
+echo "  2차 배포(재실행, 여전히 실패)"; deploy sha256:new2 crash
+verdict sha256:old; echo
+
+echo "## A2. 헬스 실패(새 app 이 unhealthy 로 계속 실행 중) → 재실행"
+reset_server
+echo "  1차 배포"; deploy sha256:new1 unhealthy
+echo "  2차 배포(재실행, 여전히 실패)"; deploy sha256:new2 unhealthy
+verdict sha256:old; echo
+
+echo "## A3. compose 오류로 실패(app 은 옛 이미지로 계속 실행) → 재실행"
+reset_server
+touch "$STATE/compose_fail"
+echo "  1차 배포"; deploy sha256:new1 healthy
+echo "  2차 배포(재실행, 여전히 실패)"; deploy sha256:new2 healthy
+verdict sha256:old; echo
+
+echo "## A4. 헬스 실패 → 되돌리기 안내대로 복구 → 재배포 실패"
+reset_server
+echo "  1차 배포"; deploy sha256:new1 crash
+echo "  안내대로 되돌린다 : docker tag :previous :latest && compose up -d"
+( export PATH="$BIN:$PATH"; echo healthy >"$STATE/outcome"; docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest; docker compose up -d )
+echo "    → app = $(cat "$STATE/app")"
+echo "  2차 배포(실패)"; deploy sha256:new2 crash
+verdict sha256:old; echo
+
+echo "## B1. 정상 배포 - 태그 시점의 :previous 가 직전 실행 이미지인가"
+reset_server
+deploy sha256:new1 healthy
+echo "  (헬스 통과 뒤 6단계가 :previous 를 지우므로 태그 기록으로 본다)"
+if grep -q "rag-chatbot-backend:previous <- sha256:old" "$STATE/tag-history"; then echo "  판정 : 태그 시점 :previous = sha256:old (기대대로)"; else echo "  판정 : 태그 시점 :previous 가 sha256:old 가 아니다"; fi
+echo
+
+echo "## B2. latest 가 실행 중 이미지와 다를 때(누가 손으로 load 해 둠) → 헬스 실패"
+reset_server
+echo "rag-chatbot-backend:latest sha256:stray" >"$STATE/tags"
+deploy sha256:new1 crash
+verdict sha256:old; echo
+
+echo "## C. app 컨테이너가 없을 때(첫 배포 등) → latest 로 대체하고 한 줄 출력"
+reset_server
+rm -f "$STATE/app"
+deploy sha256:new1 crash
+verdict sha256:old
+if grep -q 'latest 를 rag-chatbot-backend:previous 로' "$STATE/out"; then echo "  판정 : 대체 사실을 알리는 줄 있음"; else echo "  판정 : 대체 사실을 알리는 줄 없음"; fi
