@@ -239,6 +239,8 @@ describe('Composer', () => {
     const box = screen.getByPlaceholderText('메시지를 입력하세요')
     fireEvent.change(box, { target: { value: '첫 질문' } })
     fireEvent.keyDown(box, { key: 'Enter' })
+    // 받아들여지기 전에는 비우지 않는다
+    expect(box).toHaveValue('첫 질문')
 
     // 생성 왕복 중에 이어 쓰고 한 장 더 고른다
     fireEvent.change(box, { target: { value: '다음 질문' } })
@@ -255,6 +257,29 @@ describe('Composer', () => {
     expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
     expect(screen.getByAltText('photo_0002.png')).toBeInTheDocument()
     expect(revokeObjectURL).toHaveBeenCalledTimes(1)
+  })
+
+  /** #349 - 받아들임을 기다리는 동안 보낸 카드를 지워도 곧 메시지에 실릴 첨부를 서버에서 지우지 않는다 */
+  it('받아들임을 기다리는 동안 보낸 카드를 지워도 서버 첨부를 지우지 않음', async () => {
+    vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
+    const settled = deferred<boolean>()
+    const onSend = vi.fn(() => settled.promise)
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+
+    pick(image())
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    fireEvent.keyDown(screen.getByPlaceholderText('메시지를 입력하세요'), { key: 'Enter' })
+    expect(onSend).toHaveBeenCalledWith('', [attachment('a1')])
+
+    fireEvent.click(screen.getByLabelText('첨부 제거'))
+    expect(deleteAttachment).not.toHaveBeenCalled()
+
+    await act(async () => {
+      settled.resolve(true)
+      await settled.promise
+    })
+    expect(deleteAttachment).not.toHaveBeenCalled()
+    expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
   })
 
   /** #323 F1 - 이력 로딩 · 대화 생성 중(busy)에는 Enter 도 버튼도 보내지 않고 입력을 지우지 않는다 */

@@ -50,6 +50,8 @@ export default function Composer({
   // 언마운트 정리용 - 정리 시점에 최신 목록을 봐야 해서 상태가 아니라 ref 로 들고 있음
   const draftsRef = useRef<Draft[]>([])
   draftsRef.current = drafts
+  // 받아들임을 기다리는 동안 보낸 카드의 key(#349) - 곧 메시지에 실릴 첨부라 서버에서 지우면 안 된다
+  const sendingRef = useRef<string[]>([])
 
   const startUpload = useCallback((draft: Draft) => {
     uploadFile(draft.file, draft.controller.signal)
@@ -99,7 +101,7 @@ export default function Composer({
 
   function removeDraft(key: string) {
     const target = draftsRef.current.find((d) => d.key === key)
-    if (!target) return
+    if (!target || sendingRef.current.includes(key)) return
     target.controller.abort()
     // 이미 올라갔으면 서버에서도 지움. 실패해도 카드는 지움 - 남은 파일은 고아 회수가 가져감
     if (target.attachment) deleteAttachment(target.attachment.id).catch(() => {})
@@ -127,8 +129,8 @@ export default function Composer({
       draftsRef.current.forEach((d) => {
         URL.revokeObjectURL(d.previewUrl)
         d.controller.abort()
-        // 이미 올라간 것은 지금 지운다 - abort 는 서버가 이미 받은 것을 되돌리지 않는다
-        if (d.attachment) deleteAttachment(d.attachment.id).catch(() => {})
+        // 이미 올라간 것은 지금 지운다 - abort 는 서버가 이미 받은 것을 되돌리지 않는다. 보내는 중인 것은 빼고(#349)
+        if (d.attachment && !sendingRef.current.includes(d.key)) deleteAttachment(d.attachment.id).catch(() => {})
       })
       draftsRef.current = []
     },
@@ -190,10 +192,12 @@ export default function Composer({
     if (streaming || pending || busy) return
     if (!text.trim() && drafts.length === 0) return
     const sent = drafts
+    sendingRef.current = sent.map((d) => d.key)
     const accepted = await onSend(
       text.trim(),
       sent.map((d) => d.attachment).filter((a): a is Attachment => !!a),
     )
+    sendingRef.current = []
     if (!accepted) return
     // 생성 왕복을 기다리는 사이 이어 쓴 글 · 더한 첨부는 남긴다 - 보낸 것만 걷는다
     setText((cur) => (cur === text ? '' : cur))
