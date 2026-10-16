@@ -1,0 +1,26 @@
+# 새 케이스를 변경 전 코드(main 8a54bce)에 돌린 결과 - 5건 모두 실패해야 결함 재현
+     × 로그아웃 뒤에 도착한 응답의 헤더는 버린다 5ms
+     × 불러오기가 실패해도 로딩이 끝난다 8ms
+     × 스트림 중 지금 대화를 다시 골라도 스트림을 끊지 않는다 11ms
+     × 변경 요청이 도는 동안 다시 누를 수 없다 16ms
+       × 마크다운 이미지는 그리지 않는다 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/lib/refresh.test.ts > 슬라이딩 재발급 토큰 수신 > 로그아웃 뒤에 도착한 응답의 헤더는 버린다
+AssertionError: expected 'late-token' to be null
+- Expected:
++ Received:
+ FAIL  src/hooks/useChatLoading.test.ts > useChat 이력 불러오는 중 > 불러오기가 실패해도 로딩이 끝난다
+AssertionError: expected null to be '대화를 불러오지 못했습니다' // Object.is equality
+- Expected:
++ Received:
+ FAIL  src/hooks/useChatRace.test.ts > useChat 대화 컨텍스트 경쟁 > 스트림 중 지금 대화를 다시 골라도 스트림을 끊지 않는다
+AssertionError: expected true to be false // Object.is equality
+- Expected
++ Received
+ FAIL  src/pages/MyPage.test.tsx > MyPage 비밀번호 변경 > 변경 요청이 도는 동안 다시 누를 수 없다
+AssertionError: expected "vi.fn()" to be called 1 times, but got 2 times
+ FAIL  src/components/chat/MessageList.test.tsx > MessageList > 답변 마크다운 (#270) > 마크다운 이미지는 그리지 않는다
+AssertionError: expected <img alt="요약" …(1)></img> to be null
+- Expected:
++ Received:
+      Tests  5 failed | 57 passed (62)
