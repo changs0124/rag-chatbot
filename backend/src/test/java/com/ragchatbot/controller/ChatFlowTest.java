@@ -22,7 +22,7 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Phase 5 : SSE 스트리밍 채팅 + 레이트리밋.
+ * SSE 스트리밍 채팅 + 레이트리밋.
  * 무자료(REQ-RAG-003) · 출처 저장·재조회(REQ-RAG-002) · 429(REQ-OPS-003) · 리소스 정리 · 첨부 전달 · 이미지 단독 질문.
  */
 class ChatFlowTest extends AbstractPgIntegrationTest {
@@ -199,7 +199,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		String convId = createConversation(token);
 		var res = chat(token, Map.of("conversationId", convId, "message", "우주의 크기는 얼마나 되나"));
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-		// 무자료는 텍스트 접두가 아니라 done 이벤트의 noSource 플래그로 판정함(2026-07-28)
+		// 무자료는 텍스트 접두가 아니라 done 이벤트의 noSource 플래그로 판정함
 		assertThat(res.getBody()).contains("\"noSource\":true").doesNotContain("이용 정책 문서");
 		assertThat(res.getBody()).doesNotContain("자료 없음"); // 접두가 텍스트에 섞이지 않음
 	}
@@ -240,7 +240,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		assertThat(atts.get(0).get("id")).isEqualTo(attId);
 		assertThat(atts.get(0).get("fileType")).isEqualTo("image");
 		// 서명 토큰이 붙어 있는지까지만 잼. "조회 시점 재서명"은 첨부 테이블에 URL 컬럼 자체가 없어
-		// 구조적으로 그럴 수밖에 없는 것이라 여기서 따로 재지 않음(재리뷰 지적 9)
+		// 구조적으로 그럴 수밖에 없는 것이라 여기서 따로 재지 않음
 		assertThat(String.valueOf(atts.get(0).get("url"))).contains("/api/files/" + attId + "?token=");
 	}
 

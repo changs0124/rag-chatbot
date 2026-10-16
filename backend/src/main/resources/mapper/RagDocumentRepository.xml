@@ -59,7 +59,6 @@
 		order by d.created_at desc
 	</select>
 
-	<!-- listAlive 의 한 행. 업로드 직후 응답용 - 목록 전체를 읽어 거르지 않게 함(#300) -->
 	<select id="findSummaryById" resultMap="summaryResult">
 		select d.id, d.filename, d.byte_size, d.status, u.name as uploaded_by_name, d.created_at
 		from rag_documents d

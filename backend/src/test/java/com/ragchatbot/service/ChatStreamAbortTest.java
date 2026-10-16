@@ -79,7 +79,7 @@ class ChatStreamAbortTest {
 		assertThat(persistence.saves.get(0).status()).isEqualTo("complete");
 		assertThat(persistence.saves.get(0).content()).isEqualTo("부분");
 		// 인용은 스트림 끝에 오므로 여기서는 늘 0건임 - stopped 를 남기지 않으면 화면이
-		// "자료 없음"을 거짓으로 붙임(재리뷰 지적 2)
+		// "자료 없음"을 거짓으로 붙임
 		assertThat(persistence.saves.get(0).stopped()).isTrue();
 	}
 

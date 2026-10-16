@@ -278,7 +278,7 @@ describe('관리자 화면', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
-  /** #330 : 발급 창 「닫기」도 주요 버튼이라 44px(h-11) 공용 클래스를 쓴다 - 종전에는 py-2.5 로 40px 였다 */
+  /** #330 : 발급 창 「닫기」도 주요 버튼이라 44px(h-11) 공용 클래스를 쓴다 */
   it('발급 창 「닫기」는 44px 주요 버튼이다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
       { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },

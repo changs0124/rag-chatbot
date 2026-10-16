@@ -40,7 +40,7 @@ public class OrphanCleanupScheduler {
 		} catch (Exception e) {
 			log.warn("고아 첨부 회수 실패 - 다음 주기에 재시도", e);
 		}
-		// 2차 패스 - 행이 사라진 뒤 남은 파일은 위 행 기준 회수가 구조적으로 못 봄(2026-07-28 결정).
+		// 2차 패스 - 행이 사라진 뒤 남은 파일(FileService#cleanupUnreferencedFiles 참고).
 		// 1차가 실패해도 돌게 try 를 나눔 - 둘은 서로 다른 잔류를 지움
 		try {
 			int removed = fileService.cleanupUnreferencedFiles(cutoff);

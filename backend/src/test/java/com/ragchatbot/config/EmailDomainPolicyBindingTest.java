@@ -20,7 +20,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
  * 열린다.</b> 화면에도 로그에도 아무 표시가 없다</li>
  * </ul>
  *
- * <p>{@code AppModeGuardTest} 가 2026-07-28 Phase 0 리뷰(M-1)에서 같은 이유로 이 형태로 옮겨 갔다.
+ * <p>{@code AppModeGuardTest} 가 같은 이유로 이 형태로 옮겨 갔다.
  * 이 클래스만 옛 형태로 남아 있었다. {@code ApplicationContextRunner} 라 Docker 도 DB 도 필요 없다.
  */
 class EmailDomainPolicyBindingTest {

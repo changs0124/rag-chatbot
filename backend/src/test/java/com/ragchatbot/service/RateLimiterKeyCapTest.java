@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import com.ragchatbot.exception.ApiExceptions.RateLimitException;
 
 /**
- * 카운터 키 총량 상한(2026-07-28 결정). 종전에는 <b>한 분 안에서</b> 서로 다른 키가 상한 없이 쌓였음 -
+ * 카운터 키 총량 상한. 없으면 <b>한 분 안에서</b> 서로 다른 키가 상한 없이 쌓였음 -
  * 로그인 키가 미인증 요청 본문의 이메일이라 아무 문자열이나 새 키가 됐기 때문임.
  */
 class RateLimiterKeyCapTest {

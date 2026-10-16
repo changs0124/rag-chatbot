@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * Phase 7 : 진행 단계 표시(REQ-CHAT-005)가 실제 동작과 어긋나지 않는지 고정함.
+ * 진행 단계 표시(REQ-CHAT-005)가 실제 동작과 어긋나지 않는지 고정함.
  * 목업 단계는 목업이 실제로 지나는 경계에서만 나오고, 라벨도 라이브 문구가 아닌 목업 전용 문구여야 함(REQ-RAG-004).
  */
 class ChatStageHonestyTest extends AbstractPgIntegrationTest {

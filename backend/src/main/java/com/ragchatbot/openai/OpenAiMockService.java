@@ -23,9 +23,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnExpression("T(com.ragchatbot.config.AppModeGuard).normalize('${app.mode:}') == 'mock'")
 public class OpenAiMockService implements OpenAiService {
 
-	// 무자료는 **텍스트 접두가 아니라 플래그**로 알림 - 라이브는 인용 0건 여부를 스트림이 끝나야 알 수 있어
-	// 이미 흘려보낸 토큰 앞에 접두를 붙일 수 없음.
-	// 판정 규칙은 Mock·Real 공통으로 citations.isEmpty() 하나임(REQ-RAG-003).
+	// 무자료 판정 규칙은 OpenAiService.ChatCompletion, 접두 대신 플래그인 이유는 OpenAiRealService 머리 주석 참고(REQ-RAG-003)
 
 	/** 목업 고정 코퍼스 키워드 */
 	private static final List<String> CORPUS_KEYWORDS = List.of("환불", "배송", "정책", "가격", "이용", "약관");
@@ -102,7 +100,7 @@ public class OpenAiMockService implements OpenAiService {
 		// 자료명은 화면 하단 출처 목록과 같은 값을 씀 - 진행 문구와 출처가 어긋나지 않게 함
 		onStage.accept(Stage.SEARCHING, citations.stream().map(CitationData::sourceName).toList());
 
-		// 스트리밍 인터페이스를 실제로 흘려봄(Phase 5 SSE가 이 onToken을 emitter에 연결)
+		// 스트리밍 인터페이스를 실제로 흘려봄(ChatService 가 이 onToken 을 emitter 에 연결)
 		// 토큰당 소량 지연으로 실제 스트리밍처럼 타이핑 효과를 냄
 		// 첫 토큰 직전이 생성 경계임. 체감 시간을 만들려고 여기에 인위 지연을 넣지 않음(REQ-RAG-004)
 		onStage.accept(Stage.GENERATING, List.of());

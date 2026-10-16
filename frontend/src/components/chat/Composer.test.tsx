@@ -59,7 +59,7 @@ describe('Composer', () => {
     expect(uploadFile).toHaveBeenCalledTimes(1)
     // 응답을 기다리지 않고 카드부터 그림 + 취소용 signal 을 함께 넘김
     expect(vi.mocked(uploadFile).mock.calls[0][1]).toBeInstanceOf(AbortSignal)
-    // 두 제품과 같은 구분 - 이미지 카드에는 파일명을 쓰지 않음(alt 로만 남김)
+    // 이미지 카드에는 파일명을 쓰지 않음(alt 로만 남김)
     expect(screen.queryByText('photo_0001.png')).not.toBeInTheDocument()
   })
 
@@ -302,7 +302,7 @@ describe('Composer', () => {
    *
    * `api.md` 오류 코드 표가 이 상황을 명시한다 — 약 32MB 를 넘기면 Tomcat 이 연결을 끊어
    * **상태 코드 없이 I/O 오류**가 온다(#70 에서 실측). 즉 「HTTP 오류가 아닌 실패」는 계약에 적힌
-   * **정상 시나리오**인데 그것을 밟는 테스트가 없었다 — 잠겨 있던 것은 `ApiError` 쪽뿐이었다.
+   * **정상 시나리오**다.
    *
    * `.catch` 가 `e.message` 를 무방비로 읽도록 바뀌면 `ApiError` 케이스는 계속 통과하고
    * **네트워크 실패에서만 조용히 깨진다.**
@@ -340,9 +340,8 @@ describe('Composer', () => {
   /**
    * #101 - 업로드 실패 사유가 **텍스트로** 보인다.
    *
-   * 종전에는 카드의 `title` 속성뿐이라 **터치 기기에서는 툴팁이 뜨지 않았다.** 모바일 사용자는
-   * 작은 경고 아이콘만 보고 전송 버튼이 왜 회색인지 알 방법이 없었다.
-   * `features.md` FEAT-CHAT-001 이 「서버가 준 메시지를 보여준다」를 이미 요구하고 있었다.
+   * `title` 툴팁은 **터치 기기에서 뜨지 않아**, 모바일 사용자는 작은 경고 아이콘만 보고 전송 버튼이
+   * 왜 회색인지 알 수 없다. `features.md` FEAT-CHAT-001 이 「서버가 준 메시지를 보여준다」를 요구한다.
    */
   it('업로드가 실패하면 사유가 화면 텍스트로 보임', async () => {
     const d = deferred<Attachment>()
@@ -389,9 +388,8 @@ describe('Composer', () => {
   /**
    * abort 보다 먼저 서버가 받아 버린 업로드는 <b>뒤늦게 성공</b>한다.
    *
-   * abort 는 요청을 끊을 뿐 서버가 이미 받은 것을 되돌리지 않는다. 그때 기존 회수 경로가
-   * 그대로 돌아야 한다 - `startUpload` 의 `some(...)` 가 거짓이 되도록 언마운트가 draftsRef 를
-   * 비우기 때문이다. 비우지 않으면 언마운트된 컴포넌트에 setDrafts 를 시도하고 파일은 남는다.
+   * abort 는 서버가 이미 받은 것을 되돌리지 않으므로 기존 회수 경로가 그대로 돌아야 한다 -
+   * 이유는 Composer.tsx 언마운트 정리 effect 주석.
    */
   it('언마운트 뒤 뒤늦게 성공한 업로드는 서버에서도 지움', async () => {
     const d = deferred<Attachment>()

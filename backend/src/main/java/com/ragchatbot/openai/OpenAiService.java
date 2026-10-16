@@ -7,7 +7,6 @@ import java.util.function.Predicate;
 
 /**
  * OpenAI 호출 경계(P-2). Mock/Real 두 구현을 APP_MODE로 전환함.
- * 실 응답과의 대조는 OpenAiRealService 에서 끝남(2026-09-22, live-integration.md 3절).
  */
 public interface OpenAiService {
 
@@ -63,7 +62,7 @@ public interface OpenAiService {
 	String stageLabel(Stage stage, List<String> sources);
 
 	/**
-	 * 스트리밍 채팅. 토큰을 onToken으로 흘리고(Phase 5 SSE 연결) 완료 시 결과 반환.
+	 * 스트리밍 채팅. 토큰을 onToken으로 흘리고(ChatService 가 SSE 로 내보냄) 완료 시 결과 반환.
 	 * onStage는 실제로 통과한 경계에서만 호출함 - 근거가 없으면 그 단계를 보내지 않음(REQ-RAG-004).
 	 * 두 번째 인자는 그 단계가 참조한 자료명이며 근거가 없으면 빈 리스트임.
 	 * OpenAI 실 호출은 여기 뒤에만 존재함(키 비노출).
@@ -116,7 +115,10 @@ public interface OpenAiService {
 
 	/**
 	 * Vector Store 연결 해제 + 파일 삭제. 실패해도 예외를 던지지 않음(호출자는 삭제를 계속 진행함).
-	 * 연결 해제가 실패하면 파일은 남긴다(#271) - 파일까지 지우면 검색에 잡히는 연결을 다시 지울 손잡이가 없어진다
+	 *
+	 * <p><b>연결 해제가 실패하면 파일은 남긴다</b>(#271). 파일까지 지우면 스토어에 이름 없는 연결이 남아 검색에는
+	 * 잡히는데 다시 지울 손잡이가 없다. 파일이 남아 있으면 스토어 동기화(#193)가 행을 되살려(soft delete 된 행은
+	 * 살아 있는 행으로 치지 않음) 관리자가 다시 지울 수 있다.
 	 */
 	void deleteDocument(String vectorStoreId, String openaiFileId);
 

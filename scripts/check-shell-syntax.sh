@@ -10,9 +10,8 @@
 # 포함된다. 상수로 개수를 박아 두면 스크립트를 하나 더할 때마다 같이 고쳐야 하고,
 # 안 고치면 **새 파일만 조용히 빠진다** - 게이트가 막으려던 상황이 게이트 안에서 재현된다.
 #
-# **`bash -n` 이 잡지 못하는 것** : 구문이 맞으면 통과한다. 의미 오류는 `shellcheck` 의
-# 몫이다 - 실제로 #138 의 버그(`printf '""N""' "$1" "$2"` 가 인자를 버리던 것)는 `bash -n`
-# 을 통과했고 shellcheck 만 SC2182 으로 잡았다. 의미 오류는 check-shell-lint.sh(shellcheck) 몫이다.
+# **`bash -n` 이 잡지 못하는 것** : 구문만 본다. 의미 오류는 check-shell-lint.sh(shellcheck) 몫이다
+# (#138 사례는 그쪽 머리 주석).
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 

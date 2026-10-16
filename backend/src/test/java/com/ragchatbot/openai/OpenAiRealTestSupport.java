@@ -3,7 +3,7 @@ package com.ragchatbot.openai;
 /**
  * 테스트용 {@link OpenAiRealService} 생성을 한 곳에 모은다.
  *
- * <p>종전에는 위치 인자 8개를 테스트마다 풀어 써서 생성자 인자 하나를 늘리면 십수 곳을 고쳐야 했다(#329).
+ * <p>위치 인자 8개를 테스트마다 풀어 쓰면 생성자 인자 하나를 늘릴 때 십수 곳을 고쳐야 한다(#329).
  * 타임아웃은 운영 기본값과 같은 비율(스트림 읽기 &lt; SSE)로 둔다 - 생성자가 그 순서를 검사한다.
  */
 final class OpenAiRealTestSupport {

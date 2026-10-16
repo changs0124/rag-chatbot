@@ -9,8 +9,8 @@ const css = readFileSync(`${process.cwd()}/src/index.css`, 'utf-8')
 /**
  * #191 - 화면은 라이트 하나다. 테마 전환을 걷은 뒤 그것이 조용히 되살아나는 길을 막는다.
  *
- * 가장 위험한 것은 `dark:` 다. 종전에는 `data-theme` 에 묶은 커스텀 variant 가 있었는데 지금은 없다.
- * 그러면 Tailwind 4 의 기본 `dark:` 가 살아나고, 그건 **OS 의 prefers-color-scheme 미디어쿼리**다 —
+ * 가장 위험한 것은 `dark:` 다. `data-theme` 에 묶은 커스텀 variant 가 없으므로 Tailwind 4 의 기본 `dark:` 가
+ * 살아 있고, 그건 **OS 의 prefers-color-scheme 미디어쿼리**다 —
  * 누가 `dark:bg-…` 한 줄을 쓰면 OS 가 다크인 사용자에게만 화면이 갈리고, 개발자 화면에서는 안 보인다.
  */
 

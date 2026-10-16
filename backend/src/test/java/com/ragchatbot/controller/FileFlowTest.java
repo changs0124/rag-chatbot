@@ -26,7 +26,7 @@ import com.ragchatbot.service.FileService;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * Phase 3 파일 플로우 : 업로드·검증·서명 서빙·고아 정리(REQ-OPS-004).
+ * 파일 플로우 : 업로드·검증·서명 서빙·고아 정리(REQ-OPS-004).
  */
 class FileFlowTest extends AbstractPgIntegrationTest {
 
@@ -110,7 +110,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 
 	/**
 	 * 용량 상한(이미지 10MB). MIME·매직바이트가 전부 맞아도 크기만으로 거부돼야 함 -
-	 * 종전에는 이 경로에 케이스가 없어 상한을 지워도 초록이었음(2026-07-28 리스크 표 정비).
+	 * 이 케이스가 없으면 상한을 지워도 초록임.
 	 */
 	@Test
 	void upload_oversized_image_400() {
@@ -213,7 +213,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 
 	/**
 	 * 대화 삭제 시 cascade 로 행이 먼저 사라진 뒤 파일 삭제가 실패하면, 행 기준 회수는 그 파일을
-	 * <b>구조적으로 볼 수 없음</b>. 저장소 스캔 패스가 그 잔류를 지워야 함(2026-07-28 결정).
+	 * <b>구조적으로 볼 수 없음</b>. 저장소 스캔 패스가 그 잔류를 지워야 함.
 	 */
 	@Test
 	void unreferenced_old_file_is_removed_by_scan() throws Exception {

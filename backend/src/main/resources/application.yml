@@ -47,10 +47,9 @@ server:
 app:
   mode: ${APP_MODE:}
   auth:
-    # 가입을 허용할 이메일 도메인(콤마 구분, @ 없이). **APP_MODE=live 에서는 필수** -
-    # 비우면 기동에 실패함(FEAT-AUTH-001). "비면 전원 허용"으로 두면 배포에서 이 변수를
-    # 빠뜨렸을 때 조용히 가입이 열려, 아무나 사내 문서 기반 답변을 받게 됨.
-    # mock 에서는 비워도 되며 그때는 전원 허용임 - 통합 테스트가 매 케이스 가입하기 때문
+    # 계정 발급을 허용할 이메일 도메인(콤마 구분, @ 없이). **APP_MODE=live 에서는 필수** -
+    # 비우면 기동에 실패함(FEAT-AUTH-001). 근거는 EmailDomainPolicy 머리 주석.
+    # mock 에서는 비워도 되며 그때는 전원 허용임
     allowed-email-domains: ${ALLOWED_EMAIL_DOMAINS:}
   admin:
     # 관리자 이메일 명단(콤마 구분). 기동 시 이 명단으로 users.role 을 맞춤 -
@@ -66,7 +65,7 @@ app:
     stream-read-timeout-ms: ${OPENAI_STREAM_READ_TIMEOUT_MS:540000}
     # 그 밖의 호출(문서 업로드·상태 조회·삭제) 읽기 타임아웃. 스트리밍이 아니므로 짧다(#92)
     request-timeout-ms: ${OPENAI_REQUEST_TIMEOUT_MS:30000}
-    # 테스트 훅 - env 로 노출하지 않음. 증분 수신을 실 코드 경로로 재려고 엔드포인트를 갈아 끼우는 자리
+    # 테스트 훅 - env 로 노출하지 않음(이유는 OpenAiRealService.restClient 주석)
     base-url: https://api.openai.com/v1
   mock:
     # 테스트 훅 - env 로 노출하지 않음. 목업 토큰당 지연(ms) - 타이핑 효과용이며 테스트는 0
@@ -75,10 +74,11 @@ app:
     # 프론트 출처(개발: Vite 5173). 배포 시 실제 도메인으로 교체
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
   chat:
-    # SSE emitter 타임아웃이 스트림 수명을 단독 결정(기본 10분). 참조 착지값
+    # SSE emitter 타임아웃이 스트림 수명을 단독 결정(기본 10분)
     sse-timeout-ms: ${SSE_TIMEOUT_MS:600000}
     # back-pressure - 동시 스트림 상한. 초과는 큐에 쌓지 않고 429로 거절함.
-    # 이 값은 chatExecutor 풀 크기이기도 함(ChatExecutorConfig) - 상한이 풀보다 크면 큐가 쌓임
+    # 이 값은 chatExecutor 풀 크기이기도 함(ChatExecutorConfig · ChatConcurrencyLimiter 가 같은 키를 읽음).
+    # 둘이 갈려 상한이 풀보다 크면 초과분이 큐에 쌓여 응답 한 바이트 없이 SSE 타임아웃까지 기다림
     # 16 : 동시 16명 실측은 backend.md 「유량 제어」(#278)
     max-concurrent-streams: ${CHAT_MAX_CONCURRENT_STREAMS:16}
     # 사용자별 동시 스트림. 화면이 한 번에 하나만 쓰므로 1 - 한 사용자가 풀을 독점하지 못하게 함

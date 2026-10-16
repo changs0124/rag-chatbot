@@ -38,7 +38,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.ragchatbot.storage.FileStorage;
 
 /**
- * 실 OpenAI 연동(APP_MODE=live). RestClient 직접 호출(1단계 채택) + Responses API 스트리밍.
+ * 실 OpenAI 연동(APP_MODE=live). RestClient 직접 호출 + Responses API 스트리밍.
  *
  * <p>구조 : Responses API(모델은 `OPENAI_MODEL`) + 공용 Vector Store 기반 file_search + 이미지 비전 입력(base64) +
  * 스트리밍 토큰 → onToken + 응답 annotations(file_citation) → CitationData. 무자료(인용 0건)는
@@ -60,13 +60,11 @@ public class OpenAiRealService implements OpenAiService {
 	 * Vector Store 계열 호출에만 싣는 베타 헤더(#37).
 	 *
 	 * <p><b>왜 붙이는가</b> — 공식 {@code openai-python} 의 {@code resources/vector_stores/} 는
-	 * vector_stores 와 그 하위 files 의 <b>모든</b> 메서드(create · retrieve · update · list · delete ·
-	 * search)에서 이 헤더를 주입하고, 공식 API 레퍼런스의 curl 예시에도 들어 있다. 우리만 빼고 부르고 있었다.
+	 * vector_stores 와 그 하위 files 의 <b>모든</b> 메서드에서 이 헤더를 주입하고, 공식 API 레퍼런스의
+	 * curl 예시에도 들어 있다.
 	 *
-	 * <p><b>필수는 아니다</b>(2026-09-22 실키 판정) — 헤더 <b>없이</b> 목록 조회 · 파일 연결 · 상태 조회 ·
-	 * 연결 해제를 실제로 불러 전부 200 이었다. 헤더를 <b>실은</b> 이 구현으로도 업로드 → completed · 삭제가
-	 * 정상이라 보내서 생기는 문제도 없다. 그래서 이 헤더는 "없으면 막혀서" 가 아니라 <b>문서화된 계약(SDK ·
-	 * API 레퍼런스)과 맞추려고</b> 남긴다. 판정 기록은 이슈 #37 에 있다.
+	 * <p><b>필수는 아니다</b> — 헤더 없이도 스토어 호출이 200 이고, 실어도 문제가 없다. 그래서 "없으면 막혀서" 가
+	 * 아니라 <b>문서화된 계약(SDK · API 레퍼런스)과 맞추려고</b> 남긴다(실측은 #37).
 	 *
 	 * <p><b>왜 기본 헤더가 아닌가</b> — 기본 헤더로 올리면 {@code /responses} 와 {@code /files} 에도 함께
 	 * 나간다. SDK 는 그 둘에 붙이지 않으며, 그 둘에 붙였을 때의 효과는 재 보지 않았다. 근거가 있는 범위에만
@@ -93,7 +91,7 @@ public class OpenAiRealService implements OpenAiService {
 	 *
 	 * <p><b>왜 강제하지 않는가</b> — {@code tool_choice} 로 file_search 를 강제하면 근거 부착률은 오르지만
 	 * 단순 인사말에도 검색이 붙어 턴당 비용과 응답 지연이 는다. 프롬프트로 유도하되 강제하지 않는 쪽을
-	 * 골랐다. 편차가 남는 것은 아는 대가이며, 실 연동에서 부착률을 재 본 뒤 다시 판단한다.
+	 * 골랐다. 편차가 남는 것은 아는 대가다 - 실측과 판단은 live-integration.md 3-2.
 	 *
 	 * <p><b>못 찾았으면 인용하지 말라는 줄이 따로 있는 이유(#181)</b> — 판정이 {@code citations.isEmpty()}
 	 * 하나라서 인용이 1건만 붙어도 「자료 없음」이 사라진다. 실 연동에서 모델이 「찾지 못했다」고 답하면서
@@ -294,10 +292,8 @@ public class OpenAiRealService implements OpenAiService {
 					continue;
 				}
 				JsonNode ev = mapper.readTree(payload);
-				// **기본값을 반드시 준다.** Jackson 3 의 인자 없는 접근자는 Object·Array 노드에서
-				// 예외를 던진다(Jackson 2 는 "" 를 돌려줬음). 여기서 던지면 모르는 모양의 이벤트 하나가
-				// 스트림 전체를 죽인다 - 예전에는 아래 if/else 사슬을 그냥 빠져나가 무해하게 무시됐다.
-				// 업스트림 스키마가 넓어져도 조용히 넘어가는 쪽이 맞다(#63)
+				// **기본값을 반드시 준다** - Jackson 3 의 인자 없는 접근자는 Object·Array 노드에서 예외를 던져,
+				// 모르는 모양의 이벤트 하나가 스트림 전체를 죽인다. 업스트림 스키마가 넓어져도 조용히 넘어가는 쪽이 맞다(#63)
 				String type = ev.path("type").asString("");
 				if ("response.output_text.delta".equals(type)) {
 					// 인용 표기 원문은 화면·저장본 어디에도 남기지 않음(#277)
@@ -417,7 +413,7 @@ public class OpenAiRealService implements OpenAiService {
 
 	/**
 	 * 한 파일의 검색 결과 중 답이 근거로 쓴 청크를 고름(#268). annotation 에는 어느 청크인지가 없어,
-	 * 예전처럼 1순위를 쓰면 답과 무관한 단락이 출처로 보였다(2026-10-15 실측 : 답이 쓴 청크는 7위).
+	 * 1순위를 쓰면 답과 무관한 단락이 출처로 보인다.
 	 * <ol>
 	 *   <li>답에 나온 그림 표식을 담은 청크 - 그림은 그 절에서만 나옴</li>
 	 *   <li>답과 겹치는 글자 2-gram(공백 제외) 종류가 가장 많은 청크. 동점은 앞 순위</li>
@@ -655,9 +651,7 @@ public class OpenAiRealService implements OpenAiService {
 	/**
 	 * 연결 해제 후 파일 삭제. 둘 다 실패해도 던지지 않음 - 호출자는 삭제 표시를 계속 진행함.
 	 *
-	 * <p><b>연결 해제가 실패하면 File 을 지우지 않는다</b>(#271). File 만 지워지면 스토어에 이름 없는 연결이 남아
-	 * 검색에는 계속 잡히는데, 관리 화면에도 동기화에도 다시 지울 손잡이가 없다. File 이 남아 있으면 동기화가
-	 * 행을 되살려(soft delete 된 행은 살아 있는 행으로 치지 않음) 관리자가 다시 지울 수 있다.
+	 * <p><b>연결 해제가 실패하면 File 을 지우지 않는다</b>(#271) - 이유와 복구 경로는 {@link OpenAiService#deleteDocument}.
 	 */
 	@Override
 	public void deleteDocument(String vectorStoreId, String openaiFileId) {
@@ -688,8 +682,6 @@ public class OpenAiRealService implements OpenAiService {
 	/** 지워졌거나 이미 없으면(404) 참. 그 밖의 실패는 경고만 남기고 거짓 - 정리 실패는 삭제 흐름을 막지 않음 */
 	private boolean deleteQuietly(String path, String kind, String id) {
 		try {
-			// 상대 경로여야 빌더의 baseUrl 이 적용됨 - 절대 URL 을 박으면 app.openai.base-url 이
-			// 이 경로에서만 죽어, 스파이크·대체 엔드포인트로 돌려도 삭제만 실 API 로 나감
 			var request = client.delete().uri(path)
 					// **본문이 없어도 JSON 을 명시한다**(#271). JDK HttpURLConnection 은 DELETE 에 출력 스트림을 열면서
 					// 기본 Content-Type(application/x-www-form-urlencoded)을 붙이는데, 스토어 연결 해제는 그것을

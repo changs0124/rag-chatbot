@@ -11,8 +11,8 @@ import com.ragchatbot.service.ChatService.PreparedChat;
 /**
  * {@code ChatService.stream} 을 손으로 만든 대역 위에서 돌리는 테스트들의 공용 바탕.
  *
- * <p>종전에는 {@code ChatStreamAbortTest} · {@code ChatStreamTimeoutTest} 가 같은 대역을 한 벌씩 들고 있어
- * {@code OpenAiService} 메서드 하나를 늘릴 때마다 두 곳을 고쳐야 했다(#329).
+ * <p>{@code ChatStreamAbortTest} · {@code ChatStreamTimeoutTest} 가 대역을 한 벌씩 들고 있으면
+ * {@code OpenAiService} 메서드 하나를 늘릴 때마다 두 곳을 고쳐야 한다(#329).
  */
 final class ChatStreamTestSupport {
 

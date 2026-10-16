@@ -79,9 +79,8 @@ summary() {
 # 오류가 있으면 그 검사만 죽고 나머지는 통과해 **부분적인 초록불**이 나온다. 앞에 두면
 # "검사가 깨졌다"와 "검사가 잡아냈다"가 구분된다. 이 스크립트 자신도 검사 대상이다
 run "셸 구문 검사"          bash scripts/check-shell-syntax.sh
-# **구문 검사 바로 뒤다(#145).** 파싱이 되어야 정적 분석도 의미가 있다. 둘을 합치지 않는
-# 이유는 실패 신호가 다르기 때문이다 - 앞이 죽으면 파일이 파싱조차 안 되는 것이고,
-# 여기가 죽으면 파싱은 되는데 의도와 다르게 도는 것이다.
+# **구문 검사 바로 뒤다(#145).** 파싱이 되어야 정적 분석도 의미가 있다. 둘을 나눈 이유는
+# check-shell-lint.sh 머리 주석.
 # 이 검사는 shellcheck 가 없으면 exit 0 으로 빠진다. 그때는 "통과"가 아니라 "모름"이므로
 # 아래에서 skip() 으로 다시 등록한다 - run() 으로만 두면 초록 체크가 찍힌다
 if command -v shellcheck >/dev/null 2>&1; then
@@ -90,7 +89,7 @@ else
 	skip "셸 정적 분석" "shellcheck 없음 - CI 러너에는 기본 설치돼 있다"
 fi
 # **충돌 표시는 문서 검사보다 앞에 본다(#210).** 표시가 남은 문서는 참조 · 섹션 검사가 통과해도
-# 깨진 문서다 - overview.md 가 실제로 3주 동안 그 상태로 초록불을 받았다
+# 깨진 문서다
 run "병합 충돌 표시"        bash scripts/check-merge-markers.sh
 run "문서 참조 실재"        bash scripts/check-doc-refs.sh
 run "문서 섹션 이름 대조"    bash scripts/check-doc-sections.sh
@@ -135,8 +134,7 @@ run "프론트 build"           bash -c 'cd frontend && npm run build'
 run "프론트 케이스 수 하한"   bash scripts/check-case-floor.sh frontend
 
 # --- 이미지 (CI 의 docker 잡) --------------------------------------------------
-# 배포 산출물이 조용히 썩는 것을 막는다 - pom·소스 구조가 바뀌어 Dockerfile 이 깨지면
-# 정작 배포하는 날이 아니라 여기서 먼저 드러난다. CI 의 docker 잡과 같은 의도다
+# CI 의 docker 잡과 같다 - 이유는 ci.yml 의 같은 잡 주석
 if command -v docker >/dev/null 2>&1; then
 	# **`deploy.sh` 와 같은 태그로 빌드한다(#129)** - 게이트를 통과한 그 이미지를 `deploy.sh --skip-build` 가 그대로 보낸다
 	run "백엔드 이미지 빌드"  docker build -t rag-chatbot-backend:latest backend

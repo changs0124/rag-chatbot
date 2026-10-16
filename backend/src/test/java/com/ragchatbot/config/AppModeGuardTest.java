@@ -9,7 +9,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
  * 실행 모드가 명시되지 않으면 기동 실패 · prod 프로필에서 mock 이면 기동 실패.
  *
  * <p>생성자 단위 검증만 두면 프로퍼티 바인딩과 프로필 결합이 검사되지 않아, 프로퍼티 키를 바꾸거나
- * 프로필 이름을 오타 내도 초록이 됨(2026-07-28 Phase 0 리뷰 M-1). 그래서 실제 컨텍스트를 띄워 고정함.
+ * 프로필 이름을 오타 내도 초록이 됨. 그래서 실제 컨텍스트를 띄워 고정함.
  *
  * <p>이전 이름은 {@code ProdModeGuardTest} 였음 - 가드가 prod 전용이 아니게 되면서 함께 개명함.
  */

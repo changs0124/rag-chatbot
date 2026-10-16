@@ -63,9 +63,8 @@ describe('chat SSE 수신 계약', () => {
   /**
    * #85 - 종단 이벤트 없이 스트림이 끝나는 경로.
    *
-   * 서버 SSE 타임아웃은 emitter 를 닫을 뿐 done 도 error 도 싣지 못한다(닫힌 뒤의 send 는
-   * IllegalStateException 이다). 프록시 idle timeout · 모바일 네트워크 전환도 같은 모양으로 온다 -
-   * 이 프로젝트는 Cloudflare Tunnel 뒤로 배포되므로 프록시가 한 겹 더 낀다.
+   * 서버 SSE 타임아웃 · 프록시 idle timeout 은 done 도 error 도 없이 끝난다 - 이유는 endpoints.ts
+   * streamChat 의 `terminated` 주석. 이 프로젝트는 Cloudflare Tunnel 뒤라 프록시가 한 겹 더 낀다.
    */
   it('done 없이 끊기면 오류로 귀결됨 - 영구 streaming 을 막음', async () => {
     stubFetch(

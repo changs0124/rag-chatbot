@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * Phase 7 : SSE 이벤트 계약을 고정함.
+ * SSE 이벤트 계약을 고정함.
  * stage 이벤트를 추가해도 meta → stage* → token* → citations → done 순서가 깨지지 않아야 하고,
  * 기존 수신부가 의존하는 이벤트가 사라지지 않아야 함.
  */

@@ -62,8 +62,8 @@ export function adoptRefreshedToken(res: Response): void {
 /**
  * 실패 응답 → ApiError. 401 이면 만료 처리까지 건다.
  *
- * 이 래퍼, 채팅 스트림(`endpoints.ts`), 그림 로드(`docFigures.ts`) 세 곳이 쓴다 - 따로 두면 한쪽만 고쳐 스트림과 나머지 API 의
- * 에러 표시가 조용히 갈린다(#219).
+ * 래퍼 밖 두 경로도 쓴다(adoptRefreshedToken 주석의 세 곳) - 따로 두면 스트림과 나머지 API 의 에러 표시가
+ * 조용히 갈린다(#219).
  */
 export async function toApiError(res: Response, path: string): Promise<ApiError> {
   if (res.status === 401) handleUnauthorized(path)

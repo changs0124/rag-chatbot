@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * Phase 6c 마이페이지 - 이름/비밀번호/테마 변경.
+ * 마이페이지 - 이름/비밀번호/테마 변경.
  */
 class ProfileFlowTest extends AbstractPgIntegrationTest {
 
@@ -55,7 +55,7 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 	 * 변경 응답이 새 토큰을 주고, 그 토큰으로 세션이 이어져야 함.
 	 *
 	 * <p>변경 시각 이전 토큰이 전부 무효가 되면서 <b>변경을 수행한 본인도 로그아웃</b>되던 회귀를 막음 -
-	 * "변경했습니다"를 띄운 직후 다음 요청부터 401 이었음(재리뷰 지적 1).
+	 * "변경했습니다"를 띄운 직후 다음 요청부터 401 이었음.
 	 */
 	@SuppressWarnings("rawtypes")
 	@Test
