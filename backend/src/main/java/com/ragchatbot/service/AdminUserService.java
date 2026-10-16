@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -63,8 +64,15 @@ public class AdminUserService {
 		});
 		String temporary = temporaryPasswords.generate();
 		String role = adminEmails.contains(email) ? "admin" : "user";
-		userRepository.insert(new User(UUID.randomUUID(), email, passwordEncoder.encode(temporary),
-				req.name(), role, null, null));
+		try {
+			userRepository.insert(new User(UUID.randomUUID(), email, passwordEncoder.encode(temporary),
+					req.name().trim(), role, null, null));
+		} catch (DuplicateKeyException e) {
+			// users 의 업무 유니크 키가 email 하나뿐일 때만 맞는 변환이다 - 유니크 키를 더하면 여기서 갈라 볼 것
+			// 위 조회와 이 삽입 사이(bcrypt 로 ~100ms)에 같은 주소가 먼저 들어간 경우. 유니크 인덱스가 막은 것을
+			// 그대로 내보내면 500 이 된다 - 순차 중복과 같은 409 로 맞춘다(#327). 위 조회는 오류 순서 때문에 남긴다
+			throw new ConflictException("이미 있는 이메일");
+		}
 		return temporary;
 	}
 

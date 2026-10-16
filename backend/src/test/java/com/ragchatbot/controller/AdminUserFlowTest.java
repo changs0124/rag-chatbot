@@ -163,6 +163,40 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
+	/**
+	 * 발급하는 이름도 앞뒤 공백을 걷는다(#327). 마이페이지 이름 변경과 대화 제목은 이미 걷는데
+	 * 여기만 그대로 저장하면 같은 사람이 목록에서 공백째 보인다.
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	void issued_name_is_trimmed() {
+		String adminToken = createAdminUser("trim-admin@b.com");
+		assertThat(issueRaw("trim-target@b.com", "  관리자 ").getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+		ResponseEntity<List> res = rest.exchange("/api/admin/users", HttpMethod.GET,
+				new HttpEntity<>(bearer(adminToken)), List.class);
+
+		List<Map<String, Object>> rows = res.getBody();
+		assertThat(rows).anySatisfy(r -> {
+			assertThat(r.get("email")).isEqualTo("trim-target@b.com");
+			assertThat(r.get("name")).isEqualTo("관리자");
+		});
+	}
+
+	/**
+	 * 형식이 틀린 경로 변수는 <b>관리자 확인보다 먼저</b> 걸려 일반 사용자도 400 을 받는다(#327).
+	 * 컨트롤러 javadoc 이 적은 그대로다 - 인가는 본문 진입 시 확인하므로, 이 순서가 바뀌면 javadoc 도 같이 고친다.
+	 */
+	@Test
+	void malformed_path_is_rejected_before_admin_check() {
+		String plainToken = createUser("malformed-plain@b.com");
+
+		var res = rest.exchange("/api/admin/users/not-a-uuid/password-reset", HttpMethod.POST,
+				new HttpEntity<>(bearer(plainToken)), String.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
 	/** 관리자 목록에는 역할이 실려야 화면이 "관리자/사용자"를 구분해 보여줄 수 있다 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
