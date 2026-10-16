@@ -1,0 +1,24 @@
+ ✓ src/components/chat/Sidebar.test.tsx > Sidebar 시간 묶음 > 묶음은 로컬 자정 기준이다 - 어제 23시는 「지난 7일」 86ms
+ ✓ src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 두 손가락으로 벌리면 확대됨 121ms
+ ✓ src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 오므려도 화면 맞춤(1배) 아래로는 내려가지 않음 21ms
+ ✓ src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 이미지를 넘기면 확대 상태를 들고 가지 않음 32ms
+ ✓ src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 확대 상태에서 끌면 이미지가 따라 움직임 18ms
+ ✓ src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 내려받기 > 응답이 실패면 저장하지 않음 13ms
+ ✓ src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 내려받기 > 이름이 없으면 받은 형식의 확장자를 붙여 저장함 79ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 문서가 없으면 아직 시작하지 않은 상태임을 밝힌다 117ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 완료·처리중·실패가 각각 다른 문구로 보인다 56ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 인덱싱 실패에는 근거로 쓰이지 않는다는 설명이 붙는다 28ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 인덱싱 중이면 폴링한다 32ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 전부 완료면 폴링을 멈춘다 31ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 폴링이 한 번 실패한 뒤 성공하면 목록 오류가 사라진다 81ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 폴링이 성공해도 업로드 오류는 남는다 81ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 스토어와 동기화하면 가져온 수를 알리고 목록을 다시 읽는다 151ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 가져올 것이 없으면 이미 맞다고 알린다 60ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 삭제 확인이 기존 답변의 출처는 남는다고 알린다 92ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 임시 비밀번호 발급이 두 가지 사실을 함께 알린다 98ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 일회용 비밀번호 창은 배경 클릭으로 닫히지 않고 Esc · 닫기로 닫힌다 166ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 자기 자신에게는 초기화 버튼이 없다 47ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 계정을 발급하고 임시 비밀번호를 한 번 보여준다 74ms
+ ✓ src/pages/AdminPage.test.tsx > 관리자 화면 > 일반 사용자는 관리 화면을 보지 못한다 13ms
+ Test Files  3 passed (3)
+      Tests  22 passed (22)
