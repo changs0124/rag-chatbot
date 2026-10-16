@@ -1,0 +1,8 @@
+#327 검증 요약 (2026-10-16, 리뷰 반영 후)
+- cd backend && ./mvnw clean verify : BUILD SUCCESS, Tests run: 291, Failures: 0, Errors: 0, Skipped: 0 (log: mvnw-verify.log)
+- bash scripts/check-case-floor.sh backend : 실측 291 / 하한 291 OK (287 -> 291)
+- bash scripts/check-all.sh docs : exit 0, 돌린 검사 전부 통과 (shellcheck 없음으로 1건 건너뜀 - 로컬 도구 부재)
+- 대상 테스트 : UserRepositoryDuplicateKeyTest 1/1 (실 PostgreSQL, 같은 주소 · 대소문자 변형 둘 다 DuplicateKeyException), AdminUserCreateRaceTest 1/1, AdminUserFlowTest 12/12 (trim 케이스는 발급 201 먼저 단언)
+- 변경 전 : duplicate_key_on_insert_becomes_conflict, issued_name_is_trimmed 실패 (before/test.txt)
+- malformed_path_is_rejected_before_admin_check 는 기존 동작 고정용이라 변경 전에도 통과
+- api.md 계정 발급 오류 표에 409 「이미 있는 이메일」 행이 이미 있어 수정 없음

@@ -1,0 +1,60 @@
+	at com.ragchatbot.controller.AdminUserFlowTest.issued_name_is_trimmed(AdminUserFlowTest.java:180)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	...(84 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+
+{"createdAt"="2026-10-16T01:14:31.769822Z", "email"="reset-victim@b.com", "id"="6b89635a-6f4d-428e-add5-46412a4a2cff", "name"="사용자", "role"="user"}
+error: org.opentest4j.AssertionFailedError: 
+expected: "trim-target@b.com"
+ but was: "reset-victim@b.com"
+	at com.ragchatbot.controller.AdminUserFlowTest.lambda$issued_name_is_trimmed$0(AdminUserFlowTest.java:181)
+	at com.ragchatbot.controller.AdminUserFlowTest.issued_name_is_trimmed(AdminUserFlowTest.java:180)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	...(84 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+
+{"createdAt"="2026-10-16T01:14:32.113838Z", "email"="reset-intruder@b.com", "id"="55f592d5-56ed-44e1-bcf2-d0529c252400", "name"="사용자", "role"="user"}
+error: org.opentest4j.AssertionFailedError: 
+expected: "trim-target@b.com"
+ but was: "reset-intruder@b.com"
+	at com.ragchatbot.controller.AdminUserFlowTest.lambda$issued_name_is_trimmed$0(AdminUserFlowTest.java:181)
+	at com.ragchatbot.controller.AdminUserFlowTest.issued_name_is_trimmed(AdminUserFlowTest.java:180)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	...(84 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+
+{"createdAt"="2026-10-16T01:14:32.486687Z", "email"="trim-admin@b.com", "id"="74939def-7b78-476f-a09a-4fd749cae38f", "name"="사용자", "role"="admin"}
+error: org.opentest4j.AssertionFailedError: 
+expected: "trim-target@b.com"
+ but was: "trim-admin@b.com"
+	at com.ragchatbot.controller.AdminUserFlowTest.lambda$issued_name_is_trimmed$0(AdminUserFlowTest.java:181)
+	at com.ragchatbot.controller.AdminUserFlowTest.issued_name_is_trimmed(AdminUserFlowTest.java:180)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	...(84 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+
+{"createdAt"="2026-10-16T01:14:32.84027Z", "email"="trim-target@b.com", "id"="187d4382-03d5-4d85-affd-ea0766f93b6f", "name"="  관리자 ", "role"="user"}
+error: org.opentest4j.AssertionFailedError: 
+expected: "관리자"
+ but was: "  관리자 "
+	at com.ragchatbot.controller.AdminUserFlowTest.lambda$issued_name_is_trimmed$0(AdminUserFlowTest.java:182)
+	at com.ragchatbot.controller.AdminUserFlowTest.issued_name_is_trimmed(AdminUserFlowTest.java:180)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	...(84 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+[ERROR]   AdminUserCreateRaceTest.duplicate_key_on_insert_becomes_conflict:43 
+Expecting actual throwable to be an instance of:
+  com.ragchatbot.exception.ApiExceptions.ConflictException
+but was:
+  org.springframework.dao.DuplicateKeyException: idx_users_email_lower
+	at com.ragchatbot.service.AdminUserService.create(AdminUserService.java:66)
+	at com.ragchatbot.service.AdminUserCreateRaceTest.lambda$duplicate_key_on_insert_becomes_conflict$0(AdminUserCreateRaceTest.java:42)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:66)
+	...(89 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+[ERROR] Tests run: 13, Failures: 2, Errors: 0, Skipped: 0
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project backend: There are test failures.
+[ERROR] 
+[ERROR] See D:\dev\rag-chatbot\.issue\worktrees\327-admin-user-create\backend\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
