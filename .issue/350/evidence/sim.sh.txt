@@ -37,11 +37,11 @@ cat >"$BIN/free" <<'EOF'
 echo '              total        used        free'
 echo 'Mem:           1.9Gi       0.5Gi       1.4Gi'
 EOF
-# 헬스 : app 이 running 이고 health 가 healthy 일 때만 200
+# 헬스 : app 이 running 이고 health 가 healthy(또는 healthcheck 없음 = none)일 때만 200
 cat >"$BIN/curl" <<'EOF'
 #!/usr/bin/env bash
 read -r _ _ health status <"$SIM_STATE/app" 2>/dev/null || { printf 000; exit 0; }
-if [ "$status" = running ] && [ "$health" = healthy ]; then printf 200; else printf 000; fi
+if [ "$status" = running ] && { [ "$health" = healthy ] || [ "$health" = none ]; }; then printf 200; else printf 000; fi
 EOF
 cat >"$BIN/docker" <<'EOF'
 #!/usr/bin/env bash
@@ -75,7 +75,11 @@ case "$1" in
 		[ "$cid" = "$id" ] || { echo "No such object: $cid" >&2; exit 1; }
 		case "$fmt" in
 			'{{.Image}}') echo "$img" ;;
-			'{{.State.Health.Status}}') echo "$health" ;;
+			# 실제 docker 처럼 healthcheck 가 없는 컨테이너(none)에서는 .State.Health 가 nil 이라 오류로 끝난다
+			'{{.State.Health.Status}}')
+				[ "$health" = none ] && { echo 'template: :1:15: executing "" at <.State.Health.Status>: nil pointer evaluating *container.Health.Status' >&2; exit 1; }
+				echo "$health" ;;
+			'{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}') echo "$health" ;;
 			'{{.State.Status}}') echo "$status" ;;
 			*) echo "모의가 모르는 형식: $fmt" >&2; exit 1 ;;
 		esac ;;
@@ -92,9 +96,11 @@ case "$1" in
 						healthy)   echo "c-${latest#sha256:} $latest healthy running" >"$S/app" ;;
 						unhealthy) echo "c-${latest#sha256:} $latest unhealthy running" >"$S/app" ;;
 						crash)     echo "c-${latest#sha256:} $latest unhealthy exited" >"$S/app" ;;
+						crash-nohc) echo "c-${latest#sha256:} $latest none exited" >"$S/app" ;;
 					esac
 				fi ;;
 			ps)
+				[ -f "$S/compose_fail" ] && { echo 'service "app" refers to undefined volume x: invalid compose project' >&2; exit 1; }
 				shift; all=0; q=0; running_only=0
 				while [ $# -gt 0 ]; do case "$1" in -a) all=1 ;; -q) q=1 ;; --status) running_only=1; shift ;; esac; shift; done
 				read -r id img health status < <(app)
@@ -129,7 +135,7 @@ deploy() {
 	( cd "$REPO" && PATH="$BIN:$PATH" DEPLOY_HOST=sim-host bash scripts/deploy.sh --skip-build ) >"$STATE/out" 2>&1
 	local rc=$?
 	echo "    exit=$rc  load=$1  새 app=$2"
-	grep -E ':previous|실행 중이 아니|되돌리려면|sudo docker tag' "$STATE/out" | grep -v deploy-app-1 | sed 's/\x1b\[[0-9;]*m//g; s/^/    | /'
+	grep -E 'previous|첫 배포|되돌릴|되돌리려면|sudo docker tag' "$STATE/out" | grep -v deploy-app-1 | sed 's/\x1b\[[0-9;]*m//g; s/^/    | /'
 	sed 's/^/    태그 기록 : /' "$STATE/tag-history"
 	echo "    → :previous = $(awk '$1=="rag-chatbot-backend:previous"{print $2}' "$STATE/tags" | grep . || echo '(없음)') · latest = $(awk '$1=="rag-chatbot-backend:latest"{print $2}' "$STATE/tags") · app = $(cat "$STATE/app" 2>/dev/null || echo '(없음)')"
 }
@@ -152,7 +158,7 @@ echo "  1차 배포"; deploy sha256:new1 unhealthy
 echo "  2차 배포(재실행, 여전히 실패)"; deploy sha256:new2 unhealthy
 verdict sha256:old; echo
 
-echo "## A3. compose 오류로 실패(app 은 옛 이미지로 계속 실행) → 재실행"
+echo "## A3. compose 오류로 실패(up · ps 모두 실패, app 은 옛 이미지로 계속 실행) → 재실행"
 reset_server
 touch "$STATE/compose_fail"
 echo "  1차 배포"; deploy sha256:new1 healthy
@@ -187,3 +193,20 @@ rm -f "$STATE/app"
 deploy sha256:new1 crash
 verdict sha256:old
 if grep -q 'latest 를 rag-chatbot-backend:previous 로' "$STATE/out"; then echo "  판정 : 대체 사실을 알리는 줄 있음"; else echo "  판정 : 대체 사실을 알리는 줄 없음"; fi
+echo
+
+echo "## C2. 진짜 첫 배포(app 컨테이너도 latest 도 없음) → 실패"
+reset_server
+rm -f "$STATE/app"; : >"$STATE/tags"
+deploy sha256:new1 crash
+verdict '(없음)'
+if grep -q '되돌릴 이미지' "$STATE/out"; then echo "  판정 : 「되돌릴 이미지 없음」 줄 있음"; else echo "  판정 : 「되돌릴 이미지 없음」 줄 없음"; fi
+if grep -q 'sudo docker tag rag-chatbot-backend:previous' "$STATE/out"; then echo "  판정 : 없는 :previous 로 되돌리라는 명령을 찍었다"; else echo "  판정 : 없는 :previous 로 되돌리라는 명령을 찍지 않았다"; fi
+echo
+
+echo "## D. app 에 healthcheck 가 없을 때(.State.Health 가 nil) → 실패 → 재실행"
+reset_server
+echo "c-old sha256:old none running" >"$STATE/app"
+echo "  1차 배포"; deploy sha256:new1 crash-nohc
+echo "  2차 배포(재실행, 여전히 실패)"; deploy sha256:new2 crash-nohc
+verdict sha256:old

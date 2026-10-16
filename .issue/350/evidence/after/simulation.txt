@@ -1,18 +1,18 @@
-# deploy.sh : /d/dev/rag-chatbot/.issue/worktrees/350-previous-tag-from-running-image/scripts/deploy.sh (534807a · 작업 트리 변경 1건)
+# deploy.sh : /d/dev/rag-chatbot/.issue/worktrees/350-previous-tag-from-running-image/scripts/deploy.sh (381ab1c · 작업 트리 변경 1건)
 # 초기 상태 : app = sha256:old healthy 실행 중, latest = sha256:old, :previous 없음
 
 ## A1. 헬스 실패(새 app 이 죽음) → 재실행
   1차 배포
     exit=1  load=sha256:new1  새 app=crash
     |   rag-chatbot-backend:previous <- 실행 중(healthy)인 app 의 이미지
-    | 되돌리려면 (마지막 정상 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
     |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
     태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
     → :previous = sha256:old · latest = sha256:new1 · app = c-new1 sha256:new1 unhealthy exited
   2차 배포(재실행, 여전히 실패)
     exit=1  load=sha256:new2  새 app=crash
-    |   app 이 healthy 로 실행 중이 아니다 - 지난 배포가 남긴 rag-chatbot-backend:previous 를 그대로 둔다
-    | 되돌리려면 (마지막 정상 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    |   app 헬스체크 상태 app 없음 - 남아 있는 rag-chatbot-backend:previous(sha256:old)를 그대로 둔다. 실행 중 app 이미지 : -
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
     |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
     → :previous = sha256:old · latest = sha256:new2 · app = c-new2 sha256:new2 unhealthy exited
   판정 : :previous = sha256:old (기대대로)
@@ -21,28 +21,27 @@
   1차 배포
     exit=1  load=sha256:new1  새 app=unhealthy
     |   rag-chatbot-backend:previous <- 실행 중(healthy)인 app 의 이미지
-    | 되돌리려면 (마지막 정상 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
     |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
     태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
     → :previous = sha256:old · latest = sha256:new1 · app = c-new1 sha256:new1 unhealthy running
   2차 배포(재실행, 여전히 실패)
     exit=1  load=sha256:new2  새 app=unhealthy
-    |   app 이 healthy 로 실행 중이 아니다 - 지난 배포가 남긴 rag-chatbot-backend:previous 를 그대로 둔다
-    | 되돌리려면 (마지막 정상 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    |   app 헬스체크 상태 unhealthy - 남아 있는 rag-chatbot-backend:previous(sha256:old)를 그대로 둔다. 실행 중 app 이미지 : sha256:new1
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
     |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
     → :previous = sha256:old · latest = sha256:new2 · app = c-new2 sha256:new2 unhealthy running
   판정 : :previous = sha256:old (기대대로)
 
-## A3. compose 오류로 실패(app 은 옛 이미지로 계속 실행) → 재실행
+## A3. compose 오류로 실패(up · ps 모두 실패, app 은 옛 이미지로 계속 실행) → 재실행
   1차 배포
     exit=1  load=sha256:new1  새 app=healthy
-    |   rag-chatbot-backend:previous <- 실행 중(healthy)인 app 의 이미지
+    |   app 헬스체크 상태 app 없음 - rag-chatbot-backend:latest 를 rag-chatbot-backend:previous 로 남긴다
     태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
     → :previous = sha256:old · latest = sha256:new1 · app = c-old sha256:old healthy running
   2차 배포(재실행, 여전히 실패)
     exit=1  load=sha256:new2  새 app=healthy
-    |   rag-chatbot-backend:previous <- 실행 중(healthy)인 app 의 이미지
-    태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
+    |   app 헬스체크 상태 app 없음 - 남아 있는 rag-chatbot-backend:previous(sha256:old)를 그대로 둔다. 실행 중 app 이미지 : -
     → :previous = sha256:old · latest = sha256:new2 · app = c-old sha256:old healthy running
   판정 : :previous = sha256:old (기대대로)
 
@@ -50,7 +49,7 @@
   1차 배포
     exit=1  load=sha256:new1  새 app=crash
     |   rag-chatbot-backend:previous <- 실행 중(healthy)인 app 의 이미지
-    | 되돌리려면 (마지막 정상 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
     |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
     태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
     → :previous = sha256:old · latest = sha256:new1 · app = c-new1 sha256:new1 unhealthy exited
@@ -59,7 +58,7 @@
   2차 배포(실패)
     exit=1  load=sha256:new2  새 app=crash
     |   rag-chatbot-backend:previous <- 실행 중(healthy)인 app 의 이미지
-    | 되돌리려면 (마지막 정상 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
     |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
     태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
     → :previous = sha256:old · latest = sha256:new2 · app = c-new2 sha256:new2 unhealthy exited
@@ -76,7 +75,7 @@
 ## B2. latest 가 실행 중 이미지와 다를 때(누가 손으로 load 해 둠) → 헬스 실패
     exit=1  load=sha256:new1  새 app=crash
     |   rag-chatbot-backend:previous <- 실행 중(healthy)인 app 의 이미지
-    | 되돌리려면 (마지막 정상 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
     |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
     태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
     → :previous = sha256:old · latest = sha256:new1 · app = c-new1 sha256:new1 unhealthy exited
@@ -84,10 +83,35 @@
 
 ## C. app 컨테이너가 없을 때(첫 배포 등) → latest 로 대체하고 한 줄 출력
     exit=1  load=sha256:new1  새 app=crash
-    |   app 이 healthy 로 실행 중이 아니다 - rag-chatbot-backend:latest 를 rag-chatbot-backend:previous 로 남긴다
-    | 되돌리려면 (마지막 정상 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    |   app 헬스체크 상태 app 없음 - rag-chatbot-backend:latest 를 rag-chatbot-backend:previous 로 남긴다
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
     |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
     태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
     → :previous = sha256:old · latest = sha256:new1 · app = c-new1 sha256:new1 unhealthy exited
   판정 : :previous = sha256:old (기대대로)
   판정 : 대체 사실을 알리는 줄 있음
+
+## C2. 진짜 첫 배포(app 컨테이너도 latest 도 없음) → 실패
+    exit=1  load=sha256:new1  새 app=crash
+    |   rag-chatbot-backend:latest 가 없다(첫 배포) - 되돌릴 이미지를 만들지 않았다
+    | rag-chatbot-backend:previous 가 없어 되돌릴 이미지가 없다 - 고친 커밋을 다시 배포할 것
+    → :previous = (없음) · latest = sha256:new1 · app = c-new1 sha256:new1 unhealthy exited
+  판정 : :previous = (없음) (기대대로)
+  판정 : 「되돌릴 이미지 없음」 줄 있음
+  판정 : 없는 :previous 로 되돌리라는 명령을 찍지 않았다
+
+## D. app 에 healthcheck 가 없을 때(.State.Health 가 nil) → 실패 → 재실행
+  1차 배포
+    exit=1  load=sha256:new1  새 app=crash-nohc
+    |   app 헬스체크 상태 none - rag-chatbot-backend:latest 를 rag-chatbot-backend:previous 로 남긴다
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
+    |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
+    태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
+    → :previous = sha256:old · latest = sha256:new1 · app = c-new1 sha256:new1 none exited
+  2차 배포(재실행, 여전히 실패)
+    exit=1  load=sha256:new2  새 app=crash-nohc
+    |   app 헬스체크 상태 app 없음 - 남아 있는 rag-chatbot-backend:previous(sha256:old)를 그대로 둔다. 실행 중 app 이미지 : -
+    | 되돌리려면 (load 전에 rag-chatbot-backend:previous 로 태그한 이미지) :
+    |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
+    → :previous = sha256:old · latest = sha256:new2 · app = c-new2 sha256:new2 none exited
+  판정 : :previous = sha256:old (기대대로)

@@ -1,8 +1,11 @@
-# 검증 (shellcheck 0.11.0 - shellcheck-py 휠의 바이너리, 이 실행에서만 PATH 앞에 둠)
+# 검증 (리뷰 반영 후 · shellcheck 0.11.0 - shellcheck-py 휠의 바이너리, 이 실행에서만 PATH 앞에 둠)
 $ bash -n scripts/deploy.sh
 exit=0
 
 $ shellcheck -x scripts/deploy.sh
+exit=0
+
+$ shellcheck -s bash .issue/350/evidence/sim.sh.txt
 exit=0
 
 $ bash scripts/check-shell-lint.sh
@@ -23,7 +26,7 @@ $ bash scripts/check-all.sh quick
 [32m  ✓ 셸 정적 분석[0m
 
 [1m▶ 병합 충돌 표시[0m
-충돌 표시 검사 통과 (파일 895개)
+충돌 표시 검사 통과 (파일 896개)
 [32m  ✓ 병합 충돌 표시[0m
 
 [1m▶ 문서 참조 실재[0m

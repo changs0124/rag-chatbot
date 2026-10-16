@@ -1,4 +1,4 @@
-# deploy.sh : /d/dev/rag-chatbot/.issue/worktrees/350-previous-tag-from-running-image/scripts/deploy.sh (534807a · 작업 트리 변경 0건)
+# deploy.sh : /d/dev/rag-chatbot/.issue/worktrees/350-previous-tag-from-running-image/scripts/deploy.sh (381ab1c · 작업 트리 변경 1건)
 # 초기 상태 : app = sha256:old healthy 실행 중, latest = sha256:old, :previous 없음
 
 ## A1. 헬스 실패(새 app 이 죽음) → 재실행
@@ -31,7 +31,7 @@
     → :previous = sha256:new1 · latest = sha256:new2 · app = c-new2 sha256:new2 unhealthy running
   판정 : :previous = sha256:new1 - 기대 sha256:old 와 다르다 (롤백 지점 잃음)
 
-## A3. compose 오류로 실패(app 은 옛 이미지로 계속 실행) → 재실행
+## A3. compose 오류로 실패(up · ps 모두 실패, app 은 옛 이미지로 계속 실행) → 재실행
   1차 배포
     exit=1  load=sha256:new1  새 app=healthy
     태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
@@ -82,3 +82,27 @@
     → :previous = sha256:old · latest = sha256:new1 · app = c-new1 sha256:new1 unhealthy exited
   판정 : :previous = sha256:old (기대대로)
   판정 : 대체 사실을 알리는 줄 없음
+
+## C2. 진짜 첫 배포(app 컨테이너도 latest 도 없음) → 실패
+    exit=1  load=sha256:new1  새 app=crash
+    | 되돌리려면 (이전 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
+    → :previous = (없음) · latest = sha256:new1 · app = c-new1 sha256:new1 unhealthy exited
+  판정 : :previous = (없음) (기대대로)
+  판정 : 「되돌릴 이미지 없음」 줄 없음
+  판정 : 없는 :previous 로 되돌리라는 명령을 찍었다
+
+## D. app 에 healthcheck 가 없을 때(.State.Health 가 nil) → 실패 → 재실행
+  1차 배포
+    exit=1  load=sha256:new1  새 app=crash-nohc
+    | 되돌리려면 (이전 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
+    태그 기록 : tag rag-chatbot-backend:previous <- sha256:old
+    → :previous = sha256:old · latest = sha256:new1 · app = c-new1 sha256:new1 none exited
+  2차 배포(재실행, 여전히 실패)
+    exit=1  load=sha256:new2  새 app=crash-nohc
+    | 되돌리려면 (이전 이미지를 rag-chatbot-backend:previous 로 남겨 두었다) :
+    |   cd deploy && sudo docker tag rag-chatbot-backend:previous rag-chatbot-backend:latest && sudo docker compose up -d
+    태그 기록 : tag rag-chatbot-backend:previous <- sha256:new1
+    → :previous = sha256:new1 · latest = sha256:new2 · app = c-new2 sha256:new2 none exited
+  판정 : :previous = sha256:new1 - 기대 sha256:old 와 다르다 (롤백 지점 잃음)
