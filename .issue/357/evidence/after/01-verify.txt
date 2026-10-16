@@ -1,0 +1,26 @@
+# after — 2026-10-16 (로컬 Docker, 프로젝트 이름 pg357 · 운영 접속은 읽기 전용 조회만)
+
+## docker-compose.yml 해석 결과 (docker compose config db)
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+  = 운영 deploy-db-1 이미지 ID sha256:721873c3…080ea 와 일치 (16.15 · alpine 3.24.2)
+  = 레지스트리 postgres:16-alpine 인덱스 다이제스트(OCI image index, 멀티 아키텍처)와 일치
+
+## A. 빈 볼륨 + 고정 다이제스트 — 초기화 경로 (cap_add 넷)
+ Container pg357-db-1 Healthy
+db-1  | PostgreSQL init process complete; ready for start up.
+db-1  | LOG:  database system is ready to accept connections
+image=sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea health=healthy
+  → DAC_OVERRIDE · FOWNER · SETUID · SETGID 로 초기화 통과, Operation not permitted 없음
+
+## B. 태그 설정으로 기동 → 고정 설정으로 compose up (운영 반영 모의)
+before: id=213055581d7c… started=2026-10-16T09:13:09Z
+after:  id=d7296dec92e1… started=2026-10-16T09:13:16Z
+  → 이미지는 같아도 image 문자열이 바뀌어 db 컨테이너는 한 번 재생성된다(수 초, 볼륨 데이터 유지).
+    app 의 depends_on 에 restart: true 가 없어 app 은 재시작되지 않고 Hikari 가 재연결한다.
+    compose 주석 · CHANGELOG 에 그대로 적었다.
+
+## 검증 파일과 커밋 대상의 차이
+  주석 줄만 다르다 (grep -v '^\s*#' 비교 동일) — 기동 시험 뒤 주석 문구만 고쳤다
+
+## bash scripts/check-all.sh docs
+돌린 검사는 전부 통과 (shellcheck 만 로컬 미설치로 건너뜀)
