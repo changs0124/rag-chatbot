@@ -1,0 +1,4 @@
+:10.1970772Z Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'flywayInitializer' defined in class path resource [org/springframework/boot/flyway/autoconfigure/FlywayAutoConfiguration$FlywayCo
+:10.1973318Z Message    : FATAL: sorry, too many clients already
+:10.1986036Z Caused by: org.flywaydb.core.internal.exception.sqlExceptions.FlywaySqlUnableToConnectToDbException: Unable to obtain connection from database: FATAL: sorry, too many clients already
+:10.1987720Z Message    : FATAL: sorry, too many clients already
