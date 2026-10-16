@@ -1,0 +1,111 @@
+#333 문서 <-> 코드 불일치 — 착수 전 재확인 (base 0e3d91b = origin/main, 2026-10-16)
+리뷰(78b4dbe) 이후 merge 된 #323~#331 · #343 · #326(#342) 반영 상태에서 항목마다 다시 대조했다.
+형식 : id | 문서:줄(지금) 서술 | 코드:줄 실제 | 판정
+
+S1  | README.md:134 `deps-backend` · `deps-frontend` = Trivy 의존성 취약점 스캔
+    | .github/workflows/ci.yml:179 Trivy 는 deps-backend 뿐 · :206-207 deps-frontend 는 `npm audit --audit-level=high`
+    | 유효
+S2  | README.md:159 ERD 설계서 = 테이블 · 인덱스 · 마이그레이션 이력
+    | erd.md 에 이력 절 없음 · INDEX.md:58 「테이블 정의 · 인덱스 · 설계 원칙 · 사용량 조회 SQL」
+    | 유효
+S3  | README.md:67 oxlint 1.71
+    | frontend/package-lock.json:3990-3991 node_modules/oxlint 1.75.0 · package.json:35 "^1.71.0" (하한)
+    | 유효 (같은 줄의 다른 버전 : vitest 4.1.11 · vite 8.1.5 · react-router 8.3.0 · tailwind 4.3.3 · TS 6.0.3 · react 19.2.8 — 일치)
+S4  | README.md:37 scripts/ = 품질 게이트 · 배포 스크립트 · 문서 그림 전처리
+    | scripts/claims/preprocess.py (클레임 전처리) 존재
+    | 유효
+S5  | docs/INDEX.md:63 backend.md = 「배포와 호스트 선정 근거」 · :83 「호스트 선정과 역할 설계는 backend.md」
+    | backend.md:381-382 「대안별 탈락 사유와 호스트 이전 경위는 CHANGELOG #243」 · 역할 설계는 backend.md:126(「인증」 안 한 줄)
+    | 유효
+S6  | api.md:26 「자체 호스팅(우분투) + Cloudflare Tunnel — 터널 도메인은 배포 시 정해진다. 절차와 선정 근거는 backend.md 「배포」」
+    | backend.md:387-394 Lightsail 운영 중 · 터널 「그대로」 고정 · 선정 근거는 CHANGELOG #243 으로 옮겨짐(:382)
+    | 유효
+S7  | api.md:179 429 = 「분당 로그인 시도 상한 초과」
+    | RateLimiterService.java:95-111 「실패 누적만 봄」 · AuthService.java:43,48 401 일 때만 recordLoginFailure
+    | 유효
+S8  | api.md:201-205 API-PATCH-002 오류 표 = 401 한 행
+    | ProfileDtos.java:19 @Size(min=8) → GlobalExceptionHandler.java:59-65 400 BAD_REQUEST · ProfileController.java:39 checkPasswordChange → 429 RATE_LIMIT
+    | 유효 (리뷰의 「400 VALIDATION」 은 틀린 코드명 — 실제 code 는 BAD_REQUEST)
+S9  | api.md:381-385 API-POST-007 오류 표 = 404 한 행 (자기 자신 제외는 :387 산문에만)
+    | AdminUserService.java:90-92 자기 자신 대상 → BadRequestException → 400 BAD_REQUEST
+    | 유효
+S10 | api.md:344 동기화 = 「살아 있는 행이 없는 파일을 행으로 넣는다」뿐 · :351 「total 은 스토어의 파일 수」
+    | AdminDocumentService.java:237-253 파일이 지워진 스토어 연결(MISSING)은 끊고(#271) total = files.size() - orphans
+    | 유효
+S11 | erd.md:126 conversations.updated_at = 「마지막 답변 시각」
+    | V1__init.sql:73-74 trg_conversations_updated_at (before update — 제목 변경 포함) · ConversationRepository.xml:44 touch(답변)
+    | 유효
+S12 | live-integration.md:6-7 v1.5 · 2026-10-15
+    | 78b4dbe(#321, 2026-10-16) 가 :314 를 바꿈
+    | 유효
+S13 | live-integration.md:314 「머리에 전수 집계를 둔다 — 품번 · 연도 · 기종 · … · 사용일 구간」 열거
+    | scripts/claims/preprocess.py:234-269 최종원인별 · 불량유형별 · 소손및불량소자(상위 15) · 드라이브 UU 언급 표도 낸다
+    | 유효
+S14 | live-integration.md:200 `docker compose logs app | grep …` (서버 로그를 먼저 본다)
+    | backend.md:446-447 `ubuntu` 는 docker 그룹이 아님 → 서버는 sudo · deploy.sh:25,186-195 `cd deploy` 후 sudo docker
+    | 유효
+S15 | backend.md:605 (리뷰 :600) 리허설 「접속 즉시 `docker ps`」
+    | 같은 이유로 sudo 필요
+    | 유효 (줄 번호만 #326 으로 밀림)
+S16 | backend.md:394 · :454 「아래 「백업」」
+    | 「백업」 헤딩 없음 — :582 굵은 머리글 「**백업은 Lightsail 자동 일일 스냅샷이다(#243).**」
+    | 유효 (줄 번호만 밀림)
+S17 | design-system.md:197 지속 = 상태 150ms · 진입 240ms · 모달 200ms
+    | frontend/src 의 duration 은 `duration-150` 25곳뿐, animate-* 없음, index.css 는 reduced-motion 1ms 뿐
+    | 유효
+S18 | design-system.md:238 (§6) 이중 테두리 카드 · 알약 CTA = 「모달 · 첨부 카드 · 주요 버튼에만」
+    | p-1.5 이중 테두리는 ConfirmModal.tsx:28 · AdminPage.tsx:398 · LoginPage.tsx:49 뿐. DraftCard(Composer.tsx:355)는 단일 border.
+    | §5 :216 「모달과 로그인 폼에만 · 첨부 카드에는 과하다」와 모순. 알약은 primaryButtonClass(rounded-full, #330)
+    | 유효
+S19 | frontend.md:231 VITE_API_BASE_URL 누락 → 「빌드 결과물이 콘솔에 경고를 남긴다」
+    | frontend/src/lib/api.ts:5-7 `import.meta.env.PROD` 일 때 실행 시 console.error. 빌드는 경고하지 않음
+    | 유효
+S20 | frontend.md:170 · features.md:101 파일명은 `alt` · `aria-label` 에만
+    | Composer.tsx:346-364 미리보기를 못 그리면(onError) <img> 를 빼고 카드 바탕 + 버튼 aria-label 만 남김(#317)
+    | 유효
+S21 | features.md:525-527 (FEAT-OPS-003) 토큰 교체 = api.ts 래퍼 + endpoints.ts 두 곳
+    | lib/api.ts:57-60,124 · lib/endpoints.ts · lib/docFigures.ts — adoptRefreshedToken 세 곳. frontend.md:61-62 는 이미 셋
+    | 유효
+S22 | features.md:347 스토어 없이 동기화 → 「업로드와 같은 문구」
+    | AdminDocumentService.java:135 「…업로드할 수 없음 (…)」 vs :229 「…동기화할 수 없음 (…)」
+    | 유효
+S23 | features.md:374 "스토어가 설정되지 않아 업로드할 수 없음"
+    | AdminDocumentService.java:135 "Vector Store 가 설정되지 않아 업로드할 수 없음 (OPENAI_VECTOR_STORE_ID)"
+    | 유효
+S24 | features.md:56,114,163,198,248,285,400 SCR-CHAT-001 · SCR-MY-001 · SCR-ADMIN-001/002
+    | `grep -rn 'SCR-' docs` → features.md 뿐, 정의 문서 없음(INDEX.md:81 정보구조도는 두지 않음). 경로는 App.tsx `/` · `/me` · `/admin`
+    | 유효
+S25 | frontend.md:120 「92.7 → 140.4KB」 · :123 「140.5 → 147.6KB」
+    | #270(99d15c9)과 #287(5cbac92) 사이에 frontend 변경 커밋 0건(git log 99d15c9..5cbac92^ -- frontend) — 같은 번들을 두 값으로 적음. CHANGELOG #270 은 140.4
+    | 유효
+S26 | design-system.md:165 「본문 15px / 보조 13px」
+    | .tsx 의 크기 : text-sm(14px) 32 · text-xs(12px) 13 · text-[13px] 7 · text-[11px] 3 · text-[10px] 1 · 본문 text-[15px] 11
+    | 유효
+
+=== 리뷰 이후 merge 로 생겼거나 같은 문서에서 새로 본 것 (추가) ===
+N1  | design-system.md:156 MyPage 오류 배너 「관리자 쪽과 같은 모양」
+    | MyPage.tsx:66 rounded-xl px-3.5 py-2.5 vs AdminPage.tsx:235 rounded-2xl px-4 py-3 — 색(danger-soft · danger)만 같다
+    | 유효 (리뷰 표 밖)
+N2  | features.md:425 FEAT-ADMIN-003 예외 표 「자기 자신 대상 | 화면에 버튼을 띄우지 않는다」뿐
+    | AdminPage.tsx:360 버튼 숨김 + AdminUserService.java:90-92 API 를 직접 부르면 400 — S9 의 기능명세 쪽
+    | 유효
+N3  | 문서 헤더 : api.md v1.2 · features.md v2.2 · erd.md v1.1 · design-system.md v2.4 모두 「최종 수정일 2026-10-15」
+    | 2026-10-16 의 #326/#328(api) · #323/#325(features) · #328(erd) · #325/#330(design-system) 이 본문을 바꾸고 헤더를 올리지 않음
+    | 유효 — 이번에 고치는 문서라 함께 올린다
+
+=== 리뷰 이후 merge 가 문서에 더한 주장 — 재확인 (모두 코드와 일치) ===
+- api.md:83,103 SERVICE_UNAVAILABLE 503 (#326) ↔ GlobalExceptionHandler.java:204-212
+- backend.md:56-84 예외 → 상태 매핑 표 (#326) ↔ GlobalExceptionHandler.java @ExceptionHandler 15종 일치 · TC-OPS-025~027 ↔ ChatStreamExceptionHandlerTest
+- erd.md:177 citations.uri 「앱이 읽지도 쓰지도 않는다」(#328) ↔ mapper · dto · frontend types 에 uri 없음
+- JWT email 클레임 제거(#328) ↔ JwtService.java:17 · 문서에 email 클레임 서술 남지 않음
+- frontend.md:92-96 · features.md:82 이력 로딩 · 생성 중 전송 차단(#323) ↔ useChat.ts:291-295 (boolean 반환) · ChatPage.tsx:193 busy · Composer.tsx:189-190,292-301
+- features.md:417 초기화 확인 창 · 연타 방지(#325) ↔ AdminPage.tsx:73-78,388-390
+- design-system.md:154 danger-ink = ConfirmModal 1회 · bg-danger 유일(#325) ↔ ConfirmModal.tsx:42 (다른 bg-danger 없음)
+- design-system.md:213-215 primaryButtonClass · h-11 · opacity-50 · 사용처 · BackLink/PageShell(#330) ↔ components/primaryButton.ts · ErrorBoundary/MyPage/AdminPage
+- README.md frontend 잡 테스트 리포터 · deps-frontend 의 npm ci 제거(#331) ↔ ci.yml:97,206-207 (README 는 잡 단위라 영향 없음)
+
+=== 범위 밖 (손대지 않음, 보고만) ===
+- docs/06_changelog/CHANGELOG.md [Unreleased] 에 merge 로 겹친 줄이 있다 :
+  :15-16 #326 테스트 줄 두 번(하한 294→297 · 287→290), #330 불릿 두 벌(하한 171→172 · 165→166), #331 preprocess 불릿 꼬리 두 번, ### Fixed 절 두 개.
+  이 이슈는 CHANGELOG 에 한 줄 추가 외에 손대지 않는다(완료 기준) → 별도 처리 필요
+- #105 §4 의 CameraCapture 언급 — 이슈 본문이라 저장소 문서가 아님(오케스트레이터 몫)
