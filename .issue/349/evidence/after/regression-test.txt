@@ -23,8 +23,9 @@ Using Node v24.19.0
  ↓ src/components/chat/Composer.test.tsx > Composer > 미리보기를 그리지 못하는 파일은 이미지를 빼고 카드 바탕만 남김 - 깨진 아이콘·파일명이 비치지 않음(#317)
  ↓ src/components/chat/Composer.test.tsx > Composer > 전송은 이미 올라간 id 로 나가고, 목록과 URL 을 정리함
  ↓ src/components/chat/Composer.test.tsx > Composer > onSend 가 받지 않으면 입력과 첨부 카드가 남음
- ✓ src/components/chat/Composer.test.tsx > Composer > onSend 가 나중에 받지 않음으로 끝나면 입력과 첨부 카드가 남음 63ms
+ ✓ src/components/chat/Composer.test.tsx > Composer > onSend 가 나중에 받지 않음으로 끝나면 입력과 첨부 카드가 남음 60ms
  ✓ src/components/chat/Composer.test.tsx > Composer > 받아들임을 기다리는 사이 더한 입력과 첨부는 남음 28ms
+ ✓ src/components/chat/Composer.test.tsx > Composer > 받아들임을 기다리는 동안 보낸 카드를 지워도 서버 첨부를 지우지 않음 16ms
  ↓ src/components/chat/Composer.test.tsx > Composer > busy 이면 Enter · 버튼 모두 보내지 않고 입력이 남음
  ↓ src/components/chat/Composer.test.tsx > Composer > 전송 전 카드도 눌러서 확대할 수 있음 - 업로드 완료를 기다리지 않음
  ↓ src/components/chat/Composer.test.tsx > Composer > 이미지를 끌어다 놓으면 첨부됨
@@ -45,7 +46,7 @@ Using Node v24.19.0
  ↓ src/components/chat/Composer.test.tsx > Composer > 첨부 (+) 버튼 (#218 · #289) > 선택창은 image/* 로 연다 - 형식을 좁히면 Android 가 카메라 없이 보관함으로 바로 들어간다 (#289)
 
  Test Files  2 passed (2)
-      Tests  3 passed | 38 skipped (41)
-   Start at  15:53:16
-   Duration  973ms (transform 198ms, setup 300ms, import 287ms, tests 109ms, environment 813ms)
+      Tests  4 passed | 38 skipped (42)
+   Start at  15:59:04
+   Duration  952ms (transform 183ms, setup 278ms, import 290ms, tests 122ms, environment 799ms)
 
