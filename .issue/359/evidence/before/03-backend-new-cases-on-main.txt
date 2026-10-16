@@ -1,0 +1,42 @@
+# 새 백엔드 케이스를 변경 전 코드(main 8a54bce 의 src/main)에 돌린 결과 - 6건 모두 실패해야 결함 재현
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 9.602 s <<< FAILURE! -- in com.ragchatbot.controller.AuthFlowTest
+[ERROR] com.ragchatbot.controller.AuthFlowTest.parallel_wrong_logins_are_capped -- Time elapsed: 1.300 s <<< FAILURE!
+Expecting actual:
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.358 s <<< FAILURE! -- in com.ragchatbot.controller.ProfileFlowTest
+[ERROR] com.ragchatbot.controller.ProfileFlowTest.update_password_over_72_bytes_is_400 -- Time elapsed: 0.335 s <<< FAILURE!
+expected: 400 BAD_REQUEST
+ but was: 500 INTERNAL_SERVER_ERROR
+[ERROR] Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.005 s <<< FAILURE! -- in com.ragchatbot.openai.CitationFromMarkupTest
+[ERROR] com.ragchatbot.openai.CitationFromMarkupTest.absurdly_long_ref_number_is_skipped_without_throwing -- Time elapsed: 0.005 s <<< ERROR!
+java.lang.NumberFormatException: For input string: "99999999999"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+[ERROR] Tests run: 2, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 0.473 s <<< FAILURE! -- in com.ragchatbot.service.AttachmentLinkRaceTest
+[ERROR] com.ragchatbot.service.AttachmentLinkRaceTest.send_rejects_attachment_that_could_not_be_linked -- Time elapsed: 0.444 s <<< FAILURE!
+Expecting code to raise a throwable.
+[ERROR] com.ragchatbot.service.AttachmentLinkRaceTest.orphan_cleanup_keeps_attachment_linked_after_it_was_listed -- Time elapsed: 0.026 s <<< FAILURE!
+expected: 0
+ but was: 1
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.045 s <<< FAILURE! -- in com.ragchatbot.service.ChatStreamTimeoutTest
+[ERROR] com.ragchatbot.service.ChatStreamTimeoutTest.timeout_before_first_token_is_saved_as_timed_out_error -- Time elapsed: 0.045 s <<< FAILURE!
+Expected size: 1 but was: 0 in:
+[ERROR] Failures: 
+[ERROR]   AuthFlowTest.parallel_wrong_logins_are_capped:234 [비밀번호 검사까지 간 요청 수] 
+Expecting actual:
+[ERROR]   ProfileFlowTest.update_password_over_72_bytes_is_400:91 
+expected: 400 BAD_REQUEST
+ but was: 500 INTERNAL_SERVER_ERROR
+[ERROR]   AttachmentLinkRaceTest.orphan_cleanup_keeps_attachment_linked_after_it_was_listed:53 
+expected: 0
+ but was: 1
+[ERROR]   AttachmentLinkRaceTest.send_rejects_attachment_that_could_not_be_linked:72 
+Expecting code to raise a throwable.
+[ERROR]   ChatStreamTimeoutTest.timeout_before_first_token_is_saved_as_timed_out_error:210 
+Expected size: 1 but was: 0 in:
+[ERROR] Errors: 
+[ERROR]   CitationFromMarkupTest.absurdly_long_ref_number_is_skipped_without_throwing:79 ? NumberFormat For input string: "99999999999"
+[ERROR] Tests run: 6, Failures: 5, Errors: 1, Skipped: 0
+[INFO] BUILD FAILURE
+Expecting actual:
+  16
+to be less than or equal to:
+  6 
