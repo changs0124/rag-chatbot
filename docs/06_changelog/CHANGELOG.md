@@ -12,6 +12,7 @@
   - `GlobalExceptionHandler` : `AsyncRequestTimeoutException` 전용 처리기(WARN 한 줄 · 커밋됐으면 본문 없음 · 아니면 503 JSON),
     폴백은 ERROR 로그를 그대로 두고 커밋됐으면 본문을 쓰지 않는다. null `ResponseEntity` 로 처리 완료를 표시한다(`void` 는 기본 뷰 렌더링으로 빠짐)
   - `backend.md` 「예외 → 상태 매핑」 · `api.md` 오류 코드 · 상태 코드 표 : 「SSE 도중 오류는 여기 오지 않는다」를 실제 경로로 고치고 `SERVICE_UNAVAILABLE`(503, 지금은 도달 경로 없음) 추가
+  - 테스트 `ChatStreamExceptionHandlerTest` TC-OPS-025~027 3건(실 톰캣 원시 스트림 · 출력 캡처, 025 · 026 변경 전 실패 확인). **백엔드 하한 294 → 297**(실측)
   - 테스트 `ChatStreamExceptionHandlerTest` TC-OPS-025~027 3건(실 톰캣 원시 스트림 · 출력 캡처, 025 · 026 변경 전 실패 확인). **백엔드 하한 287 → 290**(실측)
 - **통합 테스트 컨텍스트가 공유 PostgreSQL 연결 상한에 닿던 것을 고쳤다(#343).** 설정이 다른 테스트 컨텍스트는 캐시에 남고
   컨텍스트마다 Hikari 풀이 기본 10 연결을 붙잡아, 9개 × 10 = 90 이 공유 컨테이너 상한 97 에 거의 닿아 있었다.
