@@ -45,10 +45,12 @@ describe('Composer', () => {
   })
 
   const noop = () => {}
+  // 전송을 받아들인 입력창 - 받아들였을 때만 비운다(#323)
+  const accept = () => true
 
   it('고른 즉시 카드가 뜨고 업로드가 시작됨 - 파일명은 화면 텍스트로 두지 않음', () => {
     vi.mocked(uploadFile).mockReturnValue(deferred<Attachment>().promise)
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
 
@@ -64,7 +66,7 @@ describe('Composer', () => {
   it('업로드가 끝나기 전에는 보내기가 막힘', async () => {
     const d = deferred<Attachment>()
     vi.mocked(uploadFile).mockReturnValue(d.promise)
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
     fireEvent.change(screen.getByPlaceholderText('메시지를 입력하세요'), { target: { value: '이 사진 설명해줘' } })
@@ -76,7 +78,7 @@ describe('Composer', () => {
 
   it('올라간 카드를 지우면 서버 첨부도 지우고 미리보기 URL 을 회수함', async () => {
     vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
     await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
@@ -90,7 +92,7 @@ describe('Composer', () => {
   it('업로드 중에 카드를 지우면 요청을 끊고 오류로 표시하지 않음', async () => {
     const d = deferred<Attachment>()
     vi.mocked(uploadFile).mockReturnValue(d.promise)
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
     const signal = vi.mocked(uploadFile).mock.calls[0][1] as AbortSignal
@@ -106,7 +108,7 @@ describe('Composer', () => {
   it('지운 카드의 업로드가 뒤늦게 성공하면 그 파일을 서버에서 지움', async () => {
     const d = deferred<Attachment>()
     vi.mocked(uploadFile).mockReturnValue(d.promise)
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
     fireEvent.click(screen.getByLabelText('첨부 제거'))
@@ -119,7 +121,7 @@ describe('Composer', () => {
 
   it('업로드가 실패하면 재시도가 보이고 그 동안 보내기가 막힘', async () => {
     vi.mocked(uploadFile).mockRejectedValueOnce(new ApiError(413, '파일이 너무 큽니다'))
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
     fireEvent.change(screen.getByPlaceholderText('메시지를 입력하세요'), { target: { value: '설명해줘' } })
@@ -135,7 +137,7 @@ describe('Composer', () => {
 
   it('미리보기를 그리지 못하는 파일은 이미지를 빼고 카드 바탕만 남김 - 깨진 아이콘·파일명이 비치지 않음(#317)', async () => {
     vi.mocked(uploadFile).mockRejectedValueOnce(new ApiError(400, '지원하지 않는 파일 형식: image/heic'))
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(new File(['x'], 'photo.heic', { type: 'image/heic' }))
     const card = screen.getByLabelText('photo.heic 확대')
@@ -151,7 +153,7 @@ describe('Composer', () => {
     vi.mocked(uploadFile)
       .mockResolvedValueOnce(attachment('a1'))
       .mockResolvedValueOnce(attachment('a2'))
-    const onSend = vi.fn()
+    const onSend = vi.fn(() => true)
     render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
 
     pick(image('photo_0001.png'))
@@ -168,9 +170,50 @@ describe('Composer', () => {
     expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
   })
 
+  /**
+   * #323 F2 - 받지 않은 전송은 입력을 지우지 않는다.
+   *
+   * 고치기 전에는 `onSend` 의 결과와 무관하게 비워, 새 대화 생성 왕복 중에 보낸 두 번째 메시지가 사라지고
+   * 이미 올린 첨부는 서버에서 지우지도 않은 채 상태에서만 빠져 고아로 남았다.
+   */
+  it('onSend 가 받지 않으면 입력과 첨부 카드가 남음', async () => {
+    vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
+    const onSend = vi.fn(() => false)
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+
+    pick(image())
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    const box = screen.getByPlaceholderText('메시지를 입력하세요')
+    fireEvent.change(box, { target: { value: '남아야 함' } })
+    fireEvent.keyDown(box, { key: 'Enter' })
+
+    expect(onSend).toHaveBeenCalledTimes(1)
+    expect(box).toHaveValue('남아야 함')
+    expect(screen.getByAltText('photo_0001.png')).toBeInTheDocument()
+    expect(revokeObjectURL).not.toHaveBeenCalled()
+  })
+
+  /** #323 F1 - 이력 로딩 · 대화 생성 중(busy)에는 Enter 도 버튼도 보내지 않고 입력을 지우지 않는다 */
+  it('busy 이면 Enter · 버튼 모두 보내지 않고 입력이 남음', () => {
+    const onSend = vi.fn(() => true)
+    render(<Composer onSend={onSend} streaming={false} busy onStop={noop} />)
+
+    const box = screen.getByPlaceholderText('메시지를 입력하세요')
+    fireEvent.change(box, { target: { value: '남아야 함' } })
+    fireEvent.keyDown(box, { key: 'Enter' })
+    expect(screen.getByLabelText('보내기')).toBeDisabled()
+    // 이유 없는 회색 버튼은 고장으로 읽힌다(#101)
+    expect(screen.getByLabelText('보내기')).toHaveAttribute('title', '대화를 준비하는 중에는 보낼 수 없습니다')
+    fireEvent.click(screen.getByLabelText('보내기'))
+    fireEvent.submit(box.closest('form')!)
+
+    expect(onSend).not.toHaveBeenCalled()
+    expect(box).toHaveValue('남아야 함')
+  })
+
   it('전송 전 카드도 눌러서 확대할 수 있음 - 업로드 완료를 기다리지 않음', () => {
     vi.mocked(uploadFile).mockReturnValue(deferred<Attachment>().promise)
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
     fireEvent.click(screen.getByLabelText('photo_0001.png 확대'))
@@ -182,7 +225,7 @@ describe('Composer', () => {
 
   it('이미지를 끌어다 놓으면 첨부됨', async () => {
     vi.mocked(uploadFile).mockReturnValue(deferred<Attachment>().promise)
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     fireEvent.dragEnter(window, { dataTransfer: { types: ['Files'] } })
     expect(screen.getByText('여기에 놓아 첨부')).toBeInTheDocument()
@@ -193,7 +236,7 @@ describe('Composer', () => {
   })
 
   it('드래그가 자식 요소 경계를 지나도 오버레이가 깜빡이지 않음', () => {
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     fireEvent.dragEnter(window, { dataTransfer: { types: ['Files'] } })
     fireEvent.dragEnter(window, { dataTransfer: { types: ['Files'] } })
@@ -206,7 +249,7 @@ describe('Composer', () => {
   })
 
   it('이미지가 아닌 파일은 첨부되지 않음', () => {
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(input, { target: { files: [new File(['x'], 'report.pdf', { type: 'application/pdf' })] } })
@@ -220,7 +263,7 @@ describe('Composer', () => {
     vi.mocked(uploadFile)
       .mockResolvedValueOnce(attachment('a1'))
       .mockResolvedValueOnce(attachment('a2'))
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
     pick(image())
@@ -232,7 +275,7 @@ describe('Composer', () => {
 
   it('텍스트 없이 첨부만으로도 전송됨', async () => {
     vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
-    const onSend = vi.fn()
+    const onSend = vi.fn(() => true)
     render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
 
     pick(image())
@@ -244,7 +287,7 @@ describe('Composer', () => {
 
   it('이미지를 붙여넣으면 첨부되고, 텍스트만 붙여넣으면 첨부가 생기지 않음', () => {
     vi.mocked(uploadFile).mockReturnValue(deferred<Attachment>().promise)
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
     const textarea = screen.getByPlaceholderText('메시지를 입력하세요')
 
     fireEvent.paste(textarea, { clipboardData: { files: [image()] } })
@@ -266,7 +309,7 @@ describe('Composer', () => {
    */
   it('네트워크 실패는 일반 문구로 떨어지고 서버 메시지와 구분됨', async () => {
     vi.mocked(uploadFile).mockRejectedValueOnce(new Error('Failed to fetch'))
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
 
@@ -285,7 +328,7 @@ describe('Composer', () => {
    */
   it('ApiError 는 서버 메시지를 보여줘 일반 실패와 구분됨', async () => {
     vi.mocked(uploadFile).mockRejectedValueOnce(new ApiError(413, '파일이 너무 큽니다'))
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     pick(image())
 
@@ -304,7 +347,7 @@ describe('Composer', () => {
   it('업로드가 실패하면 사유가 화면 텍스트로 보임', async () => {
     const d = deferred<Attachment>()
     vi.mocked(uploadFile).mockReturnValue(d.promise)
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
     pick(image())
 
     d.reject(new ApiError(400, '이미지 크기는 10MB 를 넘을 수 없습니다'))
@@ -318,7 +361,7 @@ describe('Composer', () => {
   /** 반대편 - 실패가 없으면 그 줄이 뜨지 않는다 */
   it('실패가 없으면 오류 줄이 뜨지 않음', async () => {
     vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
-    render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
     pick(image())
 
     await waitFor(() => expect(screen.getByAltText('photo_0001.png')).toBeInTheDocument())
@@ -333,7 +376,7 @@ describe('Composer', () => {
    */
   it('언마운트하면 진행 중인 업로드를 끊음', () => {
     vi.mocked(uploadFile).mockReturnValue(deferred<Attachment>().promise)
-    const { unmount } = render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    const { unmount } = render(<Composer onSend={accept} streaming={false} onStop={noop} />)
     pick(image())
     const signal = vi.mocked(uploadFile).mock.calls[0][1] as AbortSignal
     expect(signal.aborted).toBe(false)
@@ -353,7 +396,7 @@ describe('Composer', () => {
   it('언마운트 뒤 뒤늦게 성공한 업로드는 서버에서도 지움', async () => {
     const d = deferred<Attachment>()
     vi.mocked(uploadFile).mockReturnValue(d.promise)
-    const { unmount } = render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    const { unmount } = render(<Composer onSend={accept} streaming={false} onStop={noop} />)
     pick(image())
 
     unmount()
@@ -365,7 +408,7 @@ describe('Composer', () => {
   /** 이미 올라간 첨부를 둔 채 떠나면 그 자리에서 지운다 - 뒤늦은 성공을 기다릴 것이 없다 */
   it('업로드가 끝난 첨부를 둔 채 언마운트하면 서버에서 지움', async () => {
     vi.mocked(uploadFile).mockResolvedValue(attachment('a2'))
-    const { unmount } = render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+    const { unmount } = render(<Composer onSend={accept} streaming={false} onStop={noop} />)
     pick(image())
     await waitFor(() => expect(screen.getByAltText('photo_0001.png')).toBeInTheDocument())
 
@@ -392,7 +435,7 @@ describe('Composer', () => {
       ['마우스·트랙패드', false],
     ])('%s 환경에서 + 는 메뉴 없이 기기 선택창을 바로 연다 - 「카메라」 항목 없음', (_, coarse) => {
       pointer(coarse)
-      render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+      render(<Composer onSend={accept} streaming={false} onStop={noop} />)
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
       const open = vi.spyOn(input, 'click').mockImplementation(() => {})
 
@@ -404,7 +447,7 @@ describe('Composer', () => {
     })
 
     it('선택창은 image/* 로 연다 - 형식을 좁히면 Android 가 카메라 없이 보관함으로 바로 들어간다 (#289)', () => {
-      render(<Composer onSend={noop} streaming={false} onStop={noop} />)
+      render(<Composer onSend={accept} streaming={false} onStop={noop} />)
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
 
       expect(input.accept).toBe('image/*')

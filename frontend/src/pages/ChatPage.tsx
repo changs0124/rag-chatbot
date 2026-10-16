@@ -187,7 +187,12 @@ export default function ChatPage() {
           <div className="px-4 pb-1 text-center text-[13px] text-danger">{chat.error}</div>
         )}
 
-        <Composer onSend={chat.send} streaming={chat.streaming} onStop={chat.stop} />
+        <Composer
+          onSend={chat.send}
+          streaming={chat.streaming}
+          busy={chat.loadingMessages || chat.creating}
+          onStop={chat.stop}
+        />
       </div>
     </div>
   )

@@ -22,6 +22,8 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   // 고른 대화의 이력이 오는 중 - 그동안 본문은 직전 대화 대신 로딩 표시를 보인다(#291)
   const [loadingMessages, setLoadingMessages] = useState(false)
+  // send 의 거절 판정용 사본(#323) - 고른 직후 같은 틱의 전송도 막으려고 상태와 함께 바로 쓴다
+  const loadingRef = useRef(false)
   const [streaming, setStreaming] = useState(false)
   // 진행 단계(REQ-CHAT-005) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
   const [stage, setStage] = useState<string | null>(null)
@@ -38,6 +40,8 @@ export function useChat() {
   const generation = useRef(0)
   /** 새 대화 생성 왕복 중인지. streaming 이 아직 false 인 구간을 메운다 */
   const creatingRef = useRef(false)
+  // 입력창이 전송 버튼을 막을 수 있게 같은 사실을 상태로도 드러낸다(#323)
+  const [creating, setCreating] = useState(false)
   // 실제 도달한 단계를 순서대로 담아 최소 표시 시간만큼 유지함(단계를 만들지 않고 읽을 시간만 줌)
   const stageQueue = useRef<string[]>([])
   const stageTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -91,6 +95,7 @@ export function useChat() {
       const mine = ++generation.current
       setActiveId(id)
       setError(null)
+      loadingRef.current = true
       setLoadingMessages(true)
       let loaded: ChatMessage[] = []
       try {
@@ -102,6 +107,7 @@ export function useChat() {
       // 늦게 도착한 A 의 이력이 B 화면을 덮어써, 사이드바는 B 인데 본문은 A 가 된다
       if (generation.current !== mine) return
       setMessages(loaded)
+      loadingRef.current = false
       setLoadingMessages(false)
     },
     [abortActiveStream],
@@ -112,6 +118,7 @@ export function useChat() {
     generation.current++
     setActiveId(null)
     setMessages([])
+    loadingRef.current = false
     setLoadingMessages(false)
     setError(null)
   }, [abortActiveStream])
@@ -159,10 +166,9 @@ export function useChat() {
     abortRef.current?.abort()
   }, [])
 
-  const send = useCallback(
+  const run = useCallback(
     // 첨부는 입력창이 **고르는 즉시** 올려 두므로 여기서는 이미 올라간 것만 받음(업로드 책임이 컴포저에 있음)
     async (text: string, attachments: Attachment[]) => {
-      if (streaming || creatingRef.current) return
       setError(null)
 
       let convId = activeId
@@ -173,6 +179,7 @@ export function useChat() {
         // 아직 false 다. 막지 않으면 대화가 둘 만들어지고, 두 번째 컨트롤러가 abortRef 를 덮어쓴 뒤
         // 첫 번째의 finally 가 그것을 null 로 지워 정지 버튼이 무력화된다
         creatingRef.current = true
+        setCreating(true)
         try {
           const conv = await createConversation(text.slice(0, 30) || '새 대화')
           // 생성을 기다리는 동안 사용자가 다른 대화를 골랐으면 이 턴을 버린다. 그냥 진행하면 방금
@@ -188,6 +195,7 @@ export function useChat() {
           return
         } finally {
           creatingRef.current = false
+          setCreating(false)
         }
       }
 
@@ -273,7 +281,23 @@ export function useChat() {
         abortRef.current = null
       }
     },
-    [activeId, streaming, refreshConversations, clearStages, advanceStage],
+    [activeId, refreshConversations, clearStages, advanceStage],
+  )
+
+  /**
+   * 전송을 받아들였는지 **동기로** 돌려준다(#323). 입력창은 받아들였을 때만 입력과 첨부 초안을 비운다 -
+   * 조용히 버리면 입력이 사라지고 이미 올린 첨부는 회수 크론을 기다리는 고아가 된다.
+   *
+   * 이력 로딩 중에도 거절한다. 받아 들이면 말풍선이 직전 대화의 목록에 붙고, 곧 도착한 이력이 목록을
+   * 갈아 끼워 답 말풍선이 사라진다 - send 는 세대를 올리지 않으므로 그 이력은 버려지지 않는다.
+   */
+  const send = useCallback(
+    (text: string, attachments: Attachment[]): boolean => {
+      if (streaming || creatingRef.current || loadingRef.current) return false
+      void run(text, attachments)
+      return true
+    },
+    [streaming, run],
   )
 
   return {
@@ -281,6 +305,7 @@ export function useChat() {
     activeId,
     messages,
     loadingMessages,
+    creating,
     streaming,
     stage,
     error,

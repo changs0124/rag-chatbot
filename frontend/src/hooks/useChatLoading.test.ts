@@ -12,7 +12,7 @@ vi.mock('../lib/endpoints', () => ({
   streamChat: vi.fn().mockResolvedValue(undefined),
 }))
 
-const { getMessages } = await import('../lib/endpoints')
+const { getMessages, streamChat } = await import('../lib/endpoints')
 
 /** 손으로 끝낼 수 있는 프라미스 - 「이력이 도착하는 순간」을 테스트가 정함 */
 function deferred<T>() {
@@ -90,5 +90,61 @@ describe('useChat 이력 불러오는 중', () => {
     await act(async () => a.resolve([msg('a-1')]))
     expect(result.current.loadingMessages).toBe(false)
     expect(result.current.messages).toEqual([])
+  })
+  /**
+   * #323 F1 - 이력이 오는 동안 보낸 메시지는 받지 않는다.
+   *
+   * 고치기 전에는 받아 들여 직전 대화의 목록에 말풍선을 붙이고 스트림을 열었는데, 곧이어 도착한 이력이
+   * 목록을 갈아 끼워 답 말풍선이 사라졌다. 이후 토큰은 갈 곳을 잃어 대화를 다시 골라야 답이 보였다.
+   */
+  it('불러오는 중에 보낸 메시지는 받지 않는다', async () => {
+    const a = deferred<ChatMessage[]>()
+    vi.mocked(getMessages).mockReturnValueOnce(a.promise)
+    const { result } = renderHook(() => useChat())
+
+    act(() => void result.current.selectConversation('c1'))
+    let accepted: unknown
+    act(() => {
+      accepted = result.current.send('q', [])
+    })
+    await act(async () => a.resolve([msg('c1-1')]))
+
+    expect(streamChat).not.toHaveBeenCalled()
+    expect(result.current.messages.map((m) => m.id)).toEqual(['c1-1'])
+    expect(accepted).toBe(false)
+  })
+
+  /** 반대편 - 이력이 도착하면 막음이 풀려 전송을 받는다(#323) */
+  it('이력이 도착한 뒤에는 전송을 받는다', async () => {
+    const a = deferred<ChatMessage[]>()
+    vi.mocked(getMessages).mockReturnValueOnce(a.promise)
+    const { result } = renderHook(() => useChat())
+
+    act(() => void result.current.selectConversation('c1'))
+    await act(async () => a.resolve([msg('c1-1')]))
+
+    let accepted: unknown
+    await act(async () => {
+      accepted = result.current.send('q', [])
+    })
+    expect(accepted).toBe(true)
+    expect(streamChat).toHaveBeenCalledTimes(1)
+  })
+
+  /** 불러오기가 실패해도 막음이 풀린다 - 안 풀리면 그 대화에서는 영영 보낼 수 없다(#323) */
+  it('불러오기가 실패해도 그 뒤 전송을 받는다', async () => {
+    const a = deferred<ChatMessage[]>()
+    vi.mocked(getMessages).mockReturnValueOnce(a.promise)
+    const { result } = renderHook(() => useChat())
+
+    act(() => void result.current.selectConversation('c1'))
+    await act(async () => a.reject(new Error('down')))
+
+    let accepted: unknown
+    await act(async () => {
+      accepted = result.current.send('q', [])
+    })
+    expect(accepted).toBe(true)
+    expect(streamChat).toHaveBeenCalledTimes(1)
   })
 })

@@ -146,6 +146,38 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
   })
 
   /**
+   * #323 F2 - 막힌 전송은 「받지 않았다」를 돌려준다.
+   *
+   * 고치기 전에는 조용히 버려 입력창이 받아들여진 줄 알고 입력과 첨부 초안을 비웠다. `creating` 은
+   * 입력창이 전송 버튼을 막을 수 있게 상태로도 드러낸다.
+   */
+  it('생성 왕복 중 두 번째 전송은 false 를 돌려주고 creating 이 켜져 있다', async () => {
+    const created = deferred<Conversation>()
+    vi.mocked(createConversation).mockReturnValue(created.promise)
+
+    const { result } = renderHook(() => useChat())
+
+    let first: unknown
+    let second: unknown
+    act(() => {
+      first = result.current.send('첫 질문', [])
+    })
+    expect(result.current.creating).toBe(true)
+    act(() => {
+      second = result.current.send('두 번째 질문', [])
+    })
+
+    expect(first).toBe(true)
+    expect(second).toBe(false)
+
+    await act(async () => {
+      created.resolve(conv('new-1'))
+      await created.promise
+    })
+    expect(result.current.creating).toBe(false)
+  })
+
+  /**
    * #94 - 언마운트에서 진행 중인 스트림을 끊는다.
    *
    * 끊지 않으면 로그아웃해도 SSE 연결이 그대로 살아 서버가 답변을 끝까지 생성하고, 리더 루프가
