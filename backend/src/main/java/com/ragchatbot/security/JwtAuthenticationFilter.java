@@ -23,8 +23,8 @@ import jakarta.servlet.http.HttpServletResponse;
  * Authorization: Bearer &lt;jwt&gt; 를 검증해 SecurityContext에 인증(principal=userId)을 심음.
  * 검증 실패/토큰 부재 시 인증을 심지 않음 → 보호 경로는 401(EntryPoint), permitAll은 통과.
  *
- * <p>서명 검증에 더해 <b>비밀번호 변경 시각</b>을 대조함(2026-07-28 결정). stateless JWT는 서버가
- * 회수할 수 없어, 비밀번호를 바꿔도 이미 나간 토큰이 만료까지 살아 있었음 - 탈취 대응이 성립하지 않음.
+ * <p>서명 검증에 더해 <b>비밀번호 변경 시각</b>을 대조함. stateless JWT는 서버가 회수할 수 없어,
+ * 대조하지 않으면 비밀번호를 바꿔도 이미 나간 토큰이 만료까지 살아 있음 - 탈취 대응이 성립하지 않음.
  * 대가로 인증 요청마다 사용자 행을 한 번 읽음(단일 인스턴스 전제).
  *
  * <p>만료가 임박한 토큰에는 {@value #REFRESH_HEADER} 로 새 토큰을 실어 보냄(FEAT-OPS-003).

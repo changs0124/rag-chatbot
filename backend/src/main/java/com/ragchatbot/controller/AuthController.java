@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
 public class AuthController {
 
 	private final AuthService authService;
-	// 내 정보 조회는 프로필 쪽이 정본이다 - 같은 조회를 AuthService 에도 두었더니 사본이 둘이었다(#219)
+	// 내 정보 조회의 정본은 ProfileService 다(#219) - 같은 조회를 AuthService 에 두지 않는다
 	private final ProfileService profileService;
 
 	public AuthController(AuthService authService, ProfileService profileService) {

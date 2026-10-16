@@ -13,7 +13,7 @@ import com.ragchatbot.openai.OpenAiService.ChatCompletion;
 import com.ragchatbot.openai.OpenAiService.Stage;
 
 /**
- * Phase 7 : 라이브 스트림 → 진행 단계 매핑을 실 호출 없이 고정함(REQ-CHAT-005).
+ * 라이브 스트림 → 진행 단계 매핑을 실 호출 없이 고정함(REQ-CHAT-005).
  * 캔드 SSE를 파서에 직접 먹임 - OpenAI 호출·Docker 불필요.
  *
  * <p>주의(REQ-RAG-005) : 이 테스트는 <b>매핑 로직</b>만 검증함. 실 API 가 이 순서로 이벤트를 보낸다는 것은

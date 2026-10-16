@@ -43,9 +43,7 @@ public class AdminDocumentService {
 	 * 512MB 잡아 단일 인스턴스가 그대로 멎는다. 사내 규정 문서는 대부분 수 MB다.
 	 * 필요해지면 스트리밍 업로드로 바꾼 뒤 올린다.
 	 *
-	 * <p><b>{@code application.yml} 의 {@code max-file-size} 보다 낮아야 한다.</b> 같거나 높으면
-	 * 멀티파트가 먼저 걷어차 이 검사가 실행되지 않고(도달 불가능한 분기), 사용자는 형식을 밝히는
-	 * 400 대신 413 을 받는다. 이미지 경로가 10MB(코드) &lt; 26MB(멀티파트)로 도는 것과 같은 구조다.
+	 * <p><b>{@code application.yml} 의 {@code max-file-size} 보다 낮아야 한다</b> - 근거는 그쪽 주석(#35).
 	 */
 	private static final long MAX_SIZE = 25 * MB;
 
@@ -169,8 +167,8 @@ public class AdminDocumentService {
 			// 지울 수 없고, 검색에는 잡혀 **삭제한 적 없는 문서가 계속 인용된다.** 고아 회수 스케줄러는
 			// 로컬 첨부만 보므로 기다려도 사라지지 않음(#72)
 			//
-			// deleteDocument 는 던지지 않는다. 스토어 연결 해제가 실패하면 File 을 남기므로(#271)
-			// 스토어 동기화(#193)가 행을 되살려 관리자가 다시 지울 수 있다. file_id 는 경고 로그에도 남긴다
+			// deleteDocument 는 던지지 않는다 - 실패 시 복구 경로는 OpenAiService#deleteDocument 참고.
+			// file_id 는 경고 로그에도 남긴다
 			log.warn("문서 DB 기록 실패 - OpenAI 리소스 회수 시도 file_id={} store={}",
 					uploaded.openaiFileId(), uploaded.vectorStoreId());
 			openAiService.deleteDocument(uploaded.vectorStoreId(), uploaded.openaiFileId());
@@ -187,8 +185,8 @@ public class AdminDocumentService {
 	 * 삭제(소프트). OpenAI 정리가 실패해도 {@code deleted_at} 은 채운다.
 	 *
 	 * <p>실패를 이유로 목록에 남겨두면 관리자가 계속 지우기를 시도하는데, 그 사이 검색에서는
-	 * 이미 빠져 있을 수 있어 상태가 더 헷갈린다. 고아 파일은 경고 로그로 남기고 별도로 정리한다 -
-	 * 첨부 고아 회수와 같은 판단이다.
+	 * 이미 빠져 있을 수 있어 상태가 더 헷갈린다. 정리에 실패한 파일은 스토어 동기화(#193)가 행을 되살려
+	 * 다시 지울 수 있다(#271).
 	 */
 	public void delete(UUID documentId) {
 		RagDocument doc = documentRepository.findAliveById(documentId)
@@ -206,8 +204,8 @@ public class AdminDocumentService {
 			log.warn("rag 문서 {} 가 이미 삭제돼 있었음", documentId);
 		}
 
-		// 이쪽이 실패하면 스토어에 파일이 남아 **삭제한 적 없는 문서가 계속 인용된다.** 연결 해제가
-		// 실패하면 File 을 남기므로(#271) 스토어 동기화(#193)가 행을 되살려 관리자가 다시 지울 수 있다
+		// 이쪽이 실패하면 스토어에 파일이 남아 **삭제한 적 없는 문서가 계속 인용된다** - 복구 경로는
+		// OpenAiService#deleteDocument 참고
 		openAiService.deleteDocument(doc.vectorStoreId(), doc.openaiFileId());
 	}
 
@@ -215,7 +213,7 @@ public class AdminDocumentService {
 	 * 스토어와 동기화(#193). 공용 스토어에 있는데 살아 있는 행이 없는 파일을 행으로 넣는다.
 	 *
 	 * <p>목록은 이 서버 DB 만 읽으므로, 스토어 하나를 DB 여럿이 공유하면 검색에는 잡히는데 목록에는 없는
-	 * 문서가 생긴다(로컬 DB 로 올리고 운영 DB 를 새로 만든 2026-10-06 런칭이 그랬다). 그 어긋남을
+	 * 문서가 생긴다(예 : 로컬 DB 로 올린 뒤 운영 DB 를 새로 만들 때). 그 어긋남을
 	 * 스토어 → DB 한 방향으로만 메운다.
 	 *
 	 * <p><b>OpenAI 를 전부 읽은 뒤에 쓴다.</b> 조회가 도중에 실패하면 예외가 올라와 아무 행도 생기지 않는다 -

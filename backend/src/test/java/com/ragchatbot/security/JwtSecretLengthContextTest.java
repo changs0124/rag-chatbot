@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
  *
  * <p><b>{@link JwtSecretPolicyTest} 와 나눈 이유</b> : 그쪽은 판정 로직을 보고 이쪽은
  * <b>프로퍼티 바인딩</b>을 본다. 생성자 단위 검증만 두면 {@code @Value} 키를 바꾸거나 오타를 내도
- * 초록이 된다 - {@code AppModeGuardTest} 가 2026-07-28 Phase 0 리뷰(M-1)에서 같은 이유로
+ * 초록이 된다 - {@code AppModeGuardTest} 가 같은 이유로
  * {@code ApplicationContextRunner} 로 옮겨 갔고, 이 파일은 그 형태를 따른다.
  *
  * <p>Docker 도 DB 도 필요 없다.

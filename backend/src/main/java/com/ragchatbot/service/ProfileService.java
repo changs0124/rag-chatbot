@@ -48,8 +48,7 @@ public class ProfileService {
 	 * 방금 "변경했습니다"를 본 <b>본인의 다음 요청부터 401</b>이 됨 - 성공이라고 말해 놓고 로그아웃시키는 꼴임.
 	 * 여기서 새로 발급한 토큰만 기준선 이후라 살아남음.
 	 *
-	 * <p>기준선과 새 토큰의 {@code iat}를 <b>같은 시계(앱)</b>로 맞춤. DB의 {@code now()}를 기준선으로 쓰면
-	 * DB 호스트 시계가 앞설 때 새 토큰이 발급 즉시 자기 기준선에 걸림.
+	 * <p>기준선과 새 토큰의 {@code iat}를 <b>같은 시계(앱)</b>로 맞춤 - 이유는 {@code UserRepository#updatePasswordHash}.
 	 */
 	public AuthResponse updatePassword(UUID userId, String currentPassword, String newPassword) {
 		User user = require(userId);
@@ -57,7 +56,7 @@ public class ProfileService {
 			throw new UnauthorizedException("현재 비밀번호가 올바르지 않음");
 		}
 		// 해시를 먼저 만들고 그 뒤에 기준선을 잼 - BCrypt 소요(0.1~0.5초)만큼 기준선이 과거로
-		// 밀리면 그 사이 발급된 옛 토큰의 생존 창이 그만큼 넓어짐(재리뷰 라운드 3 ②)
+		// 밀리면 그 사이 발급된 옛 토큰의 생존 창이 그만큼 넓어짐
 		String hash = passwordEncoder.encode(newPassword);
 		// JWT iat 는 초 단위로 내림되므로 기준선도 초로 자름 - 눈금이 같아야 같은 초 발급분이 살아남음
 		OffsetDateTime changedAt = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);

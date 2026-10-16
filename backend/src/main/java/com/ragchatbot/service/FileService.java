@@ -145,7 +145,7 @@ public class FileService {
 	 * <p>cutoff 가 최소 유예({@value #MIN_ORPHAN_AGE_MINUTES}분)보다 최근이면 그 경계로 되돌림(클램프).
 	 * 첨부는 업로드된 뒤 사용자가 전송 버튼을 누를 때까지 {@code message_id = null} 로 있으므로,
 	 * cutoff 를 현재나 미래로 주면 <b>작성 중인 첨부가 지워짐</b> - 인자 하나로 살아 있는 데이터가
-	 * 사라지는 경로를 남기지 않음(2026-07-28 결정).
+	 * 사라지는 경로를 남기지 않음.
 	 */
 	public int cleanupOrphans(OffsetDateTime cutoff) {
 		OffsetDateTime effective = clampCutoff(cutoff);

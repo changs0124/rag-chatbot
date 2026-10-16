@@ -19,7 +19,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * Phase 2 인증 플로우 (공유 싱글턴 PostgreSQL).
+ * 인증 플로우 (공유 싱글턴 PostgreSQL).
  * 위조 JWT 401 · 미인증 401 · BCrypt 저장(REQ-AUTH-002).
  */
 class AuthFlowTest extends AbstractPgIntegrationTest {
@@ -86,7 +86,7 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 
 	// --- 위조 · 만료 · 서명 불일치 -------------------------------------
 	// 위 forged 테스트는 형식이 깨진 문자열이라 디코딩 단계에서 죽음 - 서명 검증에 도달하지 않아,
-	// verify() 를 decode() 로 바꿔도 초록이었음(2026-07-28 Phase 2 리뷰 H1). 아래 3건이 실제 검증 지점임.
+	// verify() 를 decode() 로 바꿔도 초록임. 아래 3건이 실제 검증 지점임.
 
 	private static final String TEST_SECRET = "test-secret-please-change-0123456789abcdef";
 
@@ -139,7 +139,7 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 				.isEqualTo(HttpStatus.UNAUTHORIZED);
 	}
 
-	// --- 2026-07-28 보안 보강 : 이메일 정규화 · 로그인 상한 · 비밀번호 변경 시 토큰 무효화 ---
+	// --- 보안 보강 : 이메일 정규화 · 로그인 상한 · 비밀번호 변경 시 토큰 무효화 ---
 
 	/** 대문자로 발급해도 저장은 소문자 - 같은 주소가 대소문자만 달라 별개 계정이 되는 것을 막음 */
 	@Test

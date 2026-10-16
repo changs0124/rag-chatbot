@@ -153,7 +153,7 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
   })
 
   it('받은 것이 없이 중단하면 빈 답변 버블을 남기지 않음', async () => {
-    // 남겨 두면 새로고침에 사라짐 - 서버도 부분 텍스트가 비면 저장하지 않음(2026-07-28 정책)
+    // 남겨 두면 새로고침에 사라짐 - 서버도 부분 텍스트가 비면 저장하지 않음
     const stream = openStream()
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', []))
@@ -195,14 +195,12 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
 
   it('내용이 비어도 onDone 이 확정했으면 버블을 지우지 않음', async () => {
     // 빈 버블 제거는 "중단으로 아무것도 못 받은" 경우만을 위한 것임. 정상 완료분은 서버가
-    // 저장했으므로 지우면 새로고침에 되살아나 화면과 재조회가 어긋남(재리뷰 라운드 3 ③)
+    // 저장했으므로 지우면 새로고침에 되살아나 화면과 재조회가 어긋남
     const stream = openStream()
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', []))
 
-    // 토큰이 안 왔으니 서버라면 noSource=true 로 보냈을 상황이다. 다만 위 케이스와 마찬가지로
-    // **이 값이 이 테스트를 가르지는 않는다** - useChat 의 onDone 이 페이로드를 읽지 않는다.
-    // 검증하는 것은 "onDone 이 왔다는 사실" 하나다
+    // noSource 값은 이 테스트를 가르지 않는다(위 케이스 주석) - 검증하는 것은 "onDone 이 왔다는 사실" 하나다
     act(() => void stream.handlers?.onDone?.({ finishReason: 'stop', noSource: true }))
     expect(result.current.messages).toHaveLength(2)
 

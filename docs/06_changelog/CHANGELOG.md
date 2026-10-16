@@ -19,6 +19,18 @@
   - `AbstractPgIntegrationTest` 공통 속성에 `spring.datasource.hikari.maximum-pool-size=4` — 최악 36 연결. 동시성 테스트 포함 294건 통과, 테스트 수 변화 없음
 
 ### Changed
+- **주석을 정리했다 — 틀린 주석 · 정의 없는 태그 · 중복 · 경위 서술(#332).** 2026-10-16 주석 리뷰 C1~C53(C46 은 #331 이 처리).
+  코드 · Flyway SQL 은 한 줄도 바꾸지 않았다 — 주석을 걷은 코드가 base 와 같음을 파일 79개 전부 대조.
+  - 낡음 · 틀림 9건 : 자가 가입 전제(`application.yml` · `AdminRoleSynchronizer`), 「셋 다 남긴다」(static 잡 스텝은 6개),
+    끝난 「재 본 뒤 판단」, 틀린 「첨부 고아 회수와 같은 판단」, 「Phase 5 SSE 연결」, 다이제스트를 올리면 낡는 「고정한 이미지(2026.10.0)」,
+    저장소 밖 원본 자료의 건수(`claims/preprocess.py`) 등
+  - 정의 없는 태그 9건 : 「가이드 N단계」 · 「0-A」 · 「Phase N」 · 「(2026-07-28 결정)」 · 「재리뷰 …」 · 「참조 착지값」 · 「sol 답 30%」 · 「QA E3/D2」(→ #267).
+    완료 기준 grep 을 맞추려고 백엔드 테스트 주석의 같은 태그 25곳도 걷었다(남은 3건은 Flyway SQL 이라 범위 밖)
+  - 중복 18건 + 교차 중복 5그룹 : 정본 한 곳에 두고 나머지는 가리킨다 — #271 복구 규칙은 `OpenAiService#deleteDocument`,
+    timedOut/stopped 는 `Message`, 비밀번호 기준 시각은 `UserRepository#updatePasswordHash`, 풀 크기 = 동시 상한은 `application.yml`,
+    충돌 표시 · 셸 검사 분리 이유는 각 스크립트 머리 주석
+  - 경위 서술 16건 : 「종전에는」 · 날짜 일화 · 실측 과정 · 지시 대상 없는 「이 이슈」를 현재형 「왜」 한두 줄로(`docker-compose.yml` · `ci.yml` · 프론트 8곳 등)
+  - 오늘 merge 분이 새로 더한 경위 서술 5곳(`primaryButton.ts` · `BackLink.tsx` · 테스트 지원 클래스 2 · `AdminPage.test.tsx`)도 같은 기준으로 고쳤다
 - **문서가 코드 · 설정과 다르게 말하던 곳을 고쳤다(#333).** 2026-10-16 문서 리뷰 표 A. 사실 정정만 했고 서술 축약은 #334 다.
   - README : `deps-frontend` 는 Trivy 가 아니라 `npm audit` · ERD 설계서 설명(마이그레이션 이력 절은 없다) · oxlint 1.75(잠금 파일) · `scripts/` 에 클레임 전처리
   - INDEX : backend.md 의 「호스트 선정 근거」(#297 에서 CHANGELOG #243 으로 옮김)

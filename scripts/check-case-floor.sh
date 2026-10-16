@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# 케이스 수 하한 게이트 - 테스트 명령은 케이스가 삭제돼도 통과하므로 수를 따로 잼(가이드 4단계)
+# 케이스 수 하한 게이트 - 테스트 명령은 케이스가 삭제돼도 통과하므로 수를 따로 잼
 # 사용 : check-case-floor.sh backend | frontend
 #
-# 주의(로컬) : **반드시 clean 후 측정할 것**. surefire 리포트는 지운 테스트 클래스의 XML이
-# target/ 에 그대로 남아, 개명·삭제한 클래스가 계속 계수됨. 2026-07-28에 실제로 이 때문에
-# 로컬 실측이 6건 부풀려져 하한을 잘못 올렸고 원격 CI(클린 체크아웃)가 잡아냄
+# 주의(로컬) : **반드시 clean 후 측정할 것** - surefire 는 지운 테스트 클래스의 XML 을 target/ 에 남겨
+# 개명·삭제한 클래스가 계속 계수된다. 원격 CI 는 클린 체크아웃이라 이 문제가 없다
 #
 # 프론트도 같음, 그리고 더 위험함 : 이 스크립트는 frontend/vitest-report.json 을 읽기만 하고
 # 직접 만들지 않음. 그냥 `vitest run` 을 돌리면 리포트가 갱신되지 않아 **이전 실행의 수가 그대로
@@ -32,7 +31,7 @@ count_backend() {
   local suites
   # 속성이 줄바꿈으로 접히는 경우가 있어 개행을 지우고 태그 단위로 뽑음
   suites="$(cat "$dir"/TEST-*.xml 2>/dev/null | tr '\n' ' ' | grep -o '<testsuite [^>]*>' || true)"
-  # 대상을 실제로 수집했는지 먼저 단언함 - 빈 목록을 돌며 조용히 통과하는 형태를 막음(가이드 6단계 경고)
+  # 대상을 실제로 수집했는지 먼저 단언함 - 빈 목록을 돌며 조용히 통과하는 형태를 막음
   [ -n "$suites" ] || { echo "수집 실패 : surefire XML에서 testsuite를 한 건도 못 찾음" >&2; exit 1; }
 
   printf '%s\n' "$suites" | awk '

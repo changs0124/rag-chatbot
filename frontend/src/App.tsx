@@ -25,7 +25,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      {/* 관리자가 아니면 AdminPage 가 스스로 `/` 로 되돌린다. 서버는 404 로 막는다 */}
+      {/* 관리자가 아니면 AdminPage 가 스스로 `/` 로 되돌린다 */}
       <Route
         path="/admin"
         element={

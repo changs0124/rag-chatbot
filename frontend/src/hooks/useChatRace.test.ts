@@ -119,9 +119,7 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
   /**
    * 생성 왕복 중 두 번째 전송이 막힌다.
    *
-   * `streaming` 은 스트림이 열려야 참이 되므로 이 구간에서는 아직 false 다. 막지 않으면 대화가
-   * 둘 만들어지고, 두 번째 컨트롤러가 `abortRef` 를 덮어쓴 뒤 첫 번째의 `finally` 가 그것을
-   * null 로 지워 **정지 버튼이 무력화된다.**
+   * 막지 않으면 대화가 둘 만들어지고 정지 버튼이 무력화된다 - 이유는 useChat.ts send 의 같은 자리 주석.
    */
   it('생성 왕복 중 다시 보내도 대화를 두 번 만들지 않는다', async () => {
     const created = deferred<Conversation>()
@@ -206,8 +204,8 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
   /**
    * #77 - 삭제 실패가 화면에 드러난다.
    *
-   * 종전에는 catch 가 없어 확인 모달은 닫히고 목록에는 대화가 그대로 남는데 **아무 표시가 없었다.**
-   * 사용자는 「삭제를 눌렀는데 그대로다」만 보고 콘솔에는 unhandled rejection 만 남았다.
+   * 확인 모달이 먼저 닫히므로, 실패를 표시하지 않으면 사용자는 「삭제를 눌렀는데 그대로다」만 보고
+   * 콘솔에는 unhandled rejection 만 남는다.
    */
   it('삭제가 실패하면 오류가 뜨고 목록도 그대로다', async () => {
     vi.mocked(deleteConversation).mockRejectedValue(new Error('network'))

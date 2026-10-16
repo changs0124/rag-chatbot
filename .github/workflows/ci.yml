@@ -28,14 +28,8 @@ permissions:
 
 # 연속 푸시 시 이전 run 을 취소함 - 잡 전체가 밀린 커밋마다 겹쳐 도는 것을 막음.
 #
-# **그룹 키에 event_name 을 넣는다(#129).** 넣지 않으면 `github.ref` 가 세 경우 모두
-# `refs/heads/main` 이라 **push · schedule · workflow_dispatch 가 한 그룹에 묶인다.**
-# `cancel-in-progress: true` 와 만나면 이렇게 된다 :
-#   - 주간 보안 스캔(gitleaks 전체 이력 · Trivy)이 도는 중에 main 푸시가 하나 들어오면
-#     **스캔이 조용히 취소되고 다음 주까지 재시도가 없다.** 아무도 알아채지 못한다
-#   - 반대로 cron 이 뜨면 진행 중이던 푸시 CI 가 죽는다. 이쪽도 재실행해 주는 사람이 없다
-#   - "급하면 workflow_dispatch 로 즉시" 라는 탈출구가 바로 이 충돌에 제일 잘 걸린다
-# 이벤트별로 레인을 나누면 연속 푸시 취소라는 원래 의도는 그대로 두면서 이 사고만 없앤다.
+# **그룹 키에 event_name 을 넣는다(#129)** - 없으면 `github.ref` 가 셋 다 `refs/heads/main` 이라 push · schedule ·
+# workflow_dispatch 가 한 그룹이 되고, 주간 보안 스캔이 main 푸시에 조용히 취소되거나(재시도 없음) 그 반대가 된다.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
@@ -48,7 +42,6 @@ env:
 jobs:
   backend:
     name: backend (test + build + 케이스 수 하한)
-    # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
@@ -73,7 +66,6 @@ jobs:
 
   frontend:
     name: frontend (lint + test + build + 케이스 수 하한)
-    # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     defaults:
@@ -103,7 +95,6 @@ jobs:
 
   docker:
     name: docker (백엔드 이미지 빌드)
-    # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
@@ -113,21 +104,17 @@ jobs:
         # 정작 배포하는 날이 아니라 여기서 먼저 드러남
         run: docker build -t rag-chatbot-backend:ci backend
 
-  # **무거운 잡(backend, 100초 → 2분)에 끼워 넣으면 공짜였는데도 따로 두는 이유**는 실패 신호가
-  # 섞이기 때문이다. `mvnw verify` 가 죽으면 그 뒤 문서 검사는 아예 돌지 않아, 「테스트도 깨지고
-  # 문서도 깨졌다」와 「테스트만 깨졌다」가 구분되지 않는다. 지금은 잡 이름만 보고 안다.
+  # **backend 잡에 끼우지 않는 이유** : `mvnw verify` 가 죽으면 그 뒤 문서 검사는 돌지 않아, 「테스트만 깨짐」과
+  # 「둘 다 깨짐」이 구분되지 않는다. 따로 두면 잡 이름만 보고 안다.
   #
-  # **스텝은 합치지 않고 셋 다 남긴다.** 어느 검사가 깨졌는지는 스텝 이름으로 드러나야 한다.
+  # **스텝은 합치지 않는다** - 어느 검사가 깨졌는지 스텝 이름으로 드러나야 한다.
   static:
     name: static (셸 구문·분석 · 계약 · 문서 참조 · 섹션 이름)
-    # 변경마다 도는 잡이다. 주간 스케줄에서는 뺀다 - 코드가 그대로인데 다시 돌 이유가 없다
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # **제일 먼저 본다(#136).** 아래 검사들이 전부 셸 스크립트라, 그중 하나에 구문 오류가
-      # 있으면 그 검사만 죽고 나머지는 통과해 **부분적인 초록불**이 나온다. 종전에는 셸을
-      # 보는 게이트가 아예 없어 `deploy.sh` 를 고쳐도 어떤 잡도 그 파일을 읽지 않았다
+      # **제일 먼저 본다(#136)** - 이유는 scripts/check-all.sh 의 같은 자리 주석
       - name: 셸 구문 검사
         run: bash scripts/check-shell-syntax.sh
       # **러너에 shellcheck 가 기본 설치돼 있다** - 설치 스텝이 필요 없다(#145).
@@ -137,20 +124,18 @@ jobs:
         run: bash scripts/check-shell-lint.sh
       - name: DTO · resultMap · 프론트 타입의 필드 대조
         run: bash scripts/check-response-contract.sh
-      # 줄 맨 앞의 `<<<<<<< ` · `>>>>>>> ` 를 저장소 전체에서 찾는다(#210). overview.md 에 충돌 표시가
-      # 3주 동안 커밋돼 있었는데 이 잡의 다른 검사는 전부 통과했다
+      # 줄 맨 앞의 충돌 표시를 저장소 전체에서 찾는다 - 이유는 check-merge-markers.sh 머리 주석(#210)
       - name: 병합 충돌 표시
         run: bash scripts/check-merge-markers.sh
       - name: 문서 참조 실재 + 위키링크 검사
         run: bash scripts/check-doc-refs.sh
-      # 경로가 아니라 **섹션 이름**을 본다. 위 검사는 파일이 있으면 통과하므로 없는 섹션을 가리켜도
-      # 초록이었다(#28 에서 실제로 통과했다). grep 기반이라 이 잡의 JDK·Node 없는 환경에서도 돈다
+      # 경로가 아니라 **섹션 이름**을 본다 - 위 검사는 파일이 있으면 통과하므로 없는 섹션을 가리켜도 초록이다(#28).
+      # grep 기반이라 JDK·Node 없는 이 잡에서도 돈다
       - name: 문서 섹션 이름 대조
         run: bash scripts/check-doc-sections.sh
 
   secrets:
     name: secrets (시크릿 스캔)
-    # 변경마다 + 주 1회(#135) - 주간 실행은 바깥(취약점 DB · 전체 이력)이 바뀐 것을 잡는다.
     # 공개 저장소라 시크릿은 한 번 들어오면 회수할 수 없어 merge 전에 돈다.
     # force-push 시 cancel-in-progress 가 스캔을 끊어도 새 푸시가 다시 돌리므로 실해는 없다.
     runs-on: ubuntu-latest
@@ -171,7 +156,6 @@ jobs:
 
   deps-backend:
     name: deps (백엔드 의존성 취약점)
-    # 변경마다 + 주 1회(#135) - 주간 실행은 바깥(취약점 DB · 전체 이력)이 바뀐 것을 잡는다.
     # 의존성을 바꾸는 것은 우리 커밋이라 변경마다 돈다.
     runs-on: ubuntu-latest
     steps:
@@ -190,7 +174,6 @@ jobs:
 
   deps-frontend:
     name: deps (프론트 의존성 취약점)
-    # 변경마다 + 주 1회(#135) - 주간 실행은 바깥(취약점 DB · 전체 이력)이 바뀐 것을 잡는다.
     # 의존성을 바꾸는 것은 우리 커밋이라 변경마다 돈다.
     runs-on: ubuntu-latest
     defaults:

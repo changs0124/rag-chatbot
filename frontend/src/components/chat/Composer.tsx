@@ -269,7 +269,7 @@ export default function Composer({
             rows={1}
             placeholder="메시지를 입력하세요"
             // 한 줄 높이를 버튼과 정확히 맞춤 : 24 + 20 = 44(모바일 h-11), 24 + 16 = 40(md h-10).
-            // leading-relaxed(24.375) 였을 때는 md 에서 버튼이 2.2px 아래로 처졌다(#218).
+            // leading-relaxed(24.375)면 md 에서 버튼이 2.2px 아래로 처진다(#218).
             // 모바일 글자는 16px - iOS 는 16px 미만 입력에 포커스하면 화면을 확대해 버린다(#221)
             className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2.5 text-base leading-6 text-ink md:py-2 md:text-[15px] outline-none placeholder:text-ink-muted"
           />
@@ -344,7 +344,7 @@ function DraftCard({
   onRetry: () => void
 }) {
   // 브라우저가 그리지 못하는 형식(데스크톱의 HEIC 등)은 깨진 아이콘과 alt 글자가 오류 막 밑으로 비친다(#317) -
-  // 이미지를 빼고 카드 바탕만 남긴다. 파일명은 버튼의 aria-label 로 남는다
+  // 이미지를 빼고 카드 바탕만 남긴다
   const [unrenderable, setUnrenderable] = useState(false)
   return (
     <div className="relative">

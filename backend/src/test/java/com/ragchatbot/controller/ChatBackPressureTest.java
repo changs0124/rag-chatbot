@@ -14,7 +14,7 @@ import org.springframework.test.context.TestPropertySource;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * back-pressure 거절이 <b>{@code prepare} 앞</b>에서 일어나는지 잼(2026-07-28 결정).
+ * back-pressure 거절이 <b>{@code prepare} 앞</b>에서 일어나는지 잼.
  *
  * <p>{@code prepare} 는 사용자 메시지를 저장하므로, 거절이 그 뒤로 밀리면 <b>답변 없는 사용자
  * 메시지</b>가 대화에 남음. 순서를 바꾸면 이 테스트가 빨간불이 됨.

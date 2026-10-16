@@ -33,7 +33,7 @@ import com.ragchatbot.openai.OpenAiService.Turn;
 import com.ragchatbot.dto.ChatDtos.ChatRequest;
 
 /**
- * 채팅 오케스트레이션(Phase 5, SSE).
+ * 채팅 오케스트레이션(SSE).
  * prepare(동기) : 소유권/검증 + 사용자 메시지 저장 → 400/404를 정상 HTTP로 반환.
  * stream(비동기) : OpenAI 토큰을 SSE(meta→stage*→token*→citations→done)로 흘림.
  * 스트리밍 이후 영속화는 ChatPersistenceService에 위임(원자적 저장, 스트리밍 구간 비트랜잭션).
@@ -196,8 +196,7 @@ public class ChatService {
 		// 여기서 하는 일은 **무슨 일이 일어났는지 기록에 남기는 것** 하나뿐이다
 		AtomicBoolean timedOut = new AtomicBoolean(false);
 		emitter.onTimeout(() -> timedOut.set(true));
-		// **catch 에서도 봐야 함**(#97). 스트림이 완주한 뒤 저장이 실패하면 인용과 사용량이 이미
-		// 손에 있는데, 여기 없으면 재시도가 그것을 버리고 빈 값으로 덮어쓴다
+		// catch 에서도 씀 - savePartial 의 completion 주석 참고(#97)
 		ChatCompletion completion = null;
 		try {
 			sendQuietly(emitter, "meta",
@@ -223,8 +222,7 @@ public class ChatService {
 					}, onStage);
 
 			// 어시스턴트 메시지 + 출처를 하나의 트랜잭션으로 저장(REQ-RAG-002)
-			// timedOut 이 참일 수 있음 - 워커가 대기 중 emitter 가 닫혔고 업스트림이 뒤늦게 응답한
-			// 갈래 ②임. 텍스트는 전문이므로 stopped 는 false 지만, 화면은 끊긴 채라 그 사실을 남김
+			// timedOut 이 참일 수 있음 - 타임아웃 뒤 업스트림이 뒤늦게 응답한 갈래(Message 머리 주석)
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, completion.fullText(),
 					"complete", false, timedOut.get(), completion.citations(), completion.inputTokens(),
 					completion.outputTokens());
@@ -239,8 +237,8 @@ public class ChatService {
 			sendQuietly(emitter, "done", Map.of("finishReason", "stop", "noSource", completion.noSource()));
 			completeQuietly(emitter);
 		} catch (ClientGoneException gone) {
-			// REQ-CHAT-006 : 사용자가 정지했거나 연결이 끊긴 경우임. **실패가 아니므로** 받은 데까지 complete 로 저장함
-			// (2026-07-28 결정 - 서버는 error, 프론트는 complete 로 서로 다르게 처리하던 것을 프론트 쪽으로 통일).
+			// REQ-CHAT-006 : 사용자가 정지했거나 연결이 끊긴 경우임. **실패가 아니므로** 받은 데까지 complete 로 저장함 -
+			// 화면도 complete 로 다루므로 재조회와 어긋나지 않음.
 			// 부분 텍스트가 비면 저장하지 않음 - 빈 답변 버블을 남기면 화면(버블 제거)과 재조회가 어긋남.
 			// stopped=true 로 남겨야 무자료 배너가 붙지 않음 - 인용은 스트림 끝에 오므로 여기서는 늘 0건임
 			if (!saved) {
@@ -250,13 +248,10 @@ public class ChatService {
 		} catch (Exception ex) {
 			// 진짜 오류 - 부분 텍스트를 error 상태로 저장(질문만 남고 답변 소실 방지).
 			//
-			// **completion 이 있으면 그것을 그대로 넘긴다**(#97). 스트림이 완주한 뒤 저장이 실패한
-			// 경로가 여기로 오는데(saveAssistant 가 던짐), 그 시점에는 인용과 사용량을 **이미 알고
-			// 있다** - 빈 값으로 덮으면 「모르면 null」(FEAT-OPS-001)과 달리 아는 값을 버린다.
-			// 중단 경로는 정말로 모르므로 null 이 맞다.
+			// 완주 후 저장 실패(saveAssistant 가 던짐)면 completion 을 그대로 넘긴다(#97) - savePartial 주석
 			//
 			// status 는 error 로 둔다. 저장이 실제로 한 번 실패했고, 화면에도 error 이벤트가 나가므로
-			// complete 로 두면 화면(오류)과 재조회(정상)가 갈린다 - 이 저장소가 반복해 고쳐 온 모양이다
+			// complete 로 두면 화면(오류)과 재조회(정상)가 갈린다
 			if (!saved) {
 				savePartial(prepared, userId, asstMsgId, buffer.toString(), "error", false, timedOut.get(),
 						completion);
@@ -279,7 +274,6 @@ public class ChatService {
 			return;
 		}
 		try {
-			// 모르면 null - 추정하지 않음(FEAT-OPS-001). 아는 경우에만 completion 이 넘어옴
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, text, status, stopped,
 					timedOut,
 					completion == null ? List.of() : completion.citations(),

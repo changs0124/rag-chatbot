@@ -16,7 +16,6 @@ WORKDIR /build
 # 의존성 레이어를 먼저 굳힘 - 소스만 바뀌면 이 레이어가 캐시에서 재사용됨
 COPY pom.xml ./
 # 의존성 해석은 여전히 Central 을 탄다 - 없앤 것은 배포판 다운로드 한 홉이다. 그쪽은 재시도로 덮는다.
-# 몇 초짜리 흔들림에 모든 PR 이 막히는 것이 이 이슈의 증상이었다
 RUN mvn -B -q dependency:go-offline || (sleep 15 && mvn -B -q dependency:go-offline) || (sleep 45 && mvn -B -q dependency:go-offline)
 
 COPY src/ src/

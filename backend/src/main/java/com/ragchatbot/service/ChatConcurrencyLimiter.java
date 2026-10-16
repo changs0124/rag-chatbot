@@ -12,13 +12,13 @@ import com.ragchatbot.exception.ApiExceptions.RateLimitException;
 /**
  * 동시 스트림 상한(back-pressure). 레이트리밋이 <b>분당 횟수</b>를 재는 것과 달리 여기서는
  * <b>지금 열려 있는 스트림 수</b>를 잼 - 서로 다른 사용자가 한 번씩만 보내도 풀은 포화되므로
- * 횟수 상한만으로는 막히지 않음(2026-07-28 결정).
+ * 횟수 상한만으로는 막히지 않음.
  *
  * <p><b>거절은 {@code prepare} 앞에서 해야 함.</b> {@code prepare} 가 사용자 메시지를 이미 저장하므로,
  * 뒤에서 거절하면 답변 없는 사용자 메시지가 대화에 남음.
  *
- * <p>전역 상한은 {@code chatExecutor} 풀 크기와 <b>같은 프로퍼티를 씀</b>({@code ChatExecutorConfig}).
- * 둘이 갈리면 상한이 풀보다 커져 큐가 다시 쌓이므로 값의 정본을 하나로 둔 것임.
+ * <p>전역 상한은 {@code chatExecutor} 풀 크기와 <b>같은 프로퍼티를 씀</b> - 이유는 application.yml 의
+ * {@code app.chat.max-concurrent-streams} 주석.
  *
  * <p>맵 전체를 {@code synchronized} 로 감쌈 - 규모가 단일 인스턴스라 경합이 없고, 레이트리밋에서
  * 겪은 <b>락 밖 읽기의 가시성 문제와 check-then-act 경합</b>을 구조적으로 만들지 않으려는 것임.

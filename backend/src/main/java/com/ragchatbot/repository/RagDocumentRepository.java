@@ -38,7 +38,7 @@ public interface RagDocumentRepository {
 	 */
 	List<DocumentResponse> listAlive();
 
-	/** {@link #listAlive} 의 한 행. 업로드 직후 응답용 - 목록 전체를 읽어 거르지 않게 함 */
+	/** {@link #listAlive} 의 한 행. 업로드 직후 응답용 - 목록 전체를 읽어 거르지 않게 함(#300) */
 	Optional<DocumentResponse> findSummaryById(UUID id);
 
 	/** 아직 인덱싱 중인 살아 있는 문서. 이 행만 OpenAI 에 상태를 다시 물음(완료·실패는 더 바뀌지 않음) */

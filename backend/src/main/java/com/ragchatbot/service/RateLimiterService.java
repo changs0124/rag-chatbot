@@ -61,7 +61,7 @@ public class RateLimiterService {
 	}
 
 	/**
-	 * 첨부 업로드 상한(#95). 종전에는 어느 축에도 걸리지 않았음.
+	 * 첨부 업로드 상한(#95).
 	 *
 	 * <p>{@code MultipartFile.getBytes()} 가 파일 전체를 힙에 올리므로, 26MB 요청을 병렬로 퍼부으면
 	 * Tomcat 기본 200 스레드 × 26MB ≈ 5GB 로 <b>단일 인스턴스가 OOM</b> 된다. 고아 회수는 매시 정각이고

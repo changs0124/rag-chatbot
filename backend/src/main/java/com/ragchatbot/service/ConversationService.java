@@ -104,7 +104,7 @@ public class ConversationService {
 	 *
 	 * <p><b>주의</b> - DB 가 먼저 지워지므로 그 뒤 파일 삭제가 실패하면 <b>대응하는 행이 이미 없어
 	 * 행 기준 회수({@link FileService#cleanupOrphans})가 찾지 못함</b>. {@code findOrphans} 는
-	 * {@code attachments} 행을 기준으로 도는데 cascade 로 그 행이 사라졌기 때문임(재리뷰 지적 3).
+	 * {@code attachments} 행을 기준으로 도는데 cascade 로 그 행이 사라졌기 때문임.
 	 *
 	 * <p><b>그 잔류는 저장소 스캔 패스가 지움</b> - {@link FileService#cleanupUnreferencedFiles} 가
 	 * 파일 쪽에서 돌며 <i>가리키는 행이 없는</i> 것을 회수하고, {@code OrphanCleanupScheduler} 가 매시
@@ -129,8 +129,6 @@ public class ConversationService {
 			try {
 				fileStorage.delete(path);
 			} catch (RuntimeException e) {
-				// "영구 잔류" 라고 적지 않음 - 저장소 스캔 패스(cleanupUnreferencedFiles)가 매시 정각에
-				// 회수함. 손실로 읽히면 운영자가 없는 사고를 쫓게 됨
 				log.warn("대화 삭제 후 첨부 파일 정리 실패 - 행이 없어 행 기준 회수는 못 보지만 "
 						+ "저장소 스캔 회수가 다음 주기에 지움. path={}", path, e);
 			}
