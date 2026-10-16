@@ -11,6 +11,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -96,6 +98,27 @@ class AttachmentLinkRaceTest {
 
 		verify(storage).delete(next.storagePath());
 		assertThat(removed).isEqualTo(2); // 행은 둘 다 지워졌다
+	}
+
+	/**
+	 * 저장소 스캔 회수도 파일 하나를 못 지웠다고 루프째 멈추지 않는다(#367). 못 지운 파일은 그대로 남아
+	 * 다음 주기에 다시 대상이 되므로 회수 수에는 넣지 않는다.
+	 */
+	@Test
+	void unreferenced_cleanup_continues_when_a_file_delete_fails() {
+		var storage = mock(FileStorage.class);
+		var repo = mock(AttachmentRepository.class);
+		Instant old = Instant.now().minus(Duration.ofHours(2));
+		var broken = new FileStorage.StoredFile("u/broken.png", old);
+		var next = new FileStorage.StoredFile("u/next.png", old);
+		when(repo.findAllStoragePaths()).thenReturn(List.of());
+		when(storage.listAll()).thenReturn(List.of(broken, next));
+		doThrow(new IllegalStateException("디스크 오류")).when(storage).delete(broken.storagePath());
+
+		int removed = new FileService(storage, repo, null).cleanupUnreferencedFiles(OffsetDateTime.now());
+
+		verify(storage).delete(next.storagePath());
+		assertThat(removed).isEqualTo(1);
 	}
 
 	/**
