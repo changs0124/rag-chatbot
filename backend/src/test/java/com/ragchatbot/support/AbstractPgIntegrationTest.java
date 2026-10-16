@@ -47,7 +47,10 @@ import com.ragchatbot.repository.UserRepository;
 		// 그냥 두면 테스트 중 매시 정각에 실제로 발화함 - 회수 대상은 DB 행과 **공유 저장소 디렉터리**라,
 		// 정각을 넘겨 도는 회차에서만 FileFlowTest 의 늙힌 파일(2시간 전)을 스케줄러가 먼저 지우거나
 		// Files.walk 가 동시 삭제와 겹쳐 터졌음. 스케줄러 자체 검증은 OrphanCleanupSchedulerTest 가 함
-		"app.file.orphan-cleanup-cron=-" })
+		"app.file.orphan-cleanup-cron=-",
+		// 설정이 다른 컨텍스트는 캐시에 남고 컨텍스트마다 풀이 연결을 붙잡는다. 기본 10 이면 컨텍스트 9개로
+		// 공유 컨테이너 상한(97)에 닿아 순서에 따라 무관한 클래스가 「too many clients」로 기동에 실패했다(#343)
+		"spring.datasource.hikari.maximum-pool-size=4" })
 public abstract class AbstractPgIntegrationTest {
 
 	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:16-alpine");
