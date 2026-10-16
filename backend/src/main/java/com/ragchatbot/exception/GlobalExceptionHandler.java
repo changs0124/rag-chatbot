@@ -120,7 +120,7 @@ public class GlobalExceptionHandler {
 	 * 업로드 요청의 형식이 틀림 - 멀티파트인데 {@code file} 파트가 없거나, 멀티파트가 아님.
 	 *
 	 * <p>화면은 늘 파일을 실어 보내므로 API 를 직접 칠 때만 밟는다. 핸들러가 없던 동안에는 폴백이
-	 * 받아 500 이었다(#217, TC-OPS-022~023).
+	 * 받아 500 이었다(#217, TC-OPS-030~031).
 	 *
 	 * <p><b>용량 초과(413)는 여기 오지 않는다.</b> {@code MaxUploadSizeExceededException} 도
 	 * {@code MultipartException} 의 하위지만 스프링이 더 구체적인 {@link #handleTooLarge} 를 고른다.

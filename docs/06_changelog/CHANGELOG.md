@@ -19,6 +19,20 @@
   - `AbstractPgIntegrationTest` 공통 속성에 `spring.datasource.hikari.maximum-pool-size=4` — 최악 36 연결. 동시성 테스트 포함 294건 통과, 테스트 수 변화 없음
 
 ### Changed
+- **`GlobalExceptionFallbackTest` 의 TC-OPS-020~023 을 028~031 로 옮겼다(#351).** 같은 번호가 JWT 슬라이딩 재발급 테스트(FEAT-OPS-003, 020~024)에도 쓰여
+  `backend.md` 의 「TC-OPS-014~023 이 잠근다」가 어느 쪽인지 모호했다(#326 리뷰). 먼저 있던 슬라이딩 쪽은 그대로 두고 나중에 붙은 폴백 4건만 옮겼다(변경 전 최고 번호 027).
+  javadoc · 주석의 ID 만 바뀌고 동작 · 테스트 수(297)는 그대로다. 과거 항목의 옛 번호는 이력이라 고치지 않는다
+  - 대응표
+
+    | 테스트 | 이전 | 이후 |
+    |---|---|---|
+    | 미지원 메서드 405 + `Allow` | TC-OPS-020 | TC-OPS-028 |
+    | 미지원 미디어 타입 415 | TC-OPS-021 | TC-OPS-029 |
+    | 멀티파트 `file` 파트 없음 400 | TC-OPS-022 | TC-OPS-030 |
+    | 멀티파트 아님 400 | TC-OPS-023 | TC-OPS-031 |
+
+  - 참조 : `GlobalExceptionHandler` 업로드 형식 핸들러 javadoc(022~023 → 030~031), `backend.md` 「014~023」 → 「014~019 · 028~031」. 이전 번호 이력(#217: 022~023)은 위 표로 읽는다
+
 - **#297 이후 다시 쌓인 경위 서술 · 중복을 정본 하나로 줄였다(#334).** 2026-10-16 문서 리뷰 표 B 41건(README 표를 줄이는 R7~R9 제외).
   문서 13개를 고쳐 320줄이 줄었다(6497 → 6177, CHANGELOG 제외). 지운 문장이 담던 결정 · 현재 값은 각 항목의 정본(스크립트 · compose · Dockerfile 머리 주석,
   README, features, erd 「messages」, overview 「알려진 제약」, 이 CHANGELOG)에 남아 있다.
