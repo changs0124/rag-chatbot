@@ -294,6 +294,18 @@ describe('MessageList', () => {
       expect(screen.getByText('뒤 글')).toBeInTheDocument()
     })
 
+    // 이미지를 지우면서 alt 문구까지 사라졌고, 이미지를 감싼 링크는 글자 없는 빈 링크로 남았다(#365)
+    it('마크다운 이미지 자리에 alt 문구를 남기고 이미지 링크도 글자를 갖는다', () => {
+      const { container } = render(
+        <MessageList
+          messages={[msg('assistant', '앞 ![결선도 요약](https://e.example/a.png) 뒤\n\n[![배지](https://e.example/b.png)](https://e.example/x)')]}
+        />,
+      )
+      expect(container.querySelector('img')).toBeNull()
+      expect(screen.getByText(/결선도 요약/)).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: '배지' })).toHaveAttribute('href', 'https://e.example/x')
+    })
+
     it('그림 표식 앞뒤의 마크다운과 그림이 함께 나온다', async () => {
       vi.stubGlobal('fetch', vi.fn(async () => new Response(new Blob(['png']), { status: 200 })))
       vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:fig' })

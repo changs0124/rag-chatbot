@@ -102,8 +102,10 @@ public class ChatService {
 		messageRepository.insert(new Message(userMsgId, conversation.id(), "user", message, "complete", false,
 				false, null, null, null));
 		// 위의 확인 뒤에 다른 전송이 먼저 실었거나 고아 회수가 지웠으면 0행이다 - 그대로 가면 남의 메시지에
-		// 실린 첨부나 곧 지워질 파일을 들고 답을 만든다(#359). 던지면 트랜잭션이 사용자 메시지까지 되돌린다
-		for (UUID attId : distinctIds) {
+		// 실린 첨부나 곧 지워질 파일을 들고 답을 만든다(#359). 던지면 트랜잭션이 사용자 메시지까지 되돌린다.
+		// **id 순으로 연결한다(#365)** - 같은 첨부 둘을 반대 순서로 동시에 보내면 행 잠금 순서가 엇갈려 데드락(500)이 난다.
+		// 모델에 보내는 순서(refs)는 사용자가 붙인 순서 그대로 둔다
+		for (UUID attId : distinctIds.stream().sorted().toList()) {
 			if (attachmentRepository.linkToMessage(attId, userMsgId, userId) == 0) {
 				throw new BadRequestException("첨부를 쓸 수 없음 - 이미 보냈거나 정리됨");
 			}
