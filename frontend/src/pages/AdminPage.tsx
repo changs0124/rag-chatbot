@@ -105,7 +105,8 @@ export default function AdminPage() {
     if (isAdmin) void refresh()
   }, [isAdmin, refresh])
 
-  // 폴링이 지켜보는 것은 인덱싱 상태뿐이다 - 사용자 목록은 첫 로드와 변경 뒤에만 다시 읽는다(#330)
+  // 폴링이 지켜보는 것은 인덱싱 상태뿐이다 - 사용자 목록은 첫 로드와 변경 뒤에만 다시 읽는다(#330).
+  // 그래서 사용자 목록 로드가 실패한 뒤 문서 폴링이 성공하면 배너는 지워지고 사용자 목록은 옛 값으로 남는다 - 받아들인 대가
   const pollDocuments = useCallback(async () => {
     try {
       setDocuments(await listDocuments())
