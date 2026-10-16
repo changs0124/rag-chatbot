@@ -456,8 +456,11 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 **CI 는 이미지를 만들지 않는다.** `docker` 잡은 종전대로 **빌드만 하고 버린다** — 배포 산출물이
 조용히 썩는 것을 막는 검증이다. 배포본을 만드는 것은 `scripts/deploy.sh` 뿐이다.
 
-**감수하는 약점** : 레지스트리에 이미지 이력이 남지 않는다. `deploy.sh` 는 load 직전 이전 이미지를
+**감수하는 약점** : 레지스트리에 이미지 이력이 남지 않는다. `deploy.sh` 는 load 직전 마지막 정상 이미지를
 `rag-chatbot-backend:previous` 로 태그해 두고, **헬스체크가 실패하면** 그 태그로 되돌리는 명령을 출력한다.
+태그 원본은 `latest` 가 아니다(#350) — healthy 로 실행 중인 app 의 이미지, 없으면 지난 실패 배포가 남긴 `:previous` 를 그대로,
+그것도 없으면(첫 배포 등) `latest` 를 쓰고 그 사실을 찍는다. 그래서 load 뒤에서 실패한 배포를 몇 번 다시 돌려도
+한 번도 정상 실행되지 않은 이미지가 `:previous` 를 덮지 않는다(순서의 근거는 `deploy.sh` 4단계 주석).
 **헬스체크가 통과하면 `:previous` 를 지운다** — 성공한 배포 뒤에 되돌리려면 배포 전에 손으로 남긴 태그
 (예 : `sudo docker tag rag-chatbot-backend:latest rag-chatbot-backend:prev-<sha>`)가 있어야 하고,
 없으면 **그 커밋을 다시 빌드해야 한다.**
@@ -493,7 +496,7 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build d
 **서버의 `.env` 권한은 `deploy.sh` 가 600 으로 고정한다(#130).** 이 파일들에는 `JWT_SECRET` ·
 `OPENAI_API_KEY` · `DB_PASSWORD` 가 평문으로 있고, 기본 umask 로 만들면 644 가 되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
 프리플라이트에서 확인하고 고치며, 무엇을 바꿨는지 출력한다. **파일이 없으면 빌드 전에 exit 3 으로 멈춘다(#331)** —
-경고만 하고 넘어가면 빌드 · 전송 뒤 `compose up` 에서야 죽고, `.env` 를 고쳐 재실행하면 한 번도 돌지 않은 이미지가 `:previous` 를 덮는다.
+경고만 하고 넘어가면 빌드 · 전송을 다 끝낸 뒤 `compose up` 에서야 죽는다.
 
 **장애 대응 중 `docker inspect` 출력을 그대로 공유하지 말 것(#130).** `env_file` 과
 `environment:` 로 넘어간 값은 `/var/lib/docker/containers/<id>/config.v2.json` 에 평문으로 굳어

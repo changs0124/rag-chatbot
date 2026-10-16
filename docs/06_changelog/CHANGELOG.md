@@ -5,6 +5,13 @@
 ## [Unreleased]
 
 ### Fixed
+- **배포가 load 뒤에서 실패한 다음 다시 돌리면 한 번도 정상 실행되지 않은 이미지가 `:previous` 를 덮던 것을 고쳤다(#350).**
+  `deploy.sh` 는 load 직전 `latest` 를 그대로 `:previous` 로 태그했다. compose 오류 · 기동 실패 · 헬스 실패 뒤에는 `latest` 가 실패한 새 이미지라,
+  재실행이 유일한 롤백 자산을 지웠다(#331 은 `.env` 누락 경로만 막았다). 가짜 ssh · docker 모의로 재현(서버 접속 없음)
+  - 태그 원본 순서 : healthy 로 실행 중인 app 의 이미지 → 없으면 지난 실패 배포가 남긴 `:previous` 유지 → 그것도 없으면 `latest`(한 줄 출력).
+    이슈가 적은 「실행 중 이미지, 없으면 `latest`」만으로는 헬스 실패 재실행(새 app 이 죽거나 unhealthy 로 남음)을 못 막아 healthy 조건과 유지 단계를 더했다
+  - 헬스 실패 안내 문구 「이전 이미지」 → 「마지막 정상 이미지」, `backend.md` 「배포」 · `env_perms` 주석의 덮어씀 서술을 새 동작에 맞췄다
+  - 모의 7개 시나리오(헬스 실패 2종 · compose 오류 · 복구 뒤 재실패 · 정상 · `latest` 불일치 · 컨테이너 없음) 전부 `:previous` = 처음 실행 이미지. 변경 전에는 4개가 덮어씀
 - **채팅 스트림의 타임아웃 · 도중 오류가 범용 예외 처리기로 가 ERROR 로그를 남기고 열린 스트림에 500 JSON 을 쓰려던 것을 고쳤다(#326).**
   SSE 타임아웃과 `completeWithError` 는 스프링이 비동기 디스패치로 예외 처리기에 다시 넘기는데, `handleUnexpected` 가 받아
   타임아웃마다 `ERROR 처리되지 않은 예외` + 스택을 남기고 커밋된 `text/event-stream` 에 `ApiError` 를 쓰려다 변환기가 실패했다.
