@@ -1,0 +1,33 @@
+# #328 변경 전 관측 (78b4dbe, 새 테스트만 먼저 넣고 운영 코드는 그대로인 상태)
+
+## grep : 출처 uri 가 지나는 자리
+backend/src/main/java/com/ragchatbot/dto/ConversationDtos.java:26:	public record CitationResponse(int seq, String sourceName, String snippet, String uri) {
+backend/src/main/java/com/ragchatbot/entity/Citation.java:15:		String uri,
+backend/src/main/java/com/ragchatbot/openai/OpenAiService.java:35:	record CitationData(int seq, String sourceName, String snippet, String uri) {
+backend/src/main/resources/db/migration/V1__init.sql:44:    uri         text,
+backend/src/main/resources/mapper/CitationRepository.xml:13:			<arg column="uri" javaType="java.lang.String"/>
+backend/src/main/resources/mapper/CitationRepository.xml:19:		insert into citations (id, message_id, seq, source_name, snippet, uri)
+backend/src/main/resources/mapper/CitationRepository.xml:20:		values (#{id}, #{messageId}, #{seq}, #{sourceName}, #{snippet}, #{uri})
+backend/src/main/resources/mapper/CitationRepository.xml:24:		select c.id, c.message_id, c.seq, c.source_name, c.snippet, c.uri, c.created_at
+docs/01_specs/api.md:241:| `citations` | `{ items: [{ seq, sourceName, snippet, uri }] }` | 출처 |
+frontend/src/components/chat/MessageList.test.tsx:17:        citations: [{ seq: 1, sourceName: '이용 정책 문서', snippet: '발췌', uri: 'corpus://1' }],
+frontend/src/components/chat/MessageList.test.tsx:69:        citations: [{ seq: 1, sourceName: '이용 정책 문서', snippet: '발췌', uri: 'corpus://1' }],
+frontend/src/components/chat/MessageList.test.tsx:204:        citations: [{ seq: 1, sourceName: '매뉴얼', snippet: '', uri: '' }],
+frontend/src/components/chat/MessageList.test.tsx:248:      citations: role === 'assistant' ? [{ seq: 1, sourceName: '매뉴얼', snippet: '', uri: '' }] : [],
+frontend/src/lib/types.ts:26:  uri: string
+
+## grep : JWT email 클레임
+backend/src/main/java/com/ragchatbot/security/JwtAuthenticationFilter.java:65:					response.setHeader(REFRESH_HEADER, jwtService.issue(userId, jwt.getClaim("email").asString()));
+backend/src/main/java/com/ragchatbot/security/JwtService.java:16: * JWT 발급/검증 (HS256, java-jwt 4.6.0). subject=userId, claim=email.
+backend/src/main/java/com/ragchatbot/security/JwtService.java:61:				.withClaim("email", email)
+backend/src/main/java/com/ragchatbot/service/AuthService.java:52:		return new AuthResponse(jwtService.issue(user.id(), user.email()),
+backend/src/main/java/com/ragchatbot/service/ProfileService.java:66:		return new AuthResponse(jwtService.issue(userId, user.email()), toResponse(user));
+
+## 새 테스트를 변경 전 코드에 돌린 결과 (mvnw test -Dtest=ChatFlowTest#citation_objects_carry_no_uri,JwtSlidingRefreshTest)
+name="com.ragchatbot.controller.ChatFlowTest" tests="1" failures="1" 
+name="com.ragchatbot.security.JwtSlidingRefreshTest" tests="6" failures="2" 
+
+- citation_objects_carry_no_uri : 실패. SSE citations 출처 객체 = {seq, sourceName, snippet, uri="corpus://policy#1"} / {.., uri="corpus://faq#2"} (목업). 키 uri 가 남아 있음
+- new_and_refreshed_tokens_carry_no_email_claim : 실패(:79). 로그인 토큰에 email 클레임이 있음
+- legacy_token_with_email_claim_authenticates_and_refreshes : 인증 200 · 갱신 헤더 발급까지 통과, 갱신본에 email 이 옮겨 적혀 실패(:107)
+- 나머지 JwtSlidingRefreshTest 4건 : 통과

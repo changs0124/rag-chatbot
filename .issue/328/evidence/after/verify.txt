@@ -1,0 +1,27 @@
+# #328 전체 검증 (2026-10-16 10:21, 워크트리 fix/328-drop-unread-contract-fields, 미커밋 변경 상태)
+
+## backend : ./mvnw clean verify (Docker 29.8.2, Testcontainers)
+[INFO] Tests run: 290, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+## frontend : npm ci && npm run lint && npm test && npm run build -> 종료 0
+found 0 vulnerabilities
+ Test Files  22 passed (22)
+      Tests  157 passed (157)
+✓ built in 659ms
+
+## bash scripts/check-all.sh docs -> 통과 (shellcheck 미설치로 셸 정적 분석 1건 건너뜀, CI 러너에는 있음)
+## bash scripts/check-all.sh quick -> 종료 0
+  ✓ 셸 구문 검사
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+  ✓ 병합 충돌 표시
+  ✓ 문서 참조 실재
+  ✓ 문서 섹션 이름 대조
+✓ 응답 계약 4곳 일치 (6필드)
+  ✓ 응답 계약 대조
+  ✓ 런타임 버전 대조(java)
+  ✓ 런타임 버전 대조(node)
+
+## 케이스 수 하한 (scripts/check-case-floor.sh, clean 후 측정 · vitest 리포트 재생성 후)
+- backend : 실측 290 / 하한 290 (287 -> 290, 새 케이스 3건)
+- frontend : 실측 157 / 하한 157 (변동 없음 - 픽스처만 고침)
