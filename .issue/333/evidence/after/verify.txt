@@ -1,0 +1,55 @@
+#333 수정 후 검증 (base 0e3d91b, 2026-10-16)
+
+== 게이트 ==
+bash scripts/check-all.sh docs : 돌린 검사 전부 통과 (셸 구문 · 병합 충돌 표시 · 문서 참조 301/283 · 섹션 참조 33건)
+  - shellcheck 는 로컬에 없어 건너뜀(「모름」) — 이번 변경은 문서뿐이라 셸 파일 변경 없음
+  - 섹션 참조 31 → 33 : 새 참조 features.md → `frontend.md` 「API 통신」, INDEX.md → `backend.md` 「인증」 (둘 다 실제 헤딩)
+bash scripts/check-doc-versions.sh : 35건 대조 통과 (m2 캐시 있음). 바꾼 버전 문자열은 oxlint(게이트 대상 아님)뿐
+원본 로그 : checks.log · 항목별 grep : greps.txt
+
+== 항목별 처리 ==
+S1  고침   README.md:134-135 deps-backend(Trivy) · deps-frontend(npm audit --audit-level=high) 행 분리 — 표 구조 유지
+S2  고침   README.md:160 「테이블 정의 · 인덱스 · 설계 원칙 · 사용량 조회 SQL」(INDEX.md:58 과 같은 문구)
+S3  고침   README.md:67 oxlint 1.75 (잠금 파일 1.75.0)
+S4  고침   README.md:37 「… · 문서 그림 · 클레임 전처리」
+S5  고침   INDEX.md:63 「… · 유량 제어 · 배포」 · :83 「호스트 선정 경위는 CHANGELOG #243, 역할 설계는 backend.md 「인증」」
+S6  고침   api.md:26 「단일 서버 자체 호스팅 + Cloudflare Tunnel(운영 중). 절차는 backend.md 「배포」」 (「배포」 참조 유지)
+S7  고침   api.md:179 「분당 로그인 실패 누적 상한 초과(성공한 로그인은 세지 않는다)」
+S8  고침   api.md:206-207 BAD_REQUEST 400(newPassword 8자 미만 · 빈 값) · RATE_LIMIT 429 행 추가.
+           리뷰가 적은 code 「VALIDATION」 은 없다 — 실제 GlobalExceptionHandler:59-65 의 BAD_REQUEST 로 적음
+S9  고침   api.md:389 BAD_REQUEST 400 자기 자신 대상 행 추가
+S10 고침   api.md:347 고아 연결 정리(#271) 한 줄 · :354 total = 스토어 파일 수 − 이번에 끊은 연결 수
+S11 고침   erd.md:126 「마지막 답변 또는 제목 변경 시각」
+S12 고침   live-integration.md v1.6 · 2026-10-16
+S13 고침   live-integration.md:315 열거를 「전수 집계 표(표 목록은 스크립트가 쓰는 `## 전체 요약` 절, 평균 사용일 포함 · #321)」로
+S14 고침   live-integration.md:200-201 로컬 명령은 그대로 두고 운영 서버 줄 `cd ~/deploy && sudo docker compose logs app | …` 추가
+           (deploy.sh:25 REMOTE_DIR 기본 deploy = 홈 기준)
+S15 고침   backend.md:607 `sudo docker ps`
+S16 고침   backend.md:582 「#### 백업」 헤딩 추가 — :394 · :454 의 「아래 「백업」」이 헤딩을 가리킨다. 기존 헤딩 이름 변경 없음,
+           code 의 「백업」 참조 없음(grep), CHANGELOG 과거 항목(:129)은 이력이라 그대로이며 이제 실제 헤딩과도 맞는다
+S17 고침   design-system.md:197 「150ms 하나(`duration-150`) — 상태 변화 · 모달 모두」
+S18 고침   design-system.md:238 「이중 테두리는 모달 · 로그인 폼에만(§5), 알약은 주요 버튼」 — §5 :216 과 모순 해소
+S19 고침   frontend.md:232 「프로덕션 번들이 실행 시 콘솔에 오류를 남긴다 — 빌드는 경고하지 않는다」
+S20 고침   frontend.md:171 「첨부 UI 계약」에 미리보기 실패 카드 한 줄(#317) · features.md:101 같은 사실 한 구절
+S21 고침   features.md:524-526 FEAT-OPS-003 단계 3·4 를 「세 곳 · 정본은 frontend.md 「API 통신」」 한 단계로
+S22 고침   features.md:347 「업로드와 같은 형태의 문구(「…동기화할 수 없음」)」
+S23 고침   features.md:374 실제 문구 그대로 인용 "Vector Store 가 설정되지 않아 업로드할 수 없음 (OPENAI_VECTOR_STORE_ID)"
+S24 고침   features.md:56,114,163,198,248,285,400 SCR- ID 7곳을 경로(`/` · `/me` · `/admin`)로. docs 에 남은 SCR- 는 CHANGELOG 이력뿐
+S25 고침   frontend.md:123 「+7.1KB(→ 147.6KB)」 — #270 과 #287 사이에 프론트 변경 0건이라 140.4 · 140.5 는 같은 번들의 두 값.
+           어느 쪽이 맞는지 다시 잴 근거가 없어 #287 쪽 기준값을 지우고 CHANGELOG #270 의 140.4 를 남겼다(수치 삭제는 #334 R39 몫)
+S26 고침   design-system.md:165 「보조는 14px(`text-sm`)이 주이고 13px · 12px(`text-xs`)도 쓴다(배지는 11 · 10px)」
+
+추가(리뷰 표 밖, 같은 문서)
+N1  고침   design-system.md:156 MyPage 오류 배너 「같은 모양」 → 「같은 색 조합(모서리 · 여백은 다르다)」
+N2  고침   features.md:425 FEAT-ADMIN-003 자기 자신 대상 「API 를 직접 부르면 `400`」 (S9 의 기능명세 쪽)
+N3  고침   10-16 merge(#323 · #325 · #326 · #328 · #330)가 본문만 바꾸고 올리지 않은 헤더 : api v1.3 · features v2.3 · erd v1.2 · design-system v2.5 (모두 2026-10-16)
+
+이미 고쳐짐(다른 PR) : 0건 — 26건 모두 merge 후에도 그대로 남아 있었다(줄 번호만 #326 · #330 등으로 밀림)
+버림 : 0건
+
+리뷰 이후 merge 가 더한 문서 주장(#323 · #325 · #326 · #328 · #330 · #331) 재확인 : 전부 코드와 일치 — before/mismatches.txt 하단
+
+== 범위 밖 (손대지 않음) ==
+- CHANGELOG [Unreleased] 의 merge 겹침 줄(#326 TC 줄 두 번 · #330 불릿 두 벌 · #331 preprocess 꼬리 · ### Fixed 두 개).
+  완료 기준이 「CHANGELOG 는 이 이슈 한 줄 추가 외에 손대지 않음」이라 남겼다 → 별도 처리 필요
+- #105 §4 CameraCapture — 이슈 본문(저장소 밖)
