@@ -39,6 +39,7 @@ const {
   resetUserPassword,
   createAdminUser,
   syncDocuments,
+  uploadDocument,
 } = await import('../lib/endpoints')
 
 function doc(over: Partial<RagDocument> = {}): RagDocument {
@@ -150,6 +151,45 @@ describe('관리자 화면', () => {
     await vi.advanceTimersByTimeAsync(20000)
 
     expect(vi.mocked(listDocuments).mock.calls.length).toBe(before)
+  })
+
+  /**
+   * #324 F4 : 폴링이 한 번 실패해도 다음 폴링이 성공하면 목록 오류 배너는 걷힌다.
+   * 배포 · 재기동 순간 한 번 실패한 배너가 목록이 계속 갱신되는 동안 남아 있으면 안 된다.
+   */
+  it('폴링이 한 번 실패한 뒤 성공하면 목록 오류가 사라진다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.mocked(listDocuments)
+      .mockResolvedValueOnce([doc({ status: 'in_progress' })])
+      .mockRejectedValueOnce(new Error('down'))
+      .mockResolvedValue([doc({ status: 'in_progress' })])
+    renderPage()
+    await screen.findByText('처리중')
+
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(await screen.findByText('목록을 불러오지 못했습니다')).toBeInTheDocument()
+
+    await vi.advanceTimersByTimeAsync(5000)
+    await waitFor(() => expect(screen.queryByText('목록을 불러오지 못했습니다')).not.toBeInTheDocument())
+  })
+
+  /** #324 F4 : 폴링 성공이 걷는 것은 목록 오류뿐이다 - 업로드 오류는 남는다 */
+  it('폴링이 성공해도 업로드 오류는 남는다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.mocked(listDocuments).mockResolvedValue([doc({ status: 'in_progress' })])
+    vi.mocked(uploadDocument).mockRejectedValueOnce(new Error('too big'))
+    const { container } = renderPage()
+    await screen.findByText('처리중')
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [new File(['x'], 'a.pdf')] } })
+    expect(await screen.findByText('업로드하지 못했습니다')).toBeInTheDocument()
+    const before = vi.mocked(listDocuments).mock.calls.length
+
+    await vi.advanceTimersByTimeAsync(5000)
+
+    expect(vi.mocked(listDocuments).mock.calls.length).toBeGreaterThan(before)
+    expect(screen.getByText('업로드하지 못했습니다')).toBeInTheDocument()
   })
 
   /** TC-ADMIN-053 : 스토어와 동기화하면 가져온 수를 알리고 목록을 다시 읽는다(#193) */

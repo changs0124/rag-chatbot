@@ -107,11 +107,15 @@ export default function ImageLightbox({
   async function download() {
     try {
       const res = await fetch(current.src)
+      // 서명 URL 이 만료되면 404 JSON 이 온다. 상태를 안 보면 그 JSON 이 그림 파일로 저장됨(#324)
+      if (!res.ok) return
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = current.name ?? 'image'
+      // 첨부는 원래 파일명을 모른다. 확장자가 없으면 OS 가 열 프로그램을 못 고르므로 받은 형식에서 붙임
+      const ext = blob.type.startsWith('image/') ? '.' + blob.type.slice(6).split('+')[0] : ''
+      a.download = current.name ?? `image${ext}`
       a.click()
       URL.revokeObjectURL(url)
     } catch {

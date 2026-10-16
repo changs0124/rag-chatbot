@@ -60,6 +60,8 @@ export default function AdminPage() {
   const [syncing, setSyncing] = useState(false)
   const [syncNotice, setSyncNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // 목록 오류는 따로 둔다 - 폴링 성공이 걷어야 하는데, 공유 error 를 지우면 업로드 · 삭제 오류까지 사라진다(#324)
+  const [listError, setListError] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<RagDocument | null>(null)
   // kind 로 갈리는 것은 안내 문구뿐이다 — 발급은 "새 계정"이고 초기화는 "기존 세션이 끊긴다"
   const [issued, setIssued] = useState<{
@@ -79,8 +81,9 @@ export default function AdminPage() {
       const [docs, people] = await Promise.all([listDocuments(), listAdminUsers()])
       setDocuments(docs)
       setUsers(people)
+      setListError(null)
     } catch (e) {
-      setError(errorMessage(e, '목록을 불러오지 못했습니다'))
+      setListError(errorMessage(e, '목록을 불러오지 못했습니다'))
     } finally {
       setLoaded(true)
     }
@@ -204,8 +207,13 @@ export default function AdminPage() {
           답변 근거로 쓰이는 사내 문서입니다. 여기 없는 내용은 답변에 출처로 붙지 않습니다.
         </p>
 
-        {error && (
-          <p className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>
+        {[listError, error].map(
+          (m, i) =>
+            m && (
+              <p key={i} className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
+                {m}
+              </p>
+            ),
         )}
 
         <section className="mt-6">
