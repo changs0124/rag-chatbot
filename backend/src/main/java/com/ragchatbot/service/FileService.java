@@ -40,8 +40,11 @@ public class FileService {
 	/** 첨부의 file_type - 받는 것이 이미지뿐이라 항상 이 값 */
 	private static final String FILE_TYPE = "image";
 
-	/** content-type(맵 키) → (확장자, 최대크기, 매직바이트) */
-	private record AllowedType(String extension, long maxSize, byte[] magic) {
+	/** 형식마다 상한이 같아 항목별로 두지 않는다 - 갈라 둘 이유가 생기면 그때 record 로 되돌린다 */
+	private static final long MAX_SIZE = 10 * MB;
+
+	/** content-type(맵 키) → (확장자, 매직바이트) */
+	private record AllowedType(String extension, byte[] magic) {
 	}
 
 	/**
@@ -50,10 +53,10 @@ public class FileService {
 	 * 올리므로, 채팅 첨부는 **문서를 받지 않는 것**을 계약으로 함.
 	 */
 	private static final Map<String, AllowedType> ALLOWED = Map.of(
-			"image/jpeg", new AllowedType("jpg", 10 * MB, new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF }),
-			"image/png", new AllowedType("png", 10 * MB, new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }),
-			"image/gif", new AllowedType("gif", 10 * MB, new byte[] { 0x47, 0x49, 0x46, 0x38 }),
-			"image/webp", new AllowedType("webp", 10 * MB, new byte[] { 0x52, 0x49, 0x46, 0x46 }));
+			"image/jpeg", new AllowedType("jpg", new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF }),
+			"image/png", new AllowedType("png", new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }),
+			"image/gif", new AllowedType("gif", new byte[] { 0x47, 0x49, 0x46, 0x38 }),
+			"image/webp", new AllowedType("webp", new byte[] { 0x52, 0x49, 0x46, 0x46 }));
 
 	private final FileStorage fileStorage;
 	private final AttachmentRepository attachmentRepository;
@@ -84,8 +87,8 @@ public class FileService {
 		} catch (IOException e) {
 			throw new BadRequestException("파일을 읽을 수 없음");
 		}
-		if (bytes.length > type.maxSize()) {
-			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (type.maxSize() / MB) + "MB)");
+		if (bytes.length > MAX_SIZE) {
+			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (MAX_SIZE / MB) + "MB)");
 		}
 		if (!regionEquals(bytes, 0, type.magic())) {
 			throw new BadRequestException("파일 내용이 형식과 일치하지 않음");

@@ -20,7 +20,7 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  */
 class ChatStreamContractTest extends AbstractPgIntegrationTest {
 
-	private static List<String> eventNames(String sse) {
+	static List<String> eventNames(String sse) {
 		List<String> names = new ArrayList<>();
 		for (String line : sse.split("\n")) {
 			if (line.startsWith("event:")) {

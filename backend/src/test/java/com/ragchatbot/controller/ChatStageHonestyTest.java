@@ -30,17 +30,6 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 		return res.getBody();
 	}
 
-	/** SSE 본문에서 이벤트 이름을 등장 순서대로 뽑음 */
-	private static List<String> eventNames(String sse) {
-		List<String> names = new ArrayList<>();
-		for (String line : sse.split("\n")) {
-			if (line.startsWith("event:")) {
-				names.add(line.substring(6).trim());
-			}
-		}
-		return names;
-	}
-
 	/** `data:{"stage":"searching",...}` 에서 stage 키를 등장 순서대로 뽑음 */
 	private static List<String> stageKeys(String sse) {
 		List<String> keys = new ArrayList<>();
@@ -96,7 +85,7 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 
 	@Test
 	void no_stage_event_after_first_token() {
-		List<String> names = eventNames(chat(createUser("stage-after@b.com"), "배송 정책"));
+		List<String> names = ChatStreamContractTest.eventNames(chat(createUser("stage-after@b.com"), "배송 정책"));
 		int firstToken = names.indexOf("token");
 		assertThat(firstToken).as("token 이벤트가 있어야 함").isGreaterThanOrEqualTo(0);
 		assertThat(names.subList(firstToken, names.size())).doesNotContain("stage");

@@ -35,10 +35,6 @@ import com.sun.net.httpserver.HttpServer;
 class OpenAiRealStreamingSpikeTest {
 
 	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
-	private static final long STREAM_READ_MS = 540_000;
-	private static final long REQUEST_MS = 30_000;
-	private static final long SSE_MS = 600_000;
-
 	private HttpServer server;
 	private final CountDownLatch firstTokenSeen = new CountDownLatch(1);
 	private final AtomicBoolean serverSawSignal = new AtomicBoolean(false);
@@ -78,7 +74,7 @@ class OpenAiRealStreamingSpikeTest {
 	@Test
 	void rest_client_delivers_sse_incrementally() {
 		String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
-		var service = new OpenAiRealService("test-key", "gpt-6-sol", "", baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
+		var service = OpenAiRealTestSupport.against(baseUrl, "");
 		List<String> tokens = new ArrayList<>();
 
 		var result = service.streamChat(

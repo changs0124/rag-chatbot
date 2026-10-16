@@ -1,9 +1,10 @@
 package com.ragchatbot.service;
 
+import static com.ragchatbot.service.ChatStreamTestSupport.chatService;
+import static com.ragchatbot.service.ChatStreamTestSupport.prepared;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -12,8 +13,8 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.ragchatbot.openai.OpenAiService;
-import com.ragchatbot.service.ChatService.PreparedChat;
+import com.ragchatbot.service.ChatStreamTestSupport.ChatOnlyOpenAi;
+import com.ragchatbot.service.ChatStreamTestSupport.RecordingPersistence;
 
 /**
  * 중단 상태 정책(REQ-CHAT-006) - <b>사용자가 멈춘 것은 실패가 아님</b>.
@@ -44,18 +45,13 @@ class ChatStreamAbortTest {
 	}
 
 	/** 토큰을 흘리다가 지시하면 예외를 던지는 OpenAI 대역 */
-	private static final class StubOpenAi implements OpenAiService {
+	private static final class StubOpenAi extends ChatOnlyOpenAi {
 		private final List<String> tokens;
 		private final RuntimeException failure;
 
 		StubOpenAi(List<String> tokens, RuntimeException failure) {
 			this.tokens = tokens;
 			this.failure = failure;
-		}
-
-		@Override
-		public String stageLabel(Stage stage, List<String> sources) {
-			return stage.name();
 		}
 
 		@Override
@@ -69,65 +65,6 @@ class ChatStreamAbortTest {
 			}
 			return new ChatCompletion(String.join("", tokens), List.of(), true, 100, 20);
 		}
-
-		@Override
-		public void deleteResources(String vectorStoreId, List<String> openaiFileIds) {
-		}
-
-		// 이 대역은 **채팅 경로만** 검증함. 문서 관리(FEAT-ADMIN-002)를 부르는 일이 없으므로
-		// 조용한 기본값 대신 던지게 둠 - 나중에 이 경로가 실수로 여기로 흘러오면 바로 드러남
-		@Override
-		public boolean hasSharedVectorStore() {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-
-		@Override
-		public UploadedDocument uploadDocument(String filename, byte[] content) {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-
-		@Override
-		public String documentStatus(String vectorStoreId, String openaiFileId) {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-
-		@Override
-		public void deleteDocument(String vectorStoreId, String openaiFileId) {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-
-		@Override
-		public List<StoreFile> listStoreFiles(java.util.function.Predicate<String> needsDetail) {
-			throw new UnsupportedOperationException("채팅 전용 대역");
-		}
-	}
-
-	private record Saved(String content, String status, boolean stopped, boolean timedOut, Integer inputTokens,
-			Integer outputTokens) {
-	}
-
-	/** 저장 호출을 기록만 하는 대역 */
-	private static final class RecordingPersistence extends ChatPersistenceService {
-		private final List<Saved> saves = new ArrayList<>();
-
-		RecordingPersistence() {
-			super(null, null, null);
-		}
-
-		@Override
-		public void saveAssistant(UUID conversationId, UUID userId, UUID assistantMsgId, String content, String status,
-				boolean stopped, boolean timedOut, List<OpenAiService.CitationData> citations, Integer inputTokens,
-				Integer outputTokens) {
-			saves.add(new Saved(content, status, stopped, timedOut, inputTokens, outputTokens));
-		}
-	}
-
-	private static PreparedChat prepared() {
-		return new PreparedChat(UUID.randomUUID(), "질문", List.of(), List.of());
-	}
-
-	private static ChatService chatService(OpenAiService openAi, ChatPersistenceService persistence) {
-		return new ChatService(null, null, null, openAi, persistence, 6000);
 	}
 
 	@Test

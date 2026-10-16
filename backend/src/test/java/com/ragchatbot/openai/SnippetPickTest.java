@@ -69,8 +69,7 @@ class SnippetPickTest {
 				{"filename":"매뉴얼.md","text":"%s"},{"filename":"매뉴얼.md","text":"%s"}]},\
 				{"type":"message","content":[{"annotations":[{"type":"file_citation","filename":"매뉴얼.md"}]}]}]}}
 				""".formatted(UNRELATED, NAMES);
-		OpenAiRealService service = new OpenAiRealService("test-key", "gpt-6-sol", "", "http://localhost:1",
-				540_000, 30_000, 600_000, null);
+		OpenAiRealService service = OpenAiRealTestSupport.parserOnly();
 
 		ChatCompletion r = service.consumeStream(new ByteArrayInputStream(sse.getBytes(StandardCharsets.UTF_8)),
 				t -> { }, (stage, sources) -> { });

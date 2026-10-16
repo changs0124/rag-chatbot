@@ -29,7 +29,7 @@ public class OrphanCleanupScheduler {
 	}
 
 	/** 기본 매시 정각. 실패해도 다음 주기가 다시 시도하므로 예외를 밖으로 내보내지 않음 */
-	@Scheduled(cron = "${app.file.orphan-cleanup-cron:0 0 * * * *}")
+	@Scheduled(cron = "${app.file.orphan-cleanup-cron}")
 	public void cleanup() {
 		OffsetDateTime cutoff = OffsetDateTime.now().minusMinutes(ttlMinutes);
 		try {

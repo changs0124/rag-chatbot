@@ -1,6 +1,5 @@
 package com.ragchatbot.config;
 
-import java.util.Arrays;
 import java.util.List;
 
 import java.util.UUID;
@@ -44,19 +43,9 @@ public class AdminRoleSynchronizer {
 
 	private static final Logger log = LoggerFactory.getLogger(AdminRoleSynchronizer.class);
 
-	/**
-	 * 명단을 소문자로 정규화해 돌려준다. 비교가 {@code lower(email)} 기준이므로
-	 * <b>앱의 이메일 정규화와 같은 눈금</b>이어야 대소문자만 다른 명단도 맞는다.
-	 */
+	/** 관리자 명단 파싱 - 파서는 {@link EmailDomainPolicy#parseList} 하나다(정규화와 같은 눈금) */
 	public static List<String> parse(String raw) {
-		if (raw == null || raw.isBlank()) {
-			return List.of();
-		}
-		return Arrays.stream(raw.split(","))
-				.map(EmailDomainPolicy::normalize)
-				.filter(s -> !s.isEmpty())
-				.distinct()
-				.toList();
+		return EmailDomainPolicy.parseList(raw);
 	}
 
 	@Bean

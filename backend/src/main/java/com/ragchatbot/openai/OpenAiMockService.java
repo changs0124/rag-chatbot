@@ -74,8 +74,7 @@ public class OpenAiMockService implements OpenAiService {
 		// 목 응답은 고정 코퍼스 키워드로만 정해짐(이력에 좌우되지 않음). 전달 여부만 기록해 둠
 		lastHistory = input.history() == null ? List.of() : input.history();
 
-		boolean hasImage = input.attachments() != null
-				&& input.attachments().stream().anyMatch(a -> "image".equals(a.fileType()));
+		boolean hasImage = input.attachments() != null && !input.attachments().isEmpty();
 		String imagePrefix = hasImage ? "(첨부 이미지를 확인함) " : "";
 
 		String message = input.userMessage() == null ? "" : input.userMessage();

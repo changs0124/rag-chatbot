@@ -23,10 +23,6 @@ import com.sun.net.httpserver.HttpServer;
  */
 class OpenAiRealDeleteDocumentTest {
 
-	private static final long STREAM_READ_MS = 540_000;
-	private static final long REQUEST_MS = 30_000;
-	private static final long SSE_MS = 600_000;
-
 	private HttpServer server;
 	private final List<String> received = new CopyOnWriteArrayList<>();
 	/** OpenAI 가 형식 때문에 거절했을 요청 - deleteQuietly 가 삼키므로 받은 목록만으로는 드러나지 않는다 */
@@ -53,8 +49,7 @@ class OpenAiRealDeleteDocumentTest {
 			exchange.close();
 		});
 		server.start();
-		service = new OpenAiRealService("test-key", "gpt-6-sol", "shared-store",
-				"http://127.0.0.1:" + server.getAddress().getPort(), STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
+		service = OpenAiRealTestSupport.against("http://127.0.0.1:" + server.getAddress().getPort(), "shared-store");
 	}
 
 	@AfterEach

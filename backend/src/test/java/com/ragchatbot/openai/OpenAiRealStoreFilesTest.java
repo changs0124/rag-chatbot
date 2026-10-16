@@ -25,10 +25,6 @@ import com.sun.net.httpserver.HttpServer;
 class OpenAiRealStoreFilesTest {
 
 	// 타임아웃 3종은 이 테스트들의 관심사가 아니다 - 기본값과 같은 비율만 지킨다(#92)
-	private static final long STREAM_READ_MS = 540_000;
-	private static final long REQUEST_MS = 30_000;
-	private static final long SSE_MS = 600_000;
-
 	private HttpServer server;
 	private final List<String> received = new CopyOnWriteArrayList<>();
 	private OpenAiRealService service;
@@ -64,8 +60,7 @@ class OpenAiRealStoreFilesTest {
 			}
 		});
 		server.start();
-		service = new OpenAiRealService("test-key", "gpt-6-sol", "shared-store",
-				"http://127.0.0.1:" + server.getAddress().getPort(), STREAM_READ_MS, REQUEST_MS, SSE_MS, null);
+		service = OpenAiRealTestSupport.against("http://127.0.0.1:" + server.getAddress().getPort(), "shared-store");
 	}
 
 	private static void reply(HttpExchange exchange, int status, String body) throws IOException {

@@ -90,7 +90,7 @@ public class ChatService {
 			if (att.messageId() != null) {
 				throw new BadRequestException("이미 보낸 첨부는 다시 사용할 수 없음");
 			}
-			refs.add(new AttachmentRef(att.fileType(), att.storagePath()));
+			refs.add(new AttachmentRef(att.storagePath()));
 		}
 
 		// 이력은 **새 사용자 메시지를 넣기 전에** 읽음 - 넣고 읽으면 방금 보낸 것이 이력에 섞여 중복됨

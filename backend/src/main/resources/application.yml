@@ -19,8 +19,6 @@ spring:
       max-request-size: 31MB
   flyway:
     # 스키마의 소유자는 마이그레이션 SQL. 기동 시 자동 적용
-    enabled: true
-    locations: classpath:db/migration
 
 # MyBatis - snake_case DB 컬럼 ↔ camelCase 자바 프로퍼티, uuid 전용 TypeHandler 등록
 mybatis:

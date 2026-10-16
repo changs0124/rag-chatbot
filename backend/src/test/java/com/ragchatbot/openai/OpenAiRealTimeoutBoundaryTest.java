@@ -25,16 +25,10 @@ import com.ragchatbot.storage.FileStorage;
  */
 class OpenAiRealTimeoutBoundaryTest {
 
-	private static final String BASE_URL = "http://localhost:1";
-
-	private static OpenAiRealService create(long streamReadMs, long sseMs) {
-		return new OpenAiRealService("test-key", "gpt-6-sol", "", BASE_URL, streamReadMs, 30_000, sseMs, null);
-	}
-
 	/** 같은 값이면 막는다 - 이것이 실제로 있던 상태다(둘 다 10분) */
 	@Test
 	void equal_timeouts_fail_to_start() {
-		assertThatThrownBy(() -> create(600_000, 600_000))
+		assertThatThrownBy(() -> OpenAiRealTestSupport.withTimeouts(600_000, 600_000))
 				.isInstanceOf(IllegalStateException.class)
 				.hasMessageContaining("stream-read-timeout-ms")
 				.hasMessageContaining("sse-timeout-ms");
@@ -43,7 +37,7 @@ class OpenAiRealTimeoutBoundaryTest {
 	/** 읽기 쪽이 더 길면 더 나쁘다 - 워커가 확실히 더 오래 산다 */
 	@Test
 	void longer_read_timeout_fails_to_start() {
-		assertThatThrownBy(() -> create(900_000, 600_000))
+		assertThatThrownBy(() -> OpenAiRealTestSupport.withTimeouts(900_000, 600_000))
 				.isInstanceOf(IllegalStateException.class);
 	}
 
@@ -54,7 +48,7 @@ class OpenAiRealTimeoutBoundaryTest {
 	 */
 	@Test
 	void shorter_read_timeout_starts() {
-		assertThatCode(() -> create(540_000, 600_000)).doesNotThrowAnyException();
+		assertThatCode(() -> OpenAiRealTestSupport.withTimeouts(540_000, 600_000)).doesNotThrowAnyException();
 	}
 
 	/**
