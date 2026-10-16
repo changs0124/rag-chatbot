@@ -1,0 +1,67 @@
+# #363 before - 회귀 테스트를 변경 전 프로덕션 코드(origin/main 0860b13)에서 실행
+# cd frontend && npx vitest run src/lib/refresh.test.ts
+
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/363-late-refresh-token-cross-session/frontend
+
+ ❯ src/lib/refresh.test.ts (8 tests | 3 failed) 13ms
+     × fetch 래퍼 - B 세션을 A 토큰으로 덮지 않는다 4ms
+     × 채팅 스트림 - B 세션을 A 토큰으로 덮지 않는다 1ms
+     × 그림 로드 - B 세션을 A 토큰으로 덮지 않는다 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/refresh.test.ts > 다른 세션에서 떠난 요청의 재발급 > fetch 래퍼 - B 세션을 A 토큰으로 덮지 않는다
+AssertionError: expected 'a-refreshed' to be 'b-token' // Object.is equality
+
+Expected: "b-token"
+Received: "a-refreshed"
+
+ ❯ src/lib/refresh.test.ts:111:24
+    109|     switchAccountThenRespond()
+    110|     await pending
+    111|     expect(getToken()).toBe('b-token')
+       |                        ^
+    112|     expect(localStorage.getItem('rag_chatbot_token')).toBe('b-token')
+    113|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/lib/refresh.test.ts > 다른 세션에서 떠난 요청의 재발급 > 채팅 스트림 - B 세션을 A 토큰으로 덮지 않는다
+AssertionError: expected 'a-refreshed' to be 'b-token' // Object.is equality
+
+Expected: "b-token"
+Received: "a-refreshed"
+
+ ❯ src/lib/refresh.test.ts:119:24
+    117|     switchAccountThenRespond(429)
+    118|     await expect(pending).rejects.toThrow()
+    119|     expect(getToken()).toBe('b-token')
+       |                        ^
+    120|   })
+    121|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/lib/refresh.test.ts > 다른 세션에서 떠난 요청의 재발급 > 그림 로드 - B 세션을 A 토큰으로 덮지 않는다
+AssertionError: expected 'a-refreshed' to be 'b-token' // Object.is equality
+
+Expected: "b-token"
+Received: "a-refreshed"
+
+ ❯ src/lib/refresh.test.ts:126:24
+    124|     switchAccountThenRespond(404)
+    125|     await pending
+    126|     expect(getToken()).toBe('b-token')
+       |                        ^
+    127|   })
+    128| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 5 passed (8)
+   Start at  19:32:27
+   Duration  678ms (transform 50ms, setup 120ms, import 92ms, tests 13ms, environment 324ms)
+

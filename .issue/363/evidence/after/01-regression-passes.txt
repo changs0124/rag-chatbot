@@ -1,0 +1,66 @@
+# #363 after - 같은 회귀 테스트를 수정 후 코드에서 실행
+# cd frontend && npx vitest run src/lib/refresh.test.ts
+
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/363-late-refresh-token-cross-session/frontend
+
+ ✓ src/lib/refresh.test.ts > 슬라이딩 재발급 토큰 수신 > 헤더가 있으면 토큰을 교체한다 2ms
+ ✓ src/lib/refresh.test.ts > 슬라이딩 재발급 토큰 수신 > 헤더가 없으면 기존 토큰을 건드리지 않는다 0ms
+ ✓ src/lib/refresh.test.ts > 슬라이딩 재발급 토큰 수신 > 로그아웃 뒤에 도착한 응답의 헤더는 버린다 0ms
+ ✓ src/lib/refresh.test.ts > 슬라이딩 재발급 토큰 수신 > 스트림 경로도 토큰을 교체한다 2ms
+ ✓ src/lib/refresh.test.ts > 슬라이딩 재발급 토큰 수신 > 스트림이 오류로 끝나도 교체는 일어난다 2ms
+ ✓ src/lib/refresh.test.ts > 다른 세션에서 떠난 요청의 재발급 > fetch 래퍼 - B 세션을 A 토큰으로 덮지 않는다 1ms
+ ✓ src/lib/refresh.test.ts > 다른 세션에서 떠난 요청의 재발급 > 채팅 스트림 - B 세션을 A 토큰으로 덮지 않는다 0ms
+ ✓ src/lib/refresh.test.ts > 다른 세션에서 떠난 요청의 재발급 > 그림 로드 - B 세션을 A 토큰으로 덮지 않는다 0ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  19:35:48
+   Duration  656ms (transform 53ms, setup 123ms, import 70ms, tests 9ms, environment 327ms)
+
+
+# bash scripts/check-all.sh (exit 0) 요약
+▶ 셸 구문 검사
+  ✓ 셸 구문 검사
+▶ 셸 정적 분석
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+▶ 병합 충돌 표시
+  ✓ 병합 충돌 표시
+▶ 문서 참조 실재
+  ✓ 문서 참조 실재
+▶ 문서 섹션 이름 대조
+  ✓ 문서 섹션 이름 대조
+▶ 응답 계약 대조
+  ✓ 응답 계약 대조
+▶ 런타임 버전 대조(java)
+  ✓ 런타임 버전 대조(java)
+▶ 런타임 버전 대조(node)
+  ✓ 런타임 버전 대조(node)
+▶ 백엔드 clean verify
+  ✓ 백엔드 clean verify
+▶ 백엔드 케이스 수 하한
+케이스 수(backend) : 실측 304 / 하한 304
+  ✓ 백엔드 케이스 수 하한
+▶ 문서 버전 주장 대조
+  ✓ 문서 버전 주장 대조
+▶ 프론트 의존성 설치
+  ✓ 프론트 의존성 설치
+▶ 프론트 lint
+  ✓ 프론트 lint
+▶ 프론트 test
+      Tests  183 passed (183)
+  ✓ 프론트 test
+▶ 프론트 build
+  ✓ 프론트 build
+▶ 프론트 케이스 수 하한
+케이스 수(frontend) : 실측 183 / 하한 183
+  ✓ 프론트 케이스 수 하한
+▶ 백엔드 이미지 빌드
+  ✓ 백엔드 이미지 빌드
+▶ 시크릿 스캔
+  - 건너뜀: gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것
+▶ 프론트 의존성 audit
+  ✓ 프론트 의존성 audit
+▶ 백엔드 의존성 스캔
+  - 건너뜀: trivy 없음
+돌린 검사는 전부 통과
