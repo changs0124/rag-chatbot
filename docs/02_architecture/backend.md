@@ -164,15 +164,9 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - **스트림 수명은 SSE emitter 타임아웃이 단독으로 정한다**(기본 10분). MVC async 타임아웃은 꺼 둔다.
   emitter 가 닫힌 뒤의 `send` 는 `IllegalStateException` 이라 `done` 도 `error` 도 실을 수 없다 —
   api.md 의 **세 번째 종료 경로**(종료 이벤트 없이 끊김)가 여기서 생긴다.
-- **타임아웃은 `timed_out` 으로 저장에 남긴다**(#84). 남기지 않으면 같은 타임아웃이 마지막 토큰의
-  타이밍에 따라 「사용자 중단」·「정상 완료」·「진짜 오류」 셋 중 하나를 사칭한다. 여섯 갈래의 조합표는
-  `docs/01_specs/erd.md` 「messages」에 있다. **자원 반납은 이 플래그로 해결되지 않는다** — 워커의
-  블로킹 read 는 인터럽트로 깨지지 않아 읽기 타임아웃이 따로 필요하며, 그쪽은
-  `app.openai.stream-read-timeout-ms` 가 맡는다(아래 「유량 제어」).
-- **중단(사용자 정지·연결 끊김)은 실패가 아니다.** 받은 데까지 `status=complete` + `stopped=true` 로 저장한다.
-  **서버 타임아웃도 도중에 떨어지면 같은 모양이 되므로** `timed_out` 을 함께 본다 — 사용자가 누른 적
-  없는 정지가 기록에 남는 것을 막는다.
-  인용은 스트림 끝에 오므로 중단 시점에는 늘 0건이며, `stopped` 가 없으면 무자료 배너가 거짓으로 붙는다.
+- **중단은 `stopped`, 서버 타임아웃은 `timed_out` 으로 따로 남긴다**(#84). 인용은 스트림 끝에 오므로 중단 시점에는 늘 0건이라
+  `stopped` 가 없으면 무자료 배너가 거짓으로 붙고, `timed_out` 이 없으면 타임아웃이 마지막 토큰 타이밍에 따라 중단 · 완료 · 오류를 사칭한다.
+  저장 조합은 `docs/01_specs/erd.md` 「messages」 가 정본이다. 자원 반납은 읽기 타임아웃이 맡는다(아래 「유량 제어」).
 - **저장 텍스트는 화면에 닿은 것과 같다.** 토큰을 보낸 **뒤에** 버퍼에 담아, 전송 실패한 토큰은 남기지 않는다.
 - **진행 단계 라벨 문자열은 LLM 구현이 소유한다.** `ChatService` 는 실행 모드를 알지 못한다. 목업은 목업임이
   드러나는 전용 문구를 쓴다.
@@ -225,9 +219,7 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 | `RateLimiterService` | 사용자별 **분당 횟수**(채팅 · 업로드 · 비밀번호 변경) · 계정별 분당 로그인 시도 | 20 / 30 / 5 / 10 |
 | `ChatConcurrencyLimiter` | **지금 열려 있는 스트림 수**(전역 · 사용자별) | 16 / 1 |
 
-**전역 상한은 16 이다(#278, 종전 8).** 8 이면 서로 다른 사용자 9명째부터 즉시 429 였다. 스트림 하나는 대부분의 시간을
-모델 응답을 기다리며 보내 CPU · 메모리를 거의 쓰지 않으므로 풀을 늘려도 부담이 작다.
-Hikari 풀 5(compose)는 그대로 둔다 — 커넥션은 스트림 앞뒤의 짧은 저장에만 잡혀 16명에서도 커넥션 대기 오류가 없었다.
+**전역 상한은 16 이다(#278).** 스트림 하나는 대부분의 시간을 모델 응답을 기다리며 보내 CPU · 메모리를 거의 쓰지 않는다.
 
 운영 실측(2026-10-15 15:15 KST, Lightsail 2 vCPU · 4GB · app 1GiB · Hikari 5, 공개 API 경유, 상한 16) :
 
@@ -238,15 +230,13 @@ Hikari 풀 5(compose)는 그대로 둔다 — 커넥션은 스트림 앞뒤의 �
 | 16 | 16 / 0 | 5.6 / 9.7초 | 223MiB |
 | 17 | 16 / 1 | 6.6 / 7.9초 | 224MiB |
 
-섞임 · 저장 불일치 · 스트림 오류 · OpenAI 쪽 거절 · 커넥션 대기 모두 0. 측정 전 메모리는 178MiB 였다 — 동시 16에서도
-늘어난 몫은 50MiB 남짓이라, 한도를 정하는 것은 메모리가 아니라 모델 호출 비용과 OpenAI 계정 한도다.
+섞임 · 저장 불일치 · 스트림 오류 · OpenAI 쪽 거절 · 커넥션 대기 모두 0 — Hikari 풀 5(compose)로 충분하다(커넥션은 스트림 앞뒤의
+짧은 저장에만 잡힌다). 측정 전 178MiB 대비 늘어난 몫이 50MiB 남짓이라, 한도를 정하는 것은 메모리가 아니라 모델 호출 비용과 OpenAI 계정 한도다.
 되돌리려면 서버 `.env` 에 `CHAT_MAX_CONCURRENT_STREAMS=8` 을 넣고 app 만 재시작한다.
 
 **검사 순서는 동시성 → 레이트리밋이다**(#96). 레이트리밋은 비용 통제가 목적인데, 동시성 상한에 걸려
-되돌아간 요청은 **모델을 부르지 않아 비용이 0**이다. 순서가 반대였을 때는 스트림이 도는 중에 전송을
-연타하면 전부 「이미 응답 중」 429 를 받으면서 분당 카운터만 올라, **스트림이 끝난 뒤에도 그 분이
-끝날 때까지** 막혔다 — 유량 제어가 스스로를 무력화했다. 레이트리밋에서 던져도 동시성 자리는
-`chat` 의 `finally` 가 반납한다. 둘 다 `prepare` 앞이라는 제약은 그대로다.
+되돌아간 요청은 **모델을 부르지 않아 비용이 0**이므로 분당 카운터를 태우지 않는다. 레이트리밋에서 던져도 동시성 자리는
+`chat` 의 `finally` 가 반납한다. 둘 다 `prepare` 앞이다.
 
 둘은 다른 것을 잰다 — 서로 다른 사용자가 한 번씩만 보내도 풀은 포화되므로 횟수 상한만으로는 막히지 않는다.
 전역 상한은 `chatExecutor` 풀 크기와 **같은 프로퍼티**를 쓴다. 갈리면 초과분이 큐에 쌓여 응답 한 바이트 없이
@@ -255,10 +245,8 @@ SSE 타임아웃까지 기다리게 된다. 그 결합을 지키는 것이 「�
 
 **업스트림 읽기 타임아웃은 SSE 타임아웃보다 짧아야 하며, 아니면 기동에 실패한다**(#76·#92).
 워커의 블로킹 read 는 인터럽트로 깨지지 않아, emitter 가 죽어도 읽기가 끝나야 스레드와 동시 스트림
-권한이 풀린다 — 그 사이 사용자는 **화면에 아무 스트림도 없는데 429** 를 받는다. 종전에는 두 값이
-정확히 같아(둘 다 10분) 결말이 밀리초 경합이었다. 그리고 **클라이언트를 스트리밍용/일반용으로
-나눴다** — 하나뿐이던 시절에는 그 10분이 문서 상태 조회·업로드·삭제에도 걸려, `in_progress` 3건이면
-관리자 목록 요청 하나가 최대 30분 톰캣 스레드를 잡았다.
+권한이 풀린다 — 그 사이 사용자는 **화면에 아무 스트림도 없는데 429** 를 받는다. OpenAI 클라이언트는
+**스트리밍용/일반용으로 나뉘어** 이 긴 읽기 타임아웃이 문서 상태 조회 · 업로드 · 삭제에는 걸리지 않는다.
 
 레이트리밋 카운터는 키 총량 상한 + LRU 축출로 메모리를 유계로 둔다. **축출은 곧 카운터 리셋**이라는 약화가 따르며,
 사유는 [overview](./overview.md) 「알려진 제약」에 있다.
@@ -333,9 +321,9 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 `app.mode` 는 **기본값이 없다.** 미설정이면 `AppModeGuard` 가 기동을 막는다 — 목업이 우연히 켜지는 경로를 없앴다.
 `mock` 과 `live` 는 `@ConditionalOnExpression` 으로 `OpenAiService` 구현 하나만 로드한다. **모드를 읽는 규칙은
 `AppModeGuard.normalize`(앞뒤 공백 제거 · 소문자) 하나다(#248)** — 가드 · 구현 선택 · `EmailDomainPolicy` 의 live 검사 ·
-`DocFigureService` 의 견본 그림이 모두 이것을 거친다. 종전에는 가드만 정규화해 `APP_MODE=LIVE` 에서 허용 도메인 검사가 빠졌다.
-`prod` 프로필 + `mock` 조합도 거부한다. 그 프로필은 `docker-compose.yml` 이 app 에 기본으로 켠다(#305) —
-종전에는 켜는 곳이 없어 이 검사가 운영에서 걸리지 않았다. 로컬 compose 로 목업을 띄울 때만 `SPRING_PROFILES_ACTIVE=` 로 비운다.
+`DocFigureService` 의 견본 그림이 모두 이것을 거친다.
+`prod` 프로필 + `mock` 조합도 거부한다. 그 프로필은 `docker-compose.yml` 이 app 에 기본으로 켠다(#305).
+로컬 compose 로 목업을 띄울 때만 `SPRING_PROFILES_ACTIVE=` 로 비운다.
 
 설정값은 `backend/src/main/resources/application.yml` 에 `${ENV:기본값}` 으로 두고, 위험한 값
 (`app.mode` · `app.jwt.secret`)은 **일부러 기본값을 비워** 기동에 실패하게 한다.
@@ -348,10 +336,8 @@ FEAT-ADMIN-002 가 정본**이다. 계층 쪽에서 짚을 것만 남긴다 :
 
 **던지지 않는 대신 순서로 막는다(#271).** `deleteDocument` 는 스토어 연결 해제가 성공(또는 이미 없음 404)했을 때만
 File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이름 없는 연결이 남아 **검색에는 계속 잡히는데 다시 지울
-손잡이가 없다** — 실제로 그랬다. 해제 요청이 JDK 기본 Content-Type(form)으로 나가 400 으로 거절됐고 `deleteQuietly` 가
-그것을 삼켰다. 지금은 DELETE 에 `Content-Type: application/json` 을 명시한다. File 이 남아 있으면 「스토어와 동기화」가
-행을 되살려 관리자가 다시 지울 수 있다. 이미 생긴 고아 연결(File 404)은 동기화가 `missing` 으로 받아 연결을 끊는다 —
-종전에는 그 404 하나로 동기화 전체가 500 이었다.
+손잡이가 없다**. 해제 DELETE 에는 `Content-Type: application/json` 을 명시한다. File 이 남아 있으면 「스토어와 동기화」가
+행을 되살려 관리자가 다시 지울 수 있고, 고아 연결(File 404)은 동기화가 `missing` 으로 받아 연결을 끊는다.
 
 `app.jwt.secret` 은 비어 있는지만이 아니라 **길이도 본다** — 32바이트 미만이면 `JwtSecretPolicy` 가
 기동을 막는다. 하한을 한 곳에 둔 이유는 이 키를 `JwtService`(aud=auth)와
@@ -365,8 +351,7 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 환경변수 요구사항은 어느 쪽이든 같다.
 
 **지금 무엇이 남았는지는 이 문서에 적지 않는다(#177).** 여기는 **절차**의 정본이고,
-남은 일은 [current-sprint](../04_tasks/current-sprint.md) 가 정본이다. 2026-10-06 런칭으로
-상시 공개 쪽이 운영 중이며, 그 경위는 [CHANGELOG](../06_changelog/CHANGELOG.md) 에 있다(#213).
+남은 일은 [current-sprint](../04_tasks/current-sprint.md) 가 정본이다.
 
 필요한 환경변수와 각 값의 의미 · 빠뜨렸을 때의 증상은 `backend/.env.example`(compose 배선은 루트 `.env.example`)이 정본이다.
 기동을 막는 것과 나중에야 드러나는 것의 구분은 [live-integration](../01_specs/live-integration.md) 1절에 있다.
@@ -458,8 +443,7 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 옮겨 복원한 **뒤에** 새 서버를 띄운다. 헬스체크와 e2e 를 확인하기 전에는 옛 서버를 지우지 않는다(되돌릴 길이다).
 
 **서버는 이미지를 빌드하지 않는다(#127).** `docker-compose.yml` 의 `app` 에 `build` 가 없고
-`image: rag-chatbot-backend:latest` 만 있다. 처음(1GB 서버)에는 build 스테이지의 Maven JVM
-하나로 물리 메모리를 넘겼고, 4GB 로 옮긴 뒤(#243)에도 서버에 빌드 도구를 들이지 않으려 구조를 유지한다. **절차로 막지 않고 키를 없앴다** — 본체에 `build` 를 남겨
+`image: rag-chatbot-backend:latest` 만 있다. **절차로 막지 않고 키를 없앴다** — 본체에 `build` 를 남겨
 두면 이미지를 못 찾았을 때 `up` 이 조용히 빌드로 빠지는 경로가 남는다.
 
 **이미지는 레지스트리를 거치지 않는다.** `scripts/deploy.sh` 가 로컬에서 빌드해
@@ -476,7 +460,7 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 **헬스체크가 통과하면 `:previous` 를 지운다** — 성공한 배포 뒤에 되돌리려면 배포 전에 손으로 남긴 태그
 (예 : `sudo docker tag rag-chatbot-backend:latest rag-chatbot-backend:prev-<sha>`)가 있어야 하고,
 없으면 **그 커밋을 다시 빌드해야 한다.**
-배포가 잦지 않은 단일 서버 전제에서 감수한다. GHCR 안으로 되돌아가면 바뀌는 것은 `image:` 한 줄과 이 문단뿐이다.
+배포가 잦지 않은 단일 서버 전제에서 감수한다.
 
 로컬에서 직접 빌드해 띄우려면 override 를 겹친다 :
 
@@ -484,95 +468,40 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app
 ```
 
-**이미지 빌드는 `mvnw` 를 쓰지 않는다.** build 스테이지가 `maven:3.9.16-eclipse-temurin-17-alpine` 이라
-Maven 이 이미지 안에 있다. wrapper 를 쓰면 빌드마다 배포판 zip 을 Maven Central 에서 내려받는데,
-의존성 해석보다 앞선 단계라 레이어 캐시로도 덮이지 않고 Central 이 거절하면 이미지 빌드가 통째로 멎는다.
-버전은 wrapper 가 쓰던 3.9.16 과 같게 고정했고, `mvnw` 자체는 로컬·CI 용으로 그대로 남는다.
-**이 근거가 지켜 주는 자리는 CI 와 개발 PC 다** — 서버는 빌드하지 않는다. CI 의 `docker` 잡이
-이미지가 여전히 빌드되는지만 보고, 실제 배포본은 `scripts/deploy.sh` 가 로컬에서 만든다.
-**의존성 해석은 여전히 Central 을 타므로** 그쪽은 재시도 두 번으로 덮는다 — 없앤 것은 배포판이라는 한 홉이다.
-멀티스테이지라 최종 이미지는 `eclipse-temurin:17-jre-alpine` 그대로이며, 실측 크기 차이는 45바이트였다.
+**이미지 빌드는 `mvnw` 대신 Maven 이 든 이미지(`maven:3.9.16-…`)를 쓴다** — 근거는 `backend/Dockerfile` 머리 주석.
 
-**메모리 상한을 셋 다 걸어 두었다(#127).** 현재 실측(Lightsail, 2026-10-12, 기동 직후)은 `app` 151MiB / 1g ·
-`db` 27MiB / 512m · 시스템 여유 2.9Gi 이다. 상한은 `app` 1g · `db` 512m · `cloudflared` 64m 이고(#243), Postgres 튜닝 값은 호스트가 넓어졌다고 일부러 키우지 않았다. `app` 은 `MaxRAMPercentage=65` · `UseSerialGC` 로, `db` 는 `shared_buffers=48MB` ·
-`max_connections=20` 으로 묶었다. Hikari 풀은 `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5` 로
-줄였다 — `application.yml` 에 hikari 설정이 없어 기본값이 10 이다. `memswap_limit` 은 `app` 만 `mem_limit` 과 같게(스왑 금지) 걸었다(#202) — 근거는
-아래 「업로드 부하에서 스왑을 금지하기로 정했다」.
+**메모리 상한을 셋 다 걸어 두었다(#127).** `app` 1g · `db` 512m · `cloudflared` 64m(#243)이고, 기동 직후 실측은 `app` 151MiB · `db` 27MiB 다
+(2026-10-12). JVM(`MaxRAMPercentage=65` · `UseSerialGC`) · Postgres(`shared_buffers=48MB` · `max_connections=20`) · Hikari 5 의 이유는
+`docker-compose.yml` 주석이 정본이다. `app` 만 `memswap_limit` = `mem_limit`(스왑 금지, #202) — 아래 「업로드 부하에서 스왑을 금지하기로 정했다」.
 
-**첨부 파일은 로컬 디스크에 저장한다.** compose 의 `uploads` 볼륨이 `/data/uploads` 를 받으며,
-이 볼륨을 떼면 업로드된 이미지가 사라진다. 볼륨을 쓸 수 없는 환경이면 `FileStorage` 구현을
-S3 등으로 교체해야 한다.
-
-**컨테이너를 하드닝했다(#130).** 종전에는 `security_opt` · `cap_drop` · `read_only` · `pids_limit`
-이 **하나도 없어** 세 컨테이너가 Docker 기본 capability 14개를 그대로 들고 돌았다. 단일 VM 에
-전부 모으는 구성이라 침해 하나가 전부를 먹는 형태였다.
+**컨테이너를 하드닝했다(#130)** — 세 컨테이너의 현재 설정 :
 
 | 설정 | `app` | `db` | `cloudflared` |
 |------|-------|------|---------------|
 | `no-new-privileges` | ✅ | ✅ | ✅ |
 | `cap_drop: ALL` | ✅ (추가 없음 — **capability 0개**) | ✅ + 최소 4개 | ✅ |
-| `read_only` | ✅ + `/tmp` tmpfs 64m | — (postgres 가 런타임에 쓴다) | — (동작 검증 불가, 아래 참고) |
+| `read_only` | ✅ + `/tmp` tmpfs 64m | — (postgres 가 런타임에 쓴다) | — (동작 검증 불가) |
 | `pids_limit` | 288 | 128 | 64 |
-| 로그 회전 | 10m × 3 | **10m × 3 (신규)** | **10m × 3 (신규)** |
+| 로그 회전 | 10m × 3 | 10m × 3 | 10m × 3 |
 | 네트워크 | `backend` + `edge` | `backend` | `edge` |
 
-**`db` 의 `cap_add` 네 개는 추측이 아니라 실측이다.** `DAC_OVERRIDE` · `FOWNER` · `SETUID` ·
-`SETGID` 다. 처음에는 `CHOWN` 까지 다섯 개로 잡았는데 **빼도 정상 기동한다** — 이미지의
-`/var/lib/postgresql/data` 가 이미 postgres 소유라 신규 named volume 이 그 소유권을 물려받아
-chown 할 일이 없다. `DAC_OVERRIDE` 를 빼면 `find` 가 디렉터리를 못 읽어 초기화가 멎고,
-`FOWNER` 를 빼면 **healthy 에는 닿지만 `chmod` 가 조용히 실패한다**(그래서 넣어 둔다).
-
-**검증은 기존 볼륨으로 하면 거짓 통과한다.** 깨지는 자리가 postgres **초기화 경로**인데 이미
-초기화가 끝난 `pgdata` 는 그 경로를 타지 않는다. 그래서 매 항목마다 `down -v` 로 볼륨을 버리고
-초기화를 실제로 태워 확인했다. 서버가 중지되어 있어도 이렇게 검증할 수 있는 것은
-**`scripts/deploy.sh` 가 저장소의 `docker-compose.yml` 을 그대로 서버로 올려** 로컬과 운영이
-같은 파일을 쓰기 때문이다.
-
-**운영 VM 에서도 같은 값을 실측했다(2026-10-06, Lightsail 첫 기동에서 2026-10-12 다시).** 로컬 확인은 커널이 달라(Docker Desktop ↔ Ubuntu) 대체에
-그쳤는데, 런칭 첫 배포가 **빈 볼륨**이라 위의 「거짓 통과」 걱정 없이 postgres 초기화 경로가 Ubuntu 커널에서 실제로 탔고
-권한 오류 없이 `init process complete` 까지 갔다(#130). 커널이 들고 있는 값(`/proc/1/status`)이 로컬과 같다 — `CapBnd` db `00000000000000ca` · app · cloudflared
-`0`, `NoNewPrivs` 셋 다 1. `app` 의 `/data/uploads` · `/tmp` 쓰기는 되고 `/app` 은 `Read-only file system`,
-`edge` 에서 `db` 는 이름 해석부터 실패하고 `app:8080` 은 닿는다. 로그 회전 · `pids_limit` · 다이제스트도
-설정대로이고 재시작 0회다. 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
-
-**네트워크를 둘로 나눴다.** `backend`(db↔app)와 `edge`(app↔cloudflared)다. 터널 컨테이너는
-바깥과 말하는 유일한 컨테이너라 침해 표면이 가장 넓은데, 그쪽에서 DB 포트가 보일 이유가 없다.
-확인은 `edge` 에만 붙인 임시 컨테이너에서 `db` 가 **이름 해석조차 되지 않는** 것으로 했다.
-`backend` 를 `internal: true` 로 만들지는 않았다 — db 의 아웃바운드까지 끊는 것은 이 이슈가
-요구한 분리를 넘어서고 새 실패 모드를 들인다.
-
-**`cloudflared` 는 capability 0개로 정상 동작한다.** 하드닝 당시에는 토큰이 자리표시자라 「설정이
-걸렸다」까지만 확인했는데, 운영에 실제 토큰을 넣은 뒤(2026-10-06) **터널 4연결**이 붙고
-`https://api.chseong.fyi/api/health` 가 200 이다.
-
-**`cloudflared` 이미지를 다이제스트로 고정했다(#130).** 이 저장소는 서드파티 액션을 커밋 SHA 로
-고정할 만큼 공급망을 신경 쓰는데 컨테이너 이미지만 `latest` 였다. 표류는 가설이 아니다 —
-고정하던 날 로컬의 `latest`(2026-09-09 빌드)와 레지스트리의 `latest`(2026-09-11 빌드)가 **이미
-서로 달랐다.** 올릴 때는 다이제스트를 바꾸는 커밋으로 올린다. (`postgres:16-alpine` 도 움직이는
-태그지만 이번 범위가 아니다 — 별도로 판단할 것.)
+주제별 근거는 `docker-compose.yml` 의 해당 서비스 주석이 정본이다 — `db` 의 `cap_add` 넷(실측으로 좁힘 · **빈 볼륨으로 초기화 경로를 태워야**
+검증된다) · 네트워크 분리(`edge` 에서 `db` 는 이름 해석부터 안 된다) · `cloudflared` 다이제스트 고정(올릴 때는 다이제스트를 바꾸는 커밋으로).
+운영 VM 에서도 로컬과 같은 값을 확인했다 — 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
 
 **서버의 `.env` 권한은 `deploy.sh` 가 600 으로 고정한다(#130).** 이 파일들에는 `JWT_SECRET` ·
-`OPENAI_API_KEY` · `DB_PASSWORD` 가 평문으로 있고(터널 토큰은 #203 에서 `secrets/` 파일로 옮겼다 — 아래),
-기본 umask 로 만들면 644 가
-되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
+`OPENAI_API_KEY` · `DB_PASSWORD` 가 평문으로 있고, 기본 umask 로 만들면 644 가 되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
 프리플라이트에서 확인하고 고치며, 무엇을 바꿨는지 출력한다. **파일이 없으면 빌드 전에 exit 3 으로 멈춘다(#331)** —
 경고만 하고 넘어가면 빌드 · 전송 뒤 `compose up` 에서야 죽고, `.env` 를 고쳐 재실행하면 한 번도 돌지 않은 이미지가 `:previous` 를 덮는다.
 
 **장애 대응 중 `docker inspect` 출력을 그대로 공유하지 말 것(#130).** `env_file` 과
 `environment:` 로 넘어간 값은 `/var/lib/docker/containers/<id>/config.v2.json` 에 평문으로 굳어
 `Config.Env` 에 전부 남는다. 사람은 보통 `State` 나 `Mounts` 를 보려고 전체를 복사하는데
-그 JSON 안에 비밀이 같이 있다 — 한 번에 JWT 서명키(전 사용자 위장) · OpenAI 키(과금) ·
-터널 토큰(도메인 트래픽 탈취)이 함께 나간다. 필요한 필드만 `--format` 으로 뽑아 쓴다.
-터널 토큰은 #203 에서 이 경로에서 뺐다(아래). **JWT 서명키 · OpenAI 키 · DB 비밀번호는 여전히 env 로 들어가
-노출된다** — 앱이 환경변수로 읽는 구조라 별도 판단 대상이다.
+그 JSON 안에 JWT 서명키(전 사용자 위장) · OpenAI 키(과금) · DB 비밀번호가 같이 있다. 필요한 필드만 `--format` 으로 뽑아 쓴다.
+앱이 환경변수로 읽는 구조라 이 셋은 여전히 env 로 들어간다(별도 판단 대상).
 
-**터널 토큰은 파일로 넘긴다(#203).** `cloudflared tunnel run --token-file /run/secrets/tunnel_token` 에
-compose `secrets`(파일)로 마운트한다. 고정한 이미지(2026.10.0)가 `--token-file` 을 지원한다.
-**권한 조합이 일반적인 비밀 파일과 다르다** — swarm 이 아닌 compose 의 secrets 는 바인드 마운트라 `uid`·`mode`
-지정이 먹지 않고 호스트 권한이 그대로 보인다. cloudflared 는 65532 로 돌아 **파일이 600 이면 못 읽는다**
-(`permission denied`, 운영 VM 에서 음성 대조로 확인). 그래서 파일은 644, 대신 **디렉터리 `secrets/` 를 700** 으로
-막아 호스트의 다른 사용자는 경로부터 들어오지 못한다. `deploy.sh` 프리플라이트가 파일이 있는지 보고 디렉터리를
-700 으로 고정한다. 파일이 없으면 compose 가 기동 전에 멈춘다.
+**터널 토큰은 파일로 넘긴다(#203).** compose `secrets` 로 `/run/secrets/tunnel_token` 에 붙여 `--token-file` 로 읽으므로 `docker inspect` 에 남지 않는다.
+파일 644 · 디렉터리 `secrets/` 700 이고(이유는 `docker-compose.yml` secrets 주석), `deploy.sh` 프리플라이트가 파일을 확인하고 디렉터리를 700 으로 고정한다.
 
 **업로드 부하에서 스왑을 금지하기로 정했다(#202 — `memswap_limit` = `mem_limit`).**
 스왑을 허용하면 유휴 중 밀려난 JVM 힙을 첫 요청이 swap-in 으로 도로 읽어 느려지고(실측 39.1초), 끄면 상주 집합이 남고
@@ -599,17 +528,13 @@ GB-월 과금)을 켜고, 종전 GCS 백업 스크립트는 삭제했다.
 새 인스턴스의 기본 방화벽은 22 · 80 을 연다 — 80 을 닫는다.
 산출물에는 **사용자 이메일 · BCrypt 해시 · 전체 대화**가 들어 있어 스냅샷 공유 · 복사 권한을 열지 않는다.
 
-**리허설(운영을 살려 둔 채 복구를 확인할 때, #255 · 2026-10-15)** — 운영 터널에 붙지 않게 하는 것이 전부다.
+**리허설(운영을 살려 둔 채 복구를 확인할 때, #255)** — 운영 터널에 붙지 않게 하는 것이 전부다. 실측 경위는 CHANGELOG #255.
 
-- `create-instances-from-snapshot --use-latest-restorable-auto-snapshot` 에 **launch script**(user-data)로 `secrets/tunnel_token` 이름 바꾸기 ·
-  `docker update --restart=no deploy-cloudflared-1` · `docker stop deploy-cloudflared-1` 을 넘긴다. 스크립트는 **ASCII 만** — 한글 주석이 있으면 Windows AWS CLI 가 파일을 못 읽는다
-- **launch script 는 docker 보다 늦게 돈다.** 실측 : 부팅 뒤 cloudflared 가 연결 4개를 먼저 등록했고 스크립트가 끊기까지 **약 3초 운영 터널에 같이 붙었다.**
-  그 사이 들어온 요청은 시험 서버(스냅샷 시점 DB)로 갈 수 있으므로 **사용자가 없는 시간에** 하고, 접속 즉시 `sudo docker ps` 로 cloudflared 가 꺼졌는지 본다
-- 확인 : `127.0.0.1:8080/api/health` 200 · 표 7개 행 수를 운영의 **스냅샷 시각 이전 생성분**(`created_at`/`installed_on` < 스냅샷 `createdAt`)과 대조 — 2026-10-15 전부 일치.
-  요청부터 헬스 200 까지 **2분 13초**, 앱 기동은 58초(운영 9초 — 스냅샷 디스크의 첫 읽기가 느리다)
-- 끝나면 인스턴스를 지우고 `get-instances` · `get-static-ips` · `get-disks` 로 남은 것이 없는지 본다. 고정 IP 는 붙이지 않는다(분리된 고정 IP 는 과금)
-
-> 종전 GCS 백업 설계와 복구 리허설은 #132 · CHANGELOG 에 있다.
+1. `create-instances-from-snapshot --use-latest-restorable-auto-snapshot` 에 **launch script**(user-data)로 `secrets/tunnel_token` 이름 바꾸기 ·
+   `docker update --restart=no deploy-cloudflared-1` · `docker stop deploy-cloudflared-1` 을 넘긴다. 스크립트는 **ASCII 만** — 한글 주석이 있으면 Windows AWS CLI 가 파일을 못 읽는다
+2. **launch script 는 docker 보다 늦게 돈다** — cloudflared 가 몇 초 운영 터널에 같이 붙으므로 **사용자가 없는 시간에** 하고, 접속 즉시 `sudo docker ps` 로 cloudflared 가 꺼졌는지 본다
+3. 확인 : `127.0.0.1:8080/api/health` 200 · 표 7개 행 수를 운영의 **스냅샷 시각 이전 생성분**(`created_at`/`installed_on` < 스냅샷 `createdAt`)과 대조
+4. 끝나면 인스턴스를 지우고 `get-instances` · `get-static-ips` · `get-disks` 로 남은 것이 없는지 본다. 고정 IP 는 붙이지 않는다(분리된 고정 IP 는 과금)
 
 ### 데모 - 로컬 + 터널
 

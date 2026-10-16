@@ -19,6 +19,16 @@
   - `AbstractPgIntegrationTest` 공통 속성에 `spring.datasource.hikari.maximum-pool-size=4` — 최악 36 연결. 동시성 테스트 포함 294건 통과, 테스트 수 변화 없음
 
 ### Changed
+- **#297 이후 다시 쌓인 경위 서술 · 중복을 정본 하나로 줄였다(#334).** 2026-10-16 문서 리뷰 표 B 41건(README 표를 줄이는 R7~R9 제외).
+  문서 13개를 고쳐 320줄이 줄었다(6497 → 6177, CHANGELOG 제외). 지운 문장이 담던 결정 · 현재 값은 각 항목의 정본(스크립트 · compose · Dockerfile 머리 주석,
+  README, features, erd 「messages」, overview 「알려진 제약」, 이 CHANGELOG)에 남아 있다.
+  - INDEX : 기술 스택 · 실행 · 배포 준비 표를 README 「기술 스택」 · 「로컬 실행」과 backend · frontend 「배포」 포인터로(-39)
+  - CONVENTIONS : 게이트별 사고 이력 · 「못 잡는 것」을 걷고 무엇을 보는지만, 필수 체크 · 관리자 우회 근거는 CHANGELOG #166 으로. case-floor `clean` · 리포트 재생성 경고는 유지(-52)
+  - backend : 유량 제어 · 실행 모드 · 동기화의 「종전에는」, compose 주석을 옮겨 적던 메모리 · 하드닝 · 네트워크 · 다이제스트 · 터널 토큰 서술, 리허설 실측(-75). `postgres:16-alpine` 고정 판단은 backlog 로
+  - live-integration : §0 상태 서술 · 가정 표 「확인됨」 칸 · 지난 모델 실측 행 · 중복 서술(-36). 절 번호는 그대로
+  - design-system : 상태 칸 이력 · v1.0/v2.1 인용 · §8 파일별 변경 표 · 경위 문장(-31). 「색 리터럴이 허용되는 자리」 유지
+  - features : 버전 노트 · FEAT-OPS-002 「도입 전 상태」 · FEAT-AUTH-001 결정 번복 표(이유 2줄만 남김)(-30). frontend : FEAT-CHAT 명세 재서술을 포인터로, 죽은 예시 · 번들 수치 제거(-25)
+  - api · requirements · overview · erd · backlog · current-sprint : 경위 구절 · 2중 서술 정리(-32)
 - **주석을 정리했다 — 틀린 주석 · 정의 없는 태그 · 중복 · 경위 서술(#332).** 2026-10-16 주석 리뷰 C1~C53(C46 은 #331 이 처리).
   코드 · Flyway SQL 은 한 줄도 바꾸지 않았다 — 주석을 걷은 코드가 base 와 같음을 파일 79개 전부 대조.
   - 낡음 · 틀림 9건 : 자가 가입 전제(`application.yml` · `AdminRoleSynchronizer`), 「셋 다 남긴다」(static 잡 스텝은 6개),
