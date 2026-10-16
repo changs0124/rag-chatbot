@@ -1,0 +1,15 @@
+# pure 상태 f1dbc00
+	public int cleanupUnreferencedFiles(OffsetDateTime cutoff) {
+		Instant effective = clampCutoff(cutoff).toInstant();
+
+		Set<String> referenced = new HashSet<>(attachmentRepository.findAllStoragePaths());
+		int removed = 0;
+		for (FileStorage.StoredFile file : fileStorage.listAll()) {
+			if (referenced.contains(file.storagePath()) || !file.lastModified().isBefore(effective)) {
+				continue;
+			}
+			fileStorage.delete(file.storagePath());
+			removed++;
+		}
+		return removed;
+	}
