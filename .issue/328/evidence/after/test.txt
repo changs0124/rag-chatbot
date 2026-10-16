@@ -1,0 +1,28 @@
+# #328 변경 후 테스트 (mvnw clean verify 의 surefire 결과에서 발췌)
+
+name="com.ragchatbot.controller.ChatFlowTest" tests="15" errors="0" failures="0" 
+name="com.ragchatbot.security.JwtSlidingRefreshTest" tests="6" errors="0" failures="0" 
+name="com.ragchatbot.controller.AuthFlowTest" tests="16" errors="0" failures="0" 
+name="com.ragchatbot.service.ChatStreamTimeoutTest" tests="6" errors="0" failures="0" 
+
+## 이번에 넣은 케이스 (전부 통과)
+controller.ChatFlowTest.xml:<testcase name="citation_objects_carry_no_uri" classname="com.ragchatbot.controller.ChatFlowTest" time="0.425"/>
+security.JwtSlidingRefreshTest.xml:<testcase name="new_and_refreshed_tokens_carry_no_email_claim" classname="com.ragchatbot.security.JwtSlidingRefreshTest" time="0.402"/>
+security.JwtSlidingRefreshTest.xml:<testcase name="legacy_token_with_email_claim_authenticates_and_refreshes" classname="com.ragchatbot.security.JwtSlidingRefreshTest" time="0.378"/>
+
+- citation_objects_carry_no_uri : SSE citations · GET /api/conversations/{id}/messages 의 출처 객체 키가 정확히 {seq, sourceName, snippet} (containsOnlyKeys)
+- new_and_refreshed_tokens_carry_no_email_claim : 로그인 토큰 · 갱신 토큰 모두 email 클레임 isMissing
+- legacy_token_with_email_claim_authenticates_and_refreshes : email 클레임이 든 옛 형식 토큰(우리 시크릿 서명, 실제 로그인 토큰의 iat) -> /api/auth/me 200, X-Refresh-Token 발급, 갱신본에 email 없음, 갱신본으로 다시 200
+- 변경 전에는 앞의 둘이 실패, 셋째는 갱신본 email 단언에서 실패했다(before/notes.txt)
+
+## 완료 기준 grep : git grep -nw uri -- backend/src/main frontend/src docs/01_specs/api.md
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:203:				.uri("/responses")
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:539:				.uri("/files")
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:554:					.uri("/vector_stores/" + sharedVectorStoreId + "/files")
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:577:					.uri("/vector_stores/" + vectorStoreId + "/files/" + openaiFileId)
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:610:			String uri = "/vector_stores/" + sharedVectorStoreId + "/files?limit=100"
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:613:					.uri(uri)
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:632:					file = client.get().uri("/files/" + fileId).retrieve().body(JsonNode.class);
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:694:			var request = client.delete().uri(path)
+backend/src/main/resources/db/migration/V1__init.sql:44:    uri         text,
+(남은 것은 RestClient .uri() 호출과 Flyway V1 컬럼 정의뿐 - 출처 uri 관련 0건)
