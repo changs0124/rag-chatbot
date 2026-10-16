@@ -12,7 +12,7 @@
     현재 원본의 산출물은 수정 전후 바이트 동일
   - `check-doc-refs.sh` · `check-doc-sections.sh` · `check-doc-versions.sh` : 아무도 설정하지 않는 `DOC_PATHS` · `M2_REPO` 덮어쓰기와 닿지 않는 `grep` 가드를 지우고 대상 `docs README.md` 를 세 곳 같은 값으로
   - `deploy.sh` : `rag-chatbot-backend:previous` 리터럴 4곳을 `PREV` 하나로. `.gitignore` : 넓은 패턴이 이미 덮는 3줄 삭제.
-    `doc-figures/preprocess.py` : 정규식의 NBSP 리터럴을 ` ` 이스케이프로
+    `doc-figures/preprocess.py` : 정규식의 NBSP 리터럴을 `\u00a0` 이스케이프로
 
 ### Fixed
 - **스크립트 · CI 결함 넷을 고쳤다(#331).** 2026-10-16 전체 리뷰(인프라 I1 · I2 · I3 · I6, 전부 재현 확인).
@@ -22,6 +22,7 @@
   - `deploy.sh` : 서버에 `.env` · `backend/.env` 가 없으면 경고만 하고 빌드 · 전송까지 간 뒤 `compose up` 에서 죽었고, 고쳐서 재실행하면
     한 번도 돌지 않은 이미지가 `:previous`(유일한 롤백 자산)를 덮었다. 사전 확인에서 exit 3 으로 멈춘다(권한 고정은 그대로)
   - `scripts/claims/preprocess.py` : 고장일이 빈 호기 · 텍스트 고장일이 하나라도 있으면 호기 타임라인 정렬에서 `ValueError` · `TypeError` 로 죽었다.
+    고장일이 날짜인 행만 호기 그룹에 넣고, 뺀 건이 있으면 「같은 호기 재발」 절 머리에 건수 · 클레임 번호를 한 줄로 밝힌다. 현재 원본의 산출물은 수정 전후 바이트 동일
     고장일이 날짜인 행만 호기 그룹에 넣는다. 현재 원본의 산출물은 수정 전후 바이트 동일
 ### Removed
 - **아무도 읽지 않던 계약 필드 둘을 뺐다 — 출처 `uri` 와 JWT `email` 클레임(#328).**

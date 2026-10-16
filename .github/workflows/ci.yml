@@ -81,7 +81,7 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Node 24
+      - name: Set up Node (.nvmrc)
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -198,7 +198,7 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Node 24
+      - name: Set up Node (.nvmrc)
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
