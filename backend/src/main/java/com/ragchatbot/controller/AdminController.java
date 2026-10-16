@@ -31,8 +31,13 @@ import com.ragchatbot.dto.AdminDtos.TemporaryPasswordResponse;
 /**
  * 관리자 - RAG 문서 관리(FEAT-ADMIN-002) · 사용자 관리(FEAT-ADMIN-003).
  *
- * <p><b>모든 경로가 먼저 관리자 여부를 확인하고, 아니면 404 를 던진다</b>(P-3).
+ * <p><b>인가는 메서드 본문 진입 시 확인하고, 관리자가 아니면 404 를 던진다</b>(P-3).
  * 403 을 쓰지 않는 이유는 관리 기능의 존재 자체를 드러내지 않기 위함이다.
+ *
+ * <p><b>감수하는 약점</b> : 인자 해석({@code @Valid @RequestBody} · {@code @PathVariable UUID} · multipart)이
+ * 본문보다 먼저 돌아, 일반 사용자의 형식 오류는 404 가 아니라 400 을 받고 경로의 존재가 드러날 수 있다(#327).
+ * 존재는 이미 다른 길(404 문구 차이 · 405 {@code Allow} · 프론트 번들의 경로 목록)로 드러나 있어 새로 새는 것이
+ * 없으므로 허용한다. 인터셉터로 앞당기는 것은 이 이득에 비해 과하다.
  */
 @RestController
 @RequestMapping("/api/admin")
