@@ -68,7 +68,8 @@ exception/    ApiExceptions + GlobalExceptionHandler
 | `HttpRequestMethodNotSupportedException` | 405 | `METHOD_NOT_ALLOWED` |
 | `HttpMediaTypeNotSupportedException` | 415 | `UNSUPPORTED_MEDIA_TYPE` |
 | `MissingServletRequestPartException` · `MultipartException` | 400 | `BAD_REQUEST` |
-| **그 밖의 모든 예외** | 500 | `INTERNAL_ERROR` |
+| `AsyncRequestTimeoutException`(SSE 타임아웃) | 503 · **커밋 뒤면 본문 없음** | `SERVICE_UNAVAILABLE` |
+| **그 밖의 모든 예외** | 500 · **커밋 뒤면 본문 없음** | `INTERNAL_ERROR` |
 
 마지막 줄이 **최종 폴백**이다(FEAT-OPS-002). 없으면 예상 못 한 예외가 Spring 기본 형태로 나가 응답 계약이 깨진다.
 
@@ -76,8 +77,11 @@ exception/    ApiExceptions + GlobalExceptionHandler
   사용자에게 주는 것은 8자리 **상관 ID** 하나이고, 그 값으로 서버 로그를 찾는다.
 - 스택트레이스는 `ERROR` 로 남기며 상관 ID·메서드·경로를 함께 적는다. 관측 도구를 도입하지 않고
   "오류가 났어요"를 로그의 한 줄과 이어 붙일 수 있는 유일한 수단이다.
-- **SSE 스트림 도중의 오류는 여기 오지 않는다.** 응답이 이미 시작돼 상태 코드를 바꿀 수 없고,
-  `ChatService` 가 `event: error` 로 따로 처리한다.
+- **SSE 스트림의 타임아웃과 도중 오류도 이 처리기에 온다**(#326). emitter 타임아웃과 `completeWithError` 를 스프링이
+  비동기 디스패치로 다시 넘기기 때문이다. 그때 응답은 이미 커밋돼 있으므로 **본문을 쓰지 않는다**(null `ResponseEntity`) —
+  쓰면 열린 이벤트 스트림에 JSON 을 넣으려다 변환기가 실패해 연결이 깨진다. 사용자에게 알리는 것은 `ChatService` 의
+  `event: error` 이고, 타임아웃은 아무 이벤트 없이 끝난다(api.md API-POST-005 의 세 번째 종료 경로). 로그는 타임아웃이 `WARN` 한 줄,
+  도중 오류는 폴백의 `ERROR` 그대로다 — 후자는 실제 원인의 유일한 서버 기록이다. TC-OPS-025~027 이 잠근다.
 - 스프링은 더 구체적인 핸들러를 먼저 고르므로, `@ExceptionHandler(Exception.class)` 를 두어도
   전용 핸들러가 있는 예외는 그쪽으로 간다. 폴백과 도메인 예외는 `GlobalExceptionFallbackTest` 가 잠근다
   (`ApiError` 모양 · 상관 ID · 내부 메시지 비노출 · 도메인 예외가 제 상태를 지킨다).
