@@ -151,7 +151,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 |------|------|------|
 | `highlight` · `highlight-ink` | `chat/MessageList.tsx` 「자료 없음」 배지 | 각 1회 (같은 줄) |
 | `highlight` | `chat/Composer.tsx` 첨부 실패 아이콘 | 1회. 어두운 고정 스크림 위라 밝은 면 기준 토큰을 못 쓴다 |
-| `danger-ink` | `ConfirmModal.tsx` 삭제 확인 버튼 | 1회 — `bg-danger` 가 있는 유일한 자리다 |
+| `danger-ink` | `ConfirmModal.tsx` 확인 버튼(삭제 · 비밀번호 초기화) | 1회 — `bg-danger` 가 있는 유일한 자리다 |
 | `danger-soft` | `pages/AdminPage.tsx` 관리자 오류 배너 | 1회 |
 | `danger-soft` | `pages/MyPage.tsx` 오류 배너 | 1회. 관리자 쪽과 같은 모양 |
 

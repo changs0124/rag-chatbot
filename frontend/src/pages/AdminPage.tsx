@@ -63,6 +63,11 @@ export default function AdminPage() {
   // 목록 오류는 따로 둔다 - 폴링 성공이 걷어야 하는데, 공유 error 를 지우면 업로드 · 삭제 오류까지 사라진다(#324)
   const [listError, setListError] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<RagDocument | null>(null)
+  // 초기화는 기존 로그인을 전부 끊고 되돌릴 수 없어 삭제처럼 확인을 거친다(#325)
+  const [pendingReset, setPendingReset] = useState<AdminUser | null>(null)
+  // 요청 중에는 초기화 버튼을 모두 막는다 - 연타 · 동시 요청이면 늦게 온 응답이 발급 창을 덮어써
+  // 이미 무효가 된 비밀번호나 다른 사람의 값만 남는다
+  const [resettingId, setResettingId] = useState<string | null>(null)
   // kind 로 갈리는 것은 안내 문구뿐이다 — 발급은 "새 계정"이고 초기화는 "기존 세션이 끊긴다"
   const [issued, setIssued] = useState<{
     kind: 'created' | 'reset'
@@ -164,13 +169,19 @@ export default function AdminPage() {
     }
   }
 
-  async function onReset(target: AdminUser) {
+  async function confirmReset() {
+    const target = pendingReset
+    setPendingReset(null)
+    if (!target || resettingId) return
     setError(null)
+    setResettingId(target.id)
     try {
       const res = await resetUserPassword(target.id)
       setIssued({ kind: 'reset', name: target.name, password: res.temporaryPassword })
     } catch (e) {
       setError(errorMessage(e, '초기화하지 못했습니다'))
+    } finally {
+      setResettingId(null)
     }
   }
 
@@ -337,8 +348,9 @@ export default function AdminPage() {
                 {/* 자기 자신은 대상이 아니다 — 마이페이지에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
                 {person.id !== user?.id && (
                   <button
-                    onClick={() => void onReset(person)}
-                    className="min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink md:min-h-0"
+                    onClick={() => setPendingReset(person)}
+                    disabled={resettingId !== null}
+                    className="min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink disabled:opacity-60 md:min-h-0"
                   >
                     비밀번호 초기화
                   </button>
@@ -357,6 +369,16 @@ export default function AdminPage() {
           message="이 문서는 더 이상 답변 근거로 쓰이지 않습니다. 이미 나간 답변의 출처 표기는 그대로 남습니다."
           onConfirm={() => void confirmDelete()}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {pendingReset && (
+        <ConfirmModal
+          title={`${pendingReset.name} 님의 비밀번호를 초기화할까요?`}
+          message="새 임시 비밀번호를 발급합니다. 기존 로그인이 모두 해제됩니다."
+          confirmLabel="초기화"
+          onConfirm={() => void confirmReset()}
+          onCancel={() => setPendingReset(null)}
         />
       )}
 
