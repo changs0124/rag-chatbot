@@ -75,6 +75,8 @@ describe('useChat 이력 불러오는 중', () => {
     await act(async () => a.reject(new Error('down')))
     expect(result.current.loadingMessages).toBe(false)
     expect(result.current.messages).toEqual([])
+    // 빈 화면만 남기면 이력이 있는 대화가 새 대화처럼 보인다(#359)
+    expect(result.current.error).toBe('대화를 불러오지 못했습니다')
   })
 
   it('불러오는 중에 새 대화를 누르면 로딩이 바로 끝난다', async () => {

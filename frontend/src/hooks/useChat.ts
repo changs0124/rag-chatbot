@@ -76,7 +76,7 @@ export function useChat() {
    * 대화를 떠날 때 돌고 있던 스트림을 끊음.
    *
    * 안 끊으면 이전 대화의 스트림이 계속 돌면서 단계 줄이 새 화면에 잔류함. 중단 후 처리는
-   * 정해진 정책을 그대로 탐(부분 저장 + `complete`) - `send` 의 catch 가 수행하며, 그 시점엔
+   * 정해진 정책을 그대로 탐(부분 저장 + `complete`) - `run` 의 catch 가 수행하며, 그 시점엔
    * `messages` 가 이미 새 대화 것으로 바뀌어 있어 이전 턴의 patch 는 대상을 못 찾고 흘러감.
    */
   const abortActiveStream = useCallback(() => {
@@ -91,6 +91,9 @@ export function useChat() {
 
   const selectConversation = useCallback(
     async (id: string) => {
+      // 답을 받는 중인 지금 대화를 다시 누르면 아무것도 하지 않는다(#359) - 모바일에서 서랍을 열었다가
+      // 지금 대화를 눌러 돌아오는 것이 자연스러운데, 그대로 두면 스트림이 끊겨 답이 중단으로 저장된다
+      if (id === activeId && abortRef.current) return
       abortActiveStream()
       const mine = ++generation.current
       setActiveId(id)
@@ -98,19 +101,23 @@ export function useChat() {
       loadingRef.current = true
       setLoadingMessages(true)
       let loaded: ChatMessage[] = []
+      let failed = false
       try {
         loaded = await getMessages(id)
       } catch {
-        // 실패하면 빈 이력으로 아래의 같은 길을 탄다
+        // 실패하면 빈 이력으로 아래의 같은 길을 타되 실패를 드러낸다(#77 · #359) - 안 드러내면 이력이 있는
+        // 대화가 새 대화처럼 빈 화면으로 보인다
+        failed = true
       }
       // 그사이 다른 대화로 옮겼으면 버린다. 이 검사가 없으면 A→B 를 빠르게 눌렀을 때
       // 늦게 도착한 A 의 이력이 B 화면을 덮어써, 사이드바는 B 인데 본문은 A 가 된다
       if (generation.current !== mine) return
       setMessages(loaded)
+      if (failed) setError('대화를 불러오지 못했습니다')
       loadingRef.current = false
       setLoadingMessages(false)
     },
-    [abortActiveStream],
+    [activeId, abortActiveStream],
   )
 
   const newConversation = useCallback(() => {

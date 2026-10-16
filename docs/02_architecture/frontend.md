@@ -122,6 +122,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 - **답변 본문은 마크다운으로 그린다(#270).** 표식으로 먼저 자르고, 표식 사이의 글만 `components/chat/Markdown.tsx`(react-markdown + remark-gfm)로 그린다.
   **원시 HTML 은 그리지 않는다**(react-markdown 기본, rehype-raw 없음) · 위험한 링크 스킴은 기본 urlTransform 이 지운다 ·
+  **마크다운 이미지(`![](url)`)도 그리지 않는다**(#359, 바깥 주소를 곧바로 불러 값이 새는 길) ·
   표는 가로 스크롤 상자 안. **사용자 메시지와 출처 스니펫은 평문 그대로**다.
 - **한국어 조사 앞의 굵게도 닫는다(#287).** 표준 강조 규칙은 닫는 `**` 앞이 문장부호 · 뒤가 글자면 굵게로 보지 않으므로
   `remark-cjk-friendly` 를 remark-gfm 뒤에 붙여 CJK 글자 옆에서만 이 규칙을 푼다.

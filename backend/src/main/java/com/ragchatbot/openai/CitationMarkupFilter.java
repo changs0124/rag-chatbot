@@ -23,7 +23,8 @@ final class CitationMarkupFilter {
 	private static final char START = '';
 	private static final char END = '';
 	private static final char SEP = '';
-	private static final Pattern FILE_REF = Pattern.compile("turn(\\d+)file(\\d+)");
+	// 자릿수를 묶는다(#359) - 모델이 낸 아주 긴 숫자가 parseInt 에서 터지면 이미 토큰을 보낸 스트림이 오류로 끝난다
+	private static final Pattern FILE_REF = Pattern.compile("turn(\\d{1,9})file(\\d{1,9})");
 
 	/** 표기 안 {@code turnNfileM} 하나. N = 몇 번째 file_search 호출, M = 그 호출의 몇 번째 결과(둘 다 0-base) */
 	record FileRef(int turn, int file) {

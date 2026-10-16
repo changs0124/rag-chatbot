@@ -284,6 +284,16 @@ describe('MessageList', () => {
       expect(link?.getAttribute('href') ?? '').not.toMatch(/javascript:/i)
     })
 
+    // 그리면 모델 출력에 실린 바깥 주소를 브라우저가 곧바로 불러 쿼리로 값이 새어 나갈 수 있다(#359)
+    it('마크다운 이미지는 그리지 않는다', () => {
+      const { container } = render(
+        <MessageList messages={[msg('assistant', '앞 글\n\n![요약](https://e.example/a.png?d=secret)\n\n뒤 글')]} />,
+      )
+      expect(container.querySelector('img')).toBeNull()
+      expect(screen.getByText('앞 글')).toBeInTheDocument()
+      expect(screen.getByText('뒤 글')).toBeInTheDocument()
+    })
+
     it('그림 표식 앞뒤의 마크다운과 그림이 함께 나온다', async () => {
       vi.stubGlobal('fetch', vi.fn(async () => new Response(new Blob(['png']), { status: 200 })))
       vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:fig' })

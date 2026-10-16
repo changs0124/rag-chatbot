@@ -28,6 +28,14 @@ describe('슬라이딩 재발급 토큰 수신', () => {
     expect(getToken()).toBe('old-token')
   })
 
+  // 로그아웃 전에 떠난 요청이 늦게 돌아와 토큰을 되살리면 새로고침에 로그아웃한 세션으로 다시 들어간다(#359)
+  it('로그아웃 뒤에 도착한 응답의 헤더는 버린다', () => {
+    setToken(null)
+    adoptRefreshedToken(new Response(null, { headers: { 'X-Refresh-Token': 'late-token' } }))
+    expect(getToken()).toBeNull()
+    expect(localStorage.getItem('rag_chatbot_token')).toBeNull()
+  })
+
   it('스트림 경로도 토큰을 교체한다', async () => {
     const body = new ReadableStream<Uint8Array>({
       start(controller) {

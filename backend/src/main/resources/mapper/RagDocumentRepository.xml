@@ -86,7 +86,7 @@
 		where id = #{id} and deleted_at is null
 	</update>
 
-	<!-- 이미 지워진 행은 건드리지 않음 - 두 번째 삭제가 0행을 돌려줘야 호출자가 404 로 귀결시킴 -->
+	<!-- 이미 지워진 행은 건드리지 않음 - 404 는 앞선 findAliveById 가 내고, 그 사이 먼저 지워져 0행이면 호출자는 경고만 남긴다 -->
 	<update id="softDelete">
 		update rag_documents set deleted_at = #{deletedAt}
 		where id = #{id} and deleted_at is null

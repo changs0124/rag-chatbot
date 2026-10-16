@@ -21,7 +21,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * 세션 슬라이딩 재발급 (FEAT-OPS-003 · TC-OPS-020~024).
+ * 세션 슬라이딩 재발급 (FEAT-OPS-003 · TC-OPS-020 · 022 · 024, 021 은 JwtRefreshFarFromExpiryTest · 023 은 JwtRefreshDisabledTest).
  *
  * <p>토큰 수명을 <b>임계와 같게</b> 잡아 발급 즉시 "만료 임박" 상태가 되게 함 - 30분을 실제로
  * 흘려보내는 검사는 시각에 의존해 게이트가 되지 못함(CONVENTIONS 규칙).

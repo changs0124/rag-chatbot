@@ -4,15 +4,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -191,6 +198,43 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 		// 한도를 넘으면 비밀번호가 맞아도 통과시키지 않음
 		var over = rest.postForEntity(LOGIN, new Login("auth-rl@b.com", temporary), Map.class);
 		assertThat(over.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+	}
+
+	/**
+	 * TC-AUTH-013 : 틀린 로그인을 한꺼번에 보내도 상한만큼만 비밀번호 검사까지 간다(#359).
+	 *
+	 * <p>종전에는 확인과 계수가 따로라, BCrypt 가 도는 사이 병렬 요청이 모두 0 을 읽고 전부 401 이 됐다.
+	 * 고정 윈도우라 분 경계를 한 번 넘을 수 있어 <b>상한의 두 배</b>까지 허용한다(CONVENTIONS 「테스트·CI 게이트」).
+	 */
+	@Test
+	void parallel_wrong_logins_are_capped() throws Exception {
+		issueAccount("auth-rl-par@b.com");
+		int perMinute = 3;
+		int requests = 16;
+		var pool = Executors.newFixedThreadPool(requests);
+		var start = new CountDownLatch(1);
+		try {
+			List<Future<HttpStatusCode>> results = new ArrayList<>();
+			for (int i = 0; i < requests; i++) {
+				results.add(pool.submit(() -> {
+					start.await();
+					return rest.postForEntity(LOGIN, new Login("auth-rl-par@b.com", "nope-wrong"), Map.class)
+							.getStatusCode();
+				}));
+			}
+			start.countDown();
+			int unauthorized = 0;
+			for (var r : results) {
+				HttpStatusCode status = r.get(30, TimeUnit.SECONDS);
+				assertThat(status).isIn(HttpStatus.UNAUTHORIZED, HttpStatus.TOO_MANY_REQUESTS);
+				if (status == HttpStatus.UNAUTHORIZED) {
+					unauthorized++;
+				}
+			}
+			assertThat(unauthorized).as("비밀번호 검사까지 간 요청 수").isLessThanOrEqualTo(perMinute * 2);
+		} finally {
+			pool.shutdownNow();
+		}
 	}
 
 	/** 성공한 로그인은 상한을 소모하지 않음 - 정상 사용자가 여러 번 로그인해도 잠기면 안 됨 */

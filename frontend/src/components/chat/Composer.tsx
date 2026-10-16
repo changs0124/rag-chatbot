@@ -123,6 +123,8 @@ export default function Composer({
    * 순서가 중요하다 - draftsRef 를 마지막에 비워야, abort 보다 먼저 서버가 받아 버린 업로드가
    * 뒤늦게 resolve 했을 때 startUpload 의 `some(...)` 가 거짓이 되어 **기존 회수 경로를 그대로 탄다.**
    * 먼저 비우면 URL 회수 대상도 함께 사라진다.
+   *
+   * 로그아웃으로 언마운트될 때는 토큰이 먼저 지워져 여기서 보내는 삭제가 401 로 실패한다 - 그 고아는 회수 크론이 걷는다.
    */
   useEffect(
     () => () => {

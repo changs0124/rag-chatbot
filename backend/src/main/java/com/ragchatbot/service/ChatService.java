@@ -101,8 +101,12 @@ public class ChatService {
 		// 사용자 메시지에는 사용량이라는 개념이 없음 - null(FEAT-OPS-001)
 		messageRepository.insert(new Message(userMsgId, conversation.id(), "user", message, "complete", false,
 				false, null, null, null));
+		// 위의 확인 뒤에 다른 전송이 먼저 실었거나 고아 회수가 지웠으면 0행이다 - 그대로 가면 남의 메시지에
+		// 실린 첨부나 곧 지워질 파일을 들고 답을 만든다(#359). 던지면 트랜잭션이 사용자 메시지까지 되돌린다
 		for (UUID attId : distinctIds) {
-			attachmentRepository.linkToMessage(attId, userMsgId, userId);
+			if (attachmentRepository.linkToMessage(attId, userMsgId, userId) == 0) {
+				throw new BadRequestException("첨부를 쓸 수 없음 - 이미 보냈거나 정리됨");
+			}
 		}
 		return new PreparedChat(conversation.id(), message, refs, history);
 	}
@@ -222,7 +226,7 @@ public class ChatService {
 					}, onStage);
 
 			// 어시스턴트 메시지 + 출처를 하나의 트랜잭션으로 저장(REQ-RAG-002)
-			// timedOut 이 참일 수 있음 - 타임아웃 뒤 업스트림이 뒤늦게 응답한 갈래(Message 머리 주석)
+			// timedOut 이 참일 수 있음 - 토큰을 다 보낸 뒤 타임아웃이 나고 완료 응답이 늦게 온 갈래(Message 머리 주석)
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, completion.fullText(),
 					"complete", false, timedOut.get(), completion.citations(), completion.inputTokens(),
 					completion.outputTokens());
@@ -241,8 +245,16 @@ public class ChatService {
 			// 화면도 complete 로 다루므로 재조회와 어긋나지 않음.
 			// 부분 텍스트가 비면 저장하지 않음 - 빈 답변 버블을 남기면 화면(버블 제거)과 재조회가 어긋남.
 			// stopped=true 로 남겨야 무자료 배너가 붙지 않음 - 인용은 스트림 끝에 오므로 여기서는 늘 0건임
+			//
+			// 단, 첫 토큰 전에 서버 타임아웃으로 닫힌 것이면 error 로 남긴다(#359) - 비었다고 건너뛰면 타임아웃 사실이
+			// 어디에도 남지 않고, 화면도 완료 이벤트 없이 끊겨 오류로 보인다(갈래 ③ 과 같은 모양)
 			if (!saved) {
-				savePartial(prepared, userId, asstMsgId, buffer.toString(), "complete", true, timedOut.get(), null);
+				if (timedOut.get() && buffer.isEmpty()) {
+					savePartial(prepared, userId, asstMsgId, "", "error", false, true, null);
+				} else {
+					savePartial(prepared, userId, asstMsgId, buffer.toString(), "complete", true, timedOut.get(),
+							null);
+				}
 			}
 			completeQuietly(emitter);
 		} catch (Exception ex) {

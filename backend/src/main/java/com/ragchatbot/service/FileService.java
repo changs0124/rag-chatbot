@@ -24,7 +24,7 @@ import com.ragchatbot.dto.FileDtos.AttachmentResponse;
 
 /**
  * 파일 업로드/검증/서빙/고아 정리.
- * 검증 : MIME 허용목록 → 타입별 용량 → 매직바이트. 서빙 : 서명 경로 토큰.
+ * 검증 : MIME 허용목록 → 용량 상한(10MB) → 매직바이트. 서빙 : 서명 경로 토큰.
  */
 @Service
 public class FileService {
@@ -140,7 +140,9 @@ public class FileService {
 	}
 
 	/**
-	 * 고아(미연결) 첨부 회수 - 파일 삭제 후 행 삭제(REQ-OPS-004).
+	 * 고아(미연결) 첨부 회수(REQ-OPS-004). {@link #delete} 와 같이 <b>행을 먼저, {@code message_id is null}
+	 * 을 걸어</b> 지우고 지워진 것만 파일을 지운다(#359) - 목록을 읽은 뒤 그 첨부가 전송에 실리면 행이
+	 * 0개 지워지고 파일도 남는다. 종전 순서(파일 → 조건 없는 행 삭제)는 방금 보낸 메시지의 첨부를 지웠다.
 	 *
 	 * <p>cutoff 가 최소 유예({@value #MIN_ORPHAN_AGE_MINUTES}분)보다 최근이면 그 경계로 되돌림(클램프).
 	 * 첨부는 업로드된 뒤 사용자가 전송 버튼을 누를 때까지 {@code message_id = null} 로 있으므로,
@@ -149,12 +151,14 @@ public class FileService {
 	 */
 	public int cleanupOrphans(OffsetDateTime cutoff) {
 		OffsetDateTime effective = clampCutoff(cutoff);
-		var orphans = attachmentRepository.findOrphans(effective);
-		for (Attachment a : orphans) {
-			fileStorage.delete(a.storagePath());
-			attachmentRepository.deleteById(a.id());
+		int removed = 0;
+		for (Attachment a : attachmentRepository.findOrphans(effective)) {
+			if (attachmentRepository.deleteDraftByIdAndUser(a.id(), a.userId()) == 1) {
+				fileStorage.delete(a.storagePath());
+				removed++;
+			}
 		}
-		return orphans.size();
+		return removed;
 	}
 
 	/**
