@@ -1,0 +1,2 @@
+# 실패 경로 확인 : compose 의 db image 를 태그만 남기면(다이제스트 제거) 테스트가 태그로 떨어지지 않고 기동을 멈춘다. 확인 뒤 compose 원복
+IllegalStateException: D:\dev\rag-chatbot\.issue\worktrees\369-testcontainers-pg-digest\docker-compose.yml 에서 다이제스트 고정된 postgres image 줄을 못 찾음

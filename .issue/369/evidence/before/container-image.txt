@@ -1,0 +1,6 @@
+# 변경 전 : AdminRoleSyncFlowTest 실행 중 Testcontainers 가 띄운 postgres 컨테이너 (2026-10-19, 로컬)
+# 요청한 이미지는 움직이는 태그 그대로다. 다이제스트가 721873 인 것은 이 PC 캐시가 10-16 에 갱신됐기 때문(우연) - 다른 PC · CI 러너는 pull 시점의 이미지를 받는다
+Config.Image=postgres:16-alpine
+Image(id)=sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+RepoDigests=[postgres@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea]
+PG_VERSION=16.15
