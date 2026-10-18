@@ -29,6 +29,8 @@ services:
     #
     # 올릴 때는 **다이제스트를 바꾸는 커밋**으로 올린다 - 초기화 경로 검증은 아래 cap_add 주석대로 `down -v` 로 한다 :
     #   docker buildx imagetools inspect postgres:16-alpine     (Digest 줄 - 멀티 아키텍처 인덱스)
+    # 통합 테스트(AbstractPgIntegrationTest)가 **이 줄을 그대로 읽어** 같은 이미지로 돈다(#369) - 테스트 쪽은 따로 고치지 않는다.
+    # 그래서 이 줄은 `image: postgres:<태그>@sha256:<64자>` 한 줄 형태를 유지한다(바꾸면 테스트가 기동을 멈춘다)
     image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     # 기본값(shared_buffers 128MB · max_connections 100)보다 줄인다. app 쪽 Hikari 풀이 5 라 20 이면 여유다.
     # 호스트가 넓어져도 일부러 키우지 않았다
