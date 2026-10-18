@@ -1,0 +1,7 @@
+# 변경 후 : AdminRoleSyncFlowTest 실행 중 Testcontainers 가 띄운 postgres 컨테이너 (2026-10-19, 로컬)
+# 요청 이미지가 compose 의 다이제스트 참조 그대로다 - 캐시와 무관하게 이 이미지만 쓴다
+Config.Image=postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+Image(id)=sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+RepoDigests=[postgres@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea]
+PG_VERSION=16.15
+compose: image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
