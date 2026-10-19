@@ -1,0 +1,67 @@
+# 변경 전 지시문 — 출처 회귀 기준
+# 서버에서 OpenAI 직접 호출. 배터리 qa-questions.json 31문항 × 2회. ann = file_citation annotation 수, 표기 = filecite 표기 수(#281 출처 복원용)
+
+근거 문항 응답 56 · 출처 0건(ann·표기 모두 0) 2 · 평균 ann 3.38 · 평균 표기 0.29
+무자료 문항 G1~G3 출처 : [('G1', 0, 0), ('G2', 0, 0), ('G3', 0, 0), ('G1', 0, 0), ('G2', 0, 0), ('G3', 0, 0)]
+{"id": "A1", "ann": 2, "marks": 0}
+{"id": "A2", "ann": 1, "marks": 1}
+{"id": "A3", "ann": 2, "marks": 0}
+{"id": "A4", "ann": 2, "marks": 0}
+{"id": "A5", "ann": 8, "marks": 0}
+{"id": "A6", "ann": 2, "marks": 0}
+{"id": "B1", "ann": 6, "marks": 0}
+{"id": "B2", "ann": 2, "marks": 0}
+{"id": "B3", "ann": 3, "marks": 0}
+{"id": "B4", "ann": 2, "marks": 0}
+{"id": "C1", "ann": 2, "marks": 0}
+{"id": "C2", "ann": 1, "marks": 0}
+{"id": "C3", "ann": 3, "marks": 0}
+{"id": "C4", "ann": 2, "marks": 0}
+{"id": "D1", "ann": 21, "marks": 0}
+{"id": "D2", "ann": 1, "marks": 0}
+{"id": "D3", "ann": 2, "marks": 2}
+{"id": "D4", "ann": 5, "marks": 0}
+{"id": "E1", "ann": 2, "marks": 0}
+{"id": "E2", "ann": 1, "marks": 0}
+{"id": "E3", "ann": 2, "marks": 0}
+{"id": "E4", "ann": 1, "marks": 0}
+{"id": "F1", "ann": 11, "marks": 0}
+{"id": "F2", "ann": 13, "marks": 0}
+{"id": "F3", "ann": 5, "marks": 0}
+{"id": "G1", "ann": 0, "marks": 0}
+{"id": "G2", "ann": 0, "marks": 0}
+{"id": "G3", "ann": 0, "marks": 0}
+{"id": "H1", "ann": 2, "marks": 0}
+{"id": "H2", "ann": 3, "marks": 0}
+{"id": "H3", "ann": 0, "marks": 0}
+{"id": "A1", "ann": 2, "marks": 0}
+{"id": "A2", "ann": 3, "marks": 0}
+{"id": "A3", "ann": 2, "marks": 0}
+{"id": "A4", "ann": 2, "marks": 0}
+{"id": "A5", "ann": 6, "marks": 2}
+{"id": "A6", "ann": 2, "marks": 0}
+{"id": "B1", "ann": 1, "marks": 2}
+{"id": "B2", "ann": 2, "marks": 0}
+{"id": "B3", "ann": 2, "marks": 0}
+{"id": "B4", "ann": 2, "marks": 0}
+{"id": "C1", "ann": 1, "marks": 1}
+{"id": "C2", "ann": 1, "marks": 0}
+{"id": "C3", "ann": 6, "marks": 0}
+{"id": "C4", "ann": 4, "marks": 0}
+{"id": "D1", "ann": 2, "marks": 5}
+{"id": "D2", "ann": 1, "marks": 0}
+{"id": "D3", "ann": 1, "marks": 3}
+{"id": "D4", "ann": 4, "marks": 0}
+{"id": "E1", "ann": 2, "marks": 0}
+{"id": "E2", "ann": 2, "marks": 0}
+{"id": "E3", "ann": 2, "marks": 0}
+{"id": "E4", "ann": 1, "marks": 0}
+{"id": "F1", "ann": 9, "marks": 0}
+{"id": "F2", "ann": 12, "marks": 0}
+{"id": "F3", "ann": 6, "marks": 0}
+{"id": "G1", "ann": 0, "marks": 0}
+{"id": "G2", "ann": 0, "marks": 0}
+{"id": "G3", "ann": 0, "marks": 0}
+{"id": "H1", "ann": 2, "marks": 0}
+{"id": "H2", "ann": 2, "marks": 0}
+{"id": "H3", "ann": 0, "marks": 0}
