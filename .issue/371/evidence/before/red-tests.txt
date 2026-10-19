@@ -1,0 +1,43 @@
+# 새 테스트를 변경 전 코드(caa3ca3, 테스트만 추가)에서 돌린 red 출력 — 상한 초과 3건이 200 으로 통과해 실패, 경계·trim·코드 포인트 케이스는 원래 통과
+
+## 백엔드 : ./mvnw -B -q test -Dtest='ChatFlowTest,ConversationTitleLimitTest'
+[ERROR] Tests run: 18, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 21.29 s <<< FAILURE! -- in com.ragchatbot.controller.ChatFlowTest
+[ERROR] com.ragchatbot.controller.ChatFlowTest.message_over_limit_400_before_save -- Time elapsed: 0.272 s <<< FAILURE!
+[ERROR] Tests run: 4, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 1.101 s <<< FAILURE! -- in com.ragchatbot.controller.ConversationTitleLimitTest
+[ERROR] com.ragchatbot.controller.ConversationTitleLimitTest.create_over_limit_400 -- Time elapsed: 0.273 s <<< FAILURE!
+[ERROR] com.ragchatbot.controller.ConversationTitleLimitTest.rename_over_limit_400_and_title_kept -- Time elapsed: 0.263 s <<< FAILURE!
+[ERROR]   ChatFlowTest.message_over_limit_400_before_save:298 
+expected: 400 BAD_REQUEST
+ but was: 200 OK
+[ERROR]   ConversationTitleLimitTest.create_over_limit_400:40 
+expected: 400 BAD_REQUEST
+ but was: 200 OK
+[ERROR]   ConversationTitleLimitTest.rename_over_limit_400_and_title_kept:53 
+expected: 400 BAD_REQUEST
+ but was: 200 OK
+[ERROR] Tests run: 22, Failures: 3, Errors: 0, Skipped: 0
+
+## 프론트 : npx vitest run src/components/chat/Composer.test.tsx src/pages/ChatPage.test.tsx
+     × 제목 입력은 100자까지만 받는다 17ms
+ ❯ src/components/chat/Composer.test.tsx (31 tests | 1 failed) 587ms
+     × 입력창은 4000자까지만 받는다 (#371) 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/ChatPage.test.tsx > ChatPage 제목 수정 (#371) > 제목 입력은 100자까지만 받는다
+Error: expect(element).toHaveAttribute("maxLength", "100") // element.getAttribute("maxLength") === "100"
+
+Expected the element to have attribute:
+  maxLength="100"
+Received:
+  null
+ FAIL  src/components/chat/Composer.test.tsx > Composer > 입력창은 4000자까지만 받는다 (#371)
+Error: expect(element).toHaveAttribute("maxLength", "4000") // element.getAttribute("maxLength") === "4000"
+
+Expected the element to have attribute:
+  maxLength="4000"
+Received:
+  null
+ Test Files  2 failed (2)
+      Tests  2 failed | 37 passed (39)
+   Start at  10:10:42
