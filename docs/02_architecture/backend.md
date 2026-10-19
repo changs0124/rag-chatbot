@@ -579,6 +579,8 @@ ngrok 문서는 interstitial 이 HTML 브라우저 요청에만 붙고 이미지
 
 통합 테스트는 Testcontainers 로 **실 PostgreSQL** 을 띄운다(`AbstractPgIntegrationTest`). H2 로 대체하지 않는다 —
 `gen_random_uuid()` · `timestamptz` · 트리거 · `lower(email)` 표현식 유일 인덱스가 실물과 갈린다.
+이미지는 **루트 `docker-compose.yml` 의 db `image:` 줄(다이제스트 고정)을 그대로 읽어** 운영과 같은 것을 쓴다(#369) -
+다이제스트를 올리는 커밋 하나로 테스트도 같이 바뀌고, compose 를 못 읽으면 태그로 떨어지지 않고 기동을 멈춘다. 그래서 테스트는 `backend/` 에서 돈다.
 케이스 수 하한은 `scripts/case-floors.env` 의 `BACKEND_MIN` 이 잠근다 - **실측값이 정본이라 여기 숫자를 적지 않는다.** 로컬 실행에 Docker 가 필요하다.
 
 통합 테스트는 **고아 회수 크론을 꺼 둔다**(`app.file.orphan-cleanup-cron=-`). `@EnableScheduling` 이 켜져 있어

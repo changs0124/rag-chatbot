@@ -80,6 +80,9 @@
   - `AbstractPgIntegrationTest` 공통 속성에 `spring.datasource.hikari.maximum-pool-size=4` — 최악 36 연결. 동시성 테스트 포함 294건 통과, 테스트 수 변화 없음
 
 ### Changed
+- **통합 테스트가 운영 compose 의 db 이미지를 그대로 쓴다(#369).** 종전에는 움직이는 태그 `postgres:16-alpine` 이라 실행하는 PC 의 캐시 · CI 러너가 pull 한 시점에 따라 검증하는 PostgreSQL 이 달랐다
+  - `AbstractPgIntegrationTest` 가 `docker-compose.yml` 의 db `image:` 줄(`postgres:16-alpine@sha256:721873c3…`, #357)을 읽어 컨테이너를 띄운다. 값을 테스트에 한 번 더 적지 않아 대조 스크립트 없이 갈릴 수 없다
+  - 그 줄을 못 찾으면 태그로 떨어지지 않고 기동을 멈춘다. compose 주석 · `backend.md` 「테스트」에 적었다. 운영 코드 변경 없음 · 배포 불필요 · 백엔드 하한 308 그대로
 - **문서를 코드와 다시 대조해 어긋난 곳을 고쳤다(#360).** #333 · #334 이후 #326 · #357 이 코드만 바꾼 자리가 남아 있었다.
   API 경로 23 · 오류 코드 12 · ERD(V1~V9) · env 31 · 설정값 · 문서가 인용한 TC ID · REQ/FEAT/API 교차 참조는 코드와 일치했다(대조표는 이슈 증거)
   - `features.md` FEAT-OPS-002 : 「SSE 도중 오류는 폴백 대상 아님」 → 폴백이 받아 커밋된 응답에는 로그만 남긴다(#326 이후 사실, `backend.md` 와 모순이던 것)

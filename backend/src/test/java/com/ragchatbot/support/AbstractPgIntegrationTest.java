@@ -2,8 +2,14 @@ package com.ragchatbot.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +27,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import com.ragchatbot.repository.UserRepository;
 
@@ -53,10 +60,32 @@ import com.ragchatbot.repository.UserRepository;
 		"spring.datasource.hikari.maximum-pool-size=4" })
 public abstract class AbstractPgIntegrationTest {
 
-	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:16-alpine");
+	// 태그와 다이제스트가 함께 있으면 호환성 검사가 저장소 이름을 「postgres:16-alpine」으로 읽어 거절한다(실측) - 공식 postgres 이미지이므로 명시한다
+	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
+			DockerImageName.parse(composeDbImage()).asCompatibleSubstituteFor("postgres"));
 
 	static {
 		POSTGRES.start(); // Ryuk가 JVM 종료 시 정리. 재시작/중단 없음
+	}
+
+	/**
+	 * 운영 compose 의 db 이미지(다이제스트 고정, #357)를 그대로 읽는다(#369).
+	 * 움직이는 태그를 쓰면 실행하는 PC 의 캐시 · CI 러너가 pull 한 시점에 따라 검증하는 PostgreSQL 이 달라졌다.
+	 * 값을 여기에 한 번 더 적지 않는 이유 - 두 곳에 두면 다이제스트를 올리는 커밋이 한쪽만 고쳐 조용히 갈린다.
+	 * 테스트는 로컬 · CI 모두 backend/ 에서 돈다. 못 찾으면 태그로 떨어지지 않고 기동을 멈춘다
+	 */
+	static String composeDbImage() {
+		Path compose = Path.of("..", "docker-compose.yml").toAbsolutePath().normalize();
+		try {
+			Matcher m = Pattern.compile("(?m)^\\s+image:\\s*(postgres:\\S+@sha256:[0-9a-f]{64})\\s*$")
+					.matcher(Files.readString(compose));
+			if (!m.find()) {
+				throw new IllegalStateException(compose + " 에서 다이제스트 고정된 postgres image 줄을 못 찾음");
+			}
+			return m.group(1);
+		} catch (IOException e) {
+			throw new UncheckedIOException(compose + " 을 못 읽음 - 테스트는 backend/ 에서 실행해야 함", e);
+		}
 	}
 
 	@DynamicPropertySource
