@@ -41,6 +41,7 @@ public class OpenAiMockService implements OpenAiService {
 	private static final Map<Stage, String> STAGE_LABELS = Map.of(
 			Stage.ANALYZING, "질문 분석 중(목업)",
 			Stage.SEARCHING, "목업 코퍼스 조회 중",
+			Stage.REVIEWING, "목업 자료 확인 중",
 			Stage.GENERATING, "답변 작성 중(목업)");
 
 	/** 토큰당 지연(ms) - 실제 스트리밍처럼 타이핑 효과를 보이게 함. 테스트는 0 */
@@ -56,12 +57,15 @@ public class OpenAiMockService implements OpenAiService {
 	}
 
 	@Override
-	public String stageLabel(Stage stage, List<String> sources) {
+	public String stageLabel(Stage stage, List<String> sources, boolean withImage) {
+		if (stage == Stage.ANALYZING && withImage) {
+			return "질문·첨부 이미지 분석 중(목업)";
+		}
 		String label = STAGE_LABELS.get(stage);
-		// 조회 단계에만 자료명을 덧붙임 - "어느 자료를 참조했는지"가 화면에 드러나야 함(REQ-CHAT-005).
-		// 무자료 분기에서는 sources가 비어 있어 자료명이 붙지 않음 - 참조한 적 없는 이름을 붙이지 않기 위함(REQ-RAG-004)
-		if (stage == Stage.SEARCHING && !sources.isEmpty()) {
-			return label + " - " + String.join(" · ", sources);
+		// 확인 단계에만 자료명을 덧붙임 - "어느 자료를 참조했는지"가 화면에 드러나야 함(REQ-CHAT-005).
+		// 라이브와 같은 꼴(#375). 무자료 분기는 이 단계를 보내지 않음 - 참조한 적 없는 이름을 붙이지 않기 위함(REQ-RAG-004)
+		if (stage == Stage.REVIEWING && !sources.isEmpty()) {
+			return label + " · " + OpenAiService.sourceSummary(sources);
 		}
 		return label;
 	}
@@ -96,9 +100,12 @@ public class OpenAiMockService implements OpenAiService {
 		}
 
 		// 코퍼스 조회 경계 - 목업이 실제로 지나는 지점에서만 단계를 올림(REQ-RAG-004). 자료 유무와 무관하게 조회는 함.
-		// 조회 결과가 정해진 뒤에 올림 - 라벨에 실제로 참조한 자료명을 실어야 하기 때문임(REQ-CHAT-005).
-		// 자료명은 화면 하단 출처 목록과 같은 값을 씀 - 진행 문구와 출처가 어긋나지 않게 함
-		onStage.accept(Stage.SEARCHING, citations.stream().map(CitationData::sourceName).toList());
+		onStage.accept(Stage.SEARCHING, List.of());
+		// 조회 결과가 정해진 뒤의 확인 경계 - 걸린 자료가 있을 때만 올림(#375, 라이브의 결과 도착과 같은 자리).
+		// 자료명은 화면 하단 출처 목록과 같은 값을 씀 - 진행 문구와 출처가 어긋나지 않게 함(REQ-CHAT-005)
+		if (!citations.isEmpty()) {
+			onStage.accept(Stage.REVIEWING, citations.stream().map(CitationData::sourceName).toList());
+		}
 
 		// 스트리밍 인터페이스를 실제로 흘려봄(ChatService 가 이 onToken 을 emitter 에 연결)
 		// 토큰당 소량 지연으로 실제 스트리밍처럼 타이핑 효과를 냄

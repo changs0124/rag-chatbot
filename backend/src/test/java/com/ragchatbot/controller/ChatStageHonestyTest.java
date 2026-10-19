@@ -47,13 +47,14 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 	@Test
 	void mock_emits_exact_stage_list_in_order_for_known_topic() {
 		String body = chat(createUser("stage-known@b.com"), "환불 정책 알려줘");
-		// 정확 목록 비교 - 부분집합이 아니라 3종이 순서까지 일치해야 함(기준 낮춤 금지)
-		assertThat(stageKeys(body)).containsExactly("analyzing", "searching", "generating");
+		// 정확 목록 비교 - 부분집합이 아니라 순서까지 일치해야 함(기준 낮춤 금지).
+		// 자료가 걸린 턴에만 참조 문서 확인 단계가 낌(#375)
+		assertThat(stageKeys(body)).containsExactly("analyzing", "searching", "reviewing", "generating");
 	}
 
 	@Test
 	void mock_emits_same_stage_list_when_no_source() {
-		// 무자료 분기도 동일한 3종 - 목업·라이브가 분기에 따라 어긋나지 않게 함(REQ-RAG-003)
+		// 무자료 분기는 확인할 문서가 없으므로 참조 문서 확인 단계가 없음 - 라이브의 결과 0건과 같은 모양(#375)
 		String body = chat(createUser("stage-nosource@b.com"), "우주의 크기는 얼마나 되나");
 		assertThat(body).contains("\"noSource\":true");
 		assertThat(stageKeys(body)).containsExactly("analyzing", "searching", "generating");
@@ -68,12 +69,14 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 
 	/**
 	 * REQ-CHAT-005 : "어느 자료를 참조했는지"가 진행 문구에 드러나야 함. 자료명은 화면 하단 출처 목록과 <b>같은 값</b>을
-	 * 씀 - 진행 문구가 말한 자료와 실제로 붙는 출처가 어긋나면 그 자체가 거짓 표시가 됨
+	 * 씀 - 진행 문구가 말한 자료와 실제로 붙는 출처가 어긋나면 그 자체가 거짓 표시가 됨.
+	 * 이름은 조회 결과가 정해진 뒤의 확인 단계에만 실림(#375) - 조회 단계 라벨에는 이름이 없음
 	 */
 	@Test
-	void mock_search_label_names_the_sources_it_used() {
+	void mock_reviewing_label_names_the_sources_it_used() {
 		String body = chat(createUser("stage-sources@b.com"), "환불 규정");
-		assertThat(body).contains("목업 코퍼스 조회 중 - 이용 정책 문서 · FAQ 문서");
+		assertThat(body).contains("목업 자료 확인 중 · 이용 정책 문서 외 1건");
+		assertThat(body).doesNotContain("목업 코퍼스 조회 중 - ");
 	}
 
 	/** 무자료 분기에는 붙일 자료명이 없음 - 참조한 적 없는 이름을 지어내지 않음(REQ-RAG-004) */
@@ -81,7 +84,7 @@ class ChatStageHonestyTest extends AbstractPgIntegrationTest {
 	void mock_search_label_has_no_source_names_when_nothing_matched() {
 		String body = chat(createUser("stage-nosources@b.com"), "우주의 크기는 얼마나 되나");
 		assertThat(body).contains("목업 코퍼스 조회 중");
-		assertThat(body).doesNotContain("이용 정책 문서");
+		assertThat(body).doesNotContain("이용 정책 문서").doesNotContain("목업 자료 확인 중");
 	}
 
 	@Test

@@ -77,6 +77,24 @@ describe('useChat 진행 단계(R-11)', () => {
     expect(result.current.stage).toBeNull() // 큐가 마르면 스스로 비워짐 → 답변으로 교체
   })
 
+  it('참조 문서 확인 단계(reviewing)도 같은 큐로 최소 표시 시간만큼 보임(#375)', async () => {
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+
+    act(() => {
+      stream.handlers?.onStage?.({ stage: 'searching', label: '참조 문서 검색 중' })
+      stream.handlers?.onStage?.({ stage: 'reviewing', label: '참조 문서 확인 중 · 정책.pdf 외 1건' })
+      stream.handlers?.onStage?.({ stage: 'generating', label: '답변 작성 중' })
+      stream.handlers?.onToken?.('안내는')
+    })
+    act(() => void vi.advanceTimersByTime(350))
+    expect(result.current.stage).toBe('참조 문서 확인 중 · 정책.pdf 외 1건')
+
+    act(() => void vi.advanceTimersByTime(350))
+    expect(result.current.stage).toBe('답변 작성 중')
+  })
+
   it('오류 경로에서는 남은 단계를 즉시 비움', async () => {
     const stream = openStream()
     const { result } = renderHook(() => useChat())

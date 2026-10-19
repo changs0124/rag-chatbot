@@ -193,6 +193,24 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		assertThat(mock.lastHistory().get(0).content()).contains("(이미지 첨부)");
 	}
 
+	/**
+	 * 첨부 이미지가 있는 턴은 분석 단계 문구가 이미지까지 밝힘(#375). 따로 단계를 만들지 않음 -
+	 * 모델이 이미지를 보는 시점을 알리는 신호가 없어 별도 단계는 지나지 않은 경계가 됨
+	 */
+	@Test
+	void attachment_turn_analyzing_label_mentions_image() {
+		String token = createUser("chat-stage-img@b.com");
+		String convId = createConversation(token);
+		String attId = uploadImage(token);
+
+		String withImage = chat(token, Map.of("conversationId", convId, "message", "이거 뭐야",
+				"attachmentIds", List.of(attId))).getBody();
+		String textOnly = chat(token, Map.of("conversationId", convId, "message", "그럼 저건?")).getBody();
+
+		assertThat(withImage).contains("질문·첨부 이미지 분석 중(목업)");
+		assertThat(textOnly).contains("질문 분석 중(목업)").doesNotContain("첨부 이미지 분석 중");
+	}
+
 	@Test
 	void unknown_topic_streams_no_source() {
 		String token = createUser("chat-unknown@b.com");

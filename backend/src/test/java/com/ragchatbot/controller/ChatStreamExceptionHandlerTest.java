@@ -2,6 +2,7 @@ package com.ragchatbot.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
@@ -55,7 +56,7 @@ class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 	@BeforeEach
 	void stageLabel() {
 		// 목은 null 을 돌려주는데 단계 이벤트가 Map.of 로 라벨을 실어 NPE 가 난다 - 다른 경로로 새지 않게 채움
-		when(openAi.stageLabel(any(), any())).thenReturn("단계");
+		when(openAi.stageLabel(any(), any(), anyBoolean())).thenReturn("단계");
 	}
 
 	private String rawChat(String token, String convId) throws Exception {

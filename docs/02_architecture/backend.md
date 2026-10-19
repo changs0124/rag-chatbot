@@ -174,6 +174,11 @@ exception/    ApiExceptions + GlobalExceptionHandler
   (`CitationData.sourceName`)에서 파생한다 — 따로 문자열을 두면 진행 문구가 말한 자료와 실제로 붙는 출처가
   언젠가 어긋나고, 그 어긋남 자체가 거짓 표시가 된다. 참조한 자료가 없거나(무자료) 그 시점에 아직 알 수 없으면
   (라이브의 `file_search` 시작 시점) 이름을 붙이지 않는다. 없는 이름을 지어내지 않는다.
+  그래서 이름은 검색 결과가 **실제로 도착한 뒤의** `reviewing` 단계에만 싣는다(#375) — 라이브는 `response.output_item.done` 의
+  `file_search_call` 결과, 목업은 코퍼스 조회 결과. 결과가 0건이면 `reviewing` 단계 자체를 보내지 않는다. `searching` 라벨에는 이름이 없다.
+- **첨부 이미지가 있는 턴은 분석 단계 문구만 바꾼다**(#375, 「질문·첨부 이미지 분석 중」). 이미지를 따로 보는 단계를 두지 않는 것은
+  모델이 이미지를 보는 시점을 알리는 이벤트가 없어서다 — 별도 단계는 지나지 않은 경계를 지어내는 것이 된다.
+  첨부 유무는 `ChatService` 가 `stageLabel` 에 넘기고 문구는 구현이 정한다.
 - **출처 파일은 annotation 이 정한다.** `file_citation` annotation 이 0건이면, 본문 인용 표기(`turnNfileM`)로
   복원한다(#281). 대응 규칙은 `live-integration.md` 3-1 에 있다.
 - **인용 표기는 문장 끝에만 오도록 지시한다**(#372). 표기를 문서 이름 자리에 쓰면 필터가 지운 자리가 빈칸이 되어
