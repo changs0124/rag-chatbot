@@ -127,6 +127,8 @@ export default function ChatPage() {
                 <input
                   autoFocus
                   value={titleDraft}
+                  // 서버 상한(CHAT_MAX_TITLE_CHARS 기본값)과 같은 값. 정본은 서버라 넘긴 요청은 400 이다(#371)
+                  maxLength={100}
                   onChange={(e) => setTitleDraft(e.target.value)}
                   onBlur={commitTitle}
                   onKeyDown={(e) => {

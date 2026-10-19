@@ -276,6 +276,8 @@ export default function Composer({
             }}
             rows={1}
             placeholder="메시지를 입력하세요"
+            // 서버 상한(CHAT_MAX_MESSAGE_CHARS 기본값)과 같은 값. 정본은 서버라 넘긴 요청은 400 이다(#371)
+            maxLength={4000}
             // 한 줄 높이를 버튼과 정확히 맞춤 : 24 + 20 = 44(모바일 h-11), 24 + 16 = 40(md h-10).
             // leading-relaxed(24.375)면 md 에서 버튼이 2.2px 아래로 처진다(#218).
             // 모바일 글자는 16px - iOS 는 16px 미만 입력에 포커스하면 화면을 확대해 버린다(#221)

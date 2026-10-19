@@ -50,16 +50,19 @@ public class ChatService {
 	private final OpenAiService openAiService;
 	private final ChatPersistenceService chatPersistence;
 	private final int historyTokenBudget;
+	private final int maxMessageChars;
 
 	public ChatService(ConversationRepository conversationRepository, MessageRepository messageRepository,
 			AttachmentRepository attachmentRepository, OpenAiService openAiService, ChatPersistenceService chatPersistence,
-			@Value("${app.chat.history-token-budget}") int historyTokenBudget) {
+			@Value("${app.chat.history-token-budget}") int historyTokenBudget,
+			@Value("${app.chat.max-message-chars}") int maxMessageChars) {
 		this.conversationRepository = conversationRepository;
 		this.messageRepository = messageRepository;
 		this.attachmentRepository = attachmentRepository;
 		this.openAiService = openAiService;
 		this.chatPersistence = chatPersistence;
 		this.historyTokenBudget = historyTokenBudget;
+		this.maxMessageChars = maxMessageChars;
 	}
 
 	public record PreparedChat(UUID conversationId, String message, List<AttachmentRef> refs, List<Turn> history) {
@@ -75,6 +78,11 @@ public class ChatService {
 		List<UUID> attachmentIds = req.attachmentIds() == null ? List.of() : req.attachmentIds();
 		if (message.isEmpty() && attachmentIds.isEmpty()) {
 			throw new BadRequestException("메시지 또는 첨부가 필요함"); // 첨부 있으면 허용
+		}
+		// 길이 상한(#371) - 횟수 상한·이력 예산은 이번 메시지의 크기를 묶지 못한다. **저장·모델 호출 전에** 거른다.
+		// 코드 포인트로 셈 - length() 면 이모지 하나가 두 자로 세진다
+		if (message.codePointCount(0, message.length()) > maxMessageChars) {
+			throw new BadRequestException("메시지는 " + maxMessageChars + "자까지 보낼 수 있음");
 		}
 
 		// **같은 id 를 두 번 넣으면 이미지가 두 번 인코딩돼 나간다**(#99). 중복은 조용히 접는다 -

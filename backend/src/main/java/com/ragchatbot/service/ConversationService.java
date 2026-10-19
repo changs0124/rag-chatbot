@@ -8,11 +8,13 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.ragchatbot.entity.Attachment;
 import com.ragchatbot.entity.Citation;
 import com.ragchatbot.entity.Conversation;
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.repository.AttachmentRepository;
 import com.ragchatbot.repository.CitationRepository;
@@ -40,10 +42,12 @@ public class ConversationService {
 	private final FileStorage fileStorage;
 	private final OpenAiService openAiService;
 	private final FileService fileService;
+	private final int maxTitleChars;
 
 	public ConversationService(ConversationRepository conversationRepository, MessageRepository messageRepository,
 			AttachmentRepository attachmentRepository, CitationRepository citationRepository, FileStorage fileStorage,
-			OpenAiService openAiService, FileService fileService) {
+			OpenAiService openAiService, FileService fileService,
+			@Value("${app.chat.max-title-chars}") int maxTitleChars) {
 		this.conversationRepository = conversationRepository;
 		this.messageRepository = messageRepository;
 		this.attachmentRepository = attachmentRepository;
@@ -51,18 +55,19 @@ public class ConversationService {
 		this.fileStorage = fileStorage;
 		this.openAiService = openAiService;
 		this.fileService = fileService;
+		this.maxTitleChars = maxTitleChars;
 	}
 
 	public ConversationResponse create(UUID userId, String title) {
 		UUID id = UUID.randomUUID();
-		String finalTitle = (title == null || title.isBlank()) ? "새 대화" : title.trim();
+		String finalTitle = (title == null || title.isBlank()) ? "새 대화" : requireTitleLength(title.trim());
 		conversationRepository.insert(new Conversation(id, userId, finalTitle, null, null, null));
 		return findOwnedResponse(id, userId);
 	}
 
 	public ConversationResponse rename(UUID userId, UUID conversationId, String title) {
 		requireOwned(conversationId, userId);
-		conversationRepository.updateTitle(conversationId, userId, title.trim());
+		conversationRepository.updateTitle(conversationId, userId, requireTitleLength(title.trim()));
 		return findOwnedResponse(conversationId, userId);
 	}
 
@@ -139,6 +144,14 @@ public class ConversationService {
 		} catch (RuntimeException e) {
 			log.warn("대화 삭제 후 OpenAI 리소스 정리 실패. conversationId={}", conversationId, e);
 		}
+	}
+
+	/** 제목 길이 상한(#371). 잘라 저장하지 않고 거절한다 - 자르면 사용자가 쓴 것과 다른 제목이 조용히 남는다 */
+	private String requireTitleLength(String title) {
+		if (title.codePointCount(0, title.length()) > maxTitleChars) {
+			throw new BadRequestException("제목은 " + maxTitleChars + "자까지 쓸 수 있음");
+		}
+		return title;
 	}
 
 	private Conversation requireOwned(UUID conversationId, UUID userId) {
