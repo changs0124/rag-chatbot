@@ -541,4 +541,11 @@ describe('Composer', () => {
       expect(input.multiple).toBe(true)
     })
   })
+
+  // 서버 상한(app.chat.max-message-chars 기본값)과 같은 값 - 넘기면 서버가 400 으로 거절한다(#371)
+  it('입력창은 4000자까지만 받는다 (#371)', () => {
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+
+    expect(screen.getByPlaceholderText('메시지를 입력하세요')).toHaveAttribute('maxLength', '4000')
+  })
 })

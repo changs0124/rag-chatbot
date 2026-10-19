@@ -86,6 +86,10 @@ app:
     # 모델에 함께 보낼 이전 대화 이력의 토큰 예산. 개수가 아니라 예산인 이유는 메시지 길이 편차가
     # 커서 "최근 N개"가 턴당 비용을 예측하지 못하기 때문임. 과거 이미지는 재전송하지 않음
     history-token-budget: ${CHAT_HISTORY_TOKEN_BUDGET:6000}
+    # 입력 길이 상한(trim 뒤 코드 포인트, #371). 넘으면 400 - 메시지는 저장·모델 호출 전, 제목은 생성·변경 모두.
+    # 분당 상한은 횟수만, 이력 예산은 이전 메시지만 묶어 이번 메시지의 크기는 이 값이 묶음. 프론트 입력창도 같은 값
+    max-message-chars: ${CHAT_MAX_MESSAGE_CHARS:4000}
+    max-title-chars: ${CHAT_MAX_TITLE_CHARS:100}
   ratelimit:
     # 사용자별 분당 채팅 상한(비용 통제, REQ-OPS-003). 단일 인스턴스 전제
     chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}

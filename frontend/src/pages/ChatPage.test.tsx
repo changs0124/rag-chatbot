@@ -16,12 +16,17 @@ vi.mock('../auth/AuthContext', () => ({
 }))
 
 // 이력 불러오는 중인지 테스트마다 바꾼다(#291)
-const chatState = vi.hoisted(() => ({ loadingMessages: false }))
+const chatState = vi.hoisted(() => ({
+  loadingMessages: false,
+  // 제목 수정 입력은 활성 대화가 있어야 뜬다(#371)
+  conversations: [] as { id: string; title: string }[],
+  activeId: null as string | null,
+}))
 
 vi.mock('../hooks/useChat', () => ({
   useChat: () => ({
-    conversations: [],
-    activeId: null,
+    conversations: chatState.conversations,
+    activeId: chatState.activeId,
     messages: [],
     loadingMessages: chatState.loadingMessages,
     streaming: false,
@@ -152,5 +157,23 @@ describe('ChatPage 대화 불러오는 중 (#291)', () => {
 
     expect(screen.queryByRole('status', { name: '대화 불러오는 중' })).toBeNull()
     expect(screen.getByText('무엇을 도와드릴까요?')).toBeInTheDocument()
+  })
+})
+
+describe('ChatPage 제목 수정 (#371)', () => {
+  afterEach(() => {
+    chatState.conversations = []
+    chatState.activeId = null
+  })
+
+  // 서버 상한(app.chat.max-title-chars 기본값)과 같은 값 - 넘기면 서버가 400 으로 거절한다
+  it('제목 입력은 100자까지만 받는다', () => {
+    chatState.conversations = [{ id: 'c1', title: '대화' }]
+    chatState.activeId = 'c1'
+    renderChatPage()
+
+    fireEvent.click(screen.getByTitle('제목 변경'))
+
+    expect(screen.getByDisplayValue('대화')).toHaveAttribute('maxLength', '100')
   })
 })

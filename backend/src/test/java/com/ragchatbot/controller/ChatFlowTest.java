@@ -285,6 +285,51 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
+	 * 메시지 길이 상한(#371, 기본 4000자). 넘으면 <b>사용자 메시지 저장 · 모델 호출 전에</b> 400 이다.
+	 * 종전에는 빈 값만 봐서 운영에서 13만 자가 모델까지 갔다. 저장되지 않았는지는 행 수로 본다
+	 */
+	@Test
+	void message_over_limit_400_before_save() {
+		String token = createUser("chat-long@b.com");
+		String convId = createConversation(token);
+
+		var res = chat(token, Map.of("conversationId", convId, "message", "가".repeat(4001)));
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(res.getBody()).contains("메시지는 4000자까지 보낼 수 있음");
+		assertThat(jdbc.queryForObject("select count(*) from messages where conversation_id = ?::uuid",
+				Integer.class, convId)).isZero();
+	}
+
+	/** 상한과 같은 길이는 통과한다 - 경계가 「미만」으로 어긋나면 정상 사용이 막힌다 */
+	@Test
+	void message_at_limit_passes() {
+		String token = createUser("chat-limit@b.com");
+		String convId = createConversation(token);
+
+		var res = chat(token, Map.of("conversationId", convId, "message", "가".repeat(4000)));
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(res.getBody()).contains("event:done");
+	}
+
+	/**
+	 * 길이는 <b>trim 뒤 코드 포인트</b>로 센다. 앞뒤 공백은 저장되지 않으니 세지 않고, 이모지(UTF-16 두 칸)는
+	 * 한 자다 - {@code length()} 로 세면 이모지 2000개에서 막힌다
+	 */
+	@Test
+	void message_length_counts_code_points_after_trim() {
+		String token = createUser("chat-limit-cp@b.com");
+		String convId = createConversation(token);
+
+		var padded = chat(token, Map.of("conversationId", convId, "message", "  " + "가".repeat(4000) + "\n "));
+		var emoji = chat(token, Map.of("conversationId", convId, "message", "😀".repeat(4000)));
+
+		assertThat(padded.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(emoji.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+	/**
 	 * 상한 5/분(테스트 프로퍼티).
 	 *
 	 * <p><b>고정 윈도우라 요청이 분 경계를 걸치면 카운터가 중간에 리셋됨.</b> 종전에는 6회만 보냈는데,

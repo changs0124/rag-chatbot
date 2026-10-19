@@ -74,7 +74,7 @@ class AttachmentLinkRaceTest {
 		when(repo.findByIdAndUser(att.id(), USER)).thenReturn(Optional.of(att));
 		when(repo.linkToMessage(any(), any(), any())).thenReturn(0);
 
-		var service = new ChatService(conversations, messages, repo, null, null, 6000);
+		var service = new ChatService(conversations, messages, repo, null, null, 6000, 4000);
 
 		assertThatThrownBy(() -> service.prepare(USER, new ChatRequest(convId, "질문", List.of(att.id()))))
 				.isInstanceOf(BadRequestException.class);
@@ -140,7 +140,7 @@ class AttachmentLinkRaceTest {
 		when(repo.findByIdAndUser(high.id(), USER)).thenReturn(Optional.of(high));
 		when(repo.linkToMessage(any(), any(), any())).thenReturn(1);
 
-		var prepared = new ChatService(conversations, messages, repo, null, null, 6000)
+		var prepared = new ChatService(conversations, messages, repo, null, null, 6000, 4000)
 				.prepare(USER, new ChatRequest(convId, "질문", List.of(high.id(), low.id())));
 
 		InOrder order = inOrder(repo);
