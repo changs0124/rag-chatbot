@@ -1,0 +1,23 @@
+# 같은 새 테스트를 구현 뒤 코드에서 돌린 green 출력 — 상한 초과 3건 400 · 경계/trim/코드 포인트 4건 통과
+
+## 백엔드 : ./mvnw -B test -Dtest='ChatFlowTest,ConversationTitleLimitTest'
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 17.29 s -- in com.ragchatbot.controller.ChatFlowTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.102 s -- in com.ragchatbot.controller.ConversationTitleLimitTest
+[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+새 케이스(surefire 리포트, 실패 요소 없음):
+  testcase name="message_over_limit_400_before_save" classname="com.ragchatbot.controller.ChatFlowTest" time="0.278"
+  testcase name="message_length_counts_code_points_after_trim" classname="com.ragchatbot.controller.ChatFlowTest" time="0.295"
+  testcase name="message_at_limit_passes" classname="com.ragchatbot.controller.ChatFlowTest" time="0.261"
+  testcase name="create_over_limit_400" classname="com.ragchatbot.controller.ConversationTitleLimitTest" time="0.271"
+  testcase name="length_counts_code_points_after_trim" classname="com.ragchatbot.controller.ConversationTitleLimitTest" time="0.283"
+  testcase name="rename_over_limit_400_and_title_kept" classname="com.ragchatbot.controller.ConversationTitleLimitTest" time="0.26"
+  testcase name="at_limit_passes_on_create_and_rename" classname="com.ragchatbot.controller.ConversationTitleLimitTest" time="0.263"
+backend/target/surefire-reports/TEST-com.ragchatbot.controller.ChatFlowTest.xml:0
+backend/target/surefire-reports/TEST-com.ragchatbot.controller.ConversationTitleLimitTest.xml:0
+
+## 프론트 : npx vitest run src/components/chat/Composer.test.tsx src/pages/ChatPage.test.tsx
+ ✓ src/pages/ChatPage.test.tsx > ChatPage 제목 수정 (#371) > 제목 입력은 100자까지만 받는다 14ms
+ ✓ src/components/chat/Composer.test.tsx > Composer > 입력창은 4000자까지만 받는다 (#371) 2ms
+ Test Files  2 passed (2)
+      Tests  39 passed (39)

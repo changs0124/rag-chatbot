@@ -1,0 +1,4 @@
+# 변경 전 : 2026-10-19 운영(b63b498) advprobe.py 측정 원본 발췌 (adv.json)
+{"name": "제목 특수문자 그대로 저장·반환(실행 아님)", "pass": true, "detail": "(200, True)"}
+{"name": "제목 20000자 → 4xx 또는 잘림(500 아님)", "pass": true, "detail": "200"}
+{"name": "13만 자 메시지 → 500/무응답 아님", "pass": true, "detail": "{'http': 200, 'sec': 11.9, 'error': None, 'body': None}"}
