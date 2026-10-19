@@ -176,6 +176,8 @@ exception/    ApiExceptions + GlobalExceptionHandler
   (라이브의 `file_search` 시작 시점) 이름을 붙이지 않는다. 없는 이름을 지어내지 않는다.
 - **출처 파일은 annotation 이 정한다.** `file_citation` annotation 이 0건이면, 본문 인용 표기(`turnNfileM`)로
   복원한다(#281). 대응 규칙은 `live-integration.md` 3-1 에 있다.
+- **인용 표기는 문장 끝에만 오도록 지시한다**(#372). 표기를 문서 이름 자리에 쓰면 필터가 지운 자리가 빈칸이 되어
+  「결과는 에 기록돼 있습니다」처럼 문장이 깨진다. 필터는 스트림 조각 단위라 앞 조각의 공백을 되돌리지 못한다.
 - **스니펫은 그 파일의 검색 결과 중 답이 쓴 청크다**(`OpenAiRealService.pickSnippet`, #268). annotation 에는
   어느 청크인지가 없어서, 예전처럼 검색 1순위를 쓰면 답과 무관한 단락이 출처로 보였다. 고르는 순서는 셋이다.
   1. 답의 그림 표식 `[[그림:<key>]]` 를 담은 청크
