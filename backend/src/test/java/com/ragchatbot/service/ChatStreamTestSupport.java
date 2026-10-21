@@ -23,7 +23,7 @@ final class ChatStreamTestSupport {
 	abstract static class ChatOnlyOpenAi implements OpenAiService {
 
 		@Override
-		public String stageLabel(Stage stage, List<String> sources) {
+		public String stageLabel(Stage stage, List<String> sources, boolean withImage) {
 			return stage.name();
 		}
 

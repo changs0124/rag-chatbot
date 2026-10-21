@@ -121,7 +121,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 - 확인 ① : 답변 토큰이 **흘러서** 온다(한 번에 뭉쳐 오지 않는다). 뭉쳐 오면 스트리밍이 아니라
   버퍼링된 것이므로 `RestClient` 응답 처리를 봐야 한다.
 - 확인 ② : 진행 단계에 **「참조 문서 검색 중」** 이 뜬다. 안 뜨면 `file_search` 호출 이벤트가
-  도착하지 않은 것이다(3절 가정 A).
+  도착하지 않은 것이다(3절 가정 A). 이어서 **「참조 문서 확인 중 · <문서명>」** 이 뜬다. 안 뜨면 3절 가정 G.
 - 확인 ③ : 답변 하단에 **출처 각주가 뜬다**. 각주가 없고 「자료 없음」 배너가 뜨면 인용 추출이
   실패한 것이다(3절 가정 B·C).
 
@@ -151,6 +151,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 | D | 검색 결과 본문이 `file_search_call` 항목의 `results[].text` 에 실린다 | 출처 각주는 뜨는데 스니펫이 빈칸이다 |
 | E | `include: ["file_search_call.results"]` 로 결과 본문을 받을 수 있다 | D와 같은 증상 |
 | F | Vector Store 계열 호출에 `OpenAI-Beta: assistants=v2` 가 **필요하다** | 없음 — 헤더 없이도 200(위 「밖에서 먼저 만들어 와야 하는 것 둘」 아래) |
+| G | 검색이 끝나면 `response.output_item.done` 이 `item.type=file_search_call` 과 `item.results[].filename` 을 싣는다(#375. 2026-10-19 운영 키 · 스토어로 실측 확인 : `file_search_call.completed` 뒤, 첫 `output_text.delta` 앞에 status=completed · results 20건 · filename 두 종) | 「참조 문서 확인 중 · …」 단계가 뜨지 않는다. 답변 · 출처는 정상(출처는 `response.completed` 에서 따로 읽는다) |
 
 가정 C는 특히 **오진하기 쉽다.** "자료 없음"은 정상 동작으로도 나오는 표시라, 스토어에 문서가 있는데도
 0건이면 검색이 안 된 것인지 인용 추출이 깨진 것인지 화면만 봐서는 구분되지 않는다. 2-4에서

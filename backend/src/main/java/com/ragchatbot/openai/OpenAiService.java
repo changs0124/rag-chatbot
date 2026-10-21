@@ -47,19 +47,27 @@ public interface OpenAiService {
 
 	/**
 	 * 진행 단계 키(REQ-CHAT-005). 키는 Mock/Real 공통이고 <b>라벨 문자열은 구현이 소유함</b>(P-2 : ChatService는 모드를 알지 않음).
-	 * ANALYZING은 ChatService가 meta 직후 발행하고, SEARCHING·GENERATING은 구현이 자기 경계에서 올림.
+	 * ANALYZING은 ChatService가 meta 직후 발행하고, SEARCHING·REVIEWING·GENERATING은 구현이 자기 경계에서 올림.
+	 * REVIEWING은 검색 결과가 <b>실제로 도착한</b> 뒤에만 오며 결과가 0건이면 오지 않음(#375).
 	 */
 	enum Stage {
-		ANALYZING, SEARCHING, GENERATING
+		ANALYZING, SEARCHING, REVIEWING, GENERATING
 	}
 
 	/**
 	 * 단계 라벨. 목업은 목 데이터임이 드러나는 전용 문구를 씀(REQ-RAG-004).
 	 *
-	 * @param sources 그 단계가 <b>실제로 참조한</b> 자료명. 참조한 자료가 없거나 그 시점에 아직 알 수 없으면
-	 *                빈 리스트임 - 비어 있으면 자료명을 붙이지 않음(없는 자료명을 지어내지 않기 위함, REQ-RAG-004)
+	 * @param sources   그 단계가 <b>실제로 참조한</b> 자료명. 참조한 자료가 없거나 그 시점에 아직 알 수 없으면
+	 *                  빈 리스트임 - 비어 있으면 자료명을 붙이지 않음(없는 자료명을 지어내지 않기 위함, REQ-RAG-004)
+	 * @param withImage 이번 턴에 첨부 이미지가 있는가. 분석 단계 문구만 이것을 봄(#375) - 이미지를 보는 시점을 알리는
+	 *                  이벤트가 없어 따로 단계를 두지 않고 문구로만 밝힘
 	 */
-	String stageLabel(Stage stage, List<String> sources);
+	String stageLabel(Stage stage, List<String> sources, boolean withImage);
+
+	/** 확인 단계 라벨의 자료 부분 - 「첫 자료명 외 N건」, 하나뿐이면 이름만. 목업·라이브가 같은 꼴을 쓰게 한 곳에 둠 */
+	static String sourceSummary(List<String> sources) {
+		return sources.size() == 1 ? sources.get(0) : sources.get(0) + " 외 " + (sources.size() - 1) + "건";
+	}
 
 	/**
 	 * 스트리밍 채팅. 토큰을 onToken으로 흘리고(ChatService 가 SSE 로 내보냄) 완료 시 결과 반환.

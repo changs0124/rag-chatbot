@@ -10,6 +10,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -174,15 +175,21 @@ public class OpenAiRealService implements OpenAiService {
 	private static final Map<Stage, String> STAGE_LABELS = Map.of(
 			Stage.ANALYZING, "질문 분석 중",
 			Stage.SEARCHING, "참조 문서 검색 중",
+			Stage.REVIEWING, "참조 문서 확인 중",
 			Stage.GENERATING, "답변 작성 중");
 
 	/**
-	 * sources는 라이브에서 늘 비어 있음. 검색 단계는 file_search 호출이 <b>시작됐다는</b> 이벤트에 올리는데
-	 * 그 시점에는 어느 문서가 걸렸는지 아직 모르고, 파일명은 response.completed 의 결과에서야 나옴 -
-	 * 즉 이미 토큰이 나간 뒤라 단계 라벨에 실을 수 없음(단계 전송 규칙). 없는 이름을 지어내지 않고 비워 둠(REQ-RAG-004)
+	 * 검색 단계는 file_search 호출이 <b>시작됐다는</b> 이벤트에 올리므로 그 시점에는 어느 문서가 걸렸는지 아직 모름 -
+	 * 들어온 이름이 있어도 붙이지 않음(REQ-RAG-004). 이름은 결과가 도착한 뒤의 확인 단계에만 실림(#375)
 	 */
 	@Override
-	public String stageLabel(Stage stage, List<String> sources) {
+	public String stageLabel(Stage stage, List<String> sources, boolean withImage) {
+		if (stage == Stage.ANALYZING && withImage) {
+			return "질문·첨부 이미지 분석 중";
+		}
+		if (stage == Stage.REVIEWING && !sources.isEmpty()) {
+			return STAGE_LABELS.get(stage) + " · " + OpenAiService.sourceSummary(sources);
+		}
 		return STAGE_LABELS.get(stage);
 	}
 
@@ -287,6 +294,8 @@ public class OpenAiRealService implements OpenAiService {
 		boolean completed = false;
 		boolean searchingSent = false;
 		boolean generatingSent = false;
+		// 확인 단계에 실은 자료명 - 검색이 여러 번 돌면 이름을 모아 새 이름이 생길 때만 다시 올림
+		Set<String> reviewedSources = new LinkedHashSet<>();
 		CitationMarkupFilter markup = new CitationMarkupFilter();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
 			String line;
@@ -320,6 +329,21 @@ public class OpenAiRealService implements OpenAiService {
 					// 이 시점에는 어느 문서가 걸렸는지 아직 모르므로 자료명은 비워 보냄(stageLabel 주석 참고)
 					onStage.accept(Stage.SEARCHING, List.of());
 					searchingSent = true;
+				} else if ("response.output_item.done".equals(type)
+						&& "file_search_call".equals(ev.path("item").path("type").asString(""))) {
+					// 검색 결과가 실제로 도착한 경계(#375). include: file_search_call.results 로 결과가 실려 옴.
+					// 이름은 출처와 같은 규칙(resultFilename)으로 뽑음 - 진행 문구와 출처 목록이 어긋나지 않게 함
+					boolean added = false;
+					for (JsonNode r : ev.path("item").path("results")) {
+						String name = resultFilename(r);
+						if (!name.isEmpty()) {
+							added |= reviewedSources.add(name);
+						}
+					}
+					// 0건이면 확인할 문서가 없으므로 단계를 만들지 않음(REQ-RAG-004)
+					if (added) {
+						onStage.accept(Stage.REVIEWING, List.copyOf(reviewedSources));
+					}
 				} else if ("response.completed".equals(type)) {
 					JsonNode response = ev.path("response");
 					citations = extractCitations(response, markup.fileRefs(), buffer.toString());
@@ -375,7 +399,7 @@ public class OpenAiRealService implements OpenAiService {
 			if ("file_search_call".equals(item.path("type").asString(""))) {
 				List<String> files = new ArrayList<>();
 				for (JsonNode r : item.path("results")) {
-					String name = r.path("filename").asString("");
+					String name = resultFilename(r);
 					files.add(name);
 					if (!name.isEmpty()) {
 						chunksByFile.computeIfAbsent(name, k -> new ArrayList<>()).add(r.path("text").asString(""));
@@ -414,6 +438,11 @@ public class OpenAiRealService implements OpenAiService {
 			citations.add(new CitationData(seq++, name, snippet));
 		}
 		return citations;
+	}
+
+	/** 검색 결과 하나의 자료명. 출처(CitationData.sourceName)와 확인 단계 라벨이 같은 값을 쓰도록 한 곳에 둠(#375) */
+	private static String resultFilename(JsonNode result) {
+		return result.path("filename").asString("");
 	}
 
 	private static final Pattern FIGURE_MARK = Pattern.compile("\\[\\[그림:[^\\]]+\\]\\]");
