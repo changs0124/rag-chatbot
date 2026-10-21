@@ -4,7 +4,6 @@ import type { ChatMessage } from '../../lib/types'
 import Citations from './Citations'
 import { nextStick } from './scroll'
 import ImageLightbox from './ImageLightbox'
-import { IconFile } from '../icons'
 import DocFigure from './DocFigure'
 import Markdown from './Markdown'
 import { splitFigures } from '../../lib/docFigures'
@@ -130,8 +129,8 @@ export default function MessageList({
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user'
-  // 확대 보기는 그 말풍선의 이미지들을 한 묶음으로 넘김(좌우 이동 대상)
-  const images = (message.attachments ?? []).filter((a) => a.fileType === 'image')
+  // 확대 보기는 그 말풍선의 이미지들을 한 묶음으로 넘김(좌우 이동 대상). 첨부는 이미지뿐이다(#391)
+  const images = message.attachments ?? []
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   // 문서 그림(FEAT-CHAT-004). 사용자 첨부와 묶음을 섞지 않는다 - 확대 화면의 좌우 이동은 같은 종류끼리다.
   // 표식은 답변에서만 그림이 된다 - 사용자가 친 표식은 글자 그대로 둔다(#385)
@@ -161,31 +160,21 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       >
         {message.attachments && message.attachments.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-2">
-            {message.attachments.map((a) =>
-              a.fileType === 'image' ? (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => setLightboxIndex(images.findIndex((i) => i.id === a.id))}
-                  aria-label="첨부 이미지 확대"
-                  className="block h-24 w-24 overflow-hidden rounded-lg"
-                >
-                  <img
-                    src={API_BASE + a.url}
-                    alt="첨부 이미지"
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-              ) : (
-                <span
-                  key={a.id}
-                  className="inline-flex items-center gap-1 rounded-lg bg-surface px-2 py-1 text-xs text-ink-muted"
-                >
-                  <IconFile className="h-3.5 w-3.5" />
-                  문서
-                </span>
-              ),
-            )}
+            {message.attachments.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => setLightboxIndex(images.findIndex((i) => i.id === a.id))}
+                aria-label="첨부 이미지 확대"
+                className="block h-24 w-24 overflow-hidden rounded-lg"
+              >
+                <img
+                  src={API_BASE + a.url}
+                  alt="첨부 이미지"
+                  className="h-full w-full object-cover"
+                />
+              </button>
+            ))}
           </div>
         )}
         {/* 무자료 표시 - 텍스트 접두가 아니라 "출처 0건"에서 파생함(REQ-RAG-003).

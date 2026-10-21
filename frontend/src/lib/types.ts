@@ -59,8 +59,7 @@ export interface AdminUser {
 
 export interface Attachment {
   id: string
-  // 문서 업로드는 받지 않음(모델에 전달되지 않아 오해를 만듦).
-  // 과거에 올라간 첨부가 남아 있을 수 있어 타입은 유지함
-  fileType: 'image' | 'document'
+  // 문서 업로드는 받지 않음(모델에 전달되지 않아 오해를 만듦). DB check 도 'image' 만 허용(#391)
+  fileType: 'image'
   url: string
 }

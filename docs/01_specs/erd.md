@@ -36,7 +36,6 @@ erDiagram
         uuid id PK
         uuid user_id FK
         text title
-        text vector_store_id
         timestamptz created_at
         timestamptz updated_at
     }
@@ -60,7 +59,6 @@ erDiagram
         integer seq
         text source_name
         text snippet
-        text uri
         timestamptz created_at
     }
 
@@ -70,7 +68,6 @@ erDiagram
         uuid message_id FK
         text storage_path
         text file_type
-        text openai_file_id
         timestamptz created_at
     }
 
@@ -121,7 +118,6 @@ erDiagram
 | id | uuid | N | `gen_random_uuid()` | PK |
 | user_id | uuid | N | - | FK → `users.id` **on delete cascade** |
 | title | text | N | `'새 대화'` | |
-| vector_store_id | text | Y | NULL | 대화 전용 스토어. **현재는 공용 스토어를 쓰므로 비어 있다** |
 | created_at | timestamptz | N | `now()` | |
 | updated_at | timestamptz | N | `now()` | 마지막 답변 또는 제목 변경 시각. 목록 정렬 기준 |
 
@@ -174,7 +170,6 @@ erDiagram
 | seq | integer | N | - | 각주 번호(1-base). 인용 순서 |
 | source_name | text | N | - | 자료명. 화면 각주에 뜨는 값 |
 | snippet | text | Y | NULL | 발췌. 200자로 자른다 |
-| uri | text | Y | NULL | **앱이 읽지도 쓰지도 않는다**(#328) — 새 행은 NULL, 그 전 행은 빈 문자열(목업은 `corpus://…`). 컬럼 삭제는 마이그레이션이 필요해 보류 |
 | created_at | timestamptz | N | `now()` | |
 
 **출처를 영속화하는 이유** : 대화를 다시 열어도 각주가 남아야 한다(REQ-RAG-002).
@@ -190,8 +185,7 @@ erDiagram
 | user_id | uuid | N | - | FK → `users.id` **on delete cascade** |
 | message_id | uuid | Y | NULL | FK → `messages.id` **on delete cascade**. **업로드 시점엔 null** |
 | storage_path | text | N | - | 로컬 디스크 경로 |
-| file_type | text | N | - | `image` \| `document`. 현재 신규 업로드는 `image` 만 |
-| openai_file_id | text | Y | NULL | 현재 미사용. 문서 첨부를 받지 않기 때문 |
+| file_type | text | N | - | `image` 만 허용(check, V10 #391). 문서 첨부는 받지 않는다 |
 | created_at | timestamptz | N | `now()` | |
 
 **`message_id` 가 nullable 인 것이 즉시 업로드의 핵심**이다. 파일을 고르는 즉시 올리고, 전송 시점에
@@ -278,6 +272,7 @@ erDiagram
 | V7 | `messages.timed_out` — 서버 타임아웃 표시(#84) |
 | V8 | `users.theme` 삭제 — 테마 전환 제거, 화면은 라이트 단일(#191) |
 | V9 | `rag_documents` 살아 있는 행의 `openai_file_id` 부분 유니크 — 스토어 동기화(#193) |
+| V10 | `conversations.vector_store_id` · `attachments.openai_file_id` · `citations.uri` 삭제, `attachments.file_type` check 를 `image` 하나로 — 한 번도 값이 들어간 적 없는 대화별 OpenAI 정리 잔재(#391, #124) |
 
 **기존 마이그레이션을 수정하지 않는다.** 새 변경은 항상 새 파일로 추가한다.
 

@@ -19,7 +19,7 @@ import com.sun.net.httpserver.HttpServer;
  *
  * <p><b>왜 이렇게 재는가</b> - 헤더가 필수인지는 2026-09-22 실키로 판정됨(필수 아님, 실어도 무해). 그래도
  * 헤더는 공식 SDK 와 맞추려고 싣기로 했으므로, 그 선택이 유지되는지 <b>우리가 무엇을 보내는지</b>를
- * 로컬 서버로 받아 판정함. {@code OpenAiRealDeleteResourcesTest} 와 같은 방식임.
+ * 로컬 서버로 받아 판정함.
  *
  * <p>부착 범위가 새지 않는지도 함께 잠금 - {@code /files} 는 Assistants 베타와 무관하므로
  * 공식 SDK 도 헤더를 붙이지 않음. 기본 헤더로 올리면 이 테스트가 깨짐.
@@ -82,13 +82,12 @@ class OpenAiRealBetaHeaderTest {
 		return OpenAiRealTestSupport.against(baseUrl, "shared-store");
 	}
 
-	/** vector store 를 건드리는 네 경로를 모두 태움 */
+	/** vector store 를 건드리는 세 경로를 모두 태움 */
 	private void exerciseAllVectorStoreCalls() {
 		var service = service();
 		service.uploadDocument("a.pdf", new byte[] { 1 }); // POST /vector_stores/{id}/files
 		service.documentStatus("shared-store", "file-1"); // GET  /vector_stores/{id}/files/{fid}
 		service.deleteDocument("shared-store", "file-1"); // DEL  /vector_stores/{id}/files/{fid}
-		service.deleteResources("conversation-store", List.of()); // DEL  /vector_stores/{id}
 	}
 
 	@Test
@@ -98,8 +97,8 @@ class OpenAiRealBetaHeaderTest {
 		List<Seen> vectorStoreCalls = seen.stream().filter(s -> s.path().startsWith("/vector_stores")).toList();
 
 		assertThat(vectorStoreCalls)
-				.withFailMessage("vector store 호출 4건이 모두 나가야 함 (관측: %s)", seen)
-				.hasSize(4);
+				.withFailMessage("vector store 호출 3건이 모두 나가야 함 (관측: %s)", seen)
+				.hasSize(3);
 		assertThat(vectorStoreCalls)
 				.withFailMessage("vector store 호출에 OpenAI-Beta: %s 가 빠짐 (관측: %s)", BETA, seen)
 				.allMatch(s -> BETA.equals(s.beta()));

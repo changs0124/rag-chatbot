@@ -42,7 +42,7 @@ class AttachmentLinkRaceTest {
 	private static final UUID USER = UUID.randomUUID();
 
 	private static Attachment draft(UUID id) {
-		return new Attachment(id, null, USER, "u/" + id + ".png", "image", null,
+		return new Attachment(id, null, USER, "u/" + id + ".png", "image",
 				OffsetDateTime.now().minusHours(2));
 	}
 
@@ -70,7 +70,7 @@ class AttachmentLinkRaceTest {
 		UUID convId = UUID.randomUUID();
 		var att = draft(UUID.randomUUID());
 		when(conversations.findByIdAndUser(convId, USER)).thenReturn(Optional.of(
-				new Conversation(convId, USER, "t", null, OffsetDateTime.now(), OffsetDateTime.now())));
+				new Conversation(convId, USER, "t", OffsetDateTime.now(), OffsetDateTime.now())));
 		when(repo.findByIdAndUser(att.id(), USER)).thenReturn(Optional.of(att));
 		when(repo.linkToMessage(any(), any(), any())).thenReturn(0);
 
@@ -135,7 +135,7 @@ class AttachmentLinkRaceTest {
 		var low = draft(new UUID(0, 1));
 		var high = draft(new UUID(0, 2));
 		when(conversations.findByIdAndUser(convId, USER)).thenReturn(Optional.of(
-				new Conversation(convId, USER, "t", null, OffsetDateTime.now(), OffsetDateTime.now())));
+				new Conversation(convId, USER, "t", OffsetDateTime.now(), OffsetDateTime.now())));
 		when(repo.findByIdAndUser(low.id(), USER)).thenReturn(Optional.of(low));
 		when(repo.findByIdAndUser(high.id(), USER)).thenReturn(Optional.of(high));
 		when(repo.linkToMessage(any(), any(), any())).thenReturn(1);

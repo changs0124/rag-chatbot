@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Removed
+- **한 번도 실행되지 않은 대화별 OpenAI 정리 경로와 그 스키마 잔재를 걷었다(#391).** 대화 삭제가 부르던 `deleteResources` 는 인자의 출처가 늘 비어 있어 항상 `(null, [])` 로 불렸다(#124)
+  - 삭제 : `OpenAiService.deleteResources`(실 · 목업 구현과 목업 호출 카운터), `ConversationService` 의 호출. 대화 삭제는 행 삭제 → 첨부 파일 삭제 순서 그대로다
+  - V10 : `conversations.vector_store_id` · `attachments.openai_file_id` · `citations.uri` 컬럼 삭제, `attachments.file_type` check 를 `image` 하나로 좁힘. 운영 DB 에는 세 컬럼에 든 값이 없었고(null 또는 빈 문자열) `document` 첨부 행도 0건이었다
+  - 관리자 문서(`rag_documents`)의 같은 이름 컬럼과 문서 삭제 정리는 살아 있는 경로라 그대로다
+  - 프론트 : 첨부 `fileType` 을 `'image'` 로 좁히고 과거 문서 첨부 칩 분기를 지웠다
+  - 테스트 : `OpenAiRealDeleteResourcesTest` 2건 삭제(지운 메서드 전용) · `ChatFlowTest` 의 목업 호출 수 단언을 삭제 후 404 단언으로 바꿈. **백엔드 하한 321 → 319**
 ### Refactored
 - **프론트 중복을 정리했다(#390).** 동작은 그대로다(테스트 191개 변화 없음)
   - 인증 fetch 순서(보낸 토큰 기억 → Bearer → 재발급 토큰 반영)를 `api.ts` 의 `authFetch` 하나로 모았다. `request` · `streamChat` · `loadFigure` 셋이 각자 쓰고 있었고, 한 곳이라도 빠지면 그 경로만 쓰는 사용자가 두 시간마다 로그아웃된다(#359 · #363)

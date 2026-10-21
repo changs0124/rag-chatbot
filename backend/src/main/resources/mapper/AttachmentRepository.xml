@@ -10,18 +10,17 @@
 			<arg column="user_id" javaType="java.util.UUID"/>
 			<arg column="storage_path" javaType="java.lang.String"/>
 			<arg column="file_type" javaType="java.lang.String"/>
-			<arg column="openai_file_id" javaType="java.lang.String"/>
 			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
 		</constructor>
 	</resultMap>
 
 	<insert id="insert" parameterType="com.ragchatbot.entity.Attachment">
-		insert into attachments (id, message_id, user_id, storage_path, file_type, openai_file_id)
-		values (#{id}, #{messageId}, #{userId}, #{storagePath}, #{fileType}, #{openaiFileId})
+		insert into attachments (id, message_id, user_id, storage_path, file_type)
+		values (#{id}, #{messageId}, #{userId}, #{storagePath}, #{fileType})
 	</insert>
 
 	<select id="findByIdAndUser" resultMap="attachmentResult">
-		select id, message_id, user_id, storage_path, file_type, openai_file_id, created_at
+		select id, message_id, user_id, storage_path, file_type, created_at
 		from attachments
 		where id = #{id} and user_id = #{userId}
 	</select>
@@ -37,7 +36,7 @@
 
 	<!-- 한 메시지의 이미지 순서를 업로드 순으로 고정(#359) - 순서를 안 정하면 재조회 때 바뀔 수 있다 -->
 	<select id="findByConversation" resultMap="attachmentResult">
-		select a.id, a.message_id, a.user_id, a.storage_path, a.file_type, a.openai_file_id, a.created_at
+		select a.id, a.message_id, a.user_id, a.storage_path, a.file_type, a.created_at
 		from attachments a
 		join messages m on a.message_id = m.id
 		where m.conversation_id = #{conversationId}
@@ -45,7 +44,7 @@
 	</select>
 
 	<select id="findOrphans" resultMap="attachmentResult">
-		select id, message_id, user_id, storage_path, file_type, openai_file_id, created_at
+		select id, message_id, user_id, storage_path, file_type, created_at
 		from attachments
 		where message_id is null and created_at &lt; #{cutoff}
 	</select>

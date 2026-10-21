@@ -77,20 +77,6 @@ public interface OpenAiService {
 	 */
 	ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage);
 
-	/**
-	 * 대화 삭제 시 OpenAI 파일/Vector Store 정리. Mock은 호출을 기록만 함.
-	 *
-	 * <p><b>현재 이 경로는 항상 {@code (null, [])} 로 불려 아무 일도 하지 않는다</b>(#124).
-	 * 두 인자의 출처인 {@code conversations.vector_store_id} 와 {@code attachments.openai_file_id} 에
-	 * 값을 넣는 자리가 없기 때문이다 - 각각 삽입 한 곳에서 {@code null} 로만 쓰이고
-	 * ({@code ConversationService} · {@code FileService}), 이후 갱신하는 UPDATE 문이 없다.
-	 * {@code erd.md} 도 두 컬럼을 「비어 있다 · 미사용」으로 적는다.
-	 *
-	 * <p>그러므로 <b>구현 안의 분기는 어느 것도 실행된 적이 없다.</b> 대화별 스토어를 실제로 쓰기
-	 * 시작하는 날, 공용 스토어 보호를 포함한 이 안쪽 전체가 <b>그날 처음 도는 코드</b>다.
-	 */
-	void deleteResources(String vectorStoreId, List<String> openaiFileIds);
-
 	// ── RAG 문서 관리(FEAT-ADMIN-002) ────────────────────────────────────────────
 	// 채팅 첨부와 다른 경로임. 첨부는 비전 입력용이라 이미지만 받고 인라인으로 보내지만,
 	// 여기는 색인용이라 문서만 받아 공용 Vector Store 에 넣음.
