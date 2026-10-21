@@ -75,7 +75,7 @@ public class ChatService {
 		String message = req.message() == null ? "" : req.message().trim();
 		List<UUID> attachmentIds = req.attachmentIds() == null ? List.of() : req.attachmentIds();
 		if (message.isEmpty() && attachmentIds.isEmpty()) {
-			throw new BadRequestException("메시지 또는 첨부가 필요함"); // 첨부 있으면 허용
+			throw new BadRequestException("메시지 또는 첨부가 필요함");
 		}
 		// 길이 상한(#371) - 횟수 상한·이력 예산은 이번 메시지의 크기를 묶지 못한다. **저장·모델 호출 전에** 거른다.
 		// 코드 포인트로 셈 - length() 면 이모지 하나가 두 자로 세진다

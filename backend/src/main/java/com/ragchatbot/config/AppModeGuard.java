@@ -16,7 +16,7 @@ import org.springframework.core.env.Profiles;
  *
  * <p>세 가지를 막음.
  * <ul>
- * <li>미설정 - 기본값 {@code mock}이 없어졌으므로 목업이 우연히 켜지는 경로가 없음</li>
+ * <li>미설정 - 기본값이 없으므로 목업이 우연히 켜지는 경로가 없음</li>
  * <li>오타 - {@code mock}/{@code live} 밖의 값</li>
  * <li>운영 목업 - {@code prod} 프로필 + {@code mock}. 프로필은 {@code docker-compose.yml} 이 켠다(#305)</li>
  * </ul>

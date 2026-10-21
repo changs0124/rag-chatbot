@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Changed
+- **틀렸거나 군더더기인 주석을 고쳤다(#392). 코드 diff 는 0 이다.**
+  - 사실과 어긋난 것 : CI 주석의 `docs 잡`(실제는 `static`), `AdminRoleSynchronizer` 의 생성 순서 설명, `application.yml` 의 `local` 프로필 언급, `check-case-floor.sh` 머리말 명령 형태
+  - 이력 어투("종전" · "예전에" · "없어졌으므로")를 현재 사실로 바꿈. 이유는 그대로 둠
+  - 중복·군더더기 : 목업 스트리밍 주석 병합, `ChatService` 꼬리 주석, `GlobalExceptionHandler` 의 홀로 남은 `</p>`, `scroll.ts` TSDoc 의 Java 식 태그를 Markdown 으로
+
 ### Removed
 - **한 번도 실행되지 않은 대화별 OpenAI 정리 경로와 그 스키마 잔재를 걷었다(#391).** 대화 삭제가 부르던 `deleteResources` 는 인자의 출처가 늘 비어 있어 항상 `(null, [])` 로 불렸다(#124)
   - 삭제 : `OpenAiService.deleteResources`(실 · 목업 구현과 목업 호출 카운터), `ConversationService` 의 호출. 대화 삭제는 행 삭제 → 첨부 파일 삭제 순서 그대로다
