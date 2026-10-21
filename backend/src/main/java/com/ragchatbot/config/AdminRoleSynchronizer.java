@@ -48,7 +48,7 @@ public class AdminRoleSynchronizer {
 			@Value("${app.admin.emails}") String adminEmails) {
 		return args -> {
 			List<String> emails = EmailDomainPolicy.parseList(adminEmails);
-			// 계정이 없는 관리자를 먼저 만든다. 뒤의 승격이 그 계정까지 한 번에 훑도록 순서를 이렇게 둔다
+			// 계정이 없는 관리자는 admin 역할로 바로 만든다. 뒤의 승격은 이미 있는 비관리자 계정만 건드린다
 			int created = 0;
 			for (String email : emails) {
 				if (userRepository.findByEmail(email).isPresent()) {

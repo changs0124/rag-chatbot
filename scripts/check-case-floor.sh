@@ -9,7 +9,7 @@
 # 직접 만들지 않음. 그냥 `vitest run` 을 돌리면 리포트가 갱신되지 않아 **이전 실행의 수가 그대로
 # 남음**. 테스트를 지운 뒤 리포트를 다시 만들지 않으면 낡은(더 큰) 수로 게이트가 통과해,
 # 이 게이트가 막으려던 바로 그 상황을 놓침. 측정 전에 반드시 :
-#   cd frontend && npx vitest run --reporter=default --reporter=json --outputFile.json=vitest-report.json
+#   cd frontend && npm test -- --reporter=default --reporter=json --outputFile.json=vitest-report.json
 # 원격 CI는 클린 체크아웃이라 매번 새로 만들므로 이 구멍은 로컬 한정임
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
