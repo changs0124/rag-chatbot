@@ -93,6 +93,17 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
+	/** 행은 있는데 디스크 파일이 없으면(볼륨 유실 · 수동 삭제) 500 이 아니라 다른 없음과 같은 404 다(#386) */
+	@Test
+	void serve_missing_file_on_disk_404() throws Exception {
+		String token = createUser("file-gone@b.com");
+		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		Files.delete(pathOf(idOf(url)));
+
+		var res = rest.getForEntity(url, Map.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
 	@Test
 	void upload_bad_magic_400() {
 		String token = createUser("file4@b.com");
