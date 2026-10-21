@@ -64,13 +64,17 @@ export function useChat() {
     setStage(null)
   }, [])
 
+  // 답변 뒤 갱신 실패는 목록이 그대로 남으니 조용히 넘긴다
   const refreshConversations = useCallback(() => {
     listConversations().then(setConversations).catch(() => {})
   }, [])
 
+  // 첫 로드 실패를 삼키면 「대화가 없습니다」로 보인다 - 없는 것과 못 불러온 것을 가른다(#385, #77 · #359 와 같은 이유)
   useEffect(() => {
-    refreshConversations()
-  }, [refreshConversations])
+    listConversations()
+      .then(setConversations)
+      .catch(() => setError('대화 목록을 불러오지 못했습니다'))
+  }, [])
 
   /**
    * 대화를 떠날 때 돌고 있던 스트림을 끊음.
