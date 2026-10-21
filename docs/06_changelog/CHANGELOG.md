@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Security
+- **vite 를 8.1.5 → 8.1.6 으로 올렸다(#382).** 2026-10-21 새로 공개된 launch-editor 권고 셋(high · [GHSA-698v-4r3x-3vcv](https://github.com/advisories/GHSA-698v-4r3x-3vcv) · [GHSA-r825-w8mm-5pxw](https://github.com/advisories/GHSA-r825-w8mm-5pxw) · [GHSA-587h-7wmj-h5pm](https://github.com/advisories/GHSA-587h-7wmj-h5pm))이 CI 의 `deps (프론트 의존성 취약점)` 잡을 빨갛게 만들어 **열린 PR 전부(#380 · #381)가 그 잡에서 실패**했다 — PR 변경과 무관했다
+  - `package.json` 의 범위(`^8.1.1`) 안이라 **lock 만 바뀌었다.** 영향은 개발 서버가 오류 위치를 편집기로 여는 경로뿐이고 배포 번들(`dist/`)에는 개발 서버가 없다 — CI 게이트를 되살린 것이 목적이다
+
 ### Fixed
 - **인용 표기를 걷어낸 자리가 비어 답변 문장이 깨지던 것을 줄였다(#372).** 모델이 표기를 문서 이름 자리에 넣으면(「…결과는 <표기>에 기록돼 있습니다」) `CitationMarkupFilter` 가 지운 뒤 「결과는 에 기록돼」 가 남았다. 기존 누출 점검은 지운 뒤를 봐서 잡지 못했다
   - 지시문(`RAG_INSTRUCTIONS`)에 「인용 표기는 문장이 끝난 뒤에만, 명사 대신 쓰지 않는다」 한 줄을 더했다. 필터는 스트림 조각 단위라 앞 조각에서 나간 공백을 되돌릴 수 없어 필터 쪽은 고치지 않았다
