@@ -49,7 +49,7 @@ export function handleUnauthorized(path: string): void {
  * 슬라이딩 재발급(FEAT-OPS-003). 만료가 가까우면 서버가 이 헤더로 새 토큰을 실어 보낸다.
  *
  * 세 곳에서 읽어야 한다 - 이 래퍼, `endpoints.ts` 의 채팅 스트림, `docFigures.ts` 의 그림 로드.
- * 뒤의 둘은 래퍼를 안 거치므로 여기만 하면 **채팅만 쓰는 사용자는 갱신을 못 받아** 두 시간마다 튕긴다.
+ * 셋 다 `authFetch` 를 거친다(#390) - 뒤의 둘이 우회하면 **채팅만 쓰는 사용자는 갱신을 못 받아** 두 시간마다 튕긴다.
  *
  * 서버가 CORS 노출 헤더에 등록하지 않으면 브라우저가 이 값을 숨겨 `null` 이 온다 - 그 경우
  * 조용히 아무 일도 일어나지 않으므로, 서버 쪽 등록을 케이스로 잠가 두었다.
@@ -110,9 +110,25 @@ export function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+/**
+ * 인증 fetch(#390). 보낼 때의 토큰을 잡아 두고 Bearer 를 실어 보낸 뒤 재발급 헤더를 반영한다.
+ * 에러 변환은 하지 않는다 - 호출부마다 다르다(404 를 null 로 보는 그림, onError 를 부르는 스트림).
+ *
+ * `request` · `streamChat` · `loadFigure` 가 전부 여기를 지나야 한다. 직접 fetch 하면 adoptRefreshedToken 이
+ * 빠져 그 경로만 쓰는 사용자는 갱신을 못 받는다(위 주석).
+ */
+export async function authFetch(
+  path: string,
+  init: Omit<RequestInit, 'headers'> & { headers?: Record<string, string> } = {},
+): Promise<Response> {
   const sentWith = token
-  const headers = authHeaders()
+  const res = await fetch(BASE + path, { ...init, headers: { ...init.headers, ...authHeaders() } })
+  adoptRefreshedToken(res, sentWith)
+  return res
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const headers: Record<string, string> = {}
 
   let body: BodyInit | undefined
   if (options.formData) {
@@ -122,13 +138,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body = JSON.stringify(options.body)
   }
 
-  const res = await fetch(BASE + path, {
+  const res = await authFetch(path, {
     method: options.method ?? 'GET',
     headers,
     body,
     signal: options.signal,
   })
-  adoptRefreshedToken(res, sentWith)
   if (!res.ok) throw await toApiError(res, path)
   if (res.status === 204) return undefined as T
   const contentType = res.headers.get('content-type') ?? ''

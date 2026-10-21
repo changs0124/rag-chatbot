@@ -1,4 +1,4 @@
-import { adoptRefreshedToken, api, API_BASE, authHeaders, getToken, toApiError } from './api'
+import { api, authFetch, toApiError } from './api'
 import type {
   AdminUser,
   Attachment,
@@ -18,7 +18,7 @@ export const updatePassword = (currentPassword: string, newPassword: string) =>
 
 // 대화
 export const listConversations = () => api.get<Conversation[]>('/api/conversations')
-export const createConversation = (title?: string) =>
+export const createConversation = (title: string) =>
   api.post<Conversation>('/api/conversations', { title })
 export const renameConversation = (id: string, title: string) =>
   api.patch<Conversation>(`/api/conversations/${id}`, { title })
@@ -79,15 +79,13 @@ export async function streamChat(
   handlers: ChatStreamHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
-  const sentWith = getToken()
-  const res = await fetch(API_BASE + '/api/chat', {
+  // 이 경로는 api 래퍼(request)를 안 거치므로 만료 처리는 여기서 직접 물림. 토큰 갱신은 authFetch 가 한다
+  const res = await authFetch('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     signal,
   })
-  // 이 경로는 api 래퍼를 안 거치므로 토큰 갱신·만료 처리를 여기서 직접 물림
-  adoptRefreshedToken(res, sentWith)
   if (!res.ok || !res.body) {
     const err = await toApiError(res, '/api/chat')
     handlers.onError?.(err.message)

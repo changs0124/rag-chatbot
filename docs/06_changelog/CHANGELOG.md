@@ -10,9 +10,15 @@
   - V10 : `conversations.vector_store_id` · `attachments.openai_file_id` · `citations.uri` 컬럼 삭제, `attachments.file_type` check 를 `image` 하나로 좁힘. 운영 DB 에는 세 컬럼에 든 값이 없었고(null 또는 빈 문자열) `document` 첨부 행도 0건이었다
   - 관리자 문서(`rag_documents`)의 같은 이름 컬럼과 문서 삭제 정리는 살아 있는 경로라 그대로다
   - 프론트 : 첨부 `fileType` 을 `'image'` 로 좁히고 과거 문서 첨부 칩 분기를 지웠다
-  - 테스트 : `OpenAiRealDeleteResourcesTest` 2건 삭제(지운 메서드 전용) · `ChatFlowTest` 의 목업 호출 수 단언을 삭제 후 404 단언으로 바꿈. **백엔드 하한 320 → 318**
+  - 테스트 : `OpenAiRealDeleteResourcesTest` 2건 삭제(지운 메서드 전용) · `ChatFlowTest` 의 목업 호출 수 단언을 삭제 후 404 단언으로 바꿈. **백엔드 하한 321 → 319**
+### Refactored
+- **프론트 중복을 정리했다(#390).** 동작은 그대로다(테스트 191개 변화 없음)
+  - 인증 fetch 순서(보낸 토큰 기억 → Bearer → 재발급 토큰 반영)를 `api.ts` 의 `authFetch` 하나로 모았다. `request` · `streamChat` · `loadFigure` 셋이 각자 쓰고 있었고, 한 곳이라도 빠지면 그 경로만 쓰는 사용자가 두 시간마다 로그아웃된다(#359 · #363)
+  - `AdminPage`(439줄 · useState 15개)를 같은 파일 안 `DocumentsSection` · `UsersSection` 으로 나눠 상태를 쓰는 코드 옆에 뒀다. 화면 · 문구 그대로
+  - `ChatMessage.status` 를 `'streaming' | 'complete' | 'error'` 로 좁히고, `createConversation` 의 제목을 필수로(호출부가 늘 넘김). 같은 파일 안 반복 클래스 문자열은 파일 지역 상수로
 
 ### Fixed
+- **첨부 행은 있는데 디스크 파일이 없으면 `GET /api/files/{id}` 가 500 을 내던 것을 404 로 고쳤다(#386).** 볼륨 유실 · 수동 삭제 때 응답 변환에서 예외가 나 ERROR 로그와 함께 500 이 됐다 — 다른 「파일 없음」과 같은 404 로. 재현 테스트 1개 · 백엔드 케이스 하한 320 → 321
 - **프론트 결함 셋을 고쳤다(#385).** 10-21 전체 코드 리뷰에서 찾았다
   - 한글 조합을 끝내려고 누른 Enter 가 메시지 전송 · 제목 확정으로 처리돼 마지막 글자가 남거나 두 번 보낼 수 있었다 → 조합 중 Enter 는 무시(입력창 · 대화 제목 편집)
   - 사용자가 친 `[[그림:<key>]]` 가 문서 그림으로 그려졌다 → 표식은 답변에서만 그림이 되고, 사용자 글은 친 그대로

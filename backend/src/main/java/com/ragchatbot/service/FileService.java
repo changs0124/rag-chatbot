@@ -123,7 +123,12 @@ public class FileService {
 				.map(Map.Entry::getKey)
 				.findFirst()
 				.orElse("application/octet-stream");
-		return new ServedFile(fileStorage.load(att.storagePath()), mediaType);
+		Resource file = fileStorage.load(att.storagePath());
+		// 행은 있는데 파일이 없으면(볼륨 유실 · 수동 삭제) 응답 변환이 터져 500 이 된다 - 다른 없음과 같은 404 로(#386)
+		if (!file.exists()) {
+			throw new NotFoundException("파일 없음");
+		}
+		return new ServedFile(file, mediaType);
 	}
 
 	/**
