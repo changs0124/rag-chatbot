@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Refactored
+- **프론트 중복을 정리했다(#390).** 동작은 그대로다(테스트 191개 변화 없음)
+  - 인증 fetch 순서(보낸 토큰 기억 → Bearer → 재발급 토큰 반영)를 `api.ts` 의 `authFetch` 하나로 모았다. `request` · `streamChat` · `loadFigure` 셋이 각자 쓰고 있었고, 한 곳이라도 빠지면 그 경로만 쓰는 사용자가 두 시간마다 로그아웃된다(#359 · #363)
+  - `AdminPage`(439줄 · useState 15개)를 같은 파일 안 `DocumentsSection` · `UsersSection` 으로 나눠 상태를 쓰는 코드 옆에 뒀다. 화면 · 문구 그대로
+  - `ChatMessage.status` 를 `'streaming' | 'complete' | 'error'` 로 좁히고, `createConversation` 의 제목을 필수로(호출부가 늘 넘김). 같은 파일 안 반복 클래스 문자열은 파일 지역 상수로
+
 ### Fixed
 - **프론트 결함 셋을 고쳤다(#385).** 10-21 전체 코드 리뷰에서 찾았다
   - 한글 조합을 끝내려고 누른 Enter 가 메시지 전송 · 제목 확정으로 처리돼 마지막 글자가 남거나 두 번 보낼 수 있었다 → 조합 중 Enter 는 무시(입력창 · 대화 제목 편집)
