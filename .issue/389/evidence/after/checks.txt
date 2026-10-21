@@ -1,0 +1,6 @@
+# 수정 후 — check-all 전체 (2026-10-21, main 합친 뒤)
+[INFO] Tests run: 319, Failures: 0, Errors: 0, Skipped: 0
+케이스 수(backend) : 실측 319 / 하한 319
+케이스 수(frontend) : 실측 191 / 하한 191
+돌린 검사는 전부 통과
+ 18 files changed, 186 insertions(+), 151 deletions(-)
