@@ -22,8 +22,8 @@
 - 계정 발급(허용 이메일 도메인만) · 비밀번호 초기화
 
 **운영**
-- 사용자별 분당 상한 — 채팅 20 · 업로드 30 · 비밀번호 변경 5 · 로그인 실패 10(계정별)
-- 동시 채팅 스트림 상한 — 전역 16 · 사용자당 1(초과는 429)
+- 사용자별 분당 상한 — 채팅 · 업로드 · 비밀번호 변경 · 로그인 실패(계정별)
+- 동시 채팅 스트림 상한 — 전역 · 사용자당(초과는 429)
 - `APP_MODE=mock` 이면 OpenAI 호출 없이 전 경로가 목업 응답으로 돈다
 - 턴별 토큰 사용량 기록 · 요청 상관 ID · 고아 첨부 회수
 
@@ -122,19 +122,8 @@ bash scripts/check-all.sh                     # CI 가 돌리는 검사를 푸�
 케이스 수 하한은 `scripts/case-floors.env` 가 잠그고 `scripts/check-case-floor.sh` 가 검사한다 —
 테스트 수가 하한 아래로 줄면 CI 가 실패한다. `bash scripts/check-all.sh docs` 는 문서 검사만 돌린다.
 
-GitHub Actions(`.github/workflows/ci.yml`)는 변경마다 7잡을 전부 돌린다 :
-
-| 잡 | 하는 일 |
-|----|---------|
-| `backend` | `mvnw verify` · 케이스 수 하한 · 런타임/문서 버전 대조 |
-| `frontend` | 런타임 버전 대조(node) · oxlint · Vitest · tsc + vite 빌드 · 케이스 수 하한 |
-| `docker` | 백엔드 이미지 빌드(푸시 없음) |
-| `static` | 셸 구문 · shellcheck · DTO · resultMap · 프론트 타입 필드 대조 · 병합 충돌 표시 · 문서 참조 · 섹션 이름 |
-| `secrets` | gitleaks 시크릿 스캔 |
-| `deps-backend` | Trivy 의존성 취약점 스캔(`backend`) |
-| `deps-frontend` | `npm audit --audit-level=high` 의존성 취약점 검사 |
-
-`secrets` · `deps` 셋은 **주 1회 스케줄로도** 돈다 — 코드가 그대로여도 취약점 DB 가 바뀌면 답이 달라지기 때문이다.
+GitHub Actions(`.github/workflows/ci.yml`)는 PR 과 `main` 푸시마다 7잡을 돌린다(`.issue/**` 만 바꾼 푸시는 건너뛰고,
+주 1회 스케줄은 보안 3잡만 돈다). 잡 목록과 게이트는 [CONVENTIONS](docs/CONVENTIONS.md) 「테스트·CI 게이트」가 정본이다.
 
 ## 배포 개요
 

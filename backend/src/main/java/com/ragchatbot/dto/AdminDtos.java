@@ -24,7 +24,7 @@ public final class AdminDtos {
 			String uploadedByName, OffsetDateTime createdAt) {
 	}
 
-	/** 스토어 동기화 결과(#193). {@code added} 는 이번에 새로 넣은 행 수, {@code total} 은 스토어의 파일 수 */
+	/** 스토어 동기화 결과(#193). {@code added} 는 이번에 새로 넣은 행 수, {@code total} 은 스토어의 파일 수에서 이번에 끊은 연결 수를 뺀 값 */
 	public record SyncResponse(int added, int total) {
 	}
 

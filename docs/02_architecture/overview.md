@@ -8,14 +8,16 @@
 
 ```mermaid
 flowchart LR
-  B["브라우저<br/>React 19 + Vite"]
+  B["브라우저<br/>React 19 + Vite SPA (Vercel)"]
+  T["Cloudflare Tunnel"]
   A["Spring Boot 4.1<br/>:8080"]
   D[("PostgreSQL<br/>Flyway")]
   F[("로컬 디스크<br/>FILE_STORAGE_ROOT")]
   O["OpenAI<br/>Responses API + Vector Store + Files"]
 
-  B -- "REST + JWT(Bearer)" --> A
-  B -- "SSE (fetch + ReadableStream)" --> A
+  B -- "REST + JWT(Bearer)" --> T
+  B -- "SSE (fetch + ReadableStream)" --> T
+  T --> A
   A -- MyBatis --> D
   A -- FileStorage --> F
   A -- "APP_MODE=live 일 때만" --> O
@@ -80,7 +82,7 @@ sequenceDiagram
   S-->>C: 400/404는 여기서 정상 HTTP로 반환
   C-->>U: SseEmitter 반환 (이후 chatExecutor 스레드)
   S->>U: event: meta
-  S->>U: event: stage (analyzing → searching → generating)
+  S->>U: event: stage (analyzing → searching → reviewing → generating, 검색 결과가 왔을 때만 reviewing)
   O-->>S: 토큰 스트림
   S->>U: event: token *
   S->>DB: 어시스턴트 메시지 + 출처 원자적 저장

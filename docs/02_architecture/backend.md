@@ -2,7 +2,7 @@
 
 Java 17 + Spring Boot 4.1.1 + MyBatis 4.1.0 + PostgreSQL(Flyway). 단일 인스턴스 전제.
 전체 시스템 그림과 운영 파라미터는 [overview](./overview.md), 엔드포인트 계약은 [api.md](../01_specs/api.md) 에 있다.
-여기서는 API 설계 원칙과 DB 스키마를 다룬다.
+여기서는 레이어 · API 설계 원칙 · 인증 · 채팅 SSE · 유량 제어 · DB 스키마 · 파일 · 실행 모드 · 배포 · 테스트를 다룬다.
 
 ## 레이어
 
@@ -28,9 +28,9 @@ exception/    ApiExceptions + GlobalExceptionHandler
   같은 모양의 타입을 하나 더 두고 서비스에서 옮겨 담는 편이 나아 보일 수 있으나, 그 변환은 필드 복사일 뿐이라
   실수할 자리만 늘린다. 직결된 만큼 **이름과 값을 따로 고정한다** — `scripts/check-response-contract.sh` 가 필드 이름을,
   `AdminDocumentFlowTest` 의 목록 한 행 단언이 값의 출처를 본다.
-- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 7 · `<update>` 9 · `<delete>` 3.
+- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 7 · `<update>` 9 · `<delete>` 2.
   소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다. **`entity` 를 통째로 받는 것은 등록
-  7건뿐이고**, **수정·삭제 12건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
+  7건뿐이고**, **수정·삭제 11건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
 
 ## API 설계 원칙
 
@@ -105,7 +105,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   매 인증 요청마다 사용자 행을 읽어 `iat` 와 대조한다. 눈금은 **초** — `iat` 가 초 단위로 내림되므로 기준선도 같아야
   변경 직후 발급분이 밀리초 차이로 거부되지 않는다.
 - **파일 서빙 토큰은 분리된 audience(`aud=file`)** 다. `<img src>` 가 `Authorization` 헤더를 못 실어 쿼리 토큰을 쓰는데,
-  audience 를 나누지 않으면 짧은 수명의 파일 토큰이 인증 Bearer 로 통용된다. TTL 15분, `subject=fileId` 일치까지 확인한다.
+  audience 를 나누지 않으면 짧은 수명의 파일 토큰이 인증 Bearer 로 통용된다. TTL 기본 15분(`FILE_ACCESS_TOKEN_TTL_MINUTES`), `subject=fileId` 일치까지 확인한다.
   **이 토큰은 비밀번호 변경 기준선(`password_changed_at`)을 타지 않는다**(#104) — 서명 · 만료 · `fileId` 만 본다.
   즉 REQ-AUTH-003 의 「전부 끊긴다」는 **인증 토큰(`aud=auth`)에 대한 것**이고, 그 시점에 이미 발급된
   첨부 URL 은 **최대 15분** 더 열려 있다. 대화를 한 번 조회하면 그 대화의 첨부 URL 이 전부 응답에
@@ -228,11 +228,13 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 
 ## 유량 제어
 
-| 장치 | 재는 것 | 기본값 |
-|------|---------|--------|
-| `RateLimiterService` | 사용자별 **분당 횟수**(채팅 · 업로드 · 비밀번호 변경) · 계정별 분당 로그인 **실패**(성공은 세지 않음, 검사 전에 선점 · 성공하면 선점한 분의 창에만 반환, #365) | 20 / 30 / 5 / 10 |
-| `ChatConcurrencyLimiter` | **지금 열려 있는 스트림 수**(전역 · 사용자별) | 16 / 1 |
-| `ChatService.prepare` · `ConversationService` | 입력 **길이**(메시지 · 대화 제목, trim 뒤 코드 포인트, #371) | 4000 / 100자 |
+| 장치 | 재는 것 | 설정 |
+|------|---------|------|
+| `RateLimiterService` | 사용자별 **분당 횟수**(채팅 · 업로드 · 비밀번호 변경) · 계정별 분당 로그인 **실패**(성공은 세지 않음, 검사 전에 선점 · 성공하면 선점한 분의 창에만 반환, #365) | `RATELIMIT_*` |
+| `ChatConcurrencyLimiter` | **지금 열려 있는 스트림 수**(전역 · 사용자별) | `CHAT_MAX_CONCURRENT_*` |
+| `ChatService.prepare` · `ConversationService` | 입력 **길이**(메시지 · 대화 제목, trim 뒤 코드 포인트, #371) | `CHAT_MAX_*_CHARS` |
+
+기본값의 정본은 `backend/.env.example` 이다.
 
 **길이 상한은 횟수 상한이 못 묶는 턴당 크기를 묶는다(#371).** 이력 토큰 예산은 **이전** 메시지에만 걸려, 이번 메시지는
 운영에서 13만 자가 그대로 모델까지 갔다. 메시지 검사는 `prepare` 안 빈 값 검사 바로 뒤라 사용자 메시지 저장 · 모델 호출 전이며,
@@ -514,7 +516,7 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build d
 
 주제별 근거는 `docker-compose.yml` 의 해당 서비스 주석이 정본이다 — `db` 의 `cap_add` 넷(실측으로 좁힘 · **빈 볼륨으로 초기화 경로를 태워야**
 검증된다) · 네트워크 분리(`edge` 에서 `db` 는 이름 해석부터 안 된다) · `cloudflared` · `db` 다이제스트 고정(#130 · #357, 올릴 때는 다이제스트를 바꾸는 커밋으로).
-운영 VM 에서도 로컬과 같은 값을 확인했다 — 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
+이전 운영 서버(GCP VM, 10-06 · 지금의 Lightsail 이전 #243 전)에서 로컬과 같은 값을 확인했다 — 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
 
 **서버의 `.env` 권한은 `deploy.sh` 가 600 으로 고정한다(#130).** 이 파일들에는 `JWT_SECRET` ·
 `OPENAI_API_KEY` · `DB_PASSWORD` 가 평문으로 있고, 기본 umask 로 만들면 644 가 되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
