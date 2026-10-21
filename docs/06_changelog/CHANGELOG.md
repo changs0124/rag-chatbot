@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Security
+- **vite 를 8.1.5 → 8.1.6 으로 올렸다(#382).** 2026-10-21 새로 공개된 launch-editor 권고 셋(high · [GHSA-698v-4r3x-3vcv](https://github.com/advisories/GHSA-698v-4r3x-3vcv) · [GHSA-r825-w8mm-5pxw](https://github.com/advisories/GHSA-r825-w8mm-5pxw) · [GHSA-587h-7wmj-h5pm](https://github.com/advisories/GHSA-587h-7wmj-h5pm))이 CI 의 `deps (프론트 의존성 취약점)` 잡을 빨갛게 만들어 **열린 PR 전부(#380 · #381)가 그 잡에서 실패**했다 — PR 변경과 무관했다
+  - `package.json` 의 범위(`^8.1.1`) 안이라 **lock 만 바뀌었다.** 영향은 개발 서버가 오류 위치를 편집기로 여는 경로뿐이고 배포 번들(`dist/`)에는 개발 서버가 없다 — CI 게이트를 되살린 것이 목적이다
+
 ### Fixed
 - **무자료 답이 근거 없는 장비 설정 절차를 단계 목록으로 덧붙이던 것을 막았다(#376).** 운영 배터리 G1(EtherCAT 연결)이 여러 회차 연속 PARTIAL 이었다 — 「찾지 못했다」 뒤 「일반적으로」 모델 확인 → ESI 확보 → 포트 연결 → 매핑 → 시운전을 번호로 붙여, 출처 0건인데도 사내 절차처럼 읽혔다
   - 지시문(`RAG_INSTRUCTIONS`)에 「일반 설명은 개념과 확인처만, 설정 순서 · 배선 · 파라미터 값을 단계 목록으로 쓰지 않는다」 한 줄을 더했다

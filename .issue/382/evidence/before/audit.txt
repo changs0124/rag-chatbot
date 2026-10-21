@@ -1,0 +1,21 @@
+# 변경 전 (main, vite 8.1.5) npm audit --audit-level=high — 2026-10-21
+Using Node v24.19.0
+rag-chatbot-frontend@0.0.1 D:\dev\rag-chatbot\.issue\worktrees\382-vite-816-audit\frontend
++-- @tailwindcss/vite@4.3.3
+| `-- vite@8.1.5 deduped
+Using Node v24.19.0
+# npm audit report
+
+vite  8.0.0 - 8.1.5
+Severity: high
+launch-editor: escapeCmdArgs() omits % escaping on Windows - https://github.com/advisories/GHSA-698v-4r3x-3vcv
+launch-editor: Editor CLI flag misinterpretation causing arbitrary command execution for some editors - https://github.com/advisories/GHSA-r825-w8mm-5pxw
+launch-editor: `fs.existsSync()` existence check can be bypassed on Windows - https://github.com/advisories/GHSA-587h-7wmj-h5pm
+fix available via `npm audit fix`
+node_modules/vite
+
+1 high severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+exit=1
