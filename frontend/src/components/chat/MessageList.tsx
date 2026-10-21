@@ -133,8 +133,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   // 확대 보기는 그 말풍선의 이미지들을 한 묶음으로 넘김(좌우 이동 대상)
   const images = (message.attachments ?? []).filter((a) => a.fileType === 'image')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-  // 문서 그림(FEAT-CHAT-004). 사용자 첨부와 묶음을 섞지 않는다 - 확대 화면의 좌우 이동은 같은 종류끼리다
-  const segments = message.content ? splitFigures(message.content, message.status === 'streaming') : []
+  // 문서 그림(FEAT-CHAT-004). 사용자 첨부와 묶음을 섞지 않는다 - 확대 화면의 좌우 이동은 같은 종류끼리다.
+  // 표식은 답변에서만 그림이 된다 - 사용자가 친 표식은 글자 그대로 둔다(#385)
+  const segments = !message.content
+    ? []
+    : isUser
+      ? [{ type: 'text' as const, text: message.content }]
+      : splitFigures(message.content, message.status === 'streaming')
   const [figureSrc, setFigureSrc] = useState<Record<string, string>>({})
   const [openFigure, setOpenFigure] = useState<string | null>(null)
   const onFigureLoad = useCallback(

@@ -12,7 +12,7 @@ vi.mock('../lib/endpoints', () => ({
   streamChat: vi.fn().mockResolvedValue(undefined),
 }))
 
-const { getMessages, streamChat } = await import('../lib/endpoints')
+const { getMessages, listConversations, streamChat } = await import('../lib/endpoints')
 
 /** 손으로 끝낼 수 있는 프라미스 - 「이력이 도착하는 순간」을 테스트가 정함 */
 function deferred<T>() {
@@ -130,6 +130,16 @@ describe('useChat 이력 불러오는 중', () => {
     })
     expect(accepted).toBe(true)
     expect(streamChat).toHaveBeenCalledTimes(1)
+  })
+
+  /** 대화 목록 첫 로드가 실패하면 「대화가 없습니다」가 아니라 오류로 알린다(#385, #77 · #359 와 같은 이유) */
+  it('대화 목록을 처음 불러오지 못하면 오류를 띄운다', async () => {
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {})
+
+    expect(result.current.conversations).toEqual([])
+    expect(result.current.error).toBe('대화 목록을 불러오지 못했습니다')
   })
 
   /** 불러오기가 실패해도 막음이 풀린다 - 안 풀리면 그 대화에서는 영영 보낼 수 없다(#323) */
