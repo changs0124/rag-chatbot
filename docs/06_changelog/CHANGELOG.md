@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Removed
+- **한 번도 실행되지 않은 대화별 OpenAI 정리 경로와 그 스키마 잔재를 걷었다(#391).** 대화 삭제가 부르던 `deleteResources` 는 인자의 출처가 늘 비어 있어 항상 `(null, [])` 로 불렸다(#124)
+  - 삭제 : `OpenAiService.deleteResources`(실 · 목업 구현과 목업 호출 카운터), `ConversationService` 의 호출. 대화 삭제는 행 삭제 → 첨부 파일 삭제 순서 그대로다
+  - V10 : `conversations.vector_store_id` · `attachments.openai_file_id` · `citations.uri` 컬럼 삭제, `attachments.file_type` check 를 `image` 하나로 좁힘. 운영 DB 에는 세 컬럼에 든 값이 없었고(null 또는 빈 문자열) `document` 첨부 행도 0건이었다
+  - 관리자 문서(`rag_documents`)의 같은 이름 컬럼과 문서 삭제 정리는 살아 있는 경로라 그대로다
+  - 프론트 : 첨부 `fileType` 을 `'image'` 로 좁히고 과거 문서 첨부 칩 분기를 지웠다
+  - 테스트 : `OpenAiRealDeleteResourcesTest` 2건 삭제(지운 메서드 전용) · `ChatFlowTest` 의 목업 호출 수 단언을 삭제 후 404 단언으로 바꿈. **백엔드 하한 320 → 318**
+
 ### Fixed
 - **프론트 결함 셋을 고쳤다(#385).** 10-21 전체 코드 리뷰에서 찾았다
   - 한글 조합을 끝내려고 누른 Enter 가 메시지 전송 · 제목 확정으로 처리돼 마지막 글자가 남거나 두 번 보낼 수 있었다 → 조합 중 Enter 는 무시(입력창 · 대화 제목 편집)

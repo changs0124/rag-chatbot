@@ -9,6 +9,5 @@ public record Attachment(
 		UUID userId,
 		String storagePath,
 		String fileType,
-		String openaiFileId,
 		OffsetDateTime createdAt) {
 }

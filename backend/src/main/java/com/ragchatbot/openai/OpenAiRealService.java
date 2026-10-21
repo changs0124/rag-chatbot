@@ -548,28 +548,6 @@ public class OpenAiRealService implements OpenAiService {
 		return flat.length() <= 200 ? flat : flat.substring(0, 200) + "…";
 	}
 
-	/**
-	 * 대화 삭제 시 OpenAI 리소스 정리. 공용 Store는 절대 삭제하지 않음.
-	 * 대화별 업로드 파일(openaiFileId)만 삭제하고, 대화 전용 스토어(공용과 다른 경우)만 삭제함.
-	 *
-	 * <p>{@link OpenAiService#deleteResources} 참고(#124).
-	 */
-	@Override
-	public void deleteResources(String vectorStoreId, List<String> openaiFileIds) {
-		if (openaiFileIds != null) {
-			for (String fileId : openaiFileIds) {
-				if (fileId != null && !fileId.isBlank()) {
-					deleteQuietly("/files/" + fileId, "file", fileId);
-				}
-			}
-		}
-		// 공용 Store 보호 : 대화 전용 스토어이면서 공용과 다를 때만 삭제
-		if (vectorStoreId != null && !vectorStoreId.isBlank()
-				&& !vectorStoreId.equals(sharedVectorStoreId)) {
-			deleteQuietly("/vector_stores/" + vectorStoreId, "vector_store", vectorStoreId);
-		}
-	}
-
 	// ── RAG 문서 관리(FEAT-ADMIN-002) ────────────────────────────────────────────
 
 	@Override

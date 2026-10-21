@@ -104,7 +104,7 @@ public class FileService {
 
 		String storagePath = fileStorage.store(userId, type.extension(), bytes);
 		UUID id = UUID.randomUUID();
-		attachmentRepository.insert(new Attachment(id, null, userId, storagePath, FILE_TYPE, null, null));
+		attachmentRepository.insert(new Attachment(id, null, userId, storagePath, FILE_TYPE, null));
 		return new AttachmentResponse(id, FILE_TYPE, issueUrl(id, userId));
 	}
 

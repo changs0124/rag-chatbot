@@ -282,16 +282,17 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	}
 
 	@Test
-	void delete_conversation_calls_openai_cleanup() {
+	void delete_conversation_removes_it() {
 		String token = createUser("chat-del@b.com");
 		String convId = createConversation(token);
 		chat(token, Map.of("conversationId", convId, "message", "가격 문의"));
 
-		int before = mock.deleteResourcesCalls();
 		var del = rest.exchange("/api/conversations/" + convId, HttpMethod.DELETE,
 				new HttpEntity<>(bearer(token)), Void.class);
 		assertThat(del.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-		assertThat(mock.deleteResourcesCalls()).isGreaterThan(before); // 대화 삭제 시 리소스 정리
+		var after = rest.exchange("/api/conversations/" + convId + "/messages", HttpMethod.GET,
+				new HttpEntity<>(bearer(token)), String.class);
+		assertThat(after.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND); // 메시지까지 cascade 로 사라짐
 	}
 
 	@Test

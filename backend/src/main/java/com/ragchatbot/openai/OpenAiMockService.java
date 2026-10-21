@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -48,7 +47,6 @@ public class OpenAiMockService implements OpenAiService {
 	private final long tokenDelayMs;
 
 	// 기록(테스트 검증용) - 목 응답 자체는 이력과 무관하지만, 이력이 실제로 전달됐는지는 여기서 확인함
-	private final AtomicInteger deleteResourcesCalls = new AtomicInteger();
 	private volatile int lastAttachmentCount = 0;
 	private volatile List<Turn> lastHistory = List.of();
 
@@ -127,12 +125,6 @@ public class OpenAiMockService implements OpenAiService {
 		return new ChatCompletion(fullText, citations, noSource, null, null);
 	}
 
-	@Override
-	public void deleteResources(String vectorStoreId, List<String> openaiFileIds) {
-		deleteResourcesCalls.incrementAndGet();
-		// 목업 : 실제 삭제 없이 호출만 기록
-	}
-
 	// ── RAG 문서 관리(FEAT-ADMIN-002) ────────────────────────────────────────────
 	// 목업도 전 경로가 동작해야 함(P-2). 실 호출 없이 메모리로만 흉내내되,
 	// **목업임이 파일 ID 에 드러나게** `mock-` 접두를 붙여 실 데이터와 섞이지 않게 함.
@@ -176,10 +168,6 @@ public class OpenAiMockService implements OpenAiService {
 	/** File 은 지워지고 스토어 연결만 남은 상태(#271) - 실 API 에서 `GET /files/{id}` 가 404 인 경우와 같은 모양 */
 	public void simulateFileGone(String fileId) {
 		mockDocuments.computeIfPresent(fileId, (id, f) -> new StoreFile(id, f.vectorStoreId(), null, 0, StoreFile.MISSING));
-	}
-
-	public int deleteResourcesCalls() {
-		return deleteResourcesCalls.get();
 	}
 
 	public int lastAttachmentCount() {

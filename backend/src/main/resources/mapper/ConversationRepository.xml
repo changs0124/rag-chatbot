@@ -8,25 +8,24 @@
 			<idArg column="id" javaType="java.util.UUID"/>
 			<arg column="user_id" javaType="java.util.UUID"/>
 			<arg column="title" javaType="java.lang.String"/>
-			<arg column="vector_store_id" javaType="java.lang.String"/>
 			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
 			<arg column="updated_at" javaType="java.time.OffsetDateTime"/>
 		</constructor>
 	</resultMap>
 
 	<insert id="insert" parameterType="com.ragchatbot.entity.Conversation">
-		insert into conversations (id, user_id, title, vector_store_id)
-		values (#{id}, #{userId}, #{title}, #{vectorStoreId})
+		insert into conversations (id, user_id, title)
+		values (#{id}, #{userId}, #{title})
 	</insert>
 
 	<select id="findByIdAndUser" resultMap="conversationResult">
-		select id, user_id, title, vector_store_id, created_at, updated_at
+		select id, user_id, title, created_at, updated_at
 		from conversations
 		where id = #{id} and user_id = #{userId}
 	</select>
 
 	<select id="listByUser" resultMap="conversationResult">
-		select id, user_id, title, vector_store_id, created_at, updated_at
+		select id, user_id, title, created_at, updated_at
 		from conversations
 		where user_id = #{userId}
 		order by updated_at desc

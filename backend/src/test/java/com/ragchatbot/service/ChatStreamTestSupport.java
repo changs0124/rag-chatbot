@@ -27,10 +27,6 @@ final class ChatStreamTestSupport {
 			return stage.name();
 		}
 
-		@Override
-		public void deleteResources(String vectorStoreId, List<String> openaiFileIds) {
-		}
-
 		// 이 대역은 **채팅 경로만** 검증함. 문서 관리(FEAT-ADMIN-002)를 부르는 일이 없으므로
 		// 조용한 기본값 대신 던지게 둠 - 나중에 이 경로가 실수로 여기로 흘러오면 바로 드러남
 		@Override

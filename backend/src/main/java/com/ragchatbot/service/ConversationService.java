@@ -20,7 +20,6 @@ import com.ragchatbot.repository.AttachmentRepository;
 import com.ragchatbot.repository.CitationRepository;
 import com.ragchatbot.repository.ConversationRepository;
 import com.ragchatbot.repository.MessageRepository;
-import com.ragchatbot.openai.OpenAiService;
 import com.ragchatbot.storage.FileStorage;
 import com.ragchatbot.dto.ConversationDtos.CitationResponse;
 import com.ragchatbot.dto.ConversationDtos.ConversationResponse;
@@ -40,20 +39,18 @@ public class ConversationService {
 	private final AttachmentRepository attachmentRepository;
 	private final CitationRepository citationRepository;
 	private final FileStorage fileStorage;
-	private final OpenAiService openAiService;
 	private final FileService fileService;
 	private final int maxTitleChars;
 
 	public ConversationService(ConversationRepository conversationRepository, MessageRepository messageRepository,
 			AttachmentRepository attachmentRepository, CitationRepository citationRepository, FileStorage fileStorage,
-			OpenAiService openAiService, FileService fileService,
+			FileService fileService,
 			@Value("${app.chat.max-title-chars}") int maxTitleChars) {
 		this.conversationRepository = conversationRepository;
 		this.messageRepository = messageRepository;
 		this.attachmentRepository = attachmentRepository;
 		this.citationRepository = citationRepository;
 		this.fileStorage = fileStorage;
-		this.openAiService = openAiService;
 		this.fileService = fileService;
 		this.maxTitleChars = maxTitleChars;
 	}
@@ -61,7 +58,7 @@ public class ConversationService {
 	public ConversationResponse create(UUID userId, String title) {
 		UUID id = UUID.randomUUID();
 		String finalTitle = (title == null || title.isBlank()) ? "새 대화" : requireTitleLength(title.trim());
-		conversationRepository.insert(new Conversation(id, userId, finalTitle, null, null, null));
+		conversationRepository.insert(new Conversation(id, userId, finalTitle, null, null));
 		return findOwnedResponse(id, userId);
 	}
 
@@ -117,15 +114,11 @@ public class ConversationService {
 	 * ({@code FileFlowTest.unreferenced_old_file_is_removed_by_scan} 가 이 경로를 잠금).
 	 */
 	public void delete(UUID userId, UUID conversationId) {
-		Conversation conversation = requireOwned(conversationId, userId);
+		requireOwned(conversationId, userId);
 		List<Attachment> attachments = attachmentRepository.findByConversation(conversationId);
-		List<String> openaiFileIds = new ArrayList<>();
 		List<String> paths = new ArrayList<>();
 		for (Attachment a : attachments) {
 			paths.add(a.storagePath());
-			if (a.openaiFileId() != null) {
-				openaiFileIds.add(a.openaiFileId());
-			}
 		}
 
 		conversationRepository.deleteByIdAndUser(conversationId, userId); // cascade - 단일 문장
@@ -137,12 +130,6 @@ public class ConversationService {
 				log.warn("대화 삭제 후 첨부 파일 정리 실패 - 행이 없어 행 기준 회수는 못 보지만 "
 						+ "저장소 스캔 회수가 다음 주기에 지움. path={}", path, e);
 			}
-		}
-		try {
-			// OpenAI 파일/Vector Store 정리. 목업은 호출 기록만. OpenAiService#deleteResources 참고(#124)
-			openAiService.deleteResources(conversation.vectorStoreId(), openaiFileIds);
-		} catch (RuntimeException e) {
-			log.warn("대화 삭제 후 OpenAI 리소스 정리 실패. conversationId={}", conversationId, e);
 		}
 	}
 
