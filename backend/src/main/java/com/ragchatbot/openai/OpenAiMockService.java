@@ -105,8 +105,7 @@ public class OpenAiMockService implements OpenAiService {
 			onStage.accept(Stage.REVIEWING, citations.stream().map(CitationData::sourceName).toList());
 		}
 
-		// 스트리밍 인터페이스를 실제로 흘려봄(ChatService 가 이 onToken 을 emitter 에 연결)
-		// 토큰당 소량 지연으로 실제 스트리밍처럼 타이핑 효과를 냄
+		// 스트리밍 인터페이스를 실제로 흘려봄(ChatService 가 이 onToken 을 emitter 에 연결). 토큰당 소량 지연으로 타이핑 효과를 냄
 		// 첫 토큰 직전이 생성 경계임. 체감 시간을 만들려고 여기에 인위 지연을 넣지 않음(REQ-RAG-004)
 		onStage.accept(Stage.GENERATING, List.of());
 		// (?s) - 그림 답은 줄바꿈을 품는다. 없으면 `.` 이 줄바꿈에서 멈춰 그 뒤가 토큰 하나로 몰려 온다

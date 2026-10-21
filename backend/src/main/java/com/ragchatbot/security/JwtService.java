@@ -14,7 +14,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 
 /**
  * JWT 발급/검증 (HS256, java-jwt 4.6.0). subject=userId 뿐이고 개인정보 클레임은 싣지 않음(#328).
- * 예전에 발급한 토큰에 남은 email 클레임은 검증에서 보지 않으므로 그대로 통과함.
+ * 토큰에 email 클레임이 남아 있어도 검증에서 보지 않으므로 그대로 통과함.
  * 시크릿은 app.jwt.secret(env 주입). 비어 있으면 기동 시 실패시킴(운영 안전).
  */
 @Service
@@ -41,7 +41,7 @@ public class JwtService {
 	 * 남은 수명이 임계 미만인지(FEAT-OPS-003). 매 요청 재발급하면 서명 연산이 요청마다 붙고 헤더가
 	 * 늘 커지므로, 만료가 가까울 때만 함 - 실제 발급은 사용자당 임계 간격에 한 번꼴이 됨.
 	 *
-	 * <p>임계가 {@code 0} 이면 언제나 false - 종전 고정 만료 동작으로 되돌리는 경로임.
+	 * <p>임계가 {@code 0} 이면 언제나 false - 고정 만료로 동작함(재발급 끔).
 	 */
 	public boolean needsRefresh(DecodedJWT jwt) {
 		if (refreshThresholdMinutes <= 0) {
