@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Refactored
+- **프론트 중복을 정리했다(#390).** 동작은 그대로다(테스트 191개 변화 없음)
+  - 인증 fetch 순서(보낸 토큰 기억 → Bearer → 재발급 토큰 반영)를 `api.ts` 의 `authFetch` 하나로 모았다. `request` · `streamChat` · `loadFigure` 셋이 각자 쓰고 있었고, 한 곳이라도 빠지면 그 경로만 쓰는 사용자가 두 시간마다 로그아웃된다(#359 · #363)
+  - `AdminPage`(439줄 · useState 15개)를 같은 파일 안 `DocumentsSection` · `UsersSection` 으로 나눠 상태를 쓰는 코드 옆에 뒀다. 화면 · 문구 그대로
+  - `ChatMessage.status` 를 `'streaming' | 'complete' | 'error'` 로 좁히고, `createConversation` 의 제목을 필수로(호출부가 늘 넘김). 같은 파일 안 반복 클래스 문자열은 파일 지역 상수로
+
 ### Fixed
 - **첨부 행은 있는데 디스크 파일이 없으면 `GET /api/files/{id}` 가 500 을 내던 것을 404 로 고쳤다(#386).** 볼륨 유실 · 수동 삭제 때 응답 변환에서 예외가 나 ERROR 로그와 함께 500 이 됐다 — 다른 「파일 없음」과 같은 404 로. 재현 테스트 1개 · 백엔드 케이스 하한 320 → 321
 - **프론트 결함 셋을 고쳤다(#385).** 10-21 전체 코드 리뷰에서 찾았다

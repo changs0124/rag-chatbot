@@ -29,6 +29,9 @@ interface Draft {
 
 let draftSeq = 0
 
+// 입력줄의 둥근 버튼(첨부 · 중단 · 보내기). 크기 · 모양만 공유하고 색 · 움직임은 호출부가 덧붙인다(#390)
+const roundBtn = 'grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10'
+
 export default function Composer({
   onSend,
   streaming,
@@ -245,7 +248,7 @@ export default function Composer({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             aria-label="첨부 추가"
-            className="grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10 text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink active:scale-[0.95]"
+            className={roundBtn + ' text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink active:scale-[0.95]'}
           >
             <IconPlus />
           </button>
@@ -291,7 +294,7 @@ export default function Composer({
               type="button"
               onClick={onStop}
               aria-label="중단"
-              className="grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10 bg-surface text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97]"
+              className={roundBtn + ' bg-surface text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97]'}
             >
               <IconStop />
             </button>
@@ -299,7 +302,7 @@ export default function Composer({
             <button
               type="submit"
               aria-label="보내기"
-              className="grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10 bg-accent text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97] disabled:scale-100 disabled:opacity-35"
+              className={roundBtn + ' bg-accent text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97] disabled:scale-100 disabled:opacity-35'}
               // 올라가지 않은(또는 실패한) 첨부를 둔 채 보내면 그 이미지가 빠진 줄 모르고 보내게 됨
               disabled={busy || pending || (!text.trim() && drafts.length === 0)}
               // 비활성 버튼은 이유를 말하지 않으면 고장으로 읽힌다(#101)

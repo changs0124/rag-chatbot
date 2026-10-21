@@ -59,31 +59,14 @@ function formatDate(iso: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
+// 공유하는 것만 여기 둔다(#390) - 목록 두 개(한 번에 읽는다) · 오류 배너 · 관리자 가드. 각 구역의 입력 · 진행 · 확인 상태는 구역 안에 있다
 export default function AdminPage() {
   const { user } = useAuth()
   const [documents, setDocuments] = useState<RagDocument[]>([])
   const [users, setUsers] = useState<AdminUser[]>([])
-  const [uploading, setUploading] = useState(false)
-  const [syncing, setSyncing] = useState(false)
-  const [syncNotice, setSyncNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   // 목록 오류는 따로 둔다 - 폴링 성공이 걷어야 하는데, 공유 error 를 지우면 업로드 · 삭제 오류까지 사라진다(#324)
   const [listError, setListError] = useState<string | null>(null)
-  const [pendingDelete, setPendingDelete] = useState<RagDocument | null>(null)
-  // 초기화는 기존 로그인을 전부 끊고 되돌릴 수 없어 삭제처럼 확인을 거친다(#325)
-  const [pendingReset, setPendingReset] = useState<AdminUser | null>(null)
-  // 요청 중에는 초기화 버튼을 모두 막는다 - 연타 · 동시 요청이면 늦게 온 응답이 발급 창을 덮어써
-  // 이미 무효가 된 비밀번호나 다른 사람의 값만 남는다
-  const [resettingId, setResettingId] = useState<string | null>(null)
-  // kind 로 갈리는 것은 안내 문구뿐이다 — 발급은 "새 계정"이고 초기화는 "기존 세션이 끊긴다"
-  const [issued, setIssued] = useState<{
-    kind: 'created' | 'reset'
-    name: string
-    password: string
-  } | null>(null)
-  const [newEmail, setNewEmail] = useState('')
-  const [newName, setNewName] = useState('')
-  const [creating, setCreating] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   const isAdmin = user?.role === 'admin'
@@ -125,19 +108,49 @@ export default function AdminPage() {
     return () => clearInterval(timer)
   }, [isAdmin, documents, pollDocuments])
 
-  // 일회용 비밀번호 창은 Esc 와 「닫기」로만 닫는다(#253). 배경 클릭으로 닫히면 「지금만 볼 수 있는」 값이
-  // 한 번의 헛클릭에 사라져 비밀번호를 다시 초기화해야 한다 - 그래서 이 창만 배경 닫기를 두지 않는다
-  useEffect(() => {
-    if (!issued) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIssued(null)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [issued])
-
   // 프론트 가드는 편의다. 유일한 방어선은 서버의 404 이며, 여기서는 없는 화면을 보여주지 않을 뿐이다
   if (user && !isAdmin) return <Navigate to="/" replace />
+
+  return (
+    <PageShell maxWidth="max-w-3xl">
+      <BackLink to="/me">마이페이지</BackLink>
+
+      <h1 className="mt-6 text-xl font-semibold text-ink">문서 관리</h1>
+      <p className="mt-1 text-sm leading-relaxed text-ink-muted">
+        답변 근거로 쓰이는 사내 문서입니다. 여기 없는 내용은 답변에 출처로 붙지 않습니다.
+      </p>
+
+      {[listError, error].map(
+        (m, i) =>
+          m && (
+            <p key={i} className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
+              {m}
+            </p>
+          ),
+      )}
+
+      <DocumentsSection documents={documents} loaded={loaded} refresh={refresh} setError={setError} />
+
+      <UsersSection users={users} currentUserId={user?.id} refresh={refresh} setError={setError} />
+    </PageShell>
+  )
+}
+
+function DocumentsSection({
+  documents,
+  loaded,
+  refresh,
+  setError,
+}: {
+  documents: RagDocument[]
+  loaded: boolean
+  refresh: () => Promise<void>
+  setError: (message: string | null) => void
+}) {
+  const [uploading, setUploading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncNotice, setSyncNotice] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<RagDocument | null>(null)
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -187,57 +200,8 @@ export default function AdminPage() {
     }
   }
 
-  async function confirmReset() {
-    const target = pendingReset
-    setPendingReset(null)
-    if (!target || resettingId) return
-    setError(null)
-    setResettingId(target.id)
-    try {
-      const res = await resetUserPassword(target.id)
-      setIssued({ kind: 'reset', name: target.name, password: res.temporaryPassword })
-    } catch (e) {
-      setError(errorMessage(e, '초기화하지 못했습니다'))
-    } finally {
-      setResettingId(null)
-    }
-  }
-
-  async function onCreate(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setCreating(true)
-    try {
-      const res = await createAdminUser(newEmail, newName)
-      setIssued({ kind: 'created', name: newName, password: res.temporaryPassword })
-      setNewEmail('')
-      setNewName('')
-      await refresh()
-    } catch (e) {
-      setError(errorMessage(e, '계정을 만들지 못했습니다'))
-    } finally {
-      setCreating(false)
-    }
-  }
-
   return (
-    <PageShell maxWidth="max-w-3xl">
-      <BackLink to="/me">마이페이지</BackLink>
-
-      <h1 className="mt-6 text-xl font-semibold text-ink">문서 관리</h1>
-      <p className="mt-1 text-sm leading-relaxed text-ink-muted">
-        답변 근거로 쓰이는 사내 문서입니다. 여기 없는 내용은 답변에 출처로 붙지 않습니다.
-      </p>
-
-      {[listError, error].map(
-        (m, i) =>
-          m && (
-            <p key={i} className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
-              {m}
-            </p>
-          ),
-      )}
-
+    <>
       <section className="mt-6">
         <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-surface px-6 py-8 text-center transition duration-150 ease-[var(--ease-out-quint)] hover:border-accent">
           <span className="text-sm text-ink">
@@ -310,6 +274,93 @@ export default function AdminPage() {
         )}
       </section>
 
+      {/* 모달은 fixed 라 골격 안에 두어도 화면 기준으로 뜬다 */}
+      {pendingDelete && (
+        <ConfirmModal
+          title={`'${pendingDelete.filename}' 를 삭제할까요?`}
+          // 두 번째 문장이 중요하다 — citations 는 영속화돼 있어 문서를 지워도 옛 답변의 각주는 남는다.
+          // 안 알리면 "지웠는데 왜 아직 보이지"라고 읽는다
+          message="이 문서는 더 이상 답변 근거로 쓰이지 않습니다. 이미 나간 답변의 출처 표기는 그대로 남습니다."
+          onConfirm={() => void confirmDelete()}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
+    </>
+  )
+}
+
+function UsersSection({
+  users,
+  currentUserId,
+  refresh,
+  setError,
+}: {
+  users: AdminUser[]
+  currentUserId: string | undefined
+  refresh: () => Promise<void>
+  setError: (message: string | null) => void
+}) {
+  // 초기화는 기존 로그인을 전부 끊고 되돌릴 수 없어 삭제처럼 확인을 거친다(#325)
+  const [pendingReset, setPendingReset] = useState<AdminUser | null>(null)
+  // 요청 중에는 초기화 버튼을 모두 막는다 - 연타 · 동시 요청이면 늦게 온 응답이 발급 창을 덮어써
+  // 이미 무효가 된 비밀번호나 다른 사람의 값만 남는다
+  const [resettingId, setResettingId] = useState<string | null>(null)
+  // kind 로 갈리는 것은 안내 문구뿐이다 — 발급은 "새 계정"이고 초기화는 "기존 세션이 끊긴다"
+  const [issued, setIssued] = useState<{
+    kind: 'created' | 'reset'
+    name: string
+    password: string
+  } | null>(null)
+  const [newEmail, setNewEmail] = useState('')
+  const [newName, setNewName] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  // 일회용 비밀번호 창은 Esc 와 「닫기」로만 닫는다(#253). 배경 클릭으로 닫히면 「지금만 볼 수 있는」 값이
+  // 한 번의 헛클릭에 사라져 비밀번호를 다시 초기화해야 한다 - 그래서 이 창만 배경 닫기를 두지 않는다
+  useEffect(() => {
+    if (!issued) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIssued(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [issued])
+
+  async function confirmReset() {
+    const target = pendingReset
+    setPendingReset(null)
+    if (!target || resettingId) return
+    setError(null)
+    setResettingId(target.id)
+    try {
+      const res = await resetUserPassword(target.id)
+      setIssued({ kind: 'reset', name: target.name, password: res.temporaryPassword })
+    } catch (e) {
+      setError(errorMessage(e, '초기화하지 못했습니다'))
+    } finally {
+      setResettingId(null)
+    }
+  }
+
+  async function onCreate(e: FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setCreating(true)
+    try {
+      const res = await createAdminUser(newEmail, newName)
+      setIssued({ kind: 'created', name: newName, password: res.temporaryPassword })
+      setNewEmail('')
+      setNewName('')
+      await refresh()
+    } catch (e) {
+      setError(errorMessage(e, '계정을 만들지 못했습니다'))
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  return (
+    <>
       <section className="mt-10">
         <h2 className="text-sm font-medium text-ink-muted">사용자 {users.length}명</h2>
         {/* 스스로 가입하는 경로가 없으므로 계정은 여기서만 태어난다 */}
@@ -357,7 +408,7 @@ export default function AdminPage() {
                 <p className="mt-0.5 truncate text-xs text-ink-muted">{person.email}</p>
               </div>
               {/* 자기 자신은 대상이 아니다 — 마이페이지에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
-              {person.id !== user?.id && (
+              {person.id !== currentUserId && (
                 <button
                   onClick={() => setPendingReset(person)}
                   disabled={resettingId !== null}
@@ -370,18 +421,6 @@ export default function AdminPage() {
           ))}
         </ul>
       </section>
-
-      {/* 모달은 fixed 라 골격 안에 두어도 화면 기준으로 뜬다 */}
-      {pendingDelete && (
-        <ConfirmModal
-          title={`'${pendingDelete.filename}' 를 삭제할까요?`}
-          // 두 번째 문장이 중요하다 — citations 는 영속화돼 있어 문서를 지워도 옛 답변의 각주는 남는다.
-          // 안 알리면 "지웠는데 왜 아직 보이지"라고 읽는다
-          message="이 문서는 더 이상 답변 근거로 쓰이지 않습니다. 이미 나간 답변의 출처 표기는 그대로 남습니다."
-          onConfirm={() => void confirmDelete()}
-          onCancel={() => setPendingDelete(null)}
-        />
-      )}
 
       {pendingReset && (
         <ConfirmModal
@@ -424,7 +463,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-    </PageShell>
+    </>
   )
 }
 

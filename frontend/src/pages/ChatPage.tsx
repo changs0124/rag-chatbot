@@ -7,6 +7,10 @@ import MessageList from '../components/chat/MessageList'
 import Composer from '../components/chat/Composer'
 import { IconEdit, IconMenu } from '../components/icons'
 
+// 헤더 양끝의 모바일 전용 아이콘 버튼(목록 열기 · 새 채팅)(#390)
+const headerIconBtn =
+  'grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink md:hidden'
+
 export default function ChatPage() {
   const { user, logout } = useAuth()
   const chat = useChat()
@@ -113,7 +117,7 @@ export default function ChatPage() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex min-h-14 items-center gap-1 px-3 py-2">
           <button
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink md:hidden"
+            className={headerIconBtn}
             onClick={() => setSidebarOpen(true)}
             aria-label="대화 목록 열기"
           >
@@ -161,7 +165,7 @@ export default function ChatPage() {
           </div>
 
           <button
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink md:hidden"
+            className={headerIconBtn}
             onClick={startNewChat}
             aria-label="새 채팅"
           >
