@@ -10,6 +10,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -103,6 +104,10 @@ public class OpenAiRealService implements OpenAiService {
 	 * 문장이 깨진다. 필터는 스트림 조각 단위라 앞 조각에서 이미 나간 공백을 되돌릴 수 없어 지시로 막았다.
 	 * 실측(같은 질문 36회) 깨진 답 1 → 0, 출처 회귀 없음(배터리 31문항 × 2 : 출처 0건 2 → 0).
 	 *
+	 * <p><b>무자료 일반 설명에서 절차를 단계로 쓰지 말라는 줄(#376)</b> — 「일반적인 설명을 덧붙인다」만 두면
+	 * 장비 연결 질문에 「모델 확인 → ESI 확보 → 포트 연결 → 매핑 → 시운전」 같은 절차를 붙여, 출처 0건인데도
+	 * 사내 절차처럼 읽혔다. 실측(무자료 질문 6회) 단계형 답 6 → 0, 배터리 31문항 × 2 출처 회귀 없음.
+	 *
 	 * <p><b>다른 언어 질문도 한국어 용어로 찾고, 같은 항목의 예외 정격을 빼지 말라는 두 줄(#377)</b> — 영어 질문(H2)은
 	 * 검색이 영어 용어로만 돌아 「BRAKE 접점 30 mA」 청크(신호표)를 6회 중 2회 못 가져왔고, 그 회차에 답이 출력을 전부
 	 * 50 mA 로 말했다. 한국어 질문(C3)은 청크를 가져오고도 1회 빠뜨렸다. 실측 H2 30 mA 4 → 6/6 · 입력 정격전류 2 → 6/6,
@@ -121,6 +126,8 @@ public class OpenAiRealService implements OpenAiService {
 			있으면 빼지 않고 함께 적는다.
 			- 검색해도 근거를 찾지 못했으면 **찾지 못했다고 먼저 밝힌 뒤** 일반적인 설명을 덧붙인다. \
 			근거가 없는 내용을 사내 규정인 것처럼 말하지 않는다.
+			- 근거를 찾지 못해 일반적인 설명을 덧붙일 때는 개념과 어디서 확인할지(제조사 매뉴얼 · 담당 부서)만 말한다. \
+			설정 순서 · 배선 · 파라미터 값 같은 장비 절차를 단계 목록으로 쓰지 않는다 — 사내 절차처럼 읽혀 현장에서 그대로 따라 할 수 있다.
 			- 근거를 찾지 못했으면 인용을 하나도 달지 않는다. 검색된 문서가 무엇이고 거기에 무엇이 없는지 \
 			설명하는 문장도 답의 근거가 아니므로 인용하지 않는다.
 			- 인용 표기는 문장이 끝난 뒤에만 붙인다. 문서 이름이나 「이 문서」 같은 말 대신 인용 표기를 \
@@ -182,15 +189,21 @@ public class OpenAiRealService implements OpenAiService {
 	private static final Map<Stage, String> STAGE_LABELS = Map.of(
 			Stage.ANALYZING, "질문 분석 중",
 			Stage.SEARCHING, "참조 문서 검색 중",
+			Stage.REVIEWING, "참조 문서 확인 중",
 			Stage.GENERATING, "답변 작성 중");
 
 	/**
-	 * sources는 라이브에서 늘 비어 있음. 검색 단계는 file_search 호출이 <b>시작됐다는</b> 이벤트에 올리는데
-	 * 그 시점에는 어느 문서가 걸렸는지 아직 모르고, 파일명은 response.completed 의 결과에서야 나옴 -
-	 * 즉 이미 토큰이 나간 뒤라 단계 라벨에 실을 수 없음(단계 전송 규칙). 없는 이름을 지어내지 않고 비워 둠(REQ-RAG-004)
+	 * 검색 단계는 file_search 호출이 <b>시작됐다는</b> 이벤트에 올리므로 그 시점에는 어느 문서가 걸렸는지 아직 모름 -
+	 * 들어온 이름이 있어도 붙이지 않음(REQ-RAG-004). 이름은 결과가 도착한 뒤의 확인 단계에만 실림(#375)
 	 */
 	@Override
-	public String stageLabel(Stage stage, List<String> sources) {
+	public String stageLabel(Stage stage, List<String> sources, boolean withImage) {
+		if (stage == Stage.ANALYZING && withImage) {
+			return "질문·첨부 이미지 분석 중";
+		}
+		if (stage == Stage.REVIEWING && !sources.isEmpty()) {
+			return STAGE_LABELS.get(stage) + " · " + OpenAiService.sourceSummary(sources);
+		}
 		return STAGE_LABELS.get(stage);
 	}
 
@@ -295,6 +308,8 @@ public class OpenAiRealService implements OpenAiService {
 		boolean completed = false;
 		boolean searchingSent = false;
 		boolean generatingSent = false;
+		// 확인 단계에 실은 자료명 - 검색이 여러 번 돌면 이름을 모아 새 이름이 생길 때만 다시 올림
+		Set<String> reviewedSources = new LinkedHashSet<>();
 		CitationMarkupFilter markup = new CitationMarkupFilter();
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
 			String line;
@@ -328,6 +343,21 @@ public class OpenAiRealService implements OpenAiService {
 					// 이 시점에는 어느 문서가 걸렸는지 아직 모르므로 자료명은 비워 보냄(stageLabel 주석 참고)
 					onStage.accept(Stage.SEARCHING, List.of());
 					searchingSent = true;
+				} else if ("response.output_item.done".equals(type)
+						&& "file_search_call".equals(ev.path("item").path("type").asString(""))) {
+					// 검색 결과가 실제로 도착한 경계(#375). include: file_search_call.results 로 결과가 실려 옴.
+					// 이름은 출처와 같은 규칙(resultFilename)으로 뽑음 - 진행 문구와 출처 목록이 어긋나지 않게 함
+					boolean added = false;
+					for (JsonNode r : ev.path("item").path("results")) {
+						String name = resultFilename(r);
+						if (!name.isEmpty()) {
+							added |= reviewedSources.add(name);
+						}
+					}
+					// 0건이면 확인할 문서가 없으므로 단계를 만들지 않음(REQ-RAG-004)
+					if (added) {
+						onStage.accept(Stage.REVIEWING, List.copyOf(reviewedSources));
+					}
 				} else if ("response.completed".equals(type)) {
 					JsonNode response = ev.path("response");
 					citations = extractCitations(response, markup.fileRefs(), buffer.toString());
@@ -383,7 +413,7 @@ public class OpenAiRealService implements OpenAiService {
 			if ("file_search_call".equals(item.path("type").asString(""))) {
 				List<String> files = new ArrayList<>();
 				for (JsonNode r : item.path("results")) {
-					String name = r.path("filename").asString("");
+					String name = resultFilename(r);
 					files.add(name);
 					if (!name.isEmpty()) {
 						chunksByFile.computeIfAbsent(name, k -> new ArrayList<>()).add(r.path("text").asString(""));
@@ -422,6 +452,11 @@ public class OpenAiRealService implements OpenAiService {
 			citations.add(new CitationData(seq++, name, snippet));
 		}
 		return citations;
+	}
+
+	/** 검색 결과 하나의 자료명. 출처(CitationData.sourceName)와 확인 단계 라벨이 같은 값을 쓰도록 한 곳에 둠(#375) */
+	private static String resultFilename(JsonNode result) {
+		return result.path("filename").asString("");
 	}
 
 	private static final Pattern FIGURE_MARK = Pattern.compile("\\[\\[그림:[^\\]]+\\]\\]");
