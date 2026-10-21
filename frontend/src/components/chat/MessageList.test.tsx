@@ -215,6 +215,20 @@ describe('MessageList', () => {
       expect(screen.getByRole('dialog')).toBeInTheDocument()
     })
 
+    // 표식은 답변에서만 그림이 된다 - 사용자가 친 표식은 친 글자 그대로 보여야 한다(#385)
+    it('keeps a marker the user typed as text', () => {
+      const fetchMock = vi.fn()
+      vi.stubGlobal('fetch', fetchMock)
+      const typed: ChatMessage[] = [
+        { id: 'u1', role: 'user', content: '이거 [[그림:tm-p061-f1]] 뭐야', status: 'complete', citations: [] },
+      ]
+      render(<MessageList messages={typed} />)
+
+      expect(screen.getByText('이거 [[그림:tm-p061-f1]] 뭐야')).toBeInTheDocument()
+      expect(screen.queryByAltText('문서 그림')).not.toBeInTheDocument()
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
     it('leaves nothing behind for a figure the server does not have', async () => {
       const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 404 }))
       vi.stubGlobal('fetch', fetchMock)

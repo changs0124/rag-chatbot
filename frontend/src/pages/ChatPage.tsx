@@ -132,6 +132,8 @@ export default function ChatPage() {
                   onChange={(e) => setTitleDraft(e.target.value)}
                   onBlur={commitTitle}
                   onKeyDown={(e) => {
+                    // 한글 조합을 끝내려고 누른 Enter 로 편집을 닫지 않는다(#385)
+                    if (e.nativeEvent.isComposing) return
                     if (e.key === 'Enter') {
                       e.preventDefault()
                       commitTitle()

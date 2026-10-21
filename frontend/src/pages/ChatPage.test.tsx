@@ -176,4 +176,19 @@ describe('ChatPage 제목 수정 (#371)', () => {
 
     expect(screen.getByDisplayValue('대화')).toHaveAttribute('maxLength', '100')
   })
+
+  // 조합을 끝내려고 누른 Enter 로 제목 편집이 닫히면 마지막 글자가 빠진 제목이 저장된다(#385)
+  it('한글 조합 중 Enter 는 제목 편집을 닫지 않는다', () => {
+    chatState.conversations = [{ id: 'c1', title: '대화' }]
+    chatState.activeId = 'c1'
+    renderChatPage()
+
+    fireEvent.click(screen.getByTitle('제목 변경'))
+    const input = screen.getByDisplayValue('대화')
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true })
+    expect(screen.getByDisplayValue('대화')).toBeInTheDocument()
+
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(screen.queryByDisplayValue('대화')).not.toBeInTheDocument()
+  })
 })

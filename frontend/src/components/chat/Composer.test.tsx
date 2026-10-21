@@ -178,6 +178,25 @@ describe('Composer', () => {
    * 고치기 전에는 `onSend` 의 결과와 무관하게 비워, 새 대화 생성 왕복 중에 보낸 두 번째 메시지가 사라지고
    * 이미 올린 첨부는 서버에서 지우지도 않은 채 상태에서만 빠져 고아로 남았다.
    */
+  // 한글 조합을 끝내려고 누른 Enter 는 전송이 아니다(#385) - 조합이 끝난 뒤의 Enter 만 보낸다
+  it('한글 조합 중 Enter 는 보내지 않음', async () => {
+    const onSend = vi.fn(accept)
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+    const box = screen.getByPlaceholderText('메시지를 입력하세요')
+    fireEvent.change(box, { target: { value: '안녕' } })
+
+    await act(async () => {
+      fireEvent.keyDown(box, { key: 'Enter', isComposing: true })
+    })
+    expect(onSend).not.toHaveBeenCalled()
+    expect(box).toHaveValue('안녕')
+
+    await act(async () => {
+      fireEvent.keyDown(box, { key: 'Enter' })
+    })
+    expect(onSend).toHaveBeenCalledTimes(1)
+  })
+
   it('onSend 가 받지 않으면 입력과 첨부 카드가 남음', async () => {
     vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
     const onSend = vi.fn(async () => false)

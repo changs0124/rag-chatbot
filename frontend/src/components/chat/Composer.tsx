@@ -269,6 +269,8 @@ export default function Composer({
             onChange={(e) => setText(e.target.value)}
             onPaste={onPaste}
             onKeyDown={(e) => {
+              // 한글 조합을 끝내려고 누른 Enter 는 전송이 아니다(#385)
+              if (e.nativeEvent.isComposing) return
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
                 void doSend()
