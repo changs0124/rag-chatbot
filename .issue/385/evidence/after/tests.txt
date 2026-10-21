@@ -1,0 +1,4 @@
+# 수정 후 — 같은 테스트 + 프론트 전체 (2026-10-21)
+ Test Files  23 passed (23)
+      Tests  191 passed (191)
+lint(oxlint) 경고 0 · tsc -b 통과 · vite build 통과 · check-all quick 전부 통과
