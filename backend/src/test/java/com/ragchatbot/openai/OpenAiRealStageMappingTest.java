@@ -43,6 +43,32 @@ class OpenAiRealStageMappingTest {
 			data:[DONE]
 			""";
 
+	/**
+	 * 검색 결과가 도착한 응답(#375). {@code include: file_search_call.results} 를 요청하므로 검색이 끝난
+	 * {@code response.output_item.done} 에 결과가 실림 - 같은 파일의 청크가 여럿이면 이름이 겹쳐 옴
+	 */
+	private static final String SSE_WITH_RESULTS = """
+			data:{"type":"response.created"}
+			data:{"type":"response.file_search_call.in_progress"}
+			data:{"type":"response.file_search_call.searching"}
+			data:{"type":"response.file_search_call.completed"}
+			data:{"type":"response.output_item.done","item":{"type":"file_search_call","results":[			{"filename":"정책.pdf","text":"발췌 1"},{"filename":"정책.pdf","text":"발췌 2"},{"filename":"FAQ.pdf","text":"발췌 3"}]}}
+			data:{"type":"response.output_text.delta","delta":"안내는 다음과 같음 [1]"}
+			data:{"type":"response.output_item.done","item":{"type":"message","content":[]}}
+			data:{"type":"response.completed","response":{"output":[			{"type":"file_search_call","results":[{"filename":"정책.pdf","text":"발췌 1"}]},			{"type":"message","content":[{"annotations":[{"type":"file_citation","filename":"정책.pdf"}]}]}]}}
+			data:[DONE]
+			""";
+
+	/** 검색은 돌았지만 걸린 문서가 0건인 응답 - 확인할 문서가 없으므로 확인 단계도 없어야 함 */
+	private static final String SSE_WITH_EMPTY_RESULTS = """
+			data:{"type":"response.created"}
+			data:{"type":"response.file_search_call.in_progress"}
+			data:{"type":"response.output_item.done","item":{"type":"file_search_call","results":[]}}
+			data:{"type":"response.output_text.delta","delta":"일반적인 관점임"}
+			data:{"type":"response.completed","response":{"output":[{"type":"file_search_call","results":[]}]}}
+			data:[DONE]
+			""";
+
 	private OpenAiRealService service() {
 		// api-key는 blank가 아니어야 빈이 생성됨(fail-fast 가드). 이 테스트는 네트워크를 타지 않음
 		return OpenAiRealTestSupport.parserOnly();
@@ -84,12 +110,50 @@ class OpenAiRealStageMappingTest {
 				.satisfies(c -> assertThat(c.sourceName()).isEqualTo("정책.pdf"));
 	}
 
+	/** 단계와 그 단계가 실은 자료명을 함께 기록 */
+	private List<String> stagesWithSources(String sse) {
+		List<String> seen = new ArrayList<>();
+		service().consumeStream(new ByteArrayInputStream(sse.getBytes(StandardCharsets.UTF_8)), t -> {
+		}, (stage, sources) -> seen.add(stage + sources.toString()));
+		return seen;
+	}
+
+	@Test
+	void arrived_search_results_add_reviewing_stage_with_deduped_names() {
+		// 결과가 실제로 도착한 경계에서만 확인 단계를 올림(#375). 이름은 출처와 같은 규칙(filename)으로, 겹치면 한 번만
+		assertThat(stagesWithSources(SSE_WITH_RESULTS))
+				.containsExactly("SEARCHING[]", "REVIEWING[정책.pdf, FAQ.pdf]", "GENERATING[]");
+	}
+
+	@Test
+	void empty_search_results_skip_reviewing_stage() {
+		// 검색 0건이면 확인할 문서가 없음 - 이름 없는 확인 단계를 만들지 않음(REQ-RAG-004)
+		assertThat(stagesWithSources(SSE_WITH_EMPTY_RESULTS)).containsExactly("SEARCHING[]", "GENERATING[]");
+	}
+
 	@Test
 	void live_labels_are_not_mock_labels() {
 		OpenAiRealService live = service();
-		assertThat(live.stageLabel(Stage.ANALYZING, List.of())).isEqualTo("질문 분석 중");
-		assertThat(live.stageLabel(Stage.SEARCHING, List.of())).isEqualTo("참조 문서 검색 중");
-		assertThat(live.stageLabel(Stage.GENERATING, List.of())).isEqualTo("답변 작성 중");
+		assertThat(live.stageLabel(Stage.ANALYZING, List.of(), false)).isEqualTo("질문 분석 중");
+		assertThat(live.stageLabel(Stage.SEARCHING, List.of(), false)).isEqualTo("참조 문서 검색 중");
+		assertThat(live.stageLabel(Stage.GENERATING, List.of(), false)).isEqualTo("답변 작성 중");
+	}
+
+	/** 첨부 이미지가 있는 턴은 분석 단계 문구만 바뀜(#375). 다른 단계는 첨부와 무관함 */
+	@Test
+	void live_analyzing_label_mentions_attached_image() {
+		OpenAiRealService live = service();
+		assertThat(live.stageLabel(Stage.ANALYZING, List.of(), true)).isEqualTo("질문·첨부 이미지 분석 중");
+		assertThat(live.stageLabel(Stage.GENERATING, List.of(), true)).isEqualTo("답변 작성 중");
+	}
+
+	/** 「외 N건」 은 첫 자료 말고 남은 수. 하나뿐이면 붙이지 않음 */
+	@Test
+	void live_reviewing_label_names_first_source_and_count_of_rest() {
+		OpenAiRealService live = service();
+		assertThat(live.stageLabel(Stage.REVIEWING, List.of("정책.pdf"), false)).isEqualTo("참조 문서 확인 중 · 정책.pdf");
+		assertThat(live.stageLabel(Stage.REVIEWING, List.of("정책.pdf", "FAQ.pdf", "약관.pdf"), false))
+				.isEqualTo("참조 문서 확인 중 · 정책.pdf 외 2건");
 	}
 
 	/**
@@ -99,6 +163,6 @@ class OpenAiRealStageMappingTest {
 	 */
 	@Test
 	void live_search_label_ignores_source_names() {
-		assertThat(service().stageLabel(Stage.SEARCHING, List.of("정책.pdf"))).isEqualTo("참조 문서 검색 중");
+		assertThat(service().stageLabel(Stage.SEARCHING, List.of("정책.pdf"), false)).isEqualTo("참조 문서 검색 중");
 	}
 }

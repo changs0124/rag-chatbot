@@ -1,0 +1,8 @@
+# 변경 후 (vite 8.1.6) npm audit --audit-level=high — 2026-10-21
+Using Node v24.19.0
+rag-chatbot-frontend@0.0.1 D:\dev\rag-chatbot\.issue\worktrees\382-vite-816-audit\frontend
++-- @tailwindcss/vite@4.3.3
+| `-- vite@8.1.6 deduped
+Using Node v24.19.0
+found 0 vulnerabilities
+exit=0

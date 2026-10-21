@@ -217,11 +217,13 @@ public class ChatService {
 					Map.of("messageId", asstMsgId.toString(), "conversationId", prepared.conversationId().toString()));
 
 			// 라벨은 구현이 소유하고(P-2) 발행만 여기서 함. analyzing은 meta 직후 = 스트림 개시 경계
-			// sources는 그 단계가 실제로 참조한 자료명 - 여기서 만들지 않고 구현이 준 것을 그대로 넘김(P-2)
+			// sources는 그 단계가 실제로 참조한 자료명 - 여기서 만들지 않고 구현이 준 것을 그대로 넘김(P-2).
+			// 첨부 유무는 사실만 넘기고 문구는 구현이 정함(#375)
+			boolean withImage = !prepared.refs().isEmpty();
 			BiConsumer<Stage, List<String>> onStage = (stage, sources) -> {
 				if (!firstTokenSeen[0]) {
 					sendQuietly(emitter, "stage", Map.of("stage", stage.name().toLowerCase(Locale.ROOT),
-							"label", openAiService.stageLabel(stage, sources)));
+							"label", openAiService.stageLabel(stage, sources, withImage)));
 				}
 			};
 			onStage.accept(Stage.ANALYZING, List.of());

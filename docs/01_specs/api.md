@@ -259,7 +259,7 @@
 | event | data | 설명 |
 |-------|------|------|
 | `meta` | `{ messageId, conversationId }` | 스트림 개시 |
-| `stage` | `{ stage, label }` | 진행 단계. **실제로 지난 경계에서만 온다** |
+| `stage` | `{ stage, label }` | 진행 단계. **실제로 지난 경계에서만 온다**. `stage` 는 `analyzing` → `searching` → `reviewing` → `generating` 순이고 지나지 않은 단계는 빠진다. `reviewing` 은 검색 결과가 실제로 도착했을 때만 오며(0건이면 없음) 라벨에 참조 문서 이름(`<첫 자료명> 외 N건`)을 싣는다. 첨부 이미지가 있는 턴은 `analyzing` 라벨이 이미지까지 밝힌다(#375) |
 | `token` | `{ delta }` | 답변 조각 |
 | `citations` | `{ items: [{ seq, sourceName, snippet }] }` | 출처 |
 | `done` | `{ finishReason, noSource }` | 완료. `finishReason` 은 항상 `stop` 이다. `noSource=true` 면 인용 0건 |
