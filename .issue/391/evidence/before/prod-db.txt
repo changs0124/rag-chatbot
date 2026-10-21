@@ -1,0 +1,7 @@
+# 수정 전 — 운영 DB 읽기 전용 확인 (2026-10-21, 4f7b9e4)
+conversations 전체 / vector_store_id 값 있음|3|0
+attachments 전체 / openai_file_id 값 있음|0|0
+attachments file_type=document|0
+citations 전체 / uri 값 있음|6|6
+flyway 최신|9
+citations.uri 값 6개는 전부 빈 문자열(길이 0) — #328 에서 계약에서 빼기 전 '' 로 쓰인 것
