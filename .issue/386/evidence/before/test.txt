@@ -1,0 +1,5 @@
+# 수정 전 — FileFlowTest (2026-10-21)
+[ERROR] Tests run: 17, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 20.71 s <<< FAILURE! -- in com.ragchatbot.controller.FileFlowTest
+expected: 404 NOT_FOUND
+ but was: 500 INTERNAL_SERVER_ERROR
+expected: 404 NOT_FOUND
