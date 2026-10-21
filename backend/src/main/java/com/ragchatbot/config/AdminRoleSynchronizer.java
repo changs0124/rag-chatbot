@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,10 +43,9 @@ public class AdminRoleSynchronizer {
 
 	@Bean
 	ApplicationRunner syncAdminRoles(UserRepository userRepository, PasswordEncoder passwordEncoder,
-			TemporaryPasswordGenerator temporaryPasswords,
-			@Value("${app.admin.emails}") String adminEmails) {
+			TemporaryPasswordGenerator temporaryPasswords, EmailDomainPolicy emailDomainPolicy) {
 		return args -> {
-			List<String> emails = EmailDomainPolicy.parseList(adminEmails);
+			List<String> emails = emailDomainPolicy.adminEmails();
 			// 계정이 없는 관리자는 admin 역할로 바로 만든다. 뒤의 승격은 이미 있는 비관리자 계정만 건드린다
 			int created = 0;
 			for (String email : emails) {

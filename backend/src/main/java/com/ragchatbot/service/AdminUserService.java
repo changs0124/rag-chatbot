@@ -5,7 +5,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,18 +32,13 @@ public class AdminUserService {
 	private final PasswordEncoder passwordEncoder;
 	private final TemporaryPasswordGenerator temporaryPasswords;
 	private final EmailDomainPolicy emailDomainPolicy;
-	private final List<String> adminEmails;
 
 	public AdminUserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-			TemporaryPasswordGenerator temporaryPasswords, EmailDomainPolicy emailDomainPolicy,
-			@Value("${app.admin.emails}") String adminEmails) {
+			TemporaryPasswordGenerator temporaryPasswords, EmailDomainPolicy emailDomainPolicy) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.temporaryPasswords = temporaryPasswords;
 		this.emailDomainPolicy = emailDomainPolicy;
-		// 명단에 있는 주소로 계정을 발급하면 곧바로 관리자여야 한다. 기동 동기화까지 기다리게 하면
-		// 발급 직후 그 사람은 관리 화면에 못 들어가고, 이유는 화면 어디에도 적히지 않는다
-		this.adminEmails = EmailDomainPolicy.parseList(adminEmails);
 	}
 
 	/**
@@ -62,7 +56,9 @@ public class AdminUserService {
 			throw new ConflictException("이미 있는 이메일");
 		});
 		String temporary = temporaryPasswords.generate();
-		String role = adminEmails.contains(email) ? "admin" : "user";
+		// 명단에 있는 주소로 계정을 발급하면 곧바로 관리자여야 한다. 기동 동기화까지 기다리게 하면
+		// 발급 직후 그 사람은 관리 화면에 못 들어가고, 이유는 화면 어디에도 적히지 않는다
+		String role = emailDomainPolicy.isAdminEmail(email) ? "admin" : "user";
 		try {
 			userRepository.insert(new User(UUID.randomUUID(), email, passwordEncoder.encode(temporary),
 					req.name().trim(), role, null, null));

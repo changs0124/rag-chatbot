@@ -22,7 +22,6 @@ import com.ragchatbot.entity.Message;
 import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.repository.AttachmentRepository;
-import com.ragchatbot.repository.ConversationRepository;
 import com.ragchatbot.repository.MessageRepository;
 import com.ragchatbot.openai.OpenAiService;
 import com.ragchatbot.openai.OpenAiService.AttachmentRef;
@@ -44,7 +43,7 @@ public class ChatService {
 	/** 과거 턴의 이미지 자리표시자 - 이미지를 다시 보내지 않아도 "그때 첨부가 있었다"는 사실은 남김 */
 	static final String IMAGE_PLACEHOLDER = "(이미지 첨부)";
 
-	private final ConversationRepository conversationRepository;
+	private final ConversationService conversationService;
 	private final MessageRepository messageRepository;
 	private final AttachmentRepository attachmentRepository;
 	private final OpenAiService openAiService;
@@ -52,11 +51,11 @@ public class ChatService {
 	private final int historyTokenBudget;
 	private final int maxMessageChars;
 
-	public ChatService(ConversationRepository conversationRepository, MessageRepository messageRepository,
+	public ChatService(ConversationService conversationService, MessageRepository messageRepository,
 			AttachmentRepository attachmentRepository, OpenAiService openAiService, ChatPersistenceService chatPersistence,
 			@Value("${app.chat.history-token-budget}") int historyTokenBudget,
 			@Value("${app.chat.max-message-chars}") int maxMessageChars) {
-		this.conversationRepository = conversationRepository;
+		this.conversationService = conversationService;
 		this.messageRepository = messageRepository;
 		this.attachmentRepository = attachmentRepository;
 		this.openAiService = openAiService;
@@ -71,8 +70,7 @@ public class ChatService {
 	/** 동기 준비 - 소유권/검증 + 사용자 메시지 저장 + 첨부 연결 */
 	@Transactional
 	public PreparedChat prepare(UUID userId, ChatRequest req) {
-		Conversation conversation = conversationRepository.findByIdAndUser(req.conversationId(), userId)
-				.orElseThrow(() -> new NotFoundException("대화 없음"));
+		Conversation conversation = conversationService.requireOwned(req.conversationId(), userId);
 
 		String message = req.message() == null ? "" : req.message().trim();
 		List<UUID> attachmentIds = req.attachmentIds() == null ? List.of() : req.attachmentIds();
@@ -98,7 +96,7 @@ public class ChatService {
 			if (att.messageId() != null) {
 				throw new BadRequestException("이미 보낸 첨부는 다시 사용할 수 없음");
 			}
-			refs.add(new AttachmentRef(att.storagePath()));
+			refs.add(new AttachmentRef(att.storagePath(), FileService.mediaTypeOf(att.storagePath())));
 		}
 
 		// 이력은 **새 사용자 메시지를 넣기 전에** 읽음 - 넣고 읽으면 방금 보낸 것이 이력에 섞여 중복됨

@@ -37,13 +37,13 @@ public class ProfileService {
 	}
 
 	public MeResponse me(UUID userId) {
-		return toResponse(require(userId));
+		return MeResponse.of(require(userId));
 	}
 
 	/** 갱신 후 한 번만 읽음 - 없는 사용자면 갱신이 0행이고 그 뒤 조회가 404 를 냄(선행 조회가 불필요) */
 	public MeResponse updateName(UUID userId, String name) {
 		userRepository.updateName(userId, name.trim());
-		return toResponse(require(userId));
+		return MeResponse.of(require(userId));
 	}
 
 	/**
@@ -71,14 +71,10 @@ public class ProfileService {
 		OffsetDateTime changedAt = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 		userRepository.updatePasswordHash(userId, hash, changedAt);
 		// 갱신되는 값은 해시뿐이라 다시 읽지 않음
-		return new AuthResponse(jwtService.issue(userId), toResponse(user));
+		return new AuthResponse(jwtService.issue(userId), MeResponse.of(user));
 	}
 
 	private User require(UUID userId) {
 		return userRepository.findById(userId).orElseThrow(() -> new NotFoundException("사용자 없음"));
-	}
-
-	private MeResponse toResponse(User u) {
-		return new MeResponse(u.id(), u.email(), u.name(), u.role());
 	}
 }

@@ -49,7 +49,6 @@ public class AuthService {
 		}
 		rateLimiter.releaseLoginAttempt(email, window);
 		User user = found.get();
-		return new AuthResponse(jwtService.issue(user.id()),
-				new MeResponse(user.id(), user.email(), user.name(), user.role()));
+		return new AuthResponse(jwtService.issue(user.id()), MeResponse.of(user));
 	}
 }

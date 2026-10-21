@@ -90,6 +90,19 @@ public class EmailDomainPolicy {
 		return allowedDomains.contains(normalizedEmail.substring(at + 1));
 	}
 
+	/**
+	 * 관리자 명단({@code ADMIN_EMAILS}). 파싱은 여기 한 곳에서만 한다(#389) - 기동 동기화와 계정 발급이
+	 * 각자 파싱하면 정규화 눈금이 갈릴 수 있다
+	 */
+	public List<String> adminEmails() {
+		return adminEmails;
+	}
+
+	/** 관리자 명단에 있는 주소인지. <b>소문자로 정규화된 이메일</b>을 넘길 것 */
+	public boolean isAdminEmail(String normalizedEmail) {
+		return adminEmails.contains(normalizedEmail);
+	}
+
 	/** 거절 메시지. 허용 도메인을 밝힌다 - 사내 도메인은 비밀이 아니고, 숨기면 문의만 는다 */
 	public String rejectionMessage() {
 		return "계정을 만들 수 없는 이메일 도메인임 (허용: " + String.join(" · ", allowedDomains) + ")";

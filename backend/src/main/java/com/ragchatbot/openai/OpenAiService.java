@@ -10,8 +10,8 @@ import java.util.function.Predicate;
  */
 public interface OpenAiService {
 
-	/** 첨부 참조 - 비전 이미지(첨부는 이미지뿐이다) */
-	record AttachmentRef(String storagePath) {
+	/** 첨부 참조 - 비전 이미지(첨부는 이미지뿐이다). mimeType 은 FileService 의 허용 표에서 채운다(#389) */
+	record AttachmentRef(String storagePath, String mimeType) {
 	}
 
 	/**

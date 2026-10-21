@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -88,7 +89,7 @@ public class AdminDocumentService {
 		if (dot < 0 || dot == name.length() - 1) {
 			return null;
 		}
-		String extension = name.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
+		String extension = name.substring(dot + 1).toLowerCase(Locale.ROOT);
 		return ALLOWED.containsValue(extension) ? extension : null;
 	}
 

@@ -70,7 +70,7 @@ public class ConversationService {
 
 	public List<ConversationResponse> list(UUID userId) {
 		return conversationRepository.listByUser(userId).stream()
-				.map(c -> new ConversationResponse(c.id(), c.title(), c.createdAt(), c.updatedAt()))
+				.map(ConversationService::toResponse)
 				.toList();
 	}
 
@@ -141,13 +141,17 @@ public class ConversationService {
 		return title;
 	}
 
-	private Conversation requireOwned(UUID conversationId, UUID userId) {
+	/** 소유 확인의 단일 경로 - 채팅 전송(ChatService.prepare)도 이것을 탄다(#389) */
+	Conversation requireOwned(UUID conversationId, UUID userId) {
 		return conversationRepository.findByIdAndUser(conversationId, userId)
 				.orElseThrow(() -> new NotFoundException("대화 없음"));
 	}
 
 	private ConversationResponse findOwnedResponse(UUID conversationId, UUID userId) {
-		Conversation c = requireOwned(conversationId, userId);
+		return toResponse(requireOwned(conversationId, userId));
+	}
+
+	private static ConversationResponse toResponse(Conversation c) {
 		return new ConversationResponse(c.id(), c.title(), c.createdAt(), c.updatedAt());
 	}
 }

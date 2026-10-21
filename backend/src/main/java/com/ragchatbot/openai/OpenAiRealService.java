@@ -8,18 +8,13 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -287,21 +282,11 @@ public class OpenAiRealService implements OpenAiService {
 	private String toDataUrl(AttachmentRef img) {
 		try (InputStream is = fileStorage.load(img.storagePath()).getInputStream()) {
 			byte[] bytes = is.readAllBytes();
-			return "data:" + mimeFromPath(img.storagePath()) + ";base64,"
+			return "data:" + img.mimeType() + ";base64,"
 					+ Base64.getEncoder().encodeToString(bytes);
 		} catch (Exception e) {
 			throw new IllegalStateException("첨부 이미지를 읽지 못함: " + img.storagePath(), e);
 		}
-	}
-
-	// FileService.ALLOWED 의 확장자 → 미디어 타입과 같은 표다. 합치지 않은 것은 openai 가 service 를 import 하면
-	// 패키지 순환(service → openai → service)이 생기기 때문이다 - 허용 형식을 늘리면 여기도 같이 고친다(#219)
-	private static String mimeFromPath(String path) {
-		String p = path.toLowerCase(Locale.ROOT);
-		if (p.endsWith(".png")) return "image/png";
-		if (p.endsWith(".webp")) return "image/webp";
-		if (p.endsWith(".gif")) return "image/gif";
-		return "image/jpeg";
 	}
 
 	/**
@@ -411,12 +396,12 @@ public class OpenAiRealService implements OpenAiService {
 	 * annotation 을 빠뜨릴 때가 있어, 그대로 두면 「자료 없음」이 본문과 반대로 뜸. 대응 규칙(N번째
 	 * file_search_call 의 results[M], 둘 다 0-base)은 2026-10-15 실측(live-integration.md 3-1). 범위 밖 참조는 버림.
 	 *
-	 * <p>스니펫은 그 파일의 검색 결과 중 답이 실제로 쓴 청크를 고름({@link #pickSnippet}, #268).
+	 * <p>스니펫은 그 파일의 검색 결과 중 답이 실제로 쓴 청크를 고름({@link SnippetPicker#pickSnippet}, #268).
 	 */
 	private List<CitationData> extractCitations(JsonNode response, List<CitationMarkupFilter.FileRef> markupRefs,
 			String answer) {
 		Map<String, List<String>> chunksByFile = new HashMap<>(); // 파일별 결과 본문, 검색 순서 유지
-		Map<String, Boolean> citedFiles = new LinkedHashMap<>(); // 순서 유지 + 중복 제거
+		Set<String> citedFiles = new LinkedHashSet<>(); // 순서 유지 + 중복 제거
 		List<List<String>> filesBySearch = new ArrayList<>(); // file_search_call 순서별 결과 파일명
 
 		for (JsonNode item : response.path("output")) {
@@ -436,7 +421,7 @@ public class OpenAiRealService implements OpenAiService {
 					if ("file_citation".equals(ann.path("type").asString(""))) {
 						String name = ann.path("filename").asString("");
 						if (!name.isEmpty()) {
-							citedFiles.putIfAbsent(name, Boolean.TRUE);
+							citedFiles.add(name);
 						}
 					}
 				}
@@ -448,7 +433,7 @@ public class OpenAiRealService implements OpenAiService {
 				if (ref.turn() < filesBySearch.size() && ref.file() < filesBySearch.get(ref.turn()).size()) {
 					String name = filesBySearch.get(ref.turn()).get(ref.file());
 					if (!name.isEmpty()) {
-						citedFiles.putIfAbsent(name, Boolean.TRUE);
+						citedFiles.add(name);
 					}
 				}
 			}
@@ -456,8 +441,9 @@ public class OpenAiRealService implements OpenAiService {
 
 		List<CitationData> citations = new ArrayList<>();
 		int seq = 1;
-		for (String name : citedFiles.keySet()) {
-			String snippet = truncate(pickSnippet(chunksByFile.getOrDefault(name, List.of()), answer));
+		for (String name : citedFiles) {
+			String snippet = SnippetPicker.truncate(
+					SnippetPicker.pickSnippet(chunksByFile.getOrDefault(name, List.of()), answer));
 			// 인용은 파일명으로 묶는다 - 이름이 같은 문서가 둘이면 한 출처로 합쳐진다(annotation 의 file_id 로 묶으면 피할 수 있다)
 			citations.add(new CitationData(seq++, name, snippet));
 		}
@@ -467,85 +453,6 @@ public class OpenAiRealService implements OpenAiService {
 	/** 검색 결과 하나의 자료명. 출처(CitationData.sourceName)와 확인 단계 라벨이 같은 값을 쓰도록 한 곳에 둠(#375) */
 	private static String resultFilename(JsonNode result) {
 		return result.path("filename").asString("");
-	}
-
-	private static final Pattern FIGURE_MARK = Pattern.compile("\\[\\[그림:[^\\]]+\\]\\]");
-
-	/**
-	 * 한 파일의 검색 결과 중 답이 근거로 쓴 청크를 고름(#268). annotation 에는 어느 청크인지가 없어,
-	 * 1순위를 쓰면 답과 무관한 단락이 출처로 보인다.
-	 * <ol>
-	 *   <li>답에 나온 그림 표식을 담은 청크 - 그림은 그 절에서만 나옴</li>
-	 *   <li>답과 겹치는 글자 2-gram(공백 제외) 종류가 가장 많은 청크. 동점은 앞 순위</li>
-	 *   <li>겹침이 전혀 없으면 1순위(빈 스니펫을 만들지 않음)</li>
-	 * </ol>
-	 * 청크는 800토큰이라 앞부분이 옆 절일 수 있음 - 화면에는 앞 200자만 보이므로 고른 청크 안에서도
-	 * 그림 표식 자리, 없으면 답과 가장 많이 겹치는 줄부터 잘라 돌려줌.
-	 */
-	static String pickSnippet(List<String> chunks, String answer) {
-		if (chunks.isEmpty()) {
-			return "";
-		}
-		Set<String> answerGrams = bigrams(answer);
-		Matcher m = FIGURE_MARK.matcher(answer);
-		while (m.find()) {
-			for (String c : chunks) {
-				int at = c.indexOf(m.group());
-				if (at >= 0) {
-					return c.substring(at);
-				}
-			}
-		}
-		String best = chunks.get(0);
-		int bestScore = 0;
-		for (String c : chunks) {
-			int score = overlap(c, answerGrams);
-			if (score > bestScore) {
-				best = c;
-				bestScore = score;
-			}
-		}
-		return best.substring(bestLineStart(best, answerGrams));
-	}
-
-	/** 답과 가장 많이 겹치는 줄의 시작 위치. 겹치는 줄이 없으면 0 */
-	private static int bestLineStart(String chunk, Set<String> answerGrams) {
-		int bestStart = 0;
-		int bestScore = 0;
-		int start = 0;
-		for (String line : chunk.split("\n", -1)) {
-			int score = overlap(line, answerGrams);
-			if (score > bestScore) {
-				bestStart = start;
-				bestScore = score;
-			}
-			start += line.length() + 1;
-		}
-		return bestStart;
-	}
-
-	private static int overlap(String text, Set<String> answerGrams) {
-		Set<String> grams = bigrams(text);
-		grams.retainAll(answerGrams);
-		return grams.size();
-	}
-
-	private static Set<String> bigrams(String s) {
-		String t = s.replaceAll("\\s+", "");
-		Set<String> grams = new HashSet<>();
-		for (int i = 0; i + 1 < t.length(); i++) {
-			grams.add(t.substring(i, i + 2));
-		}
-		return grams;
-	}
-
-	/** 출처 스니펫을 버블 분량으로 제한(UI 2줄 클램프보다 조금 넉넉하게) */
-	private static String truncate(String s) {
-		if (s == null) {
-			return "";
-		}
-		String flat = s.replaceAll("\\s+", " ").trim();
-		return flat.length() <= 200 ? flat : flat.substring(0, 200) + "…";
 	}
 
 	// ── RAG 문서 관리(FEAT-ADMIN-002) ────────────────────────────────────────────

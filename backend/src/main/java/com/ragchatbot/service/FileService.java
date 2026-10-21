@@ -118,17 +118,25 @@ public class FileService {
 		}
 		Attachment att = attachmentRepository.findByIdAndUser(fileId, userId)
 				.orElseThrow(() -> new NotFoundException("파일 없음"));
-		String mediaType = ALLOWED.entrySet().stream()
-				.filter(e -> att.storagePath().endsWith("." + e.getValue().extension()))
-				.map(Map.Entry::getKey)
-				.findFirst()
-				.orElse("application/octet-stream");
+		String mediaType = mediaTypeOf(att.storagePath());
 		Resource file = fileStorage.load(att.storagePath());
 		// 행은 있는데 파일이 없으면(볼륨 유실 · 수동 삭제) 응답 변환이 터져 500 이 된다 - 다른 없음과 같은 404 로(#386)
 		if (!file.exists()) {
 			throw new NotFoundException("파일 없음");
 		}
 		return new ServedFile(file, mediaType);
+	}
+
+	/**
+	 * 저장 경로 확장자 → 미디어 타입. 서빙과 모델 전송(ChatService → AttachmentRef)이 같은 표를 쓴다(#389) -
+	 * openai 가 service 를 import 하면 패키지 순환이 생기므로 표는 여기 두고 값만 실어 보낸다
+	 */
+	static String mediaTypeOf(String storagePath) {
+		return ALLOWED.entrySet().stream()
+				.filter(e -> storagePath.endsWith("." + e.getValue().extension()))
+				.map(Map.Entry::getKey)
+				.findFirst()
+				.orElse("application/octet-stream");
 	}
 
 	/**
