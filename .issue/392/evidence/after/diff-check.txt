@@ -1,0 +1,3 @@
+# 주석만 바뀐 것 확인 (2026-10-21)
+git diff -U0 에서 주석이 아닌 +/- 줄 : ChatService 한 줄뿐 — 줄 끝 주석 「// 첨부 있으면 허용」 삭제(문장 그대로)
+ 13 files changed, 23 insertions(+), 18 deletions(-)
