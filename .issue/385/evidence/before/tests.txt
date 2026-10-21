@@ -1,0 +1,11 @@
+# 수정 전 — 새 재현 테스트 4개 (2026-10-21)
+     × 대화 목록을 처음 불러오지 못하면 오류를 띄운다 5ms
+       × keeps a marker the user typed as text 8ms
+     × 한글 조합 중 Enter 는 제목 편집을 닫지 않는다 33ms
+     × 한글 조합 중 Enter 는 보내지 않음 11ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/hooks/useChatLoading.test.ts > useChat 이력 불러오는 중 > 대화 목록을 처음 불러오지 못하면 오류를 띄운다
+ FAIL  src/pages/ChatPage.test.tsx > ChatPage 제목 수정 (#371) > 한글 조합 중 Enter 는 제목 편집을 닫지 않는다
+ FAIL  src/components/chat/Composer.test.tsx > Composer > 한글 조합 중 Enter 는 보내지 않음
+ FAIL  src/components/chat/MessageList.test.tsx > MessageList > 문서 그림 표식 (FEAT-CHAT-004) > keeps a marker the user typed as text
+      Tests  4 failed | 67 passed (71)
