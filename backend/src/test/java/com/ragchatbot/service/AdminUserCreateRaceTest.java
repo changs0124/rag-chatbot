@@ -37,7 +37,7 @@ class AdminUserCreateRaceTest {
 		when(encoder.encode(anyString())).thenReturn("hash");
 
 		var service = new AdminUserService(repo, encoder, new TemporaryPasswordGenerator(),
-				new EmailDomainPolicy("mock", "", ""), "");
+				new EmailDomainPolicy("mock", "", ""));
 
 		assertThatThrownBy(() -> service.create(new CreateUserRequest("race@b.com", "사용자")))
 				.isInstanceOf(ConflictException.class)

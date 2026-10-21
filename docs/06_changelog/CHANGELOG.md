@@ -12,6 +12,13 @@
   - 프론트 : 첨부 `fileType` 을 `'image'` 로 좁히고 과거 문서 첨부 칩 분기를 지웠다
   - 테스트 : `OpenAiRealDeleteResourcesTest` 2건 삭제(지운 메서드 전용) · `ChatFlowTest` 의 목업 호출 수 단언을 삭제 후 404 단언으로 바꿈. **백엔드 하한 321 → 319**
 ### Refactored
+- **백엔드 중복을 정리하고 출처 스니펫 고르기를 `SnippetPicker` 로 뗐다(#389).** 동작은 그대로다(테스트 319개 변화 없음)
+  - `MeResponse` 를 `MeResponse.of(User)` 한 곳에서 만든다. 로그인(`AuthService`)과 마이페이지(`ProfileService`)가 각자 만들고 있었다
+  - 채팅 전송(`ChatService.prepare`)의 대화 소유 확인을 `ConversationService.requireOwned` 로. `ConversationResponse` 매핑 두 벌은 파일 안 헬퍼 하나로
+  - `ADMIN_EMAILS` 파싱을 `EmailDomainPolicy` 한 곳으로(`adminEmails()` · `isAdminEmail()`). `AdminUserService` · `AdminRoleSynchronizer` 가 각자 `@Value` 로 받아 파싱하고 있었다. 정규화 눈금(`parseList`)은 그대로
+  - 첨부 확장자 → 미디어 타입 표를 `FileService` 하나로. `OpenAiRealService.mimeFromPath` 를 지우고 `AttachmentRef` 에 `mimeType` 을 실어 보낸다 - openai 가 service 를 import 하지 않으므로 패키지 순환은 생기지 않는다(#219 에서 둘로 둔 이유)
+  - `pickSnippet` 과 보조 함수(`bestLineStart` · `overlap` · `bigrams` · `truncate`)를 같은 패키지의 `SnippetPicker` 로(`CitationMarkupFilter` 와 같은 방식). `SnippetPickTest` 가 그쪽을 부른다
+  - 순서 있는 집합으로만 쓰던 `Map<String, Boolean>` 을 `LinkedHashSet` 으로, `AdminDocumentService` 의 `java.util.Locale.ROOT` 를 import 로
 - **프론트 중복을 정리했다(#390).** 동작은 그대로다(테스트 191개 변화 없음)
   - 인증 fetch 순서(보낸 토큰 기억 → Bearer → 재발급 토큰 반영)를 `api.ts` 의 `authFetch` 하나로 모았다. `request` · `streamChat` · `loadFigure` 셋이 각자 쓰고 있었고, 한 곳이라도 빠지면 그 경로만 쓰는 사용자가 두 시간마다 로그아웃된다(#359 · #363)
   - `AdminPage`(439줄 · useState 15개)를 같은 파일 안 `DocumentsSection` · `UsersSection` 으로 나눠 상태를 쓰는 코드 옆에 뒀다. 화면 · 문구 그대로

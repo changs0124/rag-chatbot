@@ -41,6 +41,11 @@ class AttachmentLinkRaceTest {
 
 	private static final UUID USER = UUID.randomUUID();
 
+	/** 소유 확인은 ConversationService.requireOwned 를 탄다(#389) - 저장소 목만 있으면 되므로 나머지는 비운다 */
+	private static ConversationService owned(ConversationRepository conversations) {
+		return new ConversationService(conversations, null, null, null, null, null, 100);
+	}
+
 	private static Attachment draft(UUID id) {
 		return new Attachment(id, null, USER, "u/" + id + ".png", "image",
 				OffsetDateTime.now().minusHours(2));
@@ -74,7 +79,7 @@ class AttachmentLinkRaceTest {
 		when(repo.findByIdAndUser(att.id(), USER)).thenReturn(Optional.of(att));
 		when(repo.linkToMessage(any(), any(), any())).thenReturn(0);
 
-		var service = new ChatService(conversations, messages, repo, null, null, 6000, 4000);
+		var service = new ChatService(owned(conversations), messages, repo, null, null, 6000, 4000);
 
 		assertThatThrownBy(() -> service.prepare(USER, new ChatRequest(convId, "질문", List.of(att.id()))))
 				.isInstanceOf(BadRequestException.class);
@@ -140,13 +145,13 @@ class AttachmentLinkRaceTest {
 		when(repo.findByIdAndUser(high.id(), USER)).thenReturn(Optional.of(high));
 		when(repo.linkToMessage(any(), any(), any())).thenReturn(1);
 
-		var prepared = new ChatService(conversations, messages, repo, null, null, 6000, 4000)
+		var prepared = new ChatService(owned(conversations), messages, repo, null, null, 6000, 4000)
 				.prepare(USER, new ChatRequest(convId, "질문", List.of(high.id(), low.id())));
 
 		InOrder order = inOrder(repo);
 		order.verify(repo).linkToMessage(eq(low.id()), any(), eq(USER));
 		order.verify(repo).linkToMessage(eq(high.id()), any(), eq(USER));
-		assertThat(prepared.refs()).containsExactly(new AttachmentRef(high.storagePath()),
-				new AttachmentRef(low.storagePath()));
+		assertThat(prepared.refs()).containsExactly(new AttachmentRef(high.storagePath(), "image/png"),
+				new AttachmentRef(low.storagePath(), "image/png"));
 	}
 }
