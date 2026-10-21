@@ -5,6 +5,11 @@
 ## [Unreleased]
 
 ### Changed
+- **운영 되돌리기 절차를 실제로 되는 방법으로 바로잡고, 코드와 어긋나거나 겹친 문서를 정리했다(#387).**
+  - `live-integration.md` §6 : 운영 되돌리기는 직전 백엔드 이미지(`:previous` · `prev-<sha>`)로. `APP_MODE=mock` 은 `prod` 프로필에서 `AppModeGuard` 가 기동을 거부해(#305) 로컬 전용으로 낮춤
+  - 코드와 다르던 곳 : 진행 단계에 `reviewing`(overview), 동기화 `total` = 스토어 파일 수 − 끊은 연결 수(features · `AdminDtos` 주석), 매퍼 쓰기 수 `<delete>` 2 · 수정·삭제 11건(V10 이후), 파일 토큰 TTL 은 기본 15분(`FILE_ACCESS_TOKEN_TTL_MINUTES`), 컨테이너 하드닝 실측은 이전 GCP VM 기준임을 밝힘
+  - 중복 정리 : README CI 표 → CONVENTIONS 링크(`.issue/**` 만 바꾼 푸시는 건너뛰고 주간 스케줄은 보안 3잡), 유량 제어 수치 → `backend/.env.example`, `rag_documents` soft delete 근거 → erd, overview 구조도에 Vercel · Cloudflare Tunnel
+  - 「두 제품」을 ChatGPT · Claude 로 명시, `backend.md` 범위 문장을 실제 절 목록에 맞춤, 바꾼 명세 머리의 버전 · 수정일 갱신
 - **틀렸거나 군더더기인 주석을 고쳤다(#392). 코드 diff 는 0 이다.**
   - 사실과 어긋난 것 : CI 주석의 `docs 잡`(실제는 `static`), `AdminRoleSynchronizer` 의 생성 순서 설명, `application.yml` 의 `local` 프로필 언급, `check-case-floor.sh` 머리말 명령 형태
   - 이력 어투("종전" · "예전에" · "없어졌으므로")를 현재 사실로 바꿈. 이유는 그대로 둠
