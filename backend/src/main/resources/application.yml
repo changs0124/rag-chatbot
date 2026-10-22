@@ -90,6 +90,9 @@ app:
     # 분당 상한은 횟수만, 이력 예산은 이전 메시지만 묶어 이번 메시지의 크기는 이 값이 묶음. 프론트 입력창도 같은 값
     max-message-chars: ${CHAT_MAX_MESSAGE_CHARS:4000}
     max-title-chars: ${CHAT_MAX_TITLE_CHARS:100}
+    # 메시지 1건당 첨부 개수 상한(#401). 이미지는 전부 base64 로 바뀌어 한꺼번에 힙에 오르므로(장당 최대 약 13MB)
+    # 이 값이 요청 하나의 메모리를 묶음. 중복 id 는 접은 뒤 셈. 프론트 입력창도 같은 값
+    max-attachments: ${CHAT_MAX_ATTACHMENTS:5}
   ratelimit:
     # 사용자별 분당 채팅 상한(비용 통제, REQ-OPS-003). 단일 인스턴스 전제
     chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}
