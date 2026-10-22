@@ -1,6 +1,7 @@
 package com.ragchatbot.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.storage.FileStorage;
 
 /**
  * 용량 검사는 <b>파일을 힙에 올리기 전에</b> 한다(#402).
@@ -34,6 +36,24 @@ class FileServiceSizeCheckTest {
 		assertThatThrownBy(() -> service.upload(UUID.randomUUID(), file))
 				.isInstanceOf(BadRequestException.class)
 				.hasMessage("용량 초과(image 최대 10MB)");
+		verify(file, never()).getBytes();
+	}
+
+	/** 저장 한도(#418)에 닿은 사용자의 업로드도 힙에 올리기 전에 거절한다 - 크기 선검사(#402)와 같은 원칙 */
+	@Test
+	void over_quota_rejected_without_reading_into_heap() throws Exception {
+		MultipartFile file = mock(MultipartFile.class);
+		when(file.isEmpty()).thenReturn(false);
+		when(file.getContentType()).thenReturn("image/png");
+		when(file.getSize()).thenReturn(1024L * 1024);
+		FileStorage storage = mock(FileStorage.class);
+		when(storage.usedBytes(any())).thenReturn(500L * 1024 * 1024);
+
+		var service = new FileService(storage, null, null, 500);
+
+		assertThatThrownBy(() -> service.upload(UUID.randomUUID(), file))
+				.isInstanceOf(BadRequestException.class)
+				.hasMessageStartingWith("첨부 저장 한도 초과");
 		verify(file, never()).getBytes();
 	}
 }

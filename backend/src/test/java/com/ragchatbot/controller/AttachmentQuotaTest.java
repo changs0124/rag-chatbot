@@ -114,7 +114,7 @@ class AttachmentQuotaTest extends AbstractPgIntegrationTest {
 	@Test
 	void quota_is_per_user() {
 		String full = createUser("quota-c@b.com");
-		upload(full);
+		assertThat(upload(full).getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(upload(full).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 
 		assertThat(upload(createUser("quota-d@b.com")).getStatusCode()).isEqualTo(HttpStatus.OK);

@@ -95,6 +95,13 @@ public class FileService {
 		if (file.getSize() > MAX_SIZE) {
 			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (MAX_SIZE / MB) + "MB)");
 		}
+		// 사용자별 저장 한도(#418) - 디스크에 쓰기 전, 그리고 #402 와 같이 **힙에 올리기 전에** 본다. 분당 · 장수 상한은
+		// 쌓이는 속도만 줄여, 한 사용자가 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다.
+		// 확인과 쓰기 사이에 잠금이 없어 같은 사용자의 동시 업로드는 한도를 조금 넘길 수 있다 - 그 폭은 분당 상한 × 10MB 로 묶인다
+		if (fileStorage.usedBytes(userId) + file.getSize() > quotaMb * MB) {
+			throw new BadRequestException(
+					"첨부 저장 한도 초과(사용자당 " + quotaMb + "MB) - 오래된 대화를 지우면 다시 올릴 수 있음");
+		}
 		byte[] bytes;
 		try {
 			bytes = file.getBytes();
@@ -107,12 +114,6 @@ public class FileService {
 		// webp는 RIFF(0~3) 뒤 오프셋 8의 "WEBP"까지 확인 - 임의 RIFF 컨테이너 우회 차단
 		if ("webp".equals(type.extension()) && !regionEquals(bytes, 8, WEBP_MARKER)) {
 			throw new BadRequestException("파일 내용이 형식과 일치하지 않음");
-		}
-		// 사용자별 저장 한도(#418) - 디스크에 쓰기 전에 본다. 분당 · 장수 상한은 쌓이는 속도만 줄여,
-		// 한 사용자가 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다
-		if (fileStorage.usedBytes(userId) + bytes.length > quotaMb * MB) {
-			throw new BadRequestException(
-					"첨부 저장 한도 초과(사용자당 " + quotaMb + "MB) - 오래된 대화를 지우면 다시 올릴 수 있음");
 		}
 
 		String storagePath = fileStorage.store(userId, type.extension(), bytes);

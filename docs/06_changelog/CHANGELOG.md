@@ -16,7 +16,8 @@
   - `FileService.upload` 가 검사(형식 · 크기 · 매직바이트) 뒤, **디스크에 쓰기 전에** 사용자 폴더(`{storage-root}/{userId}/`)의 실제 파일 크기 합을 보고
     넘기면 400(「첨부 저장 한도 초과(사용자당 500MB) - …」). 마이그레이션 없음 - 기존 파일까지 정확하고, 지운 만큼 다시 올릴 수 있다
   - `FileStorage.usedBytes` 추가 · `ATTACHMENT_QUOTA_MB`(`app.file.attachment-quota-mb`) · `api.md` API-POST-004 · `backend.md` 「유량 제어」 · `.env.example`
-  - 테스트 : `AttachmentQuotaTest` 3건 · `LocalFileStorageUsedBytesTest` 2건(변경 전 실패 확인). **백엔드 하한 325 → 330**
+  - 한도도 크기 선검사(#402)처럼 **파일을 힙에 올리기 전에** 본다(`getSize()`). 같은 사용자의 동시 업로드가 한도를 조금 넘길 수 있는 폭은 분당 상한 × 10MB 로 묶인다
+  - 테스트 : `AttachmentQuotaTest` 3건 · `LocalFileStorageUsedBytesTest` 2건 · `FileServiceSizeCheckTest` 1건(힙에 올리기 전 거절, 변경 전 실패 확인). **백엔드 하한 325 → 331**
 - **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
   클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
   - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`
