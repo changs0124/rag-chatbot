@@ -129,4 +129,29 @@ class ProfileFlowTest extends AbstractPgIntegrationTest {
 		var res = rest.exchange("/api/profile", HttpMethod.GET, new HttpEntity<>(bearer(token)), Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
+
+	/**
+	 * 표시 이름은 50자(trim 뒤 코드 포인트)까지다(#413). 수 MB 이름이 저장되면 /api/auth/me · 사용자 목록 ·
+	 * 문서 목록이 매번 그만큼 커진다. 51자는 400 이고 <b>저장되지 않는다</b>.
+	 */
+	@Test
+	void name_over_50_chars_is_rejected_and_not_saved() {
+		String token = createUser("prof-long@b.com");
+		var res = patch(token, "/api/profile/name", Map.of("name", "가".repeat(51)), Map.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+
+		Integer saved = jdbc.queryForObject("select count(*) from users where name = ?", Integer.class,
+				"가".repeat(51));
+		assertThat(saved).isZero();
+	}
+
+	/** 이모지는 UTF-16 으로 두 칸이지만 한 자로 센다 - 이모지 49 + 한글 1 = 50자는 통과, trim 도 먼저 걷는다 */
+	@Test
+	void name_of_50_code_points_is_accepted() {
+		String token = createUser("prof-fifty@b.com");
+		String fifty = "😀".repeat(49) + "가";
+		var res = patch(token, "/api/profile/name", Map.of("name", " " + fifty + " "), Map.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(res.getBody().get("name")).isEqualTo(fifty);
+	}
 }

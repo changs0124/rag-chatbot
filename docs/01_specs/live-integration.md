@@ -57,6 +57,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 | `OPENAI_VECTOR_STORE_ID` | 2-3 | 업로드가 400 `Vector Store 가 설정되지 않아 업로드할 수 없음` 으로 거부된다. 업로드를 건너뛰어도 `file_search` 툴이 아예 안 붙어 **출처가 늘 0건**이 된다 |
 | `ADMIN_EMAILS` | 2-3 | 관리자가 0명이라 **로그인할 계정 자체가 없다.** 스스로 가입하는 경로가 없어 되돌릴 방법이 재기동뿐이다 |
 | `OPENAI_MODEL` (비전 미지원으로 바꾼 경우) | 2-6 | 이미지 첨부만 답변이 어긋난다. 비전 입력을 쓰므로 **이미지 지원 모델이어야 한다** |
+| `APP_DB_USER` · `APP_DB_PASSWORD` (루트 `.env`, #415) | 기동 | 비우면 기동은 되지만 **앱이 슈퍼유저로 접속한다**(옛 구성). 계정을 만들지 않고 값만 넣으면 기동이 `password authentication failed` 로 멈춘다 — 계정 생성은 backend.md 「런타임 DB 계정」 |
 | `DOC_FIGURES_DIR` (또는 그 폴더를 비워 둠) | 5-1 | 답변에 그림 표식이 들어가도 **그림 자리가 비고 텍스트만 보인다.** 오류가 나지 않아 고장으로 보이지 않는다 |
 
 **`ADMIN_EMAILS` 의 주소는 `ALLOWED_EMAIL_DOMAINS` 밖이어도 된다.** 도메인 검사를 면제받으므로

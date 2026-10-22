@@ -1,0 +1,14 @@
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/components/chat/MessageList.test.tsx > MessageList > 답변 마크다운 (#270) > 원시 HTML 은 실행하지 않고 위험한 링크 스킴은 지운다
+AssertionError: expected <a href target="_blank" …(2)></a> to be null
+- Expected:
++ Received:
+ FAIL  src/components/chat/MessageList.test.tsx > MessageList > 답변 마크다운 (#270) > 답변 속 링크는 누를 수 없는 글자와 호스트로 그린다
+AssertionError: expected <a …(4)></a> to be null
+- Expected:
++ Received:
+ FAIL  src/components/chat/MessageList.test.tsx > MessageList > 답변 마크다운 (#270) > 호스트를 못 읽는 링크는 글자만 그린다
+AssertionError: expected <a href="/docs/a" …(3)></a> to be null
+- Expected:
++ Received:
+      Tests  3 failed | 21 passed (24)

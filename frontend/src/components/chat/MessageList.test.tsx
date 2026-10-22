@@ -298,9 +298,11 @@ describe('MessageList', () => {
           messages={[msg('assistant', '<img src=x onerror="alert(1)"> <script>alert(2)</script>\n\n[누르기](javascript:alert(3))')]}
         />,
       )
-      const link = (await screen.findByText('누르기')).closest('a')
+      // 평문 fallback 에도 <a> 가 없으므로 마크다운이 그린 뒤(낱글자 일치)를 기다린 다음 본다(#414 · #417)
+      expect(await screen.findByText('누르기')).toBeInTheDocument()
       expect(container.querySelector('img, script')).toBeNull()
-      expect(link?.getAttribute('href') ?? '').not.toMatch(/javascript:/i)
+      expect(container.querySelector('a')).toBeNull()
+      expect(container.textContent).not.toMatch(/javascript:/i)
     })
 
     // 그리면 모델 출력에 실린 바깥 주소를 브라우저가 곧바로 불러 쿼리로 값이 새어 나갈 수 있다(#359)
@@ -321,9 +323,33 @@ describe('MessageList', () => {
           messages={[msg('assistant', '앞 ![결선도 요약](https://e.example/a.png) 뒤\n\n[![배지](https://e.example/b.png)](https://e.example/x)')]}
         />,
       )
-      expect(await screen.findByRole('link', { name: '배지' })).toHaveAttribute('href', 'https://e.example/x')
+      // 평문 fallback 에도 같은 글자가 있어 마크다운 문법이 사라질 때까지 기다린다(#417). 링크는 글자로 낮춘다(#414)
+      await waitFor(() => expect(container.textContent).not.toMatch(/\]\(/))
       expect(container.querySelector('img')).toBeNull()
+      expect(container.querySelector('a')).toBeNull()
       expect(screen.getByText(/결선도 요약/)).toBeInTheDocument()
+      expect(screen.getByText(/배지/)).toBeInTheDocument()
+    })
+
+    // 모델이 `[자세히](https://evil.example/?q=<대화 요약>)` 를 내면 한 번 클릭으로 값이 새므로 누를 수 없는 글자로 낮춘다(#414)
+    it('답변 속 링크는 누를 수 없는 글자와 호스트로 그린다', async () => {
+      const { container } = render(
+        <MessageList messages={[msg('assistant', '[x](https://evil.example/?q=1)')]} />,
+      )
+      expect(await screen.findByText('x (evil.example)')).toBeInTheDocument()
+      expect(container.querySelector('a')).toBeNull()
+    })
+
+    it('호스트를 못 읽는 링크는 글자만 그린다', async () => {
+      const { container } = render(
+        <MessageList
+          messages={[msg('assistant', '[상대](/docs/a)\n\n[스킴](javascript:alert(1))\n\n[메일](mailto:a@b.example)')]}
+        />,
+      )
+      await waitFor(() => expect(container.textContent).not.toMatch(/\]\(/))
+      expect(container.querySelector('a')).toBeNull()
+      const texts = Array.from(container.querySelectorAll('p')).slice(0, 3).map((p) => p.textContent)
+      expect(texts).toEqual(['상대', '스킴', '메일'])
     })
 
     it('그림 표식 앞뒤의 마크다운과 그림이 함께 나온다', async () => {

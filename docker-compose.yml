@@ -138,8 +138,13 @@ services:
       # 비밀번호를 .env 한 곳에만 두려는 것이고, 동시에 jdbc 스킴을 강제해
       # 관리형 DB 형식(postgres://…)을 그대로 넣어 기동이 깨지는 사고를 막는다
       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-ragchatbot}
-      DB_USERNAME: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      # **앱은 런타임 계정으로, 마이그레이션만 소유자로 접속한다(#415).** 소유자는 슈퍼유저라, 앱이 그대로 쓰면
+      # SQL 주입 한 곳이 `COPY ... TO PROGRAM` 으로 db 컨테이너 명령 실행까지 간다. APP_DB_USER 를 비우면
+      # 옛 구성(소유자 하나)으로 돈다 - 계정을 만들기 전 · 로컬 compose 용. 계정 만드는 SQL 은 backend.md 「배포」
+      DB_USERNAME: ${APP_DB_USER:-${POSTGRES_USER:-postgres}}
+      DB_PASSWORD: ${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}
+      SPRING_FLYWAY_USER: ${POSTGRES_USER:-postgres}
+      SPRING_FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
       FILE_STORAGE_ROOT: /data/uploads
       # 문서 그림(FEAT-CHAT-004). 아래 바인드 마운트와 짝이다
       DOC_FIGURES_DIR: /data/doc-figures

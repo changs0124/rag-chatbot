@@ -1,0 +1,8 @@
+# after (#413)
+backend 타깃: ProfileFlowTest, AdminUserFlowTest, AdminUserCreateRaceTest - 통과
+backend 전체 ./mvnw -q test - 실패 0
+케이스 수(backend) : 실측 329 / 하한 329
+OK
+frontend: npm run lint 0 오류 / npm test Test Files 25 passed, Tests 197 passed / npm run build 성공
+케이스 수(frontend) : 실측 197 / 하한 197
+OK

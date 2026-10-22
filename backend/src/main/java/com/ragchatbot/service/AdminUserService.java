@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,13 +33,16 @@ public class AdminUserService {
 	private final PasswordEncoder passwordEncoder;
 	private final TemporaryPasswordGenerator temporaryPasswords;
 	private final EmailDomainPolicy emailDomainPolicy;
+	private final int maxNameChars;
 
 	public AdminUserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-			TemporaryPasswordGenerator temporaryPasswords, EmailDomainPolicy emailDomainPolicy) {
+			TemporaryPasswordGenerator temporaryPasswords, EmailDomainPolicy emailDomainPolicy,
+			@Value("${app.user.max-name-chars}") int maxNameChars) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.temporaryPasswords = temporaryPasswords;
 		this.emailDomainPolicy = emailDomainPolicy;
+		this.maxNameChars = maxNameChars;
 	}
 
 	/**
@@ -52,6 +56,7 @@ public class AdminUserService {
 		if (!emailDomainPolicy.isAllowed(email)) {
 			throw new BadRequestException(emailDomainPolicy.rejectionMessage());
 		}
+		String name = ProfileService.requireNameLength(req.name().trim(), maxNameChars);
 		userRepository.findByEmail(email).ifPresent(u -> {
 			throw new ConflictException("이미 있는 이메일");
 		});
@@ -61,7 +66,7 @@ public class AdminUserService {
 		String role = emailDomainPolicy.isAdminEmail(email) ? "admin" : "user";
 		try {
 			userRepository.insert(new User(UUID.randomUUID(), email, passwordEncoder.encode(temporary),
-					req.name().trim(), role, null, null));
+					name, role, null, null));
 		} catch (DuplicateKeyException e) {
 			// users 의 업무 유니크 키가 email 하나뿐일 때만 맞는 변환이다 - 유니크 키를 더하면 여기서 갈라 볼 것
 			// 위 조회와 이 삽입 사이(bcrypt 로 ~100ms)에 같은 주소가 먼저 들어간 경우. 유니크 인덱스가 막은 것을
