@@ -28,6 +28,11 @@ export default function ChatPage() {
   //   interactive-widget=resizes-content 로 레이아웃 자체가 줄어 같은 결과가 된다.
   // 헤드리스 브라우저는 가상 키보드와 튕김을 재현하지 못해 실기기로만 확인된다
   const [viewportHeight, setViewportHeight] = useState<number | null>(null)
+  // 마크다운 청크를 미리 받아 둔다(#417) - 첫 답변 자리에서 평문→서식 깜빡임과, 오래 열어 둔 탭이 재배포 뒤 옛 청크를 찾는 창을 줄인다.
+  // 실패는 무시한다 - 그리는 쪽(MessageList)이 평문으로 물러선다
+  useEffect(() => {
+    import('../components/chat/Markdown').catch(() => {})
+  }, [])
   useEffect(() => {
     const html = document.documentElement
     const prev = { overflow: html.style.overflow, overscroll: html.style.overscrollBehavior }

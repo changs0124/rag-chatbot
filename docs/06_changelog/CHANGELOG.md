@@ -8,6 +8,8 @@
 - **`Markdown` 을 지연 로딩해 첫 화면 JS 를 줄인다(#417).** react-markdown + remark/micromark 가 엔트리 청크에 함께 묶여, 마크다운을 쓰지 않는 로그인 화면도
   전부 받았다. `MessageList` 가 `React.lazy` 로 불러 `Markdown` 이 별도 청크(175.89KB, gzip 53.86KB)로 빠졌다 — 엔트리 청크 gzip 147.38KB → 92.76KB(-54.62KB, -37%).
   청크가 오기 전 답변은 `<Suspense>` fallback 으로 평문이 먼저 보이고, 도착하면 서식으로 바뀐다. 렌더 결과 · 링크 · 그림은 그대로다.
+  - **청크를 못 받으면 평문으로 물러선다**(리뷰 지적) — 재배포로 옛 청크가 사라지면 SPA 리라이트가 HTML 을 돌려줘 import 가 실패하고, 그대로 두면 최상위 ErrorBoundary 가 앱 전체를 오류 화면으로 바꾼다. `ChatPage` 가 로그인 뒤 청크를 미리 받는다
+  - 테스트 : `MessageListLazy`(평문 → 서식) · `MessageListLazyFail`(청크 실패에도 오류 화면 없음, 변경 전 실패 확인). **프론트 하한 195 → 197**
 - **스트리밍 중 토큰마다 지난 답변과 사이드바를 다시 그리지 않는다(#405).** `frontend/src` 에 `memo` 가 하나도 없어, 토큰 하나에
   지난 답변 전부의 마크다운 파싱과 대화 목록 전체 렌더가 돌았다(답변 20개 대화에서 800토큰 답변이면 파싱 약 16,800회 → 약 800회, 10-22 전체 QA)
   - `MessageBubble` · `Sidebar` 를 `memo` 로, `ChatPage` 의 사이드바 핸들러(`onSelect` · 새 대화)를 `useCallback` 으로. 화면 동작은 그대로다
