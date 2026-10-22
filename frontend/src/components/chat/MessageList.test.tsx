@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect, vi } from 'vitest'
+import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import MessageList from './MessageList'
 import type { ChatMessage } from '../../lib/types'
@@ -242,6 +242,9 @@ describe('MessageList', () => {
   })
 
   describe('답변 마크다운 (#270)', () => {
+    // 지연 로딩(#417) - 첫 청크 해석이 findBy 기본 시간을 넘지 않게 미리 받는다
+    beforeAll(() => import('./Markdown'))
+
     afterEach(() => {
       vi.unstubAllGlobals()
       resetFigureCache()
@@ -255,13 +258,13 @@ describe('MessageList', () => {
       citations: role === 'assistant' ? [{ seq: 1, sourceName: '매뉴얼', snippet: '' }] : [],
     })
 
-    it('굵게 · 목록 · 표를 기호가 아니라 서식으로 그린다', () => {
+    it('굵게 · 목록 · 표를 기호가 아니라 서식으로 그린다', async () => {
       render(
         <MessageList
           messages={[msg('assistant', '핀 배열은 **CN3** 이다.\n\n- 3상 입력\n- 모터 파워\n\n| 핀 | 신호 |\n|---|---|\n| B1 | +6 |')]}
         />,
       )
-      expect(screen.getByText('CN3').tagName).toBe('STRONG')
+      expect((await screen.findByText('CN3')).tagName).toBe('STRONG')
       // 출처 목록도 listitem 이라 본문 항목만 글자로 집는다
       expect(screen.getByText('3상 입력').tagName).toBe('LI')
       expect(screen.getByText('모터 파워').tagName).toBe('LI')
@@ -270,7 +273,7 @@ describe('MessageList', () => {
       expect(screen.queryByText(/\*\*|\|---/)).not.toBeInTheDocument()
     })
 
-    it('문장부호로 끝나는 굵게 뒤에 조사가 붙어도 굵게로 그린다 (#287)', () => {
+    it('문장부호로 끝나는 굵게 뒤에 조사가 붙어도 굵게로 그린다 (#287)', async () => {
       // 표준 강조 규칙으로는 닫는 ** 앞이 문장부호 · 뒤가 글자면 안 닫힌다(Markdown.tsx 머리 주석, #287)
       render(
         <MessageList
@@ -282,49 +285,50 @@ describe('MessageList', () => {
           ]}
         />,
       )
-      expect(screen.getByText('설계불량(부품선정오류)').tagName).toBe('STRONG')
+      expect((await screen.findByText('설계불량(부품선정오류)')).tagName).toBe('STRONG')
       expect(screen.getByText('19번 파라미터는 ‘잔류펄스 허용범위’').tagName).toBe('STRONG')
       expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument()
     })
 
-    it('원시 HTML 은 실행하지 않고 위험한 링크 스킴은 지운다', () => {
+    it('원시 HTML 은 실행하지 않고 위험한 링크 스킴은 지운다', async () => {
       const { container } = render(
         <MessageList
           messages={[msg('assistant', '<img src=x onerror="alert(1)"> <script>alert(2)</script>\n\n[누르기](javascript:alert(3))')]}
         />,
       )
+      const link = (await screen.findByText('누르기')).closest('a')
       expect(container.querySelector('img, script')).toBeNull()
-      const link = screen.getByText('누르기').closest('a')
       expect(link?.getAttribute('href') ?? '').not.toMatch(/javascript:/i)
     })
 
     // 그리면 모델 출력에 실린 바깥 주소를 브라우저가 곧바로 불러 쿼리로 값이 새어 나갈 수 있다(#359)
-    it('마크다운 이미지는 그리지 않는다', () => {
+    it('마크다운 이미지는 그리지 않는다', async () => {
       const { container } = render(
         <MessageList messages={[msg('assistant', '앞 글\n\n![요약](https://e.example/a.png?d=secret)\n\n뒤 글')]} />,
       )
+      // 평문 fallback 은 한 덩어리라 낱글자 일치는 마크다운이 그린 뒤에만 된다
+      expect(await screen.findByText('뒤 글')).toBeInTheDocument()
       expect(container.querySelector('img')).toBeNull()
       expect(screen.getByText('앞 글')).toBeInTheDocument()
-      expect(screen.getByText('뒤 글')).toBeInTheDocument()
     })
 
     // 이미지를 지우면서 alt 문구까지 사라졌고, 이미지를 감싼 링크는 글자 없는 빈 링크로 남았다(#365)
-    it('마크다운 이미지 자리에 alt 문구를 남기고 이미지 링크도 글자를 갖는다', () => {
+    it('마크다운 이미지 자리에 alt 문구를 남기고 이미지 링크도 글자를 갖는다', async () => {
       const { container } = render(
         <MessageList
           messages={[msg('assistant', '앞 ![결선도 요약](https://e.example/a.png) 뒤\n\n[![배지](https://e.example/b.png)](https://e.example/x)')]}
         />,
       )
+      expect(await screen.findByRole('link', { name: '배지' })).toHaveAttribute('href', 'https://e.example/x')
       expect(container.querySelector('img')).toBeNull()
       expect(screen.getByText(/결선도 요약/)).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: '배지' })).toHaveAttribute('href', 'https://e.example/x')
     })
 
     it('그림 표식 앞뒤의 마크다운과 그림이 함께 나온다', async () => {
       vi.stubGlobal('fetch', vi.fn(async () => new Response(new Blob(['png']), { status: 200 })))
       vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:fig' })
       render(<MessageList messages={[msg('assistant', '**각 부 명칭**\n[[그림:tm-p020-f1]]\n1. 엔코더 커넥터')]} />)
-      expect(screen.getByText('각 부 명칭').tagName).toBe('STRONG')
+      expect((await screen.findByText('각 부 명칭')).tagName).toBe('STRONG')
       expect(await screen.findByAltText('문서 그림')).toBeInTheDocument()
       expect(screen.getByText('엔코더 커넥터').tagName).toBe('LI')
     })

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, waitFor } from '@testing-library/react'
 import MessageList from './MessageList'
 import type { ChatMessage } from '../../lib/types'
 
@@ -18,7 +18,7 @@ vi.mock('./Markdown', () => ({
 }))
 
 describe('MessageList 스트리밍 재렌더 (#405)', () => {
-  it('토큰이 붙어도 지난 답변은 다시 파싱하지 않는다', () => {
+  it('토큰이 붙어도 지난 답변은 다시 파싱하지 않는다', async () => {
     const done: ChatMessage[] = [
       { id: 'u1', role: 'user', content: '첫 질문', status: 'complete', citations: [] },
       { id: 'a1', role: 'assistant', content: '첫 답변', status: 'complete', citations: [] },
@@ -26,6 +26,10 @@ describe('MessageList 스트리밍 재렌더 (#405)', () => {
     ]
     const streaming: ChatMessage = { id: 'a2', role: 'assistant', content: '둘', status: 'streaming', citations: [] }
     const { rerender } = render(<MessageList messages={[...done, streaming]} />)
+    // Markdown 은 지연 로딩(#417) - 청크가 와서 첫 답변이 그려진 뒤부터 센다
+    await waitFor(() => expect(parsed).toEqual(expect.arrayContaining(['첫 답변', '둘'])))
+    // 같은 입력으로 한 번 더 그려 청크 도착으로 밀려 있던 재시도를 비운다
+    rerender(<MessageList messages={[...done, streaming]} />)
     parsed.length = 0
 
     // patch 와 같은 모양 - 진행 중인 답변만 새 객체, 나머지는 같은 객체

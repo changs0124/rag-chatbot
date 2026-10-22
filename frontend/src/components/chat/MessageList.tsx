@@ -1,12 +1,14 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { API_BASE } from '../../lib/api'
 import type { ChatMessage } from '../../lib/types'
 import Citations from './Citations'
 import { nextStick } from './scroll'
 import ImageLightbox from './ImageLightbox'
 import DocFigure from './DocFigure'
-import Markdown from './Markdown'
 import { splitFigures } from '../../lib/docFigures'
+
+// 지연 로딩(#417) - react-markdown · remark 묶음은 번들의 큰 몫인데 로그인 화면은 쓰지 않는다. 첫 답변을 그릴 때 받는다
+const Markdown = lazy(() => import('./Markdown'))
 
 /** 스크롤을 실제로 하는 조상. MessageList 는 컨테이너를 소유하지 않는다(ChatPage 가 가진다) */
 function findScrollParent(el: HTMLElement | null): HTMLElement | null {
@@ -195,7 +197,10 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: ChatMe
                 {s.text}
               </p>
             ) : (
-              <Markdown key={`t${i}`} text={s.text} />
+              // 청크가 오기 전에는 같은 글을 평문으로 보여 준다 - 빈 자리가 깜빡이지 않게
+              <Suspense key={`t${i}`} fallback={<p className="whitespace-pre-wrap break-words">{s.text}</p>}>
+                <Markdown text={s.text} />
+              </Suspense>
             )
           ) : (
             <DocFigure key={`f${i}-${s.key}`} figureKey={s.key} onLoad={onFigureLoad} onOpen={setOpenFigure} />
