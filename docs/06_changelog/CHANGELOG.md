@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Security
+- **채팅 1건에 붙이는 첨부를 5장으로 묶는다(#401).** 개수를 보지 않아, 일반 계정 하나가 10MB 이미지 수십 장을 한 메시지로 보내면
+  전부 base64 로 한꺼번에 힙(약 650MB)에 올라 OOM 으로 서비스 전체가 멎을 수 있었다(10-22 전체 QA)
+  - 5장(`CHAT_MAX_ATTACHMENTS`, 중복 id 를 접은 뒤) 초과 → 모델 호출 · 사용자 메시지 저장 전에 400
+  - 프론트 : 입력창이 남은 자리만큼만 받고 넘친 파일은 올리지 않고 알린다. 정본은 서버
+  - compose : `JAVA_TOOL_OPTIONS` 에 `-XX:+ExitOnOutOfMemoryError` - OOM 이 나면 반쯤 고장 난 채 남지 않고 재시작으로 회복한다
+  - `api.md` API-POST-005 · `features.md` FEAT-CHAT-001 · `backend.md` 「유량 제어」 · `.env.example`
+  - 테스트 : 백엔드 2건(`ChatFlowTest`) · 프론트 2건(`Composer`). 상한 초과 3건은 변경 전 실패 확인. **백엔드 하한 319 → 321 · 프론트 하한 191 → 193**
+
 ### Changed
 - **운영 되돌리기 절차를 실제로 되는 방법으로 바로잡고, 코드와 어긋나거나 겹친 문서를 정리했다(#387).**
   - `live-integration.md` §6 : 운영 되돌리기는 직전 백엔드 이미지(`:previous` · `prev-<sha>`)로. `APP_MODE=mock` 은 `prod` 프로필에서 `AppModeGuard` 가 기동을 거부해(#305) 로컬 전용으로 낮춤

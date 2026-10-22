@@ -50,11 +50,13 @@ public class ChatService {
 	private final ChatPersistenceService chatPersistence;
 	private final int historyTokenBudget;
 	private final int maxMessageChars;
+	private final int maxAttachments;
 
 	public ChatService(ConversationService conversationService, MessageRepository messageRepository,
 			AttachmentRepository attachmentRepository, OpenAiService openAiService, ChatPersistenceService chatPersistence,
 			@Value("${app.chat.history-token-budget}") int historyTokenBudget,
-			@Value("${app.chat.max-message-chars}") int maxMessageChars) {
+			@Value("${app.chat.max-message-chars}") int maxMessageChars,
+			@Value("${app.chat.max-attachments}") int maxAttachments) {
 		this.conversationService = conversationService;
 		this.messageRepository = messageRepository;
 		this.attachmentRepository = attachmentRepository;
@@ -62,6 +64,7 @@ public class ChatService {
 		this.chatPersistence = chatPersistence;
 		this.historyTokenBudget = historyTokenBudget;
 		this.maxMessageChars = maxMessageChars;
+		this.maxAttachments = maxAttachments;
 	}
 
 	public record PreparedChat(UUID conversationId, String message, List<AttachmentRef> refs, List<Turn> history) {
@@ -86,6 +89,11 @@ public class ChatService {
 		// **같은 id 를 두 번 넣으면 이미지가 두 번 인코딩돼 나간다**(#99). 중복은 조용히 접는다 -
 		// 사용자가 의도한 것이 아니고, 거절하면 화면이 고칠 수 없는 오류를 보게 된다
 		List<UUID> distinctIds = attachmentIds.stream().distinct().toList();
+		// 개수 상한(#401) - 이미지는 전부 base64 로 바뀌어 **한꺼번에** 힙에 오른다. 파일당 크기 · 분당 업로드 상한은
+		// 이번 요청 하나의 메모리를 묶지 못한다. 중복을 접은 뒤 세고, 저장 · 모델 호출 전에 거른다
+		if (distinctIds.size() > maxAttachments) {
+			throw new BadRequestException("첨부는 한 번에 " + maxAttachments + "장까지 보낼 수 있음");
+		}
 		List<AttachmentRef> refs = new ArrayList<>();
 		for (UUID attId : distinctIds) {
 			Attachment att = attachmentRepository.findByIdAndUser(attId, userId)
