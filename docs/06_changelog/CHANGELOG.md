@@ -9,7 +9,31 @@
   지난 답변 전부의 마크다운 파싱과 대화 목록 전체 렌더가 돌았다(답변 20개 대화에서 800토큰 답변이면 파싱 약 16,800회 → 약 800회, 10-22 전체 QA)
   - `MessageBubble` · `Sidebar` 를 `memo` 로, `ChatPage` 의 사이드바 핸들러(`onSelect` · 새 대화)를 `useCallback` 으로. 화면 동작은 그대로다
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
-  - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**
+  - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
+### Security
+- **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
+  클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
+  - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`
+  - CSP 는 **Report-Only** 로 먼저 올린다(`frame-ancestors 'none'` 포함). 운영에서 위반 0 을 확인한 뒤 강제 전환은 후속
+  - `frontend.md` 「배포 (Vercel)」 — 헤더 표와 CSP 에 박힌 백엔드 주소를 `VITE_API_BASE_URL` 과 같이 바꿔야 한다는 주의
+- **슬라이딩 재발급에 절대 수명(12시간)을 둔다(#403).** 재발급본이 처음부터 다시 세어, 탈취한 토큰으로 90분에 한 번씩만 요청해도
+  비밀번호를 바꾸기 전까지 무기한 쓸 수 있었다(10-22 전체 QA)
+  - 로그인 · 비밀번호 변경 토큰에 `auth_time` 을 싣고 재발급본은 그대로 옮긴다. 그로부터 `JWT_MAX_SESSION_HOURS`(기본 12) 뒤에는 재발급하지 않는다
+  - `auth_time` 없는 옛 토큰은 `iat` 를 쓴다 - 배포 순간 일괄 로그아웃 없음. 비밀번호 변경 기준선 규칙은 그대로
+  - `api.md`(v1.6) 「인증」 · `features.md`(v2.6) FEAT-OPS-003 · `backend.md` · `.env.example`
+  - 테스트 : `JwtAbsoluteLifetimeTest` 3건(변경 전 실패 확인). **백엔드 하한 319 → 322**(통합 후 322 → 325)
+- **업로드 용량을 파일을 힙에 올리기 전에 검사한다(#402).** `FileService` 가 `getBytes()` 로 다 읽은 뒤에 10MB 를 비교해,
+  26MB(멀티파트 한도) 파일 30개를 동시에 보내면 거절되기 전에 약 780MB 가 힙(약 650MB)을 넘을 수 있었다(10-22 전체 QA)
+  - `getSize()` 로 먼저 거른다. 파트는 디스크 임시 파일이라 힙을 쓰지 않는다. 응답(400 · 문구)은 그대로 - 「400 을 413 보다 먼저」(#35) 유지
+  - `overview.md` 「알려진 제약」의 업로드 힙 문장을 숫자(최대 약 300MB)로 고침
+  - 테스트 : `FileServiceSizeCheckTest` 1건(변경 전 실패 확인). **백엔드 하한 319 → 320**(통합 후 321 → 322)
+- **채팅 1건에 붙이는 첨부를 5장으로 묶는다(#401).** 개수를 보지 않아, 일반 계정 하나가 10MB 이미지 수십 장을 한 메시지로 보내면
+  전부 base64 로 한꺼번에 힙(약 650MB)에 올라 OOM 으로 서비스 전체가 멎을 수 있었다(10-22 전체 QA)
+  - 5장(`CHAT_MAX_ATTACHMENTS`, 중복 id 를 접은 뒤) 초과 → 모델 호출 · 사용자 메시지 저장 전에 400
+  - 프론트 : 입력창이 남은 자리만큼만 받고 넘친 파일은 올리지 않고 알린다. 정본은 서버
+  - compose : `JAVA_TOOL_OPTIONS` 에 `-XX:+ExitOnOutOfMemoryError` - OOM 이 나면 반쯤 고장 난 채 남지 않고 재시작으로 회복한다
+  - `api.md` API-POST-005 · `features.md` FEAT-CHAT-001 · `backend.md` 「유량 제어」 · `.env.example`
+  - 테스트 : 백엔드 2건(`ChatFlowTest`) · 프론트 2건(`Composer`). 상한 초과 3건은 변경 전 실패 확인. **백엔드 하한 319 → 321 · 프론트 하한 191 → 193**
 
 ### Changed
 - **운영 되돌리기 절차를 실제로 되는 방법으로 바로잡고, 코드와 어긋나거나 겹친 문서를 정리했다(#387).**
