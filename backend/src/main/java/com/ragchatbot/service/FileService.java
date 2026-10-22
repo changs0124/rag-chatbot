@@ -85,14 +85,16 @@ public class FileService {
 			}
 			throw new BadRequestException("지원하지 않는 파일 형식: " + file.getContentType());
 		}
+		// 크기는 **힙에 올리기 전에** 본다(#402) - 파트는 디스크 임시 파일이라 getSize() 는 공짜다.
+		// getBytes() 뒤에 재면 멀티파트 한도(26MB)까지의 파일이 거절되기 전에 힙을 잡는다
+		if (file.getSize() > MAX_SIZE) {
+			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (MAX_SIZE / MB) + "MB)");
+		}
 		byte[] bytes;
 		try {
 			bytes = file.getBytes();
 		} catch (IOException e) {
 			throw new BadRequestException("파일을 읽을 수 없음");
-		}
-		if (bytes.length > MAX_SIZE) {
-			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (MAX_SIZE / MB) + "MB)");
 		}
 		if (!regionEquals(bytes, 0, type.magic())) {
 			throw new BadRequestException("파일 내용이 형식과 일치하지 않음");
