@@ -1,0 +1,3 @@
+== GET https://rag-chatbot-jade-pi.vercel.app/admin (운영, 변경 전)
+HTTP/1.1 200 OK
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload

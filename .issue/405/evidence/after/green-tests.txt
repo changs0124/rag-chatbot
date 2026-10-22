@@ -1,0 +1,1 @@
+# npx vitest run src/components/chat/MessageListRender.test.tsx src/pages/ChatPageRender.test.tsx -> Tests 2 passed (2). 렌더 측정 : 토큰 1개 반영 시 Markdown 파싱 [첫 답변, 둘째 답] 2회 → [둘째 답] 1회, Sidebar 렌더 +1 → +0

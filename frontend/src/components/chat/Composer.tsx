@@ -29,6 +29,9 @@ interface Draft {
 
 let draftSeq = 0
 
+// 메시지 1건당 첨부 개수. 서버 상한(CHAT_MAX_ATTACHMENTS 기본값)과 같은 값. 정본은 서버라 넘긴 요청은 400 이다(#401)
+const MAX_ATTACHMENTS = 5
+
 // 입력줄의 둥근 버튼(첨부 · 중단 · 보내기). 크기 · 모양만 공유하고 색 · 움직임은 호출부가 덧붙인다(#390)
 const roundBtn = 'grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10'
 
@@ -49,6 +52,8 @@ export default function Composer({
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
+  // 상한을 넘겨 버린 파일이 있었는지 - 카드를 지우거나 보내면 걷는다
+  const [overLimit, setOverLimit] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   // 언마운트 정리용 - 정리 시점에 최신 목록을 봐야 해서 상태가 아니라 ref 로 들고 있음
   const draftsRef = useRef<Draft[]>([])
@@ -86,8 +91,12 @@ export default function Composer({
     (list: FileList | File[] | null) => {
       if (!list) return
       // 이미지가 아닌 것은 조용히 버림 - 서버도 받지 않으므로 카드를 만들면 실패만 보여 주게 됨
-      const next = Array.from(list)
-        .filter((file) => file.type.startsWith('image/'))
+      const images = Array.from(list).filter((file) => file.type.startsWith('image/'))
+      // 남은 자리만큼만 받는다. 넘친 것은 올리지 않는다 - 올리면 보낼 수 없는 첨부가 서버에 쌓인다(#401)
+      const room = Math.max(0, MAX_ATTACHMENTS - draftsRef.current.length)
+      if (images.length > room) setOverLimit(true)
+      const next = images
+        .slice(0, room)
         .map((file) => ({
           key: `d${draftSeq++}`,
           file,
@@ -110,6 +119,7 @@ export default function Composer({
     if (target.attachment) deleteAttachment(target.attachment.id).catch(() => {})
     URL.revokeObjectURL(target.previewUrl)
     setDrafts((prev) => prev.filter((d) => d.key !== key))
+    setOverLimit(false)
   }
 
   function retryDraft(key: string) {
@@ -208,6 +218,7 @@ export default function Composer({
     setText((cur) => (cur === text ? '' : cur))
     sent.forEach((d) => URL.revokeObjectURL(d.previewUrl))
     setDrafts((prev) => prev.filter((d) => !sent.includes(d)))
+    setOverLimit(false)
   }
 
   function submit(e: FormEvent) {
@@ -239,6 +250,12 @@ export default function Composer({
           <p role="alert" className="mb-2 px-1 text-[13px] text-danger">
             첨부 {failed.length}건이 실패해 보낼 수 없습니다 — {failed[0].message ?? '업로드 실패'}
             {failed.length > 1 && ` 외 ${failed.length - 1}건`}
+          </p>
+        )}
+
+        {overLimit && (
+          <p role="alert" className="mb-2 px-1 text-[13px] text-danger">
+            첨부는 한 번에 {MAX_ATTACHMENTS}장까지 보낼 수 있습니다 — 넘친 사진은 추가하지 않았습니다
           </p>
         )}
 
