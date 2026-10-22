@@ -1,0 +1,71 @@
+▶ 셸 구문 검사
+  ✓ 셸 구문 검사
+▶ 셸 정적 분석
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+▶ 병합 충돌 표시
+  ✓ 병합 충돌 표시
+▶ 문서 참조 실재
+  ✓ 문서 참조 실재
+▶ 문서 섹션 이름 대조
+  ✓ 문서 섹션 이름 대조
+▶ 응답 계약 대조
+✓ 응답 계약 4곳 일치 (6필드)
+  ✓ 응답 계약 대조
+▶ 런타임 버전 대조(java)
+  ✓ 런타임 버전 대조(java)
+▶ 런타임 버전 대조(node)
+  ✓ 런타임 버전 대조(node)
+▶ 백엔드 clean verify
+[INFO] Tests run: 320, Failures: 0, Errors: 0, Skipped: 0
+  ✓ 백엔드 clean verify
+▶ 백엔드 케이스 수 하한
+케이스 수(backend) : 실측 320 / 하한 320
+  ✓ 백엔드 케이스 수 하한
+▶ 문서 버전 주장 대조
+  ✓ 문서 버전 주장 대조
+▶ 프론트 의존성 설치
+  ✓ 프론트 의존성 설치
+▶ 프론트 lint
+  ✓ 프론트 lint
+▶ 프론트 test
+ ✓ src/components/chat/scroll.test.ts (10 tests) 8ms
+ ✓ src/lib/stream.test.ts (5 tests) 16ms
+ ✓ src/lib/refresh.test.ts (8 tests) 19ms
+ ✓ src/lib/docFigures.test.ts (15 tests) 21ms
+ ✓ src/auth/AuthContext.test.tsx (3 tests) 70ms
+ ✓ src/hooks/useChatLoading.test.ts (8 tests) 59ms
+ ✓ src/hooks/useChatRace.test.ts (13 tests) 78ms
+ ✓ src/hooks/useChat.test.ts (12 tests) 108ms
+ ✓ src/components/chat/ResizableSidebar.test.tsx (8 tests) 258ms
+ ✓ src/components/chat/ImageLightbox.test.tsx (6 tests) 369ms
+ ✓ src/pages/MyPage.test.tsx (6 tests) 531ms
+ ✓ src/pages/ChatPage.test.tsx (9 tests) 549ms
+ ✓ src/components/chat/MessageList.test.tsx (22 tests) 644ms
+ ✓ src/components/chat/Composer.test.tsx (32 tests) 1216ms
+ ✓ src/lib/api.test.ts (5 tests) 10ms
+ ✓ src/scrollbar.test.ts (2 tests) 5ms
+ ✓ src/smoke.test.tsx (1 test) 41ms
+ ✓ src/components/chat/Sidebar.test.tsx (1 test) 57ms
+ ✓ src/components/ErrorBoundary.test.tsx (1 test) 113ms
+ ✓ src/pages/AdminPage.test.tsx (19 tests) 1629ms
+ ✓ src/pages/LoginPage.test.tsx (2 tests) 115ms
+ ✓ src/no-emoji.test.ts (1 test) 4ms
+ ✓ src/theme-tokens.test.ts (2 tests) 7ms
+      Tests  191 passed (191)
+  ✓ 프론트 test
+▶ 프론트 build
+[2Ktransforming...✓ 374 modules transformed.
+✓ built in 391ms
+  ✓ 프론트 build
+▶ 프론트 케이스 수 하한
+케이스 수(frontend) : 실측 191 / 하한 191
+  ✓ 프론트 케이스 수 하한
+▶ 백엔드 이미지 빌드
+  ✓ 백엔드 이미지 빌드
+▶ 시크릿 스캔
+  - 건너뜀: gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것
+▶ 프론트 의존성 audit
+  ✓ 프론트 의존성 audit
+▶ 백엔드 의존성 스캔
+  - 건너뜀: trivy 없음
+건너뜀 3건 - 이 검사들은 돌지 않았다:
