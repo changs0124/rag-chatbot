@@ -520,6 +520,9 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build d
 검증된다) · 네트워크 분리(`edge` 에서 `db` 는 이름 해석부터 안 된다) · `cloudflared` · `db` 다이제스트 고정(#130 · #357, 올릴 때는 다이제스트를 바꾸는 커밋으로).
 이전 운영 서버(GCP VM, 10-06 · 지금의 Lightsail 이전 #243 전)에서 로컬과 같은 값을 확인했다 — 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
 
+백엔드 `Dockerfile` 의 두 `FROM`(다이제스트)과 `ci.yml` 의 `actions/*`(커밋 SHA + `# vX.Y.Z` 주석)도 같이 고정돼 있다(#416). **자동으로 갱신되지 않는다** — 올릴 때는 
+`docker buildx imagetools inspect <이미지:태그>` 의 최상단 `Digest:` 를, 액션은 `gh api repos/actions/<이름>/git/ref/tags/<태그>` 의 커밋 SHA(주석 태그면 한 번 더 벗긴다)를 새 값으로 바꾸는 커밋 하나로 올린다.
+
 **서버의 `.env` 권한은 `deploy.sh` 가 600 으로 고정한다(#130).** 이 파일들에는 `JWT_SECRET` ·
 `OPENAI_API_KEY` · `DB_PASSWORD` 가 평문으로 있고, 기본 umask 로 만들면 644 가 되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
 프리플라이트에서 확인하고 고치며, 무엇을 바꿨는지 출력한다. **파일이 없으면 빌드 전에 exit 3 으로 멈춘다(#331)** —

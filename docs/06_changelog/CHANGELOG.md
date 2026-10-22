@@ -11,6 +11,10 @@
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
+- **백엔드 베이스 이미지와 CI 액션을 다이제스트 · 커밋 SHA 로 고정한다(#416).** compose 의 db · cloudflared 는 고정돼 있었지만 운영 앱 이미지의 베이스와 
+  CI 의 GitHub 공식 액션은 움직이는 태그라, 태그가 바뀌면 빌드마다 다른 JRE · 액션이 들어왔다(10-22 전체 QA)
+  - `backend/Dockerfile` 두 `FROM` 을 `태그@sha256:` 로(멀티 아키텍처 인덱스 다이제스트), `ci.yml` 의 `checkout` · `setup-java` · `setup-node` 를 40자 SHA + `# v4.x.y` 주석으로
+  - 자동 갱신되지 않는다 - 올리는 법은 `backend.md` 에 한 단락
 - **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
   클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
   - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`
