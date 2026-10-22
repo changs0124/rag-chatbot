@@ -60,7 +60,7 @@ class AttachmentLinkRaceTest {
 		when(repo.findOrphans(any())).thenReturn(List.of(att));
 		when(repo.deleteDraftByIdAndUser(att.id(), USER)).thenReturn(0);
 
-		int removed = new FileService(storage, repo, null).cleanupOrphans(OffsetDateTime.now());
+		int removed = new FileService(storage, repo, null, 500).cleanupOrphans(OffsetDateTime.now());
 
 		assertThat(removed).isZero();
 		verify(storage, never()).delete(any());
@@ -99,7 +99,7 @@ class AttachmentLinkRaceTest {
 		when(repo.deleteDraftByIdAndUser(any(), eq(USER))).thenReturn(1);
 		doThrow(new IllegalStateException("디스크 오류")).when(storage).delete(broken.storagePath());
 
-		int removed = new FileService(storage, repo, null).cleanupOrphans(OffsetDateTime.now());
+		int removed = new FileService(storage, repo, null, 500).cleanupOrphans(OffsetDateTime.now());
 
 		verify(storage).delete(next.storagePath());
 		assertThat(removed).isEqualTo(2); // 행은 둘 다 지워졌다
@@ -120,7 +120,7 @@ class AttachmentLinkRaceTest {
 		when(storage.listAll()).thenReturn(List.of(broken, next));
 		doThrow(new IllegalStateException("디스크 오류")).when(storage).delete(broken.storagePath());
 
-		int removed = new FileService(storage, repo, null).cleanupUnreferencedFiles(OffsetDateTime.now());
+		int removed = new FileService(storage, repo, null, 500).cleanupUnreferencedFiles(OffsetDateTime.now());
 
 		verify(storage).delete(next.storagePath());
 		assertThat(removed).isEqualTo(1);

@@ -1,0 +1,2 @@
+dist/assets/index-DJkwGhBc.css                            78.56 kB │ gzip:  22.23 kB
+dist/assets/index-BvvJiyjf.js                            468.32 kB │ gzip: 147.38 kB
