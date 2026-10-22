@@ -1,0 +1,6 @@
+     × 토큰이 붙어도 지난 답변은 다시 파싱하지 않는다 57ms
+     × 토큰이 붙어 페이지가 다시 그려져도 사이드바는 다시 그리지 않는다 89ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected 2 to be 1 // Object.is equality
+AssertionError: expected [ '첫 답변', '둘째 답' ] to deeply equal [ '둘째 답' ]
+      Tests  2 failed (2)
