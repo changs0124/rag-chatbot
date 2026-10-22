@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Security
+- **슬라이딩 재발급에 절대 수명(12시간)을 둔다(#403).** 재발급본이 처음부터 다시 세어, 탈취한 토큰으로 90분에 한 번씩만 요청해도
+  비밀번호를 바꾸기 전까지 무기한 쓸 수 있었다(10-22 전체 QA)
+  - 로그인 · 비밀번호 변경 토큰에 `auth_time` 을 싣고 재발급본은 그대로 옮긴다. 그로부터 `JWT_MAX_SESSION_HOURS`(기본 12) 뒤에는 재발급하지 않는다
+  - `auth_time` 없는 옛 토큰은 `iat` 를 쓴다 - 배포 순간 일괄 로그아웃 없음. 비밀번호 변경 기준선 규칙은 그대로
+  - `api.md`(v1.6) 「인증」 · `features.md`(v2.6) FEAT-OPS-003 · `backend.md` · `.env.example`
+  - 테스트 : `JwtAbsoluteLifetimeTest` 3건(변경 전 실패 확인). **백엔드 하한 319 → 322**
+
 ### Changed
 - **운영 되돌리기 절차를 실제로 되는 방법으로 바로잡고, 코드와 어긋나거나 겹친 문서를 정리했다(#387).**
   - `live-integration.md` §6 : 운영 되돌리기는 직전 백엔드 이미지(`:previous` · `prev-<sha>`)로. `APP_MODE=mock` 은 `prod` 프로필에서 `AppModeGuard` 가 기동을 거부해(#305) 로컬 전용으로 낮춤

@@ -24,7 +24,7 @@ class JwtSecretLengthContextTest {
 	private final ApplicationContextRunner authRunner = new ApplicationContextRunner()
 			.withUserConfiguration(JwtService.class)
 			.withPropertyValues("app.jwt.secret=", "app.jwt.expiration-minutes=120",
-					"app.jwt.refresh-threshold-minutes=30");
+					"app.jwt.refresh-threshold-minutes=30", "app.jwt.max-session-hours=12");
 
 	private final ApplicationContextRunner fileRunner = new ApplicationContextRunner()
 			.withUserConfiguration(FileAccessTokenService.class)
