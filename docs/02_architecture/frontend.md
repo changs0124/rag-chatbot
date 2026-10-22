@@ -224,7 +224,7 @@ preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막�
 | `X-Frame-Options` | `DENY` | 프레임 삽입 거부(클릭재킹) |
 | `X-Content-Type-Options` | `nosniff` | 형식 추측 금지 |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | 다른 출처에는 경로 없이 출처만 |
-| `Content-Security-Policy-Report-Only` | 스크립트 `'self'` · 연결 · 이미지는 `'self'` + 백엔드 + `blob:` · `frame-ancestors 'none'` | **아직 강제하지 않는다** — 위반을 콘솔에만 남긴다. 운영 화면 전부(로그인 · 스트리밍 · 첨부 · 문서 그림 · 관리자)에서 위반 0 을 본 뒤 `Content-Security-Policy` 로 바꾼다 |
+| `Content-Security-Policy` | 스크립트 `'self'` · 연결 · 이미지는 `'self'` + 백엔드 + `blob:` · `frame-ancestors 'none'` | **강제한다**(#411). Report-Only(#404)로 운영 화면 전부(대화 목록 · 스트리밍 · 첨부 업로드/미리보기/확대 · 문서 그림 · 마이페이지 · 관리자)를 돌아 위반 0 을 본 뒤 바꿨다. 정책을 넓힐 때는 Report-Only 로 먼저 올린다 |
 
 **CSP 에 백엔드 주소(`https://api.chseong.fyi`)가 박혀 있다.** `VITE_API_BASE_URL` 을 바꾸면 이 값도 함께 바꿔야 한다 —
 강제로 바꾼 뒤에 어긋나면 모든 API 호출 · 첨부 이미지가 막힌다.
