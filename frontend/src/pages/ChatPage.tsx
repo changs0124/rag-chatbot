@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useChat } from '../hooks/useChat'
 import Sidebar from '../components/chat/Sidebar'
@@ -70,20 +70,29 @@ export default function ChatPage() {
     }
   }
 
+  // 사이드바에 넘기는 핸들러는 참조를 고정한다(#405) - 매 렌더 새 함수면 Sidebar 의 memo 가 스트리밍 토큰마다 무너진다.
+  // useChat 의 두 콜백은 이미 안정적이다
+  const { newConversation, selectConversation } = chat
+
   // 사이드바 버튼과 모바일 헤더 버튼이 같이 쓴다 - 모바일 드로어가 열려 있으면 닫는다
-  function startNewChat() {
-    chat.newConversation()
+  const startNewChat = useCallback(() => {
+    newConversation()
     setSidebarOpen(false)
-  }
+  }, [newConversation])
+
+  const selectFromSidebar = useCallback(
+    (id: string) => {
+      selectConversation(id)
+      setSidebarOpen(false)
+    },
+    [selectConversation],
+  )
 
   const sidebar = (
     <Sidebar
       conversations={chat.conversations}
       activeId={chat.activeId}
-      onSelect={(id) => {
-        chat.selectConversation(id)
-        setSidebarOpen(false)
-      }}
+      onSelect={selectFromSidebar}
       onNew={startNewChat}
       onDelete={chat.deleteConversation}
       userName={user?.name ?? ''}

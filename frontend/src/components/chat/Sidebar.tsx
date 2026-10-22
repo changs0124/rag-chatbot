@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Link } from 'react-router'
 import type { Conversation } from '../../lib/types'
 import { IconClose, IconPlus } from '../icons'
@@ -26,7 +26,9 @@ function groupByRecency(conversations: Conversation[]) {
   return groups.filter((g) => g.items.length > 0)
 }
 
-export default function Sidebar({
+// memo(#405) - 대화 상태가 ChatPage 의 useChat 에 모여 있어 스트리밍 토큰마다 페이지가 다시 그려진다.
+// 넘겨받는 값이 그대로면 대화 목록 전체를 다시 그릴 이유가 없다. 핸들러는 ChatPage 가 useCallback 으로 고정한다
+export default memo(function Sidebar({
   conversations,
   activeId,
   onSelect,
@@ -156,4 +158,4 @@ export default function Sidebar({
       )}
     </aside>
   )
-}
+})

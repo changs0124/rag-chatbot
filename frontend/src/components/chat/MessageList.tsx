@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { API_BASE } from '../../lib/api'
 import type { ChatMessage } from '../../lib/types'
 import Citations from './Citations'
@@ -127,7 +127,9 @@ export default function MessageList({
   )
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+// memo(#405) - 스트리밍 중 patch 는 진행 중인 답변만 새 객체로 만든다. 경계가 없으면 토큰마다 지난 답변까지
+// 마크다운을 다시 파싱한다(답변 20개면 토큰 하나에 21번)
+const MessageBubble = memo(function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user'
   // 확대 보기는 그 말풍선의 이미지들을 한 묶음으로 넘김(좌우 이동 대상). 첨부는 이미지뿐이다(#391)
   const images = message.attachments ?? []
@@ -221,4 +223,4 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       )}
     </div>
   )
-}
+})
