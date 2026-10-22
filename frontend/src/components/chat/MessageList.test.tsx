@@ -5,6 +5,11 @@ import type { ChatMessage } from '../../lib/types'
 import { resetFigureCache } from '../../lib/docFigures'
 
 describe('MessageList', () => {
+  // 지연 로딩(#417) - 마크다운 청크를 파일 맨 앞에서 한 번 받는다. 첫 해석이 findBy 기본 시간을 넘지 않게 하고,
+  // 아래 그림 테스트가 전역 URL 을 생성자 아닌 객체로 바꿔 둔 사이에 청크가 처음 평가되면 react-markdown 이
+  // `URL is not a constructor` 로 실패해 그 모듈이 평문 대체로 굳는다(CI 에서 순서에 따라 갈렸다)
+  beforeAll(() => import('./Markdown'))
+
   it('renders assistant content with its citations', () => {
     const messages: ChatMessage[] = [
       { id: 'u1', role: 'user', content: '환불 정책', status: 'complete', citations: [] },
@@ -242,9 +247,6 @@ describe('MessageList', () => {
   })
 
   describe('답변 마크다운 (#270)', () => {
-    // 지연 로딩(#417) - 첫 청크 해석이 findBy 기본 시간을 넘지 않게 미리 받는다
-    beforeAll(() => import('./Markdown'))
-
     afterEach(() => {
       vi.unstubAllGlobals()
       resetFigureCache()
