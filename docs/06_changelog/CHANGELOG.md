@@ -11,6 +11,13 @@
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
+- **사용자별 첨부 저장 한도(기본 500MB)를 둔다(#418).** 분당 상한(#95) · 장수 상한(#401)은 쌓이는 속도만 줄여, 한 사용자가 시간당 약 18GB 를
+  쌓을 수 있었고 uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎는다(10-22 전체 QA)
+  - `FileService.upload` 가 검사(형식 · 크기 · 매직바이트) 뒤, **디스크에 쓰기 전에** 사용자 폴더(`{storage-root}/{userId}/`)의 실제 파일 크기 합을 보고
+    넘기면 400(「첨부 저장 한도 초과(사용자당 500MB) - …」). 마이그레이션 없음 - 기존 파일까지 정확하고, 지운 만큼 다시 올릴 수 있다
+  - `FileStorage.usedBytes` 추가 · `ATTACHMENT_QUOTA_MB`(`app.file.attachment-quota-mb`) · `api.md` API-POST-004 · `backend.md` 「유량 제어」 · `.env.example`
+  - 한도도 크기 선검사(#402)처럼 **파일을 힙에 올리기 전에** 본다(`getSize()`). 같은 사용자의 동시 업로드가 한도를 조금 넘길 수 있는 폭은 분당 상한 × 10MB 로 묶인다
+  - 테스트 : `AttachmentQuotaTest` 3건 · `LocalFileStorageUsedBytesTest` 2건 · `FileServiceSizeCheckTest` 1건(힙에 올리기 전 거절, 변경 전 실패 확인). **백엔드 하한 325 → 331**
 - **앱이 Postgres 슈퍼유저 대신 런타임 계정으로 접속한다(#415).** compose 의 `POSTGRES_USER`(슈퍼유저)를 앱이 그대로 써서,
   SQL 주입 한 곳이 생기면 `COPY ... TO PROGRAM` 으로 db 컨테이너 명령 실행까지 갈 수 있었다(10-22 전체 QA, 지금 주입 지점은 0)
   - 마이그레이션은 소유자(`SPRING_FLYWAY_USER`), 앱은 루트 `.env` 의 `APP_DB_USER` · `APP_DB_PASSWORD`. 비우면 옛 구성(소유자 하나)
