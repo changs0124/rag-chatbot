@@ -64,8 +64,26 @@ public abstract class AbstractPgIntegrationTest {
 	static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
 			DockerImageName.parse(composeDbImage()).asCompatibleSubstituteFor("postgres"));
 
+	/** 앱이 접속하는 런타임 계정(#415). 운영과 같이 슈퍼유저가 아니고 DML 만 가진다 - 권한은 Flyway afterMigrate 가 준다 */
+	protected static final String RUNTIME_USER = "ragapp";
+	static final String RUNTIME_PASSWORD = "ragapp-test";
+
 	static {
 		POSTGRES.start(); // Ryuk가 JVM 종료 시 정리. 재시작/중단 없음
+		createRuntimeRole();
+	}
+
+	/**
+	 * 운영에서 운영자가 한 번 돌리는 계정 생성과 같은 모양이다(backend.md 「배포」). 모든 통합 테스트가 이 계정으로 돌아
+	 * <b>런타임 권한이 앱에 충분한지</b>를 테스트 전체가 함께 증명한다. 스키마는 컨테이너 소유자(Flyway)가 만든다
+	 */
+	private static void createRuntimeRole() {
+		try (var conn = POSTGRES.createConnection(""); var st = conn.createStatement()) {
+			st.execute("create role " + RUNTIME_USER + " login nosuperuser nocreatedb nocreaterole password '"
+					+ RUNTIME_PASSWORD + "'");
+		} catch (java.sql.SQLException e) {
+			throw new IllegalStateException("런타임 계정을 만들지 못함", e);
+		}
 	}
 
 	/**
@@ -91,8 +109,11 @@ public abstract class AbstractPgIntegrationTest {
 	@DynamicPropertySource
 	static void datasourceProps(DynamicPropertyRegistry registry) {
 		registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-		registry.add("spring.datasource.username", POSTGRES::getUsername);
-		registry.add("spring.datasource.password", POSTGRES::getPassword);
+		registry.add("spring.datasource.username", () -> RUNTIME_USER);
+		registry.add("spring.datasource.password", () -> RUNTIME_PASSWORD);
+		// 마이그레이션만 소유자 계정으로 - 운영 compose 의 SPRING_FLYWAY_USER 와 같은 구성(#415)
+		registry.add("spring.flyway.user", POSTGRES::getUsername);
+		registry.add("spring.flyway.password", POSTGRES::getPassword);
 	}
 
 	@Autowired

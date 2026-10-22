@@ -6,7 +6,7 @@ spring:
       # 스트림 수명은 SSE emitter가 단독 관장. MVC async 타임아웃을 끔
       request-timeout: -1
   datasource:
-    # 실 DB 접속. 테스트는 Testcontainers가 @ServiceConnection으로 주입함
+    # 실 DB 접속. 테스트는 AbstractPgIntegrationTest 가 Testcontainers 주소와 런타임 계정(ragapp, #415)을 @DynamicPropertySource 로 넣음
     url: ${DB_URL:}
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
@@ -18,6 +18,11 @@ spring:
       max-file-size: 26MB
       max-request-size: 31MB
   # Flyway : 스키마의 소유자는 마이그레이션 SQL. 기동 시 자동 적용 - 켜기 · 위치(db/migration)가 Boot 기본값이라 키를 두지 않는다
+  # 마이그레이션 계정은 SPRING_FLYWAY_USER/PASSWORD 로 따로 줄 수 있다(#415) - 없으면 위 datasource 계정을 쓴다.
+  # 따로 주면 앱은 DML 만 가진 런타임 계정으로 접속하고, 그 권한은 db/migration/afterMigrate.sql 이 기동마다 맞춘다
+  flyway:
+    placeholders:
+      "[runtime_user]": ${spring.datasource.username:}
 
 # MyBatis - snake_case DB 컬럼 ↔ camelCase 자바 프로퍼티, uuid 전용 TypeHandler 등록
 mybatis:

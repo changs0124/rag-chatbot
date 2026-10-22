@@ -18,6 +18,16 @@
   - `FileStorage.usedBytes` 추가 · `ATTACHMENT_QUOTA_MB`(`app.file.attachment-quota-mb`) · `api.md` API-POST-004 · `backend.md` 「유량 제어」 · `.env.example`
   - 한도도 크기 선검사(#402)처럼 **파일을 힙에 올리기 전에** 본다(`getSize()`). 같은 사용자의 동시 업로드가 한도를 조금 넘길 수 있는 폭은 분당 상한 × 10MB 로 묶인다
   - 테스트 : `AttachmentQuotaTest` 3건 · `LocalFileStorageUsedBytesTest` 2건 · `FileServiceSizeCheckTest` 1건(힙에 올리기 전 거절, 변경 전 실패 확인). **백엔드 하한 325 → 331**
+- **앱이 Postgres 슈퍼유저 대신 런타임 계정으로 접속한다(#415).** compose 의 `POSTGRES_USER`(슈퍼유저)를 앱이 그대로 써서,
+  SQL 주입 한 곳이 생기면 `COPY ... TO PROGRAM` 으로 db 컨테이너 명령 실행까지 갈 수 있었다(10-22 전체 QA, 지금 주입 지점은 0)
+  - 마이그레이션은 소유자(`SPRING_FLYWAY_USER`), 앱은 루트 `.env` 의 `APP_DB_USER` · `APP_DB_PASSWORD`. 비우면 옛 구성(소유자 하나)
+  - 권한은 `db/migration/afterMigrate.sql` 이 기동마다 맞춘다(테이블 DML · 시퀀스, `flyway_schema_history` 는 거둠). 계정 생성 SQL 은 `backend.md` 「런타임 DB 계정」
+  - 통합 테스트 전부가 런타임 계정 `ragapp` 으로 돈다. `RuntimeRolePrivilegeTest` 3건(슈퍼유저 아님 · DML 있음 · DDL · 이력 수정 · `COPY TO PROGRAM` 불가, 변경 전 실패 확인). **백엔드 하한 325 → 328**
+  - `.env.example` · `docker-compose.yml` · `live-integration.md` 준비물 표
+- **백엔드 베이스 이미지와 CI 액션을 다이제스트 · 커밋 SHA 로 고정한다(#416).** compose 의 db · cloudflared 는 고정돼 있었지만 운영 앱 이미지의 베이스와 
+  CI 의 GitHub 공식 액션은 움직이는 태그라, 태그가 바뀌면 빌드마다 다른 JRE · 액션이 들어왔다(10-22 전체 QA)
+  - `backend/Dockerfile` 두 `FROM` 을 `태그@sha256:` 로(멀티 아키텍처 인덱스 다이제스트), `ci.yml` 의 `checkout` · `setup-java` · `setup-node` 를 40자 SHA + `# v4.x.y` 주석으로
+  - 자동 갱신되지 않는다 - 올리는 법은 `backend.md` 에 한 단락
 - **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
   클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
   - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`
