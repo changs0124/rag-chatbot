@@ -1,0 +1,26 @@
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 21.02 s <<< FAILURE! -- in com.ragchatbot.controller.ChatFlowTest
+[ERROR] com.ragchatbot.controller.ChatFlowTest.attachments_over_limit_400_before_save -- Time elapsed: 1.888 s <<< FAILURE!
+expected: 400 BAD_REQUEST
+[ERROR] Failures: 
+[ERROR]   ChatFlowTest.attachments_over_limit_400_before_save:367 
+expected: 400 BAD_REQUEST
+[ERROR] Tests run: 3, Failures: 1, Errors: 0, Skipped: 0
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project backend: There are test failures.
+[ERROR] 
+[ERROR] See D:\dev\rag-chatbot\.issue\worktrees\401-attachment-count-cap\backend\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+     × 첨부는 5장까지만 받고 넘친 것은 올리지 않고 알린다 (#401) 41ms
+     × 카드를 지우면 상한 안내가 걷히고 다시 첨부할 수 있다 (#401) 32ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/components/chat/Composer.test.tsx > Composer > 첨부는 5장까지만 받고 넘친 것은 올리지 않고 알린다 (#401)
+AssertionError: expected "vi.fn()" to be called 5 times, but got 6 times
+ FAIL  src/components/chat/Composer.test.tsx > Composer > 카드를 지우면 상한 안내가 걷히고 다시 첨부할 수 있다 (#401)
+AssertionError: expected "vi.fn()" to be called 6 times, but got 7 times
+      Tests  2 failed | 32 skipped (34)
