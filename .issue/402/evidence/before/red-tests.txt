@@ -1,0 +1,5 @@
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 1.567 s <<< FAILURE! -- in com.ragchatbot.service.FileServiceSizeCheckTest
+[ERROR] com.ragchatbot.service.FileServiceSizeCheckTest.over_limit_rejected_without_reading_into_heap -- Time elapsed: 1.536 s <<< FAILURE!
+Expecting actual throwable to be an instance of:
+Expecting actual throwable to be an instance of:
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
