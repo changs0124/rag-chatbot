@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Security
+- **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
+  클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
+  - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`
+  - CSP 는 **Report-Only** 로 먼저 올린다(`frame-ancestors 'none'` 포함). 운영에서 위반 0 을 확인한 뒤 강제 전환은 후속
+  - `frontend.md` 「배포 (Vercel)」 — 헤더 표와 CSP 에 박힌 백엔드 주소를 `VITE_API_BASE_URL` 과 같이 바꿔야 한다는 주의
+
 ### Changed
 - **운영 되돌리기 절차를 실제로 되는 방법으로 바로잡고, 코드와 어긋나거나 겹친 문서를 정리했다(#387).**
   - `live-integration.md` §6 : 운영 되돌리기는 직전 백엔드 이미지(`:previous` · `prev-<sha>`)로. `APP_MODE=mock` 은 `prod` 프로필에서 `AppModeGuard` 가 기동을 거부해(#305) 로컬 전용으로 낮춤
