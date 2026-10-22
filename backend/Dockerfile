@@ -10,7 +10,9 @@
 #
 # `mvnw` 는 저장소에 그대로 둔다. 로컬과 CI 의 `./mvnw` 가 계속 쓰고, 여기서 끊는 것은
 # **도커 빌드의** 의존뿐이다.
-FROM maven:3.9.16-eclipse-temurin-17-alpine AS build
+# **다이제스트로 고정한다(#416)** - 태그는 움직이므로 빌드마다 다른 JRE 가 들어올 수 있다. 태그는 읽는 사람을 위한 표기이고
+# 실제로는 다이제스트만 쓰인다. 올리는 법은 docs/02_architecture/backend.md 의 「다이제스트 고정」 단락 참고(compose 의 db · cloudflared 와 같은 방식).
+FROM maven:3.9.16-eclipse-temurin-17-alpine@sha256:b7c8d7298dbabbe750441736cd99a1d120a58083d5af8d2bd75a1624cfdd8f3a AS build
 WORKDIR /build
 
 # 의존성 레이어를 먼저 굳힘 - 소스만 바뀌면 이 레이어가 캐시에서 재사용됨
@@ -23,7 +25,8 @@ COPY src/ src/
 RUN mvn -B -q -DskipTests package
 
 # --- 실행 ---------------------------------------------------------------
-FROM eclipse-temurin:17-jre-alpine
+# 이 이미지도 같은 이유로 다이제스트 고정(#416).
+FROM eclipse-temurin:17-jre-alpine@sha256:c4a33e6ddb738fe4be0a28a613ea0940cec42d25d7263c3e2238c43354cb19b0
 WORKDIR /app
 
 # 업로드 저장 루트. 컨테이너가 갈리면 사라지므로 **영속 볼륨을 붙여야 함**

@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -65,12 +66,16 @@ public class FileService {
 	private final FileStorage fileStorage;
 	private final AttachmentRepository attachmentRepository;
 	private final FileAccessTokenService fileTokenService;
+	/** 사용자별 첨부 저장 한도(MB, #418) */
+	private final long quotaMb;
 
 	public FileService(FileStorage fileStorage, AttachmentRepository attachmentRepository,
-			FileAccessTokenService fileTokenService) {
+			FileAccessTokenService fileTokenService,
+			@Value("${app.file.attachment-quota-mb}") long quotaMb) {
 		this.fileStorage = fileStorage;
 		this.attachmentRepository = attachmentRepository;
 		this.fileTokenService = fileTokenService;
+		this.quotaMb = quotaMb;
 	}
 
 	public AttachmentResponse upload(UUID userId, MultipartFile file) {
@@ -89,6 +94,13 @@ public class FileService {
 		// getBytes() 뒤에 재면 멀티파트 한도(26MB)까지의 파일이 거절되기 전에 힙을 잡는다
 		if (file.getSize() > MAX_SIZE) {
 			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (MAX_SIZE / MB) + "MB)");
+		}
+		// 사용자별 저장 한도(#418) - 디스크에 쓰기 전, 그리고 #402 와 같이 **힙에 올리기 전에** 본다. 분당 · 장수 상한은
+		// 쌓이는 속도만 줄여, 한 사용자가 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다.
+		// 확인과 쓰기 사이에 잠금이 없어 같은 사용자의 동시 업로드는 한도를 조금 넘길 수 있다 - 그 폭은 분당 상한 × 10MB 로 묶인다
+		if (fileStorage.usedBytes(userId) + file.getSize() > quotaMb * MB) {
+			throw new BadRequestException(
+					"첨부 저장 한도 초과(사용자당 " + quotaMb + "MB) - 오래된 대화를 지우면 다시 올릴 수 있음");
 		}
 		byte[] bytes;
 		try {

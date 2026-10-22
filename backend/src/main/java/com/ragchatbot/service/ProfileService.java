@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,11 +30,14 @@ public class ProfileService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
+	private final int maxNameChars;
 
-	public ProfileService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+	public ProfileService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
+			@Value("${app.user.max-name-chars}") int maxNameChars) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
+		this.maxNameChars = maxNameChars;
 	}
 
 	public MeResponse me(UUID userId) {
@@ -42,7 +46,7 @@ public class ProfileService {
 
 	/** 갱신 후 한 번만 읽음 - 없는 사용자면 갱신이 0행이고 그 뒤 조회가 404 를 냄(선행 조회가 불필요) */
 	public MeResponse updateName(UUID userId, String name) {
-		userRepository.updateName(userId, name.trim());
+		userRepository.updateName(userId, requireNameLength(name.trim(), maxNameChars));
 		return MeResponse.of(require(userId));
 	}
 
@@ -72,6 +76,17 @@ public class ProfileService {
 		userRepository.updatePasswordHash(userId, hash, changedAt);
 		// 갱신되는 값은 해시뿐이라 다시 읽지 않음
 		return new AuthResponse(jwtService.issue(userId), MeResponse.of(user));
+	}
+
+	/**
+	 * 표시 이름 길이 상한(#413). 잘라 저장하지 않고 거절한다 - 자르면 사용자가 쓴 것과 다른 이름이 조용히 남는다.
+	 * 코드 포인트로 셈 - length() 면 이모지 하나가 두 자로 세진다. 계정 발급({@code AdminUserService})도 같은 규칙을 쓴다
+	 */
+	static String requireNameLength(String name, int maxNameChars) {
+		if (name.codePointCount(0, name.length()) > maxNameChars) {
+			throw new BadRequestException("이름은 " + maxNameChars + "자까지 쓸 수 있음");
+		}
+		return name;
 	}
 
 	private User require(UUID userId) {

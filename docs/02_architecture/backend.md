@@ -234,6 +234,8 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 | `RateLimiterService` | 사용자별 **분당 횟수**(채팅 · 업로드 · 비밀번호 변경) · 계정별 분당 로그인 **실패**(성공은 세지 않음, 검사 전에 선점 · 성공하면 선점한 분의 창에만 반환, #365) | `RATELIMIT_*` |
 | `ChatConcurrencyLimiter` | **지금 열려 있는 스트림 수**(전역 · 사용자별) | `CHAT_MAX_CONCURRENT_*` |
 | `ChatService.prepare` · `ConversationService` | 입력 **길이**(메시지 · 대화 제목, trim 뒤 코드 포인트, #371) | `CHAT_MAX_*_CHARS` |
+| `ProfileService` · `AdminUserService` | 표시 이름 **길이**(이름 변경 · 계정 발급, trim 뒤 코드 포인트, #413). `/api/auth/me` · 사용자 목록 · 문서 목록이 이름을 매번 싣는다 | `USER_MAX_NAME_CHARS`(50) |
+| `FileService.upload` | 사용자별 **첨부 저장 총량**(사용자 폴더의 실제 파일 크기 합, 디스크에 쓰기 전, #418). 분당 · 장수 상한은 쌓이는 속도만 줄여, 한 계정이 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다 | `ATTACHMENT_QUOTA_MB` |
 | `ChatService.prepare` | 메시지 1건의 **첨부 개수**(중복 id 를 접은 뒤, #401). 이미지는 전부 base64 로 한꺼번에 힙에 오르므로 이 값이 요청 하나의 메모리를 묶는다 | `CHAT_MAX_ATTACHMENTS` |
 
 기본값의 정본은 `backend/.env.example` 이다.
@@ -426,7 +428,7 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 1. 서버를 준비한다(Lightsail 처음 한 번 — 아래 「Lightsail 처음 준비」). Docker 와 compose 플러그인을 설치한다
 2. `backend/.env` 를 만든다(정본 `backend/.env.example`). **`DB_URL` · `DB_USERNAME` · `DB_PASSWORD` 는
    넣어도 무시된다** — compose 가 덮어쓴다
-3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD`. **터널 토큰은 `.env` 가 아니라
+3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD`. **`APP_DB_USER` · `APP_DB_PASSWORD` 는 첫 배포에서는 비운다** — 계정은 db 가 뜬 뒤에 만든다(#415, 아래 「런타임 DB 계정」). **터널 토큰은 `.env` 가 아니라
    `secrets/tunnel_token` 파일**에 넣는다(#203, 디렉터리 700 · 파일 644 — 이유는 아래 「터널 토큰은 파일로 넘긴다」)
 4. Cloudflare 대시보드에서 터널을 만들고 공개 호스트명을 **`http://app:8080`** 에 매핑한다.
    `localhost` 가 아니다 - cloudflared 는 별도 컨테이너라 compose 네트워크 이름으로 찾아간다
@@ -520,6 +522,9 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build d
 검증된다) · 네트워크 분리(`edge` 에서 `db` 는 이름 해석부터 안 된다) · `cloudflared` · `db` 다이제스트 고정(#130 · #357, 올릴 때는 다이제스트를 바꾸는 커밋으로).
 이전 운영 서버(GCP VM, 10-06 · 지금의 Lightsail 이전 #243 전)에서 로컬과 같은 값을 확인했다 — 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
 
+백엔드 `Dockerfile` 의 두 `FROM`(다이제스트)과 `ci.yml` 의 `actions/*`(커밋 SHA + `# vX.Y.Z` 주석)도 같이 고정돼 있다(#416). **자동으로 갱신되지 않는다** — 올릴 때는 
+`docker buildx imagetools inspect <이미지:태그>` 의 최상단 `Digest:` 를, 액션은 `gh api repos/actions/<이름>/git/ref/tags/<태그>` 의 커밋 SHA(주석 태그면 한 번 더 벗긴다)를 새 값으로 바꾸는 커밋 하나로 올린다.
+
 **서버의 `.env` 권한은 `deploy.sh` 가 600 으로 고정한다(#130).** 이 파일들에는 `JWT_SECRET` ·
 `OPENAI_API_KEY` · `DB_PASSWORD` 가 평문으로 있고, 기본 umask 로 만들면 644 가 되어 **서버에 셸이 닿는 누구나 읽는다.** 런북에만 적으면 사람이 기억해야만 지켜지므로
 프리플라이트에서 확인하고 고치며, 무엇을 바꿨는지 출력한다. **파일이 없으면 빌드 전에 exit 3 으로 멈춘다(#331)** —
@@ -538,6 +543,26 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build d
 스왑을 허용하면 유휴 중 밀려난 JVM 힙을 첫 요청이 swap-in 으로 도로 읽어 느려지고(실측 39.1초), 끄면 상주 집합이 남고
 한도를 넘기면 디스크를 녹이는 대신 빨리 죽고 재시작한다. `app` 은 `mem_limit`/`memswap_limit` 모두 1g 다.
 원본 수치는 이슈 [#202](https://github.com/changs0124/rag-chatbot/issues/202) 코멘트에 있다.
+
+#### 런타임 DB 계정 (#415)
+
+**앱은 슈퍼유저가 아닌 계정으로 접속한다.** compose 의 `POSTGRES_USER` 는 db 이미지가 만드는 슈퍼유저라, 앱이 그대로 쓰면
+SQL 주입 한 곳이 `COPY ... TO PROGRAM` 으로 db 컨테이너 명령 실행과 모든 DB 권한으로 이어진다. 그래서 마이그레이션(Flyway,
+`SPRING_FLYWAY_USER`)만 소유자로 하고 앱(`DB_USERNAME`)은 런타임 계정으로 붙는다.
+
+- **계정은 사람이 한 번 만든다** — 비밀번호를 저장소에 둘 수 없어 마이그레이션에 넣지 않는다. db 가 떠 있어야 하므로 **새 서버는
+  `APP_DB_USER` 를 비운 채 첫 배포 → 계정 생성 → 값을 채워 재배포**, 이미 도는 서버는 계정 생성 → 값 채움 → 재배포다.
+  비밀번호는 셸 기록에 남지 않게 `\password` 로 넣는다(`-U` · `-d` 는 루트 `.env` 의 `POSTGRES_USER` · `POSTGRES_DB`) :
+  ```
+  sudo docker compose exec db psql -U postgres -d ragchatbot
+  create role ragapp login nosuperuser nocreatedb nocreaterole;
+  \password ragapp
+  ```
+  → 루트 `.env` 에 `APP_DB_USER=ragapp` · `APP_DB_PASSWORD=<같은 값>` → 배포. 계정 없이 값만 넣으면 기동이 `password authentication failed` 로 멈춘다
+- **권한은 앱이 맞춘다** — `db/migration/afterMigrate.sql` 이 기동마다 테이블 DML · 시퀀스 사용을 주고 `flyway_schema_history` 는 거둔다.
+  새 테이블을 만드는 마이그레이션이 권한을 따로 챙길 필요가 없다
+- **되돌리기** — `.env` 의 `APP_DB_USER` · `APP_DB_PASSWORD` 를 비우고 재기동하면 옛 구성(소유자 하나)이다
+- 통합 테스트도 같은 구성으로 돈다(`AbstractPgIntegrationTest` 가 `ragapp` 을 만들어 접속) — 앱에 권한이 모자라면 테스트가 먼저 깨진다
 
 #### 백업
 

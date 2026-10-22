@@ -212,4 +212,25 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 			assertThat(r.get("role")).isEqualTo("admin");
 		});
 	}
+
+	/** 발급하는 이름도 50자(trim 뒤 코드 포인트)까지다(#413). 51자는 400 이고 계정이 만들어지지 않는다 */
+	@SuppressWarnings("rawtypes")
+	@Test
+	void issued_name_over_50_chars_is_rejected_and_not_created() {
+		ResponseEntity<Map> res = issueRaw("long-name@b.com", "가".repeat(51));
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		Integer created = jdbc.queryForObject("select count(*) from users where email = ?", Integer.class,
+				"long-name@b.com");
+		assertThat(created).isZero();
+	}
+
+	/** 이모지는 한 자로 센다 - 이모지 49 + 한글 1 = 50자는 통과 */
+	@SuppressWarnings("rawtypes")
+	@Test
+	void issued_name_of_50_code_points_is_accepted() {
+		ResponseEntity<Map> res = issueRaw("fifty-name@b.com", "😀".repeat(49) + "가");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+	}
 }

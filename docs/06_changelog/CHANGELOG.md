@@ -18,6 +18,28 @@
     서버 쪽 로그아웃 API 는 범위 밖
   - `frontend.md` 「API 통신」에 규칙 추가
   - 테스트 : `api.test.ts` 5건(삭제 · 같은 계정 재발급 · 다른 계정 · clear · 다른 키 무시, 삭제 · 교체는 변경 전 실패 확인). **프론트 하한 195 → 200**
+- **표시 이름에 길이 상한(50자)을 둔다(#413).** `UpdateNameRequest` · `CreateUserRequest` 의 `name` 이 `@NotBlank` 뿐이고 DB 도 `text` 라,
+  수 MB 이름이 저장되면 `/api/auth/me` · 관리자 사용자 목록 · 문서 목록 `uploadedByName` 이 매번 그만큼 커졌다(10-22 전체 QA)
+  - 이름 변경 · 계정 발급 모두 trim 뒤 코드 포인트 50자 초과는 400 이다(잘라 저장하지 않음). `USER_MAX_NAME_CHARS`(기본 50) · `.env.example`
+  - 마이페이지 · 관리자 계정 추가 폼 입력창 `maxLength={50}`. `api.md`(API-PATCH-001 신설 · API-POST-008) · `features.md` FEAT-AUTH-001 · `backend.md` 「유량 제어」
+  - 테스트 : 백엔드 4건(51자 400 · 미저장, 이모지 포함 50자 통과 - 이름 변경 · 계정 발급 각 2) · 프론트 2건(변경 전 실패 확인). **하한 백엔드 325 → 329 · 프론트 195 → 197**
+- **사용자별 첨부 저장 한도(기본 500MB)를 둔다(#418).** 분당 상한(#95) · 장수 상한(#401)은 쌓이는 속도만 줄여, 한 사용자가 시간당 약 18GB 를
+  쌓을 수 있었고 uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎는다(10-22 전체 QA)
+  - `FileService.upload` 가 검사(형식 · 크기 · 매직바이트) 뒤, **디스크에 쓰기 전에** 사용자 폴더(`{storage-root}/{userId}/`)의 실제 파일 크기 합을 보고
+    넘기면 400(「첨부 저장 한도 초과(사용자당 500MB) - …」). 마이그레이션 없음 - 기존 파일까지 정확하고, 지운 만큼 다시 올릴 수 있다
+  - `FileStorage.usedBytes` 추가 · `ATTACHMENT_QUOTA_MB`(`app.file.attachment-quota-mb`) · `api.md` API-POST-004 · `backend.md` 「유량 제어」 · `.env.example`
+  - 한도도 크기 선검사(#402)처럼 **파일을 힙에 올리기 전에** 본다(`getSize()`). 같은 사용자의 동시 업로드가 한도를 조금 넘길 수 있는 폭은 분당 상한 × 10MB 로 묶인다
+  - 테스트 : `AttachmentQuotaTest` 3건 · `LocalFileStorageUsedBytesTest` 2건 · `FileServiceSizeCheckTest` 1건(힙에 올리기 전 거절, 변경 전 실패 확인). **백엔드 하한 325 → 331**
+- **앱이 Postgres 슈퍼유저 대신 런타임 계정으로 접속한다(#415).** compose 의 `POSTGRES_USER`(슈퍼유저)를 앱이 그대로 써서,
+  SQL 주입 한 곳이 생기면 `COPY ... TO PROGRAM` 으로 db 컨테이너 명령 실행까지 갈 수 있었다(10-22 전체 QA, 지금 주입 지점은 0)
+  - 마이그레이션은 소유자(`SPRING_FLYWAY_USER`), 앱은 루트 `.env` 의 `APP_DB_USER` · `APP_DB_PASSWORD`. 비우면 옛 구성(소유자 하나)
+  - 권한은 `db/migration/afterMigrate.sql` 이 기동마다 맞춘다(테이블 DML · 시퀀스, `flyway_schema_history` 는 거둠). 계정 생성 SQL 은 `backend.md` 「런타임 DB 계정」
+  - 통합 테스트 전부가 런타임 계정 `ragapp` 으로 돈다. `RuntimeRolePrivilegeTest` 3건(슈퍼유저 아님 · DML 있음 · DDL · 이력 수정 · `COPY TO PROGRAM` 불가, 변경 전 실패 확인). **백엔드 하한 325 → 328**
+  - `.env.example` · `docker-compose.yml` · `live-integration.md` 준비물 표
+- **백엔드 베이스 이미지와 CI 액션을 다이제스트 · 커밋 SHA 로 고정한다(#416).** compose 의 db · cloudflared 는 고정돼 있었지만 운영 앱 이미지의 베이스와 
+  CI 의 GitHub 공식 액션은 움직이는 태그라, 태그가 바뀌면 빌드마다 다른 JRE · 액션이 들어왔다(10-22 전체 QA)
+  - `backend/Dockerfile` 두 `FROM` 을 `태그@sha256:` 로(멀티 아키텍처 인덱스 다이제스트), `ci.yml` 의 `checkout` · `setup-java` · `setup-node` 를 40자 SHA + `# v4.x.y` 주석으로
+  - 자동 갱신되지 않는다 - 올리는 법은 `backend.md` 에 한 단락
 - **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
   클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
   - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`

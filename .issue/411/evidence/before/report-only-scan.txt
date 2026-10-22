@@ -1,0 +1,10 @@
+# 운영 https://rag-chatbot-jade-pi.vercel.app (Content-Security-Policy-Report-Only, #404) · 2026-10-22 · 관리자 계정
+# 방법 : 페이지마다 ReportingObserver({types:['csp-violation'], buffered:true}) — 문서 로드 이후 쌓인 위반까지 수집
+# 양성 대조 : /admin 에서 new Image().src='https://example.com/csp-probe.png' → {dir: img-src, disp: report} 1건 잡힘(탐지 방법 유효)
+
+화면                                                  위반
+/ 대화 목록 + 문서 그림 대화(blob 그림 7장 로드)          0
+/ 첨부 대화(api.chseong.fyi 첨부 이미지 로드 · 확대 보기)  0
+/ 새 대화 : 첨부 업로드 · 미리보기 · 스트리밍 답변(직전 문서)  화면 정상(답 「빨강」), 위반은 위 두 줄과 같은 문서 계열에서 0
+/me 마이페이지                                         0
+/admin 문서 2건 · 사용자 목록                           0
