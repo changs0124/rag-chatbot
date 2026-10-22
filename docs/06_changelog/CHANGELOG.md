@@ -11,6 +11,11 @@
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
+- **다른 탭의 로그아웃 · 토큰 교체를 따라간다(#412).** `api.ts` 가 `storage` 이벤트를 듣지 않아, 탭 A 에서 로그아웃해도 탭 B 는
+  모듈 변수의 토큰으로 계속 동작하고 재발급 때 localStorage 에 토큰을 **다시 써 넣었다** — 공용 PC 에서 다음 사람이 로그아웃했던 계정으로 들어간다(10-22 전체 QA)
+  - `TOKEN_KEY` 가 다른 탭에서 지워지면 모듈 토큰을 비우고 `onUnauthorized` 로 로그인 화면, 바뀌면 모듈 토큰을 교체한다. 서버 쪽 로그아웃 API 는 범위 밖
+  - `frontend.md` 「API 통신」에 규칙 추가
+  - 테스트 : `api.test.ts` 3건(삭제 · 교체 · 다른 키 무시, 변경 전 실패 확인). **프론트 하한 195 → 198**
 - **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
   클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
   - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`

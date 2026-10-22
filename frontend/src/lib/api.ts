@@ -34,6 +34,18 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
 }
 
 /**
+ * 다른 탭의 로그아웃 · 토큰 교체를 따라간다(#412). `storage` 이벤트는 **다른 탭의** 변경에만 온다(자기 탭은 안 옴).
+ * 따르지 않으면 탭 B 의 모듈 토큰이 살아 있어, 로그아웃한 뒤에도 재발급 헤더(adoptRefreshedToken)가
+ * localStorage 에 토큰을 다시 써 넣는다 - 공용 PC 에서 다음 사람이 그 계정으로 들어간다.
+ * 이미 저장소가 바뀐 뒤라 `setToken` 으로 다시 쓰지 않고 모듈 변수만 맞춘다.
+ */
+window.addEventListener('storage', (e) => {
+  if (e.key !== TOKEN_KEY) return
+  token = e.newValue
+  if (token === null) onUnauthorized?.()
+})
+
+/**
  * 401이 "세션이 죽었다"가 아니라 **"방금 넣은 자격 증명이 틀렸다"** 는 뜻인 경로들.
  * 여기서 로그아웃시키면 안 됨 - 특히 비밀번호 변경은 현재 비밀번호 불일치가 401이라,
  * 오타 한 번에 멀쩡한 세션이 날아감.
