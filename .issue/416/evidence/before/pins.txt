@@ -1,0 +1,14 @@
+# before
+backend/Dockerfile:13:FROM maven:3.9.16-eclipse-temurin-17-alpine AS build
+backend/Dockerfile:26:FROM eclipse-temurin:17-jre-alpine
+.github/workflows/ci.yml:48:      - uses: actions/checkout@v4
+.github/workflows/ci.yml:50:        uses: actions/setup-java@v4
+.github/workflows/ci.yml:75:      - uses: actions/checkout@v4
+.github/workflows/ci.yml:77:        uses: actions/setup-node@v4
+.github/workflows/ci.yml:101:      - uses: actions/checkout@v4
+.github/workflows/ci.yml:116:      - uses: actions/checkout@v4
+.github/workflows/ci.yml:143:      - uses: actions/checkout@v4
+.github/workflows/ci.yml:162:      - uses: actions/checkout@v4
+.github/workflows/ci.yml:164:        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25   # v0.36.0
+.github/workflows/ci.yml:183:      - uses: actions/checkout@v4
+.github/workflows/ci.yml:185:        uses: actions/setup-node@v4
