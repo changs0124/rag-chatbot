@@ -2,6 +2,7 @@ package com.ragchatbot.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -346,6 +347,44 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 
 		assertThat(padded.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(emoji.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+	/**
+	 * 첨부 개수 상한(#401, 기본 5장). 넘으면 <b>사용자 메시지 저장 · 모델 호출 전에</b> 400 이다.
+	 * 종전에는 개수를 보지 않아 이미지 수십 장이 한꺼번에 base64 로 힙에 올라 OOM 까지 갈 수 있었다
+	 */
+	@Test
+	void attachments_over_limit_400_before_save() {
+		String token = createUser("chat-many-att@b.com");
+		String convId = createConversation(token);
+		List<String> ids = new ArrayList<>();
+		for (int i = 0; i < 6; i++) {
+			ids.add(uploadImage(token));
+		}
+
+		var res = chat(token, Map.of("conversationId", convId, "message", "비교해줘", "attachmentIds", ids));
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(res.getBody()).contains("첨부는 한 번에 5장까지 보낼 수 있음");
+		assertThat(jdbc.queryForObject("select count(*) from messages where conversation_id = ?::uuid",
+				Integer.class, convId)).isZero();
+	}
+
+	/** 상한과 같은 개수는 통과한다. 같은 id 중복은 접은 뒤에 센다(#99) - 5장 + 중복 1은 5장이다 */
+	@Test
+	void attachments_at_limit_pass_after_dedupe() {
+		String token = createUser("chat-five-att@b.com");
+		String convId = createConversation(token);
+		List<String> ids = new ArrayList<>();
+		for (int i = 0; i < 5; i++) {
+			ids.add(uploadImage(token));
+		}
+		ids.add(ids.get(0));
+
+		var res = chat(token, Map.of("conversationId", convId, "message", "비교해줘", "attachmentIds", ids));
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(res.getBody()).contains("event:done");
 	}
 
 	/**

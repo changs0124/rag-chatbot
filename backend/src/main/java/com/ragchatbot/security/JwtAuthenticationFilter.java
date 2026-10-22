@@ -62,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				// 검증을 통과한 뒤에만 재발급함 - 무효한 토큰을 갱신해 주면 만료가 무의미해짐.
 				// 헤더는 응답 본문보다 먼저 나가므로 SSE 처럼 스트리밍하는 경로에도 실림
 				if (jwtService.needsRefresh(jwt)) {
-					response.setHeader(REFRESH_HEADER, jwtService.issue(userId));
+					response.setHeader(REFRESH_HEADER, jwtService.refresh(jwt));
 				}
 			} catch (Exception ex) {
 				// 위조·만료·형식 오류·무효화된 토큰 - 인증 미설정(보호 경로에서 401로 귀결)

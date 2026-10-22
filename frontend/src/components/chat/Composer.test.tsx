@@ -567,4 +567,37 @@ describe('Composer', () => {
 
     expect(screen.getByPlaceholderText('메시지를 입력하세요')).toHaveAttribute('maxLength', '4000')
   })
+
+  // 서버 상한(app.chat.max-attachments 기본값)과 같은 값 - 넘기면 서버가 400 으로 거절한다(#401)
+  it('첨부는 5장까지만 받고 넘친 것은 올리지 않고 알린다 (#401)', () => {
+    vi.mocked(uploadFile).mockReturnValue(deferred<Attachment>().promise)
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [image('p1.png'), image('p2.png'), image('p3.png')] } })
+    fireEvent.change(input, { target: { files: [image('p4.png'), image('p5.png'), image('p6.png')] } })
+
+    expect(uploadFile).toHaveBeenCalledTimes(5)
+    expect(screen.queryByAltText('p6.png')).not.toBeInTheDocument()
+    // 넘친 파일에는 미리보기 URL 도 만들지 않는다 - 만들면 회수할 카드가 없다
+    expect(createObjectURL).toHaveBeenCalledTimes(5)
+    expect(screen.getByRole('alert')).toHaveTextContent('첨부는 한 번에 5장까지 보낼 수 있습니다')
+  })
+
+  it('카드를 지우면 상한 안내가 걷히고 다시 첨부할 수 있다 (#401)', async () => {
+    vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(input, {
+      target: { files: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'].map((n) => image(`${n}.png`)) },
+    })
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    fireEvent.click(screen.getAllByLabelText('첨부 제거')[0])
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    pick(image('p7.png'))
+    expect(screen.getByAltText('p7.png')).toBeInTheDocument()
+    expect(uploadFile).toHaveBeenCalledTimes(6)
+  })
 })

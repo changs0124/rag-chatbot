@@ -91,6 +91,6 @@ final class ChatStreamTestSupport {
 	}
 
 	static ChatService chatService(OpenAiService openAi, ChatPersistenceService persistence) {
-		return new ChatService(null, null, null, openAi, persistence, 6000, 4000);
+		return new ChatService(null, null, null, openAi, persistence, 6000, 4000, 5);
 	}
 }

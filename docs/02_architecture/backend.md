@@ -120,6 +120,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   인증은 최초 `REQUEST` 디스패치에서 이미 검사됐다.
 - **만료가 임박하면 응답 헤더 `X-Refresh-Token` 으로 새 토큰을 보낸다**(FEAT-OPS-003).
   임계는 `JWT_REFRESH_THRESHOLD_MINUTES`(기본 30분)이고 **0 이면 기능이 꺼져** 종전 고정 만료로 돌아간다.
+  재발급본은 처음 인증 시각(`auth_time`)을 그대로 옮기고, 그로부터 `JWT_MAX_SESSION_HOURS`(기본 12)가 지나면 재발급하지 않는다(#403).
   검증을 통과한 뒤에만 발급한다 — 무효한 토큰을 갱신해 주면 만료가 무의미해진다.
   `CorsConfig` 의 **노출 헤더 등록이 빠지면 브라우저가 값을 숨겨 조용히 아무 일도 일어나지 않으므로**
   그 등록 자체를 케이스로 잠가 두었다.
@@ -233,6 +234,7 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 | `RateLimiterService` | 사용자별 **분당 횟수**(채팅 · 업로드 · 비밀번호 변경) · 계정별 분당 로그인 **실패**(성공은 세지 않음, 검사 전에 선점 · 성공하면 선점한 분의 창에만 반환, #365) | `RATELIMIT_*` |
 | `ChatConcurrencyLimiter` | **지금 열려 있는 스트림 수**(전역 · 사용자별) | `CHAT_MAX_CONCURRENT_*` |
 | `ChatService.prepare` · `ConversationService` | 입력 **길이**(메시지 · 대화 제목, trim 뒤 코드 포인트, #371) | `CHAT_MAX_*_CHARS` |
+| `ChatService.prepare` | 메시지 1건의 **첨부 개수**(중복 id 를 접은 뒤, #401). 이미지는 전부 base64 로 한꺼번에 힙에 오르므로 이 값이 요청 하나의 메모리를 묶는다 | `CHAT_MAX_ATTACHMENTS` |
 
 기본값의 정본은 `backend/.env.example` 이다.
 
