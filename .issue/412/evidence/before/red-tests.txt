@@ -1,0 +1,9 @@
+       × 다른 탭이 바꾸면 이후 요청이 새 토큰을 싣는다 4ms
+       × 다른 탭이 지우면 로그아웃 콜백이 불리고 이후 요청에 토큰이 실리지 않는다 4ms
+      Tests  2 failed | 6 passed (8)
+ FAIL  src/lib/api.test.ts > api client > 다른 탭의 토큰 변경(storage 이벤트) > 다른 탭이 바꾸면 이후 요청이 새 토큰을 싣는다
+ FAIL  src/lib/api.test.ts > api client > 다른 탭의 토큰 변경(storage 이벤트) > 다른 탭이 지우면 로그아웃 콜백이 불리고 이후 요청에 토큰이 실리지 않는다
+ Test Files  1 failed (1)
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+AssertionError: expected 'mine' to be 'theirs' // Object.is equality
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
