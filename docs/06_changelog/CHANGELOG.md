@@ -11,6 +11,11 @@
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
+- **표시 이름에 길이 상한(50자)을 둔다(#413).** `UpdateNameRequest` · `CreateUserRequest` 의 `name` 이 `@NotBlank` 뿐이고 DB 도 `text` 라,
+  수 MB 이름이 저장되면 `/api/auth/me` · 관리자 사용자 목록 · 문서 목록 `uploadedByName` 이 매번 그만큼 커졌다(10-22 전체 QA)
+  - 이름 변경 · 계정 발급 모두 trim 뒤 코드 포인트 50자 초과는 400 이다(잘라 저장하지 않음). `USER_MAX_NAME_CHARS`(기본 50) · `.env.example`
+  - 마이페이지 · 관리자 계정 추가 폼 입력창 `maxLength={50}`. `api.md`(API-PATCH-001 신설 · API-POST-008) · `features.md` FEAT-AUTH-001 · `backend.md` 「유량 제어」
+  - 테스트 : 백엔드 4건(51자 400 · 미저장, 이모지 포함 50자 통과 - 이름 변경 · 계정 발급 각 2) · 프론트 2건(변경 전 실패 확인). **하한 백엔드 325 → 329 · 프론트 195 → 197**
 - **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
   클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
   - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`

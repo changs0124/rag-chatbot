@@ -134,3 +134,22 @@ describe('MyPage 비밀번호 변경', () => {
     }
   })
 })
+
+describe('MyPage 이름 (#413)', () => {
+  beforeEach(() => {
+    setToken('old-token')
+    currentRole = 'user'
+  })
+  afterEach(() => {
+    setToken(null)
+    vi.clearAllMocks()
+  })
+
+  // 서버 상한(app.user.max-name-chars 기본값)과 같은 값 - 넘기면 서버가 400 으로 거절한다
+  it('이름 입력은 50자까지만 받는다', () => {
+    renderMyPage()
+
+    // 비밀번호 칸은 password 타입이라 textbox 는 이름 칸 하나다
+    expect(screen.getByRole('textbox')).toHaveAttribute('maxLength', '50')
+  })
+})
