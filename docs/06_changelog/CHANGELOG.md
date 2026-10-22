@@ -11,6 +11,12 @@
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
+- **앱이 Postgres 슈퍼유저 대신 런타임 계정으로 접속한다(#415).** compose 의 `POSTGRES_USER`(슈퍼유저)를 앱이 그대로 써서,
+  SQL 주입 한 곳이 생기면 `COPY ... TO PROGRAM` 으로 db 컨테이너 명령 실행까지 갈 수 있었다(10-22 전체 QA, 지금 주입 지점은 0)
+  - 마이그레이션은 소유자(`SPRING_FLYWAY_USER`), 앱은 루트 `.env` 의 `APP_DB_USER` · `APP_DB_PASSWORD`. 비우면 옛 구성(소유자 하나)
+  - 권한은 `db/migration/afterMigrate.sql` 이 기동마다 맞춘다(테이블 DML · 시퀀스, `flyway_schema_history` 는 거둠). 계정 생성 SQL 은 `backend.md` 「런타임 DB 계정」
+  - 통합 테스트 전부가 런타임 계정 `ragapp` 으로 돈다. `RuntimeRolePrivilegeTest` 3건(슈퍼유저 아님 · DML 있음 · DDL · 이력 수정 · `COPY TO PROGRAM` 불가, 변경 전 실패 확인). **백엔드 하한 325 → 328**
+  - `.env.example` · `docker-compose.yml` · `live-integration.md` 준비물 표
 - **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
   클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
   - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`

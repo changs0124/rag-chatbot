@@ -418,6 +418,20 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본으로 열리는 80 포함)를 닫는다. 서비스 트래픽은 터널로
 들어오므로 80 · 443 이 필요 없다. 소스 IP 를 좁힐 수 있으면 좁힌다.
 
+### 런타임 DB 계정 (#415)
+
+**앱은 슈퍼유저가 아닌 계정으로 접속한다.** compose 의 `POSTGRES_USER` 는 db 이미지가 만드는 슈퍼유저라, 앱이 그대로 쓰면
+SQL 주입 한 곳이 `COPY ... TO PROGRAM` 으로 db 컨테이너 명령 실행과 모든 DB 권한으로 이어진다. 그래서 마이그레이션(Flyway,
+`SPRING_FLYWAY_USER`)만 소유자로 하고 앱(`DB_USERNAME`)은 런타임 계정으로 붙는다.
+
+- **계정은 사람이 한 번 만든다** — 비밀번호를 저장소에 둘 수 없어 마이그레이션에 넣지 않는다. 새 서버 · 기존 서버 같다 :
+  `sudo docker compose exec -T db psql -U postgres -d ragchatbot -c "create role ragapp login nosuperuser nocreatedb nocreaterole password '<값>'"`
+  → 루트 `.env` 에 `APP_DB_USER=ragapp` · `APP_DB_PASSWORD=<값>` → 배포
+- **권한은 앱이 맞춘다** — `db/migration/afterMigrate.sql` 이 기동마다 테이블 DML · 시퀀스 사용을 주고 `flyway_schema_history` 는 거둔다.
+  새 테이블을 만드는 마이그레이션이 권한을 따로 챙길 필요가 없다
+- **되돌리기** — `.env` 의 `APP_DB_USER` · `APP_DB_PASSWORD` 를 비우고 재기동하면 옛 구성(소유자 하나)이다
+- 통합 테스트도 같은 구성으로 돈다(`AbstractPgIntegrationTest` 가 `ragapp` 을 만들어 접속) — 앱에 권한이 모자라면 테스트가 먼저 깨진다
+
 **터널 방식의 이점은 「서비스 포트를 안 연다」는 것이지 「서버가 인터넷에서 안 보인다」가 아니다** —
 이 구분을 흐리면 방화벽을 점검할 이유가 사라진다.
 
@@ -426,7 +440,7 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 1. 서버를 준비한다(Lightsail 처음 한 번 — 아래 「Lightsail 처음 준비」). Docker 와 compose 플러그인을 설치한다
 2. `backend/.env` 를 만든다(정본 `backend/.env.example`). **`DB_URL` · `DB_USERNAME` · `DB_PASSWORD` 는
    넣어도 무시된다** — compose 가 덮어쓴다
-3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD`. **터널 토큰은 `.env` 가 아니라
+3. 루트 `.env` 를 만든다(정본 `.env.example`) — `POSTGRES_PASSWORD` · `APP_DB_USER` · `APP_DB_PASSWORD`(#415, 아래 「런타임 DB 계정」). **터널 토큰은 `.env` 가 아니라
    `secrets/tunnel_token` 파일**에 넣는다(#203, 디렉터리 700 · 파일 644 — 이유는 아래 「터널 토큰은 파일로 넘긴다」)
 4. Cloudflare 대시보드에서 터널을 만들고 공개 호스트명을 **`http://app:8080`** 에 매핑한다.
    `localhost` 가 아니다 - cloudflared 는 별도 컨테이너라 compose 네트워크 이름으로 찾아간다
