@@ -382,6 +382,14 @@ describe('관리자 화면', () => {
     expect(screen.getByText(/다시 확인할 수 없습니다/)).toBeInTheDocument()
   })
 
+  // 서버 상한(app.user.max-name-chars 기본값)과 같은 값 - 넘기면 서버가 400 으로 거절한다(#413)
+  it('계정 발급 이름 입력은 50자까지만 받는다', async () => {
+    renderPage()
+
+    await screen.findByText('아직 문서가 없습니다') // 비동기 조회가 끝난 뒤에 마친다
+    expect(screen.getByLabelText('이름')).toHaveAttribute('maxLength', '50')
+  })
+
   /** TC-ADMIN-041 : 일반 사용자는 되돌려진다 */
   it('일반 사용자는 관리 화면을 보지 못한다', async () => {
     currentRole = 'user'

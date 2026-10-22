@@ -1,10 +1,15 @@
-import { afterEach, describe, it, expect, vi } from 'vitest'
+import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import MessageList from './MessageList'
 import type { ChatMessage } from '../../lib/types'
 import { resetFigureCache } from '../../lib/docFigures'
 
 describe('MessageList', () => {
+  // 지연 로딩(#417) - 마크다운 청크를 파일 맨 앞에서 한 번 받는다. 첫 해석이 findBy 기본 시간을 넘지 않게 하고,
+  // 아래 그림 테스트가 전역 URL 을 생성자 아닌 객체로 바꿔 둔 사이에 청크가 처음 평가되면 react-markdown 이
+  // `URL is not a constructor` 로 실패해 그 모듈이 평문 대체로 굳는다(CI 에서 순서에 따라 갈렸다)
+  beforeAll(() => import('./Markdown'))
+
   it('renders assistant content with its citations', () => {
     const messages: ChatMessage[] = [
       { id: 'u1', role: 'user', content: '환불 정책', status: 'complete', citations: [] },
@@ -255,13 +260,13 @@ describe('MessageList', () => {
       citations: role === 'assistant' ? [{ seq: 1, sourceName: '매뉴얼', snippet: '' }] : [],
     })
 
-    it('굵게 · 목록 · 표를 기호가 아니라 서식으로 그린다', () => {
+    it('굵게 · 목록 · 표를 기호가 아니라 서식으로 그린다', async () => {
       render(
         <MessageList
           messages={[msg('assistant', '핀 배열은 **CN3** 이다.\n\n- 3상 입력\n- 모터 파워\n\n| 핀 | 신호 |\n|---|---|\n| B1 | +6 |')]}
         />,
       )
-      expect(screen.getByText('CN3').tagName).toBe('STRONG')
+      expect((await screen.findByText('CN3')).tagName).toBe('STRONG')
       // 출처 목록도 listitem 이라 본문 항목만 글자로 집는다
       expect(screen.getByText('3상 입력').tagName).toBe('LI')
       expect(screen.getByText('모터 파워').tagName).toBe('LI')
@@ -270,7 +275,7 @@ describe('MessageList', () => {
       expect(screen.queryByText(/\*\*|\|---/)).not.toBeInTheDocument()
     })
 
-    it('문장부호로 끝나는 굵게 뒤에 조사가 붙어도 굵게로 그린다 (#287)', () => {
+    it('문장부호로 끝나는 굵게 뒤에 조사가 붙어도 굵게로 그린다 (#287)', async () => {
       // 표준 강조 규칙으로는 닫는 ** 앞이 문장부호 · 뒤가 글자면 안 닫힌다(Markdown.tsx 머리 주석, #287)
       render(
         <MessageList
@@ -282,49 +287,76 @@ describe('MessageList', () => {
           ]}
         />,
       )
-      expect(screen.getByText('설계불량(부품선정오류)').tagName).toBe('STRONG')
+      expect((await screen.findByText('설계불량(부품선정오류)')).tagName).toBe('STRONG')
       expect(screen.getByText('19번 파라미터는 ‘잔류펄스 허용범위’').tagName).toBe('STRONG')
       expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument()
     })
 
-    it('원시 HTML 은 실행하지 않고 위험한 링크 스킴은 지운다', () => {
+    it('원시 HTML 은 실행하지 않고 위험한 링크 스킴은 지운다', async () => {
       const { container } = render(
         <MessageList
           messages={[msg('assistant', '<img src=x onerror="alert(1)"> <script>alert(2)</script>\n\n[누르기](javascript:alert(3))')]}
         />,
       )
+      // 평문 fallback 에도 <a> 가 없으므로 마크다운이 그린 뒤(낱글자 일치)를 기다린 다음 본다(#414 · #417)
+      expect(await screen.findByText('누르기')).toBeInTheDocument()
       expect(container.querySelector('img, script')).toBeNull()
-      const link = screen.getByText('누르기').closest('a')
-      expect(link?.getAttribute('href') ?? '').not.toMatch(/javascript:/i)
+      expect(container.querySelector('a')).toBeNull()
+      expect(container.textContent).not.toMatch(/javascript:/i)
     })
 
     // 그리면 모델 출력에 실린 바깥 주소를 브라우저가 곧바로 불러 쿼리로 값이 새어 나갈 수 있다(#359)
-    it('마크다운 이미지는 그리지 않는다', () => {
+    it('마크다운 이미지는 그리지 않는다', async () => {
       const { container } = render(
         <MessageList messages={[msg('assistant', '앞 글\n\n![요약](https://e.example/a.png?d=secret)\n\n뒤 글')]} />,
       )
+      // 평문 fallback 은 한 덩어리라 낱글자 일치는 마크다운이 그린 뒤에만 된다
+      expect(await screen.findByText('뒤 글')).toBeInTheDocument()
       expect(container.querySelector('img')).toBeNull()
       expect(screen.getByText('앞 글')).toBeInTheDocument()
-      expect(screen.getByText('뒤 글')).toBeInTheDocument()
     })
 
     // 이미지를 지우면서 alt 문구까지 사라졌고, 이미지를 감싼 링크는 글자 없는 빈 링크로 남았다(#365)
-    it('마크다운 이미지 자리에 alt 문구를 남기고 이미지 링크도 글자를 갖는다', () => {
+    it('마크다운 이미지 자리에 alt 문구를 남기고 이미지 링크도 글자를 갖는다', async () => {
       const { container } = render(
         <MessageList
           messages={[msg('assistant', '앞 ![결선도 요약](https://e.example/a.png) 뒤\n\n[![배지](https://e.example/b.png)](https://e.example/x)')]}
         />,
       )
+      // 평문 fallback 에도 같은 글자가 있어 마크다운 문법이 사라질 때까지 기다린다(#417). 링크는 글자로 낮춘다(#414)
+      await waitFor(() => expect(container.textContent).not.toMatch(/\]\(/))
       expect(container.querySelector('img')).toBeNull()
+      expect(container.querySelector('a')).toBeNull()
       expect(screen.getByText(/결선도 요약/)).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: '배지' })).toHaveAttribute('href', 'https://e.example/x')
+      expect(screen.getByText(/배지/)).toBeInTheDocument()
+    })
+
+    // 모델이 `[자세히](https://evil.example/?q=<대화 요약>)` 를 내면 한 번 클릭으로 값이 새므로 누를 수 없는 글자로 낮춘다(#414)
+    it('답변 속 링크는 누를 수 없는 글자와 호스트로 그린다', async () => {
+      const { container } = render(
+        <MessageList messages={[msg('assistant', '[x](https://evil.example/?q=1)')]} />,
+      )
+      expect(await screen.findByText('x (evil.example)')).toBeInTheDocument()
+      expect(container.querySelector('a')).toBeNull()
+    })
+
+    it('호스트를 못 읽는 링크는 글자만 그린다', async () => {
+      const { container } = render(
+        <MessageList
+          messages={[msg('assistant', '[상대](/docs/a)\n\n[스킴](javascript:alert(1))\n\n[메일](mailto:a@b.example)')]}
+        />,
+      )
+      await waitFor(() => expect(container.textContent).not.toMatch(/\]\(/))
+      expect(container.querySelector('a')).toBeNull()
+      const texts = Array.from(container.querySelectorAll('p')).slice(0, 3).map((p) => p.textContent)
+      expect(texts).toEqual(['상대', '스킴', '메일'])
     })
 
     it('그림 표식 앞뒤의 마크다운과 그림이 함께 나온다', async () => {
       vi.stubGlobal('fetch', vi.fn(async () => new Response(new Blob(['png']), { status: 200 })))
       vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:fig' })
       render(<MessageList messages={[msg('assistant', '**각 부 명칭**\n[[그림:tm-p020-f1]]\n1. 엔코더 커넥터')]} />)
-      expect(screen.getByText('각 부 명칭').tagName).toBe('STRONG')
+      expect((await screen.findByText('각 부 명칭')).tagName).toBe('STRONG')
       expect(await screen.findByAltText('문서 그림')).toBeInTheDocument()
       expect(screen.getByText('엔코더 커넥터').tagName).toBe('LI')
     })

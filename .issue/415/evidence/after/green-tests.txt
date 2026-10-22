@@ -1,0 +1,1 @@
+# ./mvnw test -Dtest=RuntimeRolePrivilegeTest,ChatFlowTest,FileFlowTest,AuthFlowTest -> exit 0 · 전체 check-all 에서 백엔드 328 전부 통과(모든 통합 테스트가 런타임 계정 ragapp 으로 접속)

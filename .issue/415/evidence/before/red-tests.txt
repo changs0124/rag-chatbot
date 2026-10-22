@@ -1,0 +1,8 @@
+### Error querying database.  Cause: org.postgresql.util.PSQLException: ERROR: permission denied for table users
+### Cause: org.postgresql.util.PSQLException: ERROR: permission denied for table users
+Caused by: org.postgresql.util.PSQLException: ERROR: permission denied for table users
+Caused by: org.springframework.jdbc.BadSqlGrammarException: 
+### Error querying database.  Cause: org.postgresql.util.PSQLException: ERROR: permission denied for table users
+### Cause: org.postgresql.util.PSQLException: ERROR: permission denied for table users
+Caused by: org.postgresql.util.PSQLException: ERROR: permission denied for table users
+[ERROR] Tests run: 3, Failures: 0, Errors: 3, Skipped: 0, Time elapsed: 30.25 s <<< FAILURE! -- in com.ragchatbot.support.RuntimeRolePrivilegeTest

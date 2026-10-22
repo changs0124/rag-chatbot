@@ -180,6 +180,27 @@
 **알려진 약점** : 미존재 계정은 BCrypt 검증을 건너뛰어 응답 시간이 갈리는 타이밍 오라클이 남는다.
 응답 본문·상태 코드만 통일돼 있다.
 
+### API-PATCH-001: 이름 변경
+
+**PATCH** `/api/profile/name`
+
+**Request Body:**
+```json
+{ "name": "홍길동" }
+```
+
+**Response 200:** 사용자(`id` · `email` · `name` · `role`).
+
+**이름은 50자까지다**(#413). trim 뒤 코드 포인트로 세며 넘으면 400 이다 — 잘라 저장하지 않는다.
+`/api/auth/me` · 사용자 목록 · 문서 목록(`uploadedByName`)이 이름을 매번 실어 보내므로 상한이 없으면 응답 크기가 이름 크기를 따라간다.
+입력창도 같은 값으로 더 받지 않지만 정본은 서버다. 계정 발급(API-POST-008)의 이름도 같은 규칙이다.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `BAD_REQUEST` | 400 | 이름 빈 값 · **이름 50자 초과**(trim 뒤 코드 포인트, `USER_MAX_NAME_CHARS`, #413) |
+
 ### API-PATCH-002: 비밀번호 변경
 
 **PATCH** `/api/profile/password`
@@ -286,6 +307,18 @@
 부분 텍스트가 비면 아무것도 저장하지 않는다.
 
 **서버 타임아웃은 `timed_out=true` 로 남는다**(#84). 저장 조합은 `erd.md` 「messages」 표가 정본이다.
+
+### API-POST-004: 첨부 업로드
+
+**POST** `/api/files` (multipart, 필드 `file`) → 200
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `BAD_REQUEST` | 400 | 빈 파일 · 이미지가 아닌 형식(jpg · png · gif · webp 만) · 10MB 초과 · 매직바이트 불일치 · **사용자별 저장 한도 초과**(기본 500MB, `ATTACHMENT_QUOTA_MB`, #418) |
+| `RATE_LIMIT` | 429 | 분당 상한(`RATELIMIT_UPLOAD_PER_MINUTE`) |
+
+**저장 한도는 사용자 폴더에 지금 남아 있는 파일 크기의 합이다**(#418) — 디스크에 쓰기 전에 보고, 넘기면 아무것도 쓰지 않는다.
+지운 첨부 · 대화만큼 다시 올릴 수 있다. 문구 : 「첨부 저장 한도 초과(사용자당 500MB) - 오래된 대화를 지우면 다시 올릴 수 있음」.
 
 ### API-DELETE-002: 첨부 삭제
 
@@ -436,7 +469,7 @@
 
 | code | HTTP | 상황 |
 |------|------|------|
-| `BAD_REQUEST` | 400 | 이메일 형식 · 이름 공백 |
+| `BAD_REQUEST` | 400 | 이메일 형식 · 이름 공백 · **이름 50자 초과**(trim 뒤 코드 포인트, `USER_MAX_NAME_CHARS`, #413) |
 | `BAD_REQUEST` | 400 | **허용 도메인 밖**(FEAT-AUTH-001). 메시지에 허용 도메인을 밝힌다 |
 | `CONFLICT` | 409 | 이미 있는 이메일 |
 | `NOT_FOUND` | 404 | 비관리자 접근 |

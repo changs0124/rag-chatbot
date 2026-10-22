@@ -1,0 +1,9 @@
+# before (수정 전 코드, #413) - 실패 줄만
+## backend (ProfileFlowTest, AdminUserFlowTest)
+[ERROR]   AdminUserFlowTest.issued_name_over_50_chars_is_rejected_and_not_created:222  expected: 400 BAD_REQUEST but was: 201 CREATED
+[ERROR]   ProfileFlowTest.name_over_50_chars_is_rejected_and_not_saved:141  expected: 400 BAD_REQUEST but was: 200 OK
+[ERROR] Tests run: 23, Failures: 2
+## frontend (MyPage.test, AdminPage.test)
+ FAIL  src/pages/AdminPage.test.tsx > 관리자 화면 > 계정 발급 이름 입력은 50자까지만 받는다
+ FAIL  src/pages/MyPage.test.tsx > MyPage 이름 (#413) > 이름 입력은 50자까지만 받는다
+      (maxLength 속성 없음 - Expected the element to have attribute: maxLength=50)

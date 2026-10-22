@@ -69,6 +69,28 @@ public class LocalFileStorage implements FileStorage {
 		}
 	}
 
+	@Override
+	public long usedBytes(UUID userId) {
+		Path dir = resolve(userId.toString());
+		if (!Files.isDirectory(dir)) {
+			return 0; // 아직 한 장도 안 올렸으면 폴더가 없음
+		}
+		try (Stream<Path> walk = Files.walk(dir)) {
+			return walk.filter(Files::isRegularFile).mapToLong(LocalFileStorage::sizeOf).sum();
+		} catch (IOException e) {
+			throw new IllegalStateException("사용량 조회 실패: " + userId, e);
+		}
+	}
+
+	/** 세는 도중 지워진 파일(회수 · 삭제와 겹침)은 0 으로 본다 - 없는 파일이 한도를 잡지 않음 */
+	private static long sizeOf(Path p) {
+		try {
+			return Files.size(p);
+		} catch (IOException e) {
+			return 0;
+		}
+	}
+
 	private static Instant lastModified(Path p) {
 		try {
 			return Files.getLastModifiedTime(p).toInstant();
