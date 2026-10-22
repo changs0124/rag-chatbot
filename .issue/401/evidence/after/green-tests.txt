@@ -1,0 +1,2 @@
+# backend: ./mvnw test -Dtest='ChatFlowTest#attachments*' -> exit 0 (attachments_over_limit_400_before_save, attachments_at_limit_pass_after_dedupe 통과)
+      Tests  2 passed | 32 skipped (34)
