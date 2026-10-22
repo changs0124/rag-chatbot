@@ -208,6 +208,19 @@ preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막�
 `frontend/vercel.json` 이 빌드 명령·출력 디렉터리와 **SPA 리라이트**를 고정한다. 리라이트가 없으면
 `/me` 를 직접 열거나 새로고침할 때 404 가 난다 — 라우팅을 `BrowserRouter` 가 하기 때문이다.
 
+같은 파일이 **보안 헤더**를 모든 경로에 붙인다(#404). 없으면 Vercel 기본 HSTS 하나뿐이라 다른 사이트가 `/admin` 을
+투명 iframe 으로 덮어 「삭제 → 확인」 클릭을 유도할 수 있었다(클릭재킹).
+
+| 헤더 | 값 | 이유 |
+|------|-----|------|
+| `X-Frame-Options` | `DENY` | 프레임 삽입 거부(클릭재킹) |
+| `X-Content-Type-Options` | `nosniff` | 형식 추측 금지 |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | 다른 출처에는 경로 없이 출처만 |
+| `Content-Security-Policy-Report-Only` | 스크립트 `'self'` · 연결 · 이미지는 `'self'` + 백엔드 + `blob:` · `frame-ancestors 'none'` | **아직 강제하지 않는다** — 위반을 콘솔에만 남긴다. 운영 화면 전부(로그인 · 스트리밍 · 첨부 · 문서 그림 · 관리자)에서 위반 0 을 본 뒤 `Content-Security-Policy` 로 바꾼다 |
+
+**CSP 에 백엔드 주소(`https://api.chseong.fyi`)가 박혀 있다.** `VITE_API_BASE_URL` 을 바꾸면 이 값도 함께 바꿔야 한다 —
+강제로 바꾼 뒤에 어긋나면 모든 API 호출 · 첨부 이미지가 막힌다.
+
 GitHub 저장소가 연결돼 `main` 푸시가 자동 배포된다. **다시 연결할 때 : Root Directory = `frontend`** — 모노레포라 빼면 루트에서 빌드해 실패한다.
 
 배포 전 반드시 할 것 :

@@ -5,6 +5,11 @@
 ## [Unreleased]
 
 ### Security
+- **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
+  클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
+  - `frontend/vercel.json` : `X-Frame-Options: DENY` · `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin`
+  - CSP 는 **Report-Only** 로 먼저 올린다(`frame-ancestors 'none'` 포함). 운영에서 위반 0 을 확인한 뒤 강제 전환은 후속
+  - `frontend.md` 「배포 (Vercel)」 — 헤더 표와 CSP 에 박힌 백엔드 주소를 `VITE_API_BASE_URL` 과 같이 바꿔야 한다는 주의
 - **슬라이딩 재발급에 절대 수명(12시간)을 둔다(#403).** 재발급본이 처음부터 다시 세어, 탈취한 토큰으로 90분에 한 번씩만 요청해도
   비밀번호를 바꾸기 전까지 무기한 쓸 수 있었다(10-22 전체 QA)
   - 로그인 · 비밀번호 변경 토큰에 `auth_time` 을 싣고 재발급본은 그대로 옮긴다. 그로부터 `JWT_MAX_SESSION_HOURS`(기본 12) 뒤에는 재발급하지 않는다
