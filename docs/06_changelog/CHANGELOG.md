@@ -11,6 +11,11 @@
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
+- **표시 이름에 길이 상한(50자)을 둔다(#413).** `UpdateNameRequest` · `CreateUserRequest` 의 `name` 이 `@NotBlank` 뿐이고 DB 도 `text` 라,
+  수 MB 이름이 저장되면 `/api/auth/me` · 관리자 사용자 목록 · 문서 목록 `uploadedByName` 이 매번 그만큼 커졌다(10-22 전체 QA)
+  - 이름 변경 · 계정 발급 모두 trim 뒤 코드 포인트 50자 초과는 400 이다(잘라 저장하지 않음). `USER_MAX_NAME_CHARS`(기본 50) · `.env.example`
+  - 마이페이지 · 관리자 계정 추가 폼 입력창 `maxLength={50}`. `api.md`(API-PATCH-001 신설 · API-POST-008) · `features.md` FEAT-AUTH-001 · `backend.md` 「유량 제어」
+  - 테스트 : 백엔드 4건(51자 400 · 미저장, 이모지 포함 50자 통과 - 이름 변경 · 계정 발급 각 2) · 프론트 2건(변경 전 실패 확인). **하한 백엔드 325 → 329 · 프론트 195 → 197**
 - **사용자별 첨부 저장 한도(기본 500MB)를 둔다(#418).** 분당 상한(#95) · 장수 상한(#401)은 쌓이는 속도만 줄여, 한 사용자가 시간당 약 18GB 를
   쌓을 수 있었고 uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎는다(10-22 전체 QA)
   - `FileService.upload` 가 검사(형식 · 크기 · 매직바이트) 뒤, **디스크에 쓰기 전에** 사용자 폴더(`{storage-root}/{userId}/`)의 실제 파일 크기 합을 보고

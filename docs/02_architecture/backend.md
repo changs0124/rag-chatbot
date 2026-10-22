@@ -234,6 +234,7 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 | `RateLimiterService` | 사용자별 **분당 횟수**(채팅 · 업로드 · 비밀번호 변경) · 계정별 분당 로그인 **실패**(성공은 세지 않음, 검사 전에 선점 · 성공하면 선점한 분의 창에만 반환, #365) | `RATELIMIT_*` |
 | `ChatConcurrencyLimiter` | **지금 열려 있는 스트림 수**(전역 · 사용자별) | `CHAT_MAX_CONCURRENT_*` |
 | `ChatService.prepare` · `ConversationService` | 입력 **길이**(메시지 · 대화 제목, trim 뒤 코드 포인트, #371) | `CHAT_MAX_*_CHARS` |
+| `ProfileService` · `AdminUserService` | 표시 이름 **길이**(이름 변경 · 계정 발급, trim 뒤 코드 포인트, #413). `/api/auth/me` · 사용자 목록 · 문서 목록이 이름을 매번 싣는다 | `USER_MAX_NAME_CHARS`(50) |
 | `FileService.upload` | 사용자별 **첨부 저장 총량**(사용자 폴더의 실제 파일 크기 합, 디스크에 쓰기 전, #418). 분당 · 장수 상한은 쌓이는 속도만 줄여, 한 계정이 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다 | `ATTACHMENT_QUOTA_MB` |
 | `ChatService.prepare` | 메시지 1건의 **첨부 개수**(중복 id 를 접은 뒤, #401). 이미지는 전부 base64 로 한꺼번에 힙에 오르므로 이 값이 요청 하나의 메모리를 묶는다 | `CHAT_MAX_ATTACHMENTS` |
 

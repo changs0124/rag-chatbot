@@ -75,7 +75,13 @@ export default function MyPage() {
       <div className="space-y-4">
         <Card title="이름">
           <div className="flex gap-2">
-            <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+            <TextInput
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              // 서버 상한(USER_MAX_NAME_CHARS 기본값)과 같은 값. 정본은 서버라 넘긴 요청은 400 이다(#413).
+              // maxLength 는 UTF-16 단위라 이모지가 섞이면 서버(코드 포인트)보다 먼저 막는다 - 더 엄격한 쪽이라 둔다
+              maxLength={50}
+            />
             <button onClick={saveName} disabled={!name.trim()} className={primaryButtonClass}>
               저장
             </button>

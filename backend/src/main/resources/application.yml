@@ -98,6 +98,10 @@ app:
     # 메시지 1건당 첨부 개수 상한(#401). 이미지는 전부 base64 로 바뀌어 한꺼번에 힙에 오르므로(장당 최대 약 13MB)
     # 이 값이 요청 하나의 메모리를 묶음. 중복 id 는 접은 뒤 셈. 프론트 입력창도 같은 값
     max-attachments: ${CHAT_MAX_ATTACHMENTS:5}
+  user:
+    # 표시 이름 길이 상한(trim 뒤 코드 포인트, #413). 넘으면 400 - 이름 변경·계정 발급 모두. /api/auth/me · 사용자 목록 ·
+    # 문서 목록이 이름을 매번 실어 보내므로 상한이 없으면 응답 크기가 이름 크기를 따라감. 프론트 입력창도 같은 값
+    max-name-chars: ${USER_MAX_NAME_CHARS:50}
   ratelimit:
     # 사용자별 분당 채팅 상한(비용 통제, REQ-OPS-003). 단일 인스턴스 전제
     chat-per-minute: ${RATELIMIT_CHAT_PER_MINUTE:20}
