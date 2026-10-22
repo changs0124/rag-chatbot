@@ -308,6 +308,18 @@
 
 **서버 타임아웃은 `timed_out=true` 로 남는다**(#84). 저장 조합은 `erd.md` 「messages」 표가 정본이다.
 
+### API-POST-004: 첨부 업로드
+
+**POST** `/api/files` (multipart, 필드 `file`) → 200
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `BAD_REQUEST` | 400 | 빈 파일 · 이미지가 아닌 형식(jpg · png · gif · webp 만) · 10MB 초과 · 매직바이트 불일치 · **사용자별 저장 한도 초과**(기본 500MB, `ATTACHMENT_QUOTA_MB`, #418) |
+| `RATE_LIMIT` | 429 | 분당 상한(`RATELIMIT_UPLOAD_PER_MINUTE`) |
+
+**저장 한도는 사용자 폴더에 지금 남아 있는 파일 크기의 합이다**(#418) — 디스크에 쓰기 전에 보고, 넘기면 아무것도 쓰지 않는다.
+지운 첨부 · 대화만큼 다시 올릴 수 있다. 문구 : 「첨부 저장 한도 초과(사용자당 500MB) - 오래된 대화를 지우면 다시 올릴 수 있음」.
+
 ### API-DELETE-002: 첨부 삭제
 
 **DELETE** `/api/files/{id}` → 204

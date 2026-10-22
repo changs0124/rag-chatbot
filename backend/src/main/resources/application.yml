@@ -6,7 +6,7 @@ spring:
       # 스트림 수명은 SSE emitter가 단독 관장. MVC async 타임아웃을 끔
       request-timeout: -1
   datasource:
-    # 실 DB 접속. 테스트는 Testcontainers가 @ServiceConnection으로 주입함
+    # 실 DB 접속. 테스트는 AbstractPgIntegrationTest 가 Testcontainers 주소와 런타임 계정(ragapp, #415)을 @DynamicPropertySource 로 넣음
     url: ${DB_URL:}
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
@@ -18,6 +18,11 @@ spring:
       max-file-size: 26MB
       max-request-size: 31MB
   # Flyway : 스키마의 소유자는 마이그레이션 SQL. 기동 시 자동 적용 - 켜기 · 위치(db/migration)가 Boot 기본값이라 키를 두지 않는다
+  # 마이그레이션 계정은 SPRING_FLYWAY_USER/PASSWORD 로 따로 줄 수 있다(#415) - 없으면 위 datasource 계정을 쓴다.
+  # 따로 주면 앱은 DML 만 가진 런타임 계정으로 접속하고, 그 권한은 db/migration/afterMigrate.sql 이 기동마다 맞춘다
+  flyway:
+    placeholders:
+      "[runtime_user]": ${spring.datasource.username:}
 
 # MyBatis - snake_case DB 컬럼 ↔ camelCase 자바 프로퍼티, uuid 전용 TypeHandler 등록
 mybatis:
@@ -120,6 +125,9 @@ app:
     orphan-cleanup-cron: ${ORPHAN_CLEANUP_CRON:0 0 * * * *}
     # 첨부 서빙용 서명 경로 토큰의 수명(분). <img src> 가 헤더를 못 실어 URL 에 토큰을 싣는다
     access-token-ttl-minutes: ${FILE_ACCESS_TOKEN_TTL_MINUTES:15}
+    # 사용자별 첨부 저장 한도(MB, #418). 사용자 폴더의 실제 파일 크기 합으로 재고, 넘기는 업로드는 400.
+    # 분당 · 장수 상한은 쌓이는 속도만 줄여 uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎는다
+    attachment-quota-mb: ${ATTACHMENT_QUOTA_MB:500}
   doc-figures:
     # 문서 그림 루트(FEAT-CHAT-004). 전처리가 만든 <key>.png 를 둠. 비면 live 는 그림이 전부 404 이고
     # mock 은 classpath mock-figures/ 견본을 씀. 기동은 막지 않음 - 그림은 보조 정보다
