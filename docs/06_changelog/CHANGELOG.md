@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Performance
+- **스트리밍 중 토큰마다 지난 답변과 사이드바를 다시 그리지 않는다(#405).** `frontend/src` 에 `memo` 가 하나도 없어, 토큰 하나에
+  지난 답변 전부의 마크다운 파싱과 대화 목록 전체 렌더가 돌았다(답변 20개 대화에서 800토큰 답변이면 파싱 약 16,800회 → 약 800회, 10-22 전체 QA)
+  - `MessageBubble` · `Sidebar` 를 `memo` 로, `ChatPage` 의 사이드바 핸들러(`onSelect` · 새 대화)를 `useCallback` 으로. 화면 동작은 그대로다
+  - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
+  - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
 - **Vercel 응답에 보안 헤더를 붙인다(#404).** 운영 응답에는 HSTS(Vercel 기본)뿐이라 다른 사이트가 `/admin` 을 iframe 으로 덮어
   클릭을 유도할 수 있었다(10-22 전체 QA, `curl -I` 로 확인)
