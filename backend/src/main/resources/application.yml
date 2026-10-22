@@ -116,6 +116,9 @@ app:
     orphan-cleanup-cron: ${ORPHAN_CLEANUP_CRON:0 0 * * * *}
     # 첨부 서빙용 서명 경로 토큰의 수명(분). <img src> 가 헤더를 못 실어 URL 에 토큰을 싣는다
     access-token-ttl-minutes: ${FILE_ACCESS_TOKEN_TTL_MINUTES:15}
+    # 사용자별 첨부 저장 한도(MB, #418). 사용자 폴더의 실제 파일 크기 합으로 재고, 넘기는 업로드는 400.
+    # 분당 · 장수 상한은 쌓이는 속도만 줄여 uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎는다
+    attachment-quota-mb: ${ATTACHMENT_QUOTA_MB:500}
   doc-figures:
     # 문서 그림 루트(FEAT-CHAT-004). 전처리가 만든 <key>.png 를 둠. 비면 live 는 그림이 전부 404 이고
     # mock 은 classpath mock-figures/ 견본을 씀. 기동은 막지 않음 - 그림은 보조 정보다

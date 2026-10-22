@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -65,12 +66,16 @@ public class FileService {
 	private final FileStorage fileStorage;
 	private final AttachmentRepository attachmentRepository;
 	private final FileAccessTokenService fileTokenService;
+	/** 사용자별 첨부 저장 한도(MB, #418) */
+	private final long quotaMb;
 
 	public FileService(FileStorage fileStorage, AttachmentRepository attachmentRepository,
-			FileAccessTokenService fileTokenService) {
+			FileAccessTokenService fileTokenService,
+			@Value("${app.file.attachment-quota-mb}") long quotaMb) {
 		this.fileStorage = fileStorage;
 		this.attachmentRepository = attachmentRepository;
 		this.fileTokenService = fileTokenService;
+		this.quotaMb = quotaMb;
 	}
 
 	public AttachmentResponse upload(UUID userId, MultipartFile file) {
@@ -102,6 +107,12 @@ public class FileService {
 		// webp는 RIFF(0~3) 뒤 오프셋 8의 "WEBP"까지 확인 - 임의 RIFF 컨테이너 우회 차단
 		if ("webp".equals(type.extension()) && !regionEquals(bytes, 8, WEBP_MARKER)) {
 			throw new BadRequestException("파일 내용이 형식과 일치하지 않음");
+		}
+		// 사용자별 저장 한도(#418) - 디스크에 쓰기 전에 본다. 분당 · 장수 상한은 쌓이는 속도만 줄여,
+		// 한 사용자가 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다
+		if (fileStorage.usedBytes(userId) + bytes.length > quotaMb * MB) {
+			throw new BadRequestException(
+					"첨부 저장 한도 초과(사용자당 " + quotaMb + "MB) - 오래된 대화를 지우면 다시 올릴 수 있음");
 		}
 
 		String storagePath = fileStorage.store(userId, type.extension(), bytes);

@@ -29,7 +29,7 @@ class FileServiceSizeCheckTest {
 		when(file.getContentType()).thenReturn("image/png");
 		when(file.getSize()).thenReturn(10L * 1024 * 1024 + 1);
 
-		var service = new FileService(null, null, null);
+		var service = new FileService(null, null, null, 500);
 
 		assertThatThrownBy(() -> service.upload(UUID.randomUUID(), file))
 				.isInstanceOf(BadRequestException.class)

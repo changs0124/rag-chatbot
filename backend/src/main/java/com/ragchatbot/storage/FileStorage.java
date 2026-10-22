@@ -27,6 +27,13 @@ public interface FileStorage {
 	 */
 	List<StoredFile> listAll();
 
+	/**
+	 * 그 사용자 폴더({userId}/)에 실재하는 일반 파일 크기의 합(바이트). 폴더가 없으면 0.
+	 *
+	 * <p>사용자별 저장 한도(#418) 판정용 - DB 행이 아니라 디스크를 세므로 기존 파일까지 정확하다.
+	 */
+	long usedBytes(UUID userId);
+
 	record StoredFile(String storagePath, Instant lastModified) {
 	}
 }
