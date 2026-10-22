@@ -34,6 +34,8 @@
 - 헤더 : `Authorization: Bearer {token}`
 - 만료 : 기본 120분 (`JWT_EXPIRATION_MINUTES`)
 - 갱신 : **슬라이딩 재발급** (FEAT-OPS-003). 헤더 계약과 CORS 노출 조건은 아래 「4. 응답 헤더」 참고
+- 절대 수명 : 최초 인증(로그인 · 비밀번호 변경)부터 기본 12시간(`JWT_MAX_SESSION_HOURS`, #403)이 지나면 재발급하지 않는다.
+  그 뒤 토큰이 만료되면 재로그인이다. 인증 시각은 토큰의 `auth_time` 클레임에 실려 재발급본으로 그대로 옮겨진다
 
 **리프레시 토큰이 없다.** 별도 토큰·테이블·회전을 두는 대신 응답 헤더로 교체한다.
 `refresh_tokens` 테이블도 `POST /auth/refresh` 엔드포인트도 존재하지 않는다.

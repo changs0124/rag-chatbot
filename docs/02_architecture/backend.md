@@ -120,6 +120,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   인증은 최초 `REQUEST` 디스패치에서 이미 검사됐다.
 - **만료가 임박하면 응답 헤더 `X-Refresh-Token` 으로 새 토큰을 보낸다**(FEAT-OPS-003).
   임계는 `JWT_REFRESH_THRESHOLD_MINUTES`(기본 30분)이고 **0 이면 기능이 꺼져** 종전 고정 만료로 돌아간다.
+  재발급본은 처음 인증 시각(`auth_time`)을 그대로 옮기고, 그로부터 `JWT_MAX_SESSION_HOURS`(기본 12)가 지나면 재발급하지 않는다(#403).
   검증을 통과한 뒤에만 발급한다 — 무효한 토큰을 갱신해 주면 만료가 무의미해진다.
   `CorsConfig` 의 **노출 헤더 등록이 빠지면 브라우저가 값을 숨겨 조용히 아무 일도 일어나지 않으므로**
   그 등록 자체를 케이스로 잠가 두었다.
