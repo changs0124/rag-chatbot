@@ -11,6 +11,12 @@
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
 ### Security
+- **앱이 Postgres 슈퍼유저 대신 런타임 계정으로 접속한다(#415).** compose 의 `POSTGRES_USER`(슈퍼유저)를 앱이 그대로 써서,
+  SQL 주입 한 곳이 생기면 `COPY ... TO PROGRAM` 으로 db 컨테이너 명령 실행까지 갈 수 있었다(10-22 전체 QA, 지금 주입 지점은 0)
+  - 마이그레이션은 소유자(`SPRING_FLYWAY_USER`), 앱은 루트 `.env` 의 `APP_DB_USER` · `APP_DB_PASSWORD`. 비우면 옛 구성(소유자 하나)
+  - 권한은 `db/migration/afterMigrate.sql` 이 기동마다 맞춘다(테이블 DML · 시퀀스, `flyway_schema_history` 는 거둠). 계정 생성 SQL 은 `backend.md` 「런타임 DB 계정」
+  - 통합 테스트 전부가 런타임 계정 `ragapp` 으로 돈다. `RuntimeRolePrivilegeTest` 3건(슈퍼유저 아님 · DML 있음 · DDL · 이력 수정 · `COPY TO PROGRAM` 불가, 변경 전 실패 확인). **백엔드 하한 325 → 328**
+  - `.env.example` · `docker-compose.yml` · `live-integration.md` 준비물 표
 - **백엔드 베이스 이미지와 CI 액션을 다이제스트 · 커밋 SHA 로 고정한다(#416).** compose 의 db · cloudflared 는 고정돼 있었지만 운영 앱 이미지의 베이스와 
   CI 의 GitHub 공식 액션은 움직이는 태그라, 태그가 바뀌면 빌드마다 다른 JRE · 액션이 들어왔다(10-22 전체 QA)
   - `backend/Dockerfile` 두 `FROM` 을 `태그@sha256:` 로(멀티 아키텍처 인덱스 다이제스트), `ci.yml` 의 `checkout` · `setup-java` · `setup-node` 를 40자 SHA + `# v4.x.y` 주석으로
