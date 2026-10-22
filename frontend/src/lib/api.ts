@@ -33,16 +33,39 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
   onUnauthorized = handler
 }
 
+/** 토큰의 주인(JWT `sub`). 서명은 서버가 보므로 여기서는 읽기만 한다. 못 읽으면 null */
+function subjectOf(jwt: string | null): string | null {
+  try {
+    const part = jwt?.split('.')[1]
+    return part ? (JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/'))).sub ?? null) : null
+  } catch {
+    return null
+  }
+}
+
+/** 테스트가 바꿔 끼우는 자리 - jsdom 은 location.reload 를 구현하지 않는다 */
+export const page = { reload: () => window.location.reload() }
+
 /**
  * 다른 탭의 로그아웃 · 토큰 교체를 따라간다(#412). `storage` 이벤트는 **다른 탭의** 변경에만 온다(자기 탭은 안 옴).
  * 따르지 않으면 탭 B 의 모듈 토큰이 살아 있어, 로그아웃한 뒤에도 재발급 헤더(adoptRefreshedToken)가
  * localStorage 에 토큰을 다시 써 넣는다 - 공용 PC 에서 다음 사람이 그 계정으로 들어간다.
- * 이미 저장소가 바뀐 뒤라 `setToken` 으로 다시 쓰지 않고 모듈 변수만 맞춘다.
+ *
+ * - **같은 계정의 재발급**이면 토큰만 바꾼다 - 화면은 그대로 맞다
+ * - **로그아웃 · 다른 계정**이면 페이지를 다시 읽는다. 토큰만 바꾸면 화면은 Y 인데 요청은 X 로 나가고,
+ *   로그아웃 처리(onUnauthorized → setToken(null))를 부르면 **늦게 처리된 이벤트가 다른 탭의 새 로그인을 지운다**
+ *   (멈춰 있던 탭이 깨어나 밀린 삭제를 처리할 때). 다시 읽으면 저장소를 건드리지 않고 지금 저장소의 상태로 맞춰진다
+ * - `key === null` 은 다른 탭의 `localStorage.clear()` 다 - 로그아웃과 같게 본다
  */
 window.addEventListener('storage', (e) => {
-  if (e.key !== TOKEN_KEY) return
-  token = e.newValue
-  if (token === null) onUnauthorized?.()
+  if (e.key !== TOKEN_KEY && e.key !== null) return
+  const next = e.key === null ? null : e.newValue
+  if (next && token && subjectOf(next) !== null && subjectOf(next) === subjectOf(token)) {
+    token = next
+    return
+  }
+  token = next
+  page.reload()
 })
 
 /**
