@@ -1,0 +1,22 @@
+# #418 red - base 634deee, 프로덕션 코드 변경 전
+
+## 1) ./mvnw -q test -Dtest='AttachmentQuotaTest,LocalFileStorageUsedBytesTest' -> 컴파일 실패 (usedBytes 없음)
+[ERROR] /D:/dev/rag-chatbot/.issue/worktrees/418-attachment-storage-quota/backend/src/test/java/com/ragchatbot/storage/LocalFileStorageUsedBytesTest.java:[27,35] cannot find symbol
+[ERROR] /D:/dev/rag-chatbot/.issue/worktrees/418-attachment-storage-quota/backend/src/test/java/com/ragchatbot/storage/LocalFileStorageUsedBytesTest.java:[28,35] cannot find symbol
+[ERROR] /D:/dev/rag-chatbot/.issue/worktrees/418-attachment-storage-quota/backend/src/test/java/com/ragchatbot/storage/LocalFileStorageUsedBytesTest.java:[34,35] cannot find symbol
+[ERROR] /D:/dev/rag-chatbot/.issue/worktrees/418-attachment-storage-quota/backend/src/test/java/com/ragchatbot/storage/LocalFileStorageUsedBytesTest.java:[37,35] cannot find symbol
+  symbol:   method usedBytes(java.util.UUID)
+
+## 2) LocalFileStorageUsedBytesTest 를 잠시 빼고 ./mvnw -q test -Dtest=AttachmentQuotaTest -> 3건 모두 실패 (한도 없음: 두 번째 업로드가 200)
+[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 33.41 s <<< FAILURE! -- in com.ragchatbot.controller.AttachmentQuotaTest
+[ERROR] com.ragchatbot.controller.AttachmentQuotaTest.quota_is_per_user -- Time elapsed: 3.589 s <<< FAILURE!
+expected: 400 BAD_REQUEST
+ but was: 200 OK
+[ERROR] com.ragchatbot.controller.AttachmentQuotaTest.over_quota_upload_is_400_and_writes_nothing -- Time elapsed: 0.690 s <<< FAILURE!
+expected: 400 BAD_REQUEST
+ but was: 200 OK
+[ERROR] com.ragchatbot.controller.AttachmentQuotaTest.deleting_an_attachment_frees_quota -- Time elapsed: 0.593 s <<< FAILURE!
+expected: 400 BAD_REQUEST
+ but was: 200 OK
+expected: 400 BAD_REQUEST
+ but was: 200 OK
