@@ -8,14 +8,12 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
 
 import com.ragchatbot.openai.OpenAiMockService;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
@@ -31,23 +29,9 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	@Autowired
 	private OpenAiMockService mock;
 
-	private static final byte[] PNG = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
-
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private String uploadImage(String token) {
-		var partHeaders = new HttpHeaders();
-		partHeaders.setContentType(MediaType.IMAGE_PNG);
-		var resource = new ByteArrayResource(PNG) {
-			@Override
-			public String getFilename() {
-				return "a.png";
-			}
-		};
-		var body = new LinkedMultiValueMap<String, Object>();
-		body.add("file", new HttpEntity<>(resource, partHeaders));
-		var headers = bearer(token);
-		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-		var res = rest.postForEntity("/api/files", new HttpEntity<>(body, headers), Map.class);
+		var res = rest.postForEntity("/api/files", multipart(token, "a.png", PNG_MAGIC, MediaType.IMAGE_PNG), Map.class);
 		String url = (String) res.getBody().get("url");
 		return url.substring(url.indexOf("/api/files/") + 11, url.indexOf('?'));
 	}

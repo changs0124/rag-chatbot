@@ -11,7 +11,7 @@
 # `mvnw` 는 저장소에 그대로 둔다. 로컬과 CI 의 `./mvnw` 가 계속 쓰고, 여기서 끊는 것은
 # **도커 빌드의** 의존뿐이다.
 # **다이제스트로 고정한다(#416)** - 태그는 움직이므로 빌드마다 다른 JRE 가 들어올 수 있다. 태그는 읽는 사람을 위한 표기이고
-# 실제로는 다이제스트만 쓰인다. 올리는 법은 docs/02_architecture/backend.md 의 「다이제스트 고정」 단락 참고(compose 의 db · cloudflared 와 같은 방식).
+# 실제로는 다이제스트만 쓰인다. 올리는 법은 docs/02_architecture/backend.md 「배포」 의 #416 단락 참고(compose 의 db · cloudflared 와 같은 방식).
 FROM maven:3.9.16-eclipse-temurin-17-alpine@sha256:b7c8d7298dbabbe750441736cd99a1d120a58083d5af8d2bd75a1624cfdd8f3a AS build
 WORKDIR /build
 

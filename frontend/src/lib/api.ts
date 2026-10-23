@@ -83,8 +83,8 @@ export function handleUnauthorized(path: string): void {
 /**
  * 슬라이딩 재발급(FEAT-OPS-003). 만료가 가까우면 서버가 이 헤더로 새 토큰을 실어 보낸다.
  *
- * 세 곳에서 읽어야 한다 - 이 래퍼, `endpoints.ts` 의 채팅 스트림, `docFigures.ts` 의 그림 로드.
- * 셋 다 `authFetch` 를 거친다(#390) - 뒤의 둘이 우회하면 **채팅만 쓰는 사용자는 갱신을 못 받아** 두 시간마다 튕긴다.
+ * 부르는 곳은 `authFetch` 하나다(#390). `request` · `endpoints.ts` 의 채팅 스트림 · `docFigures.ts` 의 그림 로드가 모두 거친다 -
+ * 우회하면 **그 경로만 쓰는 사용자(채팅만 쓰는 사용자)는 갱신을 못 받아** 두 시간마다 튕긴다.
  *
  * 서버가 CORS 노출 헤더에 등록하지 않으면 브라우저가 이 값을 숨겨 `null` 이 온다 - 그 경우
  * 조용히 아무 일도 일어나지 않으므로, 서버 쪽 등록을 케이스로 잠가 두었다.
@@ -103,7 +103,7 @@ export function adoptRefreshedToken(res: Response, sentWith: string | null): voi
 /**
  * 실패 응답 → ApiError. 401 이면 만료 처리까지 건다.
  *
- * 래퍼 밖 두 경로도 쓴다(adoptRefreshedToken 주석의 세 곳) - 따로 두면 스트림과 나머지 API 의 에러 표시가
+ * `request` 밖의 채팅 스트림 · 그림 로드도 쓴다 - 따로 두면 스트림과 나머지 API 의 에러 표시가
  * 조용히 갈린다(#219).
  */
 export async function toApiError(res: Response, path: string): Promise<ApiError> {
@@ -140,8 +140,8 @@ interface RequestOptions {
   signal?: AbortSignal
 }
 
-/** Bearer 헤더. api 래퍼를 거치지 않는 fetch(SSE·그림)도 이것을 쓴다 (#300) */
-export function authHeaders(): Record<string, string> {
+/** Bearer 헤더. `authFetch` 만 쓴다 (#300) */
+function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
@@ -150,7 +150,7 @@ export function authHeaders(): Record<string, string> {
  * 에러 변환은 하지 않는다 - 호출부마다 다르다(404 를 null 로 보는 그림, onError 를 부르는 스트림).
  *
  * `request` · `streamChat` · `loadFigure` 가 전부 여기를 지나야 한다. 직접 fetch 하면 adoptRefreshedToken 이
- * 빠져 그 경로만 쓰는 사용자는 갱신을 못 받는다(위 주석).
+ * 빠져 그 경로만 쓰는 사용자는 갱신을 못 받는다(위 주석). 직접 fetch 는 서명 URL 을 받는 ImageLightbox 다운로드뿐이다.
  */
 export async function authFetch(
   path: string,

@@ -8,10 +8,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -21,8 +23,11 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
@@ -137,8 +142,8 @@ public abstract class AbstractPgIntegrationTest {
 	 * 계정 발급 후 그 계정의 JWT 반환(FEAT-AUTH-001).
 	 *
 	 * <p><b>실제 발급 경로를 그대로 탄다</b> - 관리자로 로그인해 {@code POST /api/admin/users} 를 부르고,
-	 * 돌려받은 임시 비밀번호로 다시 로그인한다. DB 에 행을 직접 넣으면 빠르지만, 그러면 16개 테스트
-	 * 파일이 전부 발급 로직을 **한 번도 밟지 않는다.**
+	 * 돌려받은 임시 비밀번호로 다시 로그인한다. DB 에 행을 직접 넣으면 빠르지만, 그러면 이 베이스를 쓰는 통합 테스트가
+	 * 전부 발급 로직을 **한 번도 밟지 않는다.**
 	 */
 	protected String createUser(String email) {
 		return login(email, issueAccount(email));
@@ -199,5 +204,33 @@ public abstract class AbstractPgIntegrationTest {
 		var h = new HttpHeaders();
 		h.setBearerAuth(token);
 		return h;
+	}
+
+	/** 유효 PNG 매직바이트(89 50 4E 47 0D 0A 1A 0A) + 패딩 - 매직바이트 검사를 통과하되 내용은 중요하지 않다 */
+	protected static final byte[] PNG_MAGIC = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
+
+	/** 이메일로 사용자 ID 를 읽는다 */
+	protected UUID userId(String email) {
+		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
+	}
+
+	/** 멀티파트 업로드 본문 - 파트 이름은 {@code file}, 파트 Content-Type 을 명시한다 */
+	protected static HttpEntity<MultiValueMap<String, Object>> multipart(String token, String filename,
+			byte[] content, MediaType partType) {
+		var partHeaders = new HttpHeaders();
+		partHeaders.setContentType(partType);
+		var resource = new ByteArrayResource(content) {
+			@Override
+			public String getFilename() {
+				return filename;
+			}
+		};
+		var body = new LinkedMultiValueMap<String, Object>();
+		body.add("file", new HttpEntity<>(resource, partHeaders));
+
+		var headers = new HttpHeaders();
+		headers.setBearerAuth(token);
+		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+		return new HttpEntity<>(body, headers);
 	}
 }

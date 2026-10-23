@@ -2,37 +2,20 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useChat } from './useChat'
 import type { ChatMessage, Conversation } from '../lib/types'
+import { conv, deferred, msg } from '../test/fixtures'
 
 vi.mock('../lib/endpoints', () => ({
   listConversations: vi.fn().mockResolvedValue([]),
   createConversation: vi.fn(),
   getMessages: vi.fn(),
   deleteConversation: vi.fn(),
+  deleteConversationIfEmpty: vi.fn().mockResolvedValue(undefined),
   renameConversation: vi.fn(),
   streamChat: vi.fn().mockResolvedValue(undefined),
 }))
 
 const { createConversation, getMessages, streamChat, deleteConversation, renameConversation } =
   await import('../lib/endpoints')
-
-/** 손으로 resolve 할 수 있는 프라미스 - 「응답이 도착하는 순간」을 테스트가 정함 */
-function deferred<T>() {
-  let resolve!: (v: T) => void
-  const promise = new Promise<T>((r) => {
-    resolve = r
-  })
-  return { promise, resolve }
-}
-
-const conv = (id: string): Conversation => ({ id, title: id, updatedAt: '' })
-
-const msg = (id: string): ChatMessage => ({
-  id,
-  role: 'user',
-  content: id,
-  status: 'complete',
-  citations: [],
-})
 
 /**
  * 대화 전환과 비동기 응답의 경쟁 (#93).

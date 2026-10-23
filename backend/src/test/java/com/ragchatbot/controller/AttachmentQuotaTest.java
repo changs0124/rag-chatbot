@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -18,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.util.LinkedMultiValueMap;
 
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
@@ -38,29 +36,12 @@ class AttachmentQuotaTest extends AbstractPgIntegrationTest {
 	private static final byte[] PNG_600K = new byte[600 * 1024];
 
 	static {
-		byte[] magic = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
-		System.arraycopy(magic, 0, PNG_600K, 0, magic.length);
+		System.arraycopy(PNG_MAGIC, 0, PNG_600K, 0, PNG_MAGIC.length);
 	}
 
 	@SuppressWarnings("rawtypes")
 	private ResponseEntity<Map> upload(String token) {
-		var partHeaders = new HttpHeaders();
-		partHeaders.setContentType(MediaType.IMAGE_PNG);
-		var resource = new ByteArrayResource(PNG_600K) {
-			@Override
-			public String getFilename() {
-				return "a.png";
-			}
-		};
-		var body = new LinkedMultiValueMap<String, Object>();
-		body.add("file", new HttpEntity<>(resource, partHeaders));
-		var headers = bearer(token);
-		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-		return rest.postForEntity("/api/files", new HttpEntity<>(body, headers), Map.class);
-	}
-
-	private UUID userIdOf(String email) {
-		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
+		return rest.postForEntity("/api/files", multipart(token, "a.png", PNG_600K, MediaType.IMAGE_PNG), Map.class);
 	}
 
 	private long filesOf(UUID userId) throws Exception {
@@ -82,7 +63,7 @@ class AttachmentQuotaTest extends AbstractPgIntegrationTest {
 	void over_quota_upload_is_400_and_writes_nothing() throws Exception {
 		String email = "quota-a@b.com";
 		String token = createUser(email);
-		UUID userId = userIdOf(email);
+		UUID userId = userId(email);
 
 		assertThat(upload(token).getStatusCode()).isEqualTo(HttpStatus.OK);
 

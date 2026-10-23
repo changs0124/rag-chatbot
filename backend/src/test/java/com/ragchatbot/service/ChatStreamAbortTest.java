@@ -19,8 +19,8 @@ import com.ragchatbot.service.ChatStreamTestSupport.RecordingPersistence;
 /**
  * 중단 상태 정책(REQ-CHAT-006) - <b>사용자가 멈춘 것은 실패가 아님</b>.
  *
- * <p>이전에는 서버가 중단을 {@code error}로 저장하고 프론트는 같은 상황을 {@code complete}로 표시해
- * 화면과 재조회가 어긋났음. 여기서 서버 쪽을 프론트 쪽으로 통일한 것을 고정함.
+ * <p>서버가 중단을 {@code error}로 저장하지 않고, 프론트가 같은 상황을 {@code complete}로 표시하는 것과 맞춘다.
+ * 화면과 재조회가 어긋나지 않는다는 점을 고정함.
  *
  * <p>SSE 전송 실패(= 클라이언트가 연결을 끊음)를 실제 오류와 구분하는 것이 핵심이라,
  * 전송이 깨지는 순간을 직접 만들 수 있도록 emitter 와 OpenAI 경계를 손으로 만든 대역으로 세움.

@@ -9,15 +9,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
@@ -29,25 +26,6 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  */
 class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 
-	private static HttpEntity<MultiValueMap<String, Object>> multipart(String token, String filename,
-			byte[] content, String contentType) {
-		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-		HttpHeaders partHeaders = new HttpHeaders();
-		partHeaders.setContentType(MediaType.parseMediaType(contentType));
-		ByteArrayResource resource = new ByteArrayResource(content) {
-			@Override
-			public String getFilename() {
-				return filename;
-			}
-		};
-		body.add("file", new HttpEntity<>(resource, partHeaders));
-
-		HttpHeaders headers = new HttpHeaders();
-		headers.setBearerAuth(token);
-		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-		return new HttpEntity<>(body, headers);
-	}
-
 	private static byte[] pdf() {
 		return "%PDF-1.4 규정 본문".getBytes(StandardCharsets.UTF_8);
 	}
@@ -55,7 +33,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	@SuppressWarnings("rawtypes")
 	private ResponseEntity<Map> upload(String token, String filename, byte[] content, String contentType) {
 		return rest.postForEntity("/api/admin/documents",
-				multipart(token, filename, content, contentType), Map.class);
+				multipart(token, filename, content, MediaType.parseMediaType(contentType)), Map.class);
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -397,8 +375,7 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 	void deleting_uploader_is_blocked_by_reference() {
 		String token = createAdminUser("doc-uploader@b.com");
 		upload(token, "이력보존.pdf", pdf(), "application/pdf");
-		UUID uploaderId = jdbc.queryForObject("select id from users where email = ?", UUID.class,
-				"doc-uploader@b.com");
+		UUID uploaderId = userId("doc-uploader@b.com");
 
 		assertThat(org.assertj.core.api.Assertions.catchThrowable(
 				() -> jdbc.update("delete from users where id = ?", uploaderId)))

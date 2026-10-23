@@ -47,9 +47,9 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ## API 통신
 
 - API 호출은 `frontend/src/lib/api.ts` 의 `api.get/post/patch/del/postForm` 을 통한다.
-  **래퍼 밖에서 `fetch` 를 직접 부르는 곳은 셋** — 채팅 스트림(아래, `endpoints.ts`), 문서 그림 로드
-  (`docFigures.ts` — blob 을 objectURL 로), 첨부 저장(`ImageLightbox.download()` 이 blob 으로 받아야 해서).
-  앞의 둘은 컴포넌트가 아니라 `lib/` 에 있다.
+  **모든 인증 요청은 `authFetch` 를 거친다**(#390) — `api.*` 의 `request` · 채팅 스트림(`endpoints.ts` `streamChat`) · 문서 그림 로드
+  (`docFigures.ts` `loadFigure`, blob 을 objectURL 로)가 같은 `authFetch` 를 지난다. **직접 `fetch` 하는 곳은 `ImageLightbox.download()` 하나**다 —
+  서명 URL(`?token=`)이라 Bearer 가 필요 없고 blob 으로 받아야 해서다.
 - 엔드포인트 함수는 `frontend/src/lib/endpoints.ts` 에 둔다. **대부분은 `api.*` 를 한 줄로 감싼 것**이고,
   래퍼로 안 되는 것만 함수로 편다 — 멀티파트 업로드 둘(`uploadFile` · `uploadDocument`)과 채팅 스트림이다.
   **`AuthContext` 는 예외로 `/api/auth/me` 와 `/api/auth/login` 을 직접 부른다** — 세션 수명을 그 안에서
@@ -60,11 +60,11 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 - **401 이면 어떤 요청에서든 세션을 비우고 로그인으로 돌아간다**(`setUnauthorizedHandler`). 단 로그인·비밀번호 변경의 401 은
   "자격 증명이 틀렸다"는 뜻이라 세션을 유지한다(`CREDENTIAL_PATHS`) — 그러지 않으면 비밀번호 오타 한 번에 로그아웃된다.
 - **응답 헤더 `X-Refresh-Token` 이 오면 토큰을 교체한다**(FEAT-OPS-003). 만료가 임박했을 때만 온다.
-  교체는 **세 곳에서** 일어나야 한다 — `api.ts` 의 fetch 래퍼, `endpoints.ts` 의 채팅 스트림, `docFigures.ts` 의 그림 로드
-  (셋 다 `adoptRefreshedToken` 을 쓴다). 스트림은 래퍼를 거치지 않으므로 한쪽만 하면 **채팅만 쓰는 사용자는 갱신을 못 받고** 두 시간마다 튕긴다.
+  교체는 **`authFetch` 한 곳**에서 일어난다 — `adoptRefreshedToken` 을 부르는 곳이 그곳뿐이다. `request` · 채팅 스트림 · 그림 로드가 모두 `authFetch` 를 지나므로
+  새 인증 요청도 `authFetch` 를 거쳐야 한다. 우회하면 그 경로만 쓰는 사용자(예: **채팅만 쓰는 사용자**)는 갱신을 못 받고 두 시간마다 튕긴다.
   헤더가 없으면 기존 토큰을 그대로 둔다 — 서버가 CORS 노출 헤더 등록을 빠뜨리면 `null` 이 오는데,
   그때 토큰을 지우면 멀쩡한 세션이 날아간다.
-  **요청을 보낸 세션과 지금 세션이 다르면 헤더를 버린다(#363)** — 세 곳 모두 송신 시점 토큰을 넘긴다. 로그아웃 → 다른 계정 로그인 사이에
+  **요청을 보낸 세션과 지금 세션이 다르면 헤더를 버린다(#363)** — `authFetch` 가 송신 시점 토큰을 넘긴다. 로그아웃 → 다른 계정 로그인 사이에
   늦게 돌아온 응답이 이전 계정의 새 토큰으로 지금 세션을 덮기 때문이다.
 - **다른 탭이 토큰을 지우거나 바꾸면 따라간다(#412)** — `api.ts` 가 `storage` 이벤트(다른 탭의 변경에만 온다)를 듣는다. 같은 계정의 재발급이면
   모듈 토큰만 맞추고, 지워지거나 다른 계정 · `clear()` 면 **저장소를 건드리지 않고 페이지를 다시 읽는다** — 토큰만 바꾸면 화면과 요청의 계정이 갈리고,
@@ -154,7 +154,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   **마크다운 이미지(`![](url)`)도 그리지 않는다**(#359, 바깥 주소를 곧바로 불러 값이 새는 길) — 자리에는 **alt 문구만** 글자로 남긴다(#365, 이미지를 감싼 링크가 빈 링크로 남지 않게) ·
   **마크다운 링크(`[글](url)`)도 누를 수 없는 글자로 그린다**(#414, 모델 출력에 실린 바깥 주소로 한 번 클릭에 대화가 새는 길) — 글자 뒤에 ` (호스트)` 를 밝히고, 호스트를 못 읽는 값(상대 경로 · http(s) 아님)은 글자만 ·
   표는 가로 스크롤 상자 안. **사용자 메시지와 출처 스니펫은 평문 그대로**다.
-- **`Markdown` 은 `React.lazy` 로 지연 로딩한다(#417).** react-markdown · remark 묶음이 따로 청크(gzip 약 54KB)로 빠져 로그인 화면의 첫 JS 는 gzip 147.38KB → 92.76KB 다. 청크가 오기 전 답변 자리는 `<Suspense>` fallback 으로 같은 글을 평문(`whitespace-pre-wrap`)으로 보인다. **청크를 못 받으면(재배포로 옛 청크가 사라짐 · 망 끊김) 평문으로 물러선다** — 그대로 두면 lazy 의 오류가 최상위 ErrorBoundary 까지 가 앱 전체가 오류 화면이 된다. `ChatPage` 가 로그인 뒤 청크를 미리 받아 둔다.
+- **`Markdown` 은 `React.lazy` 로 지연 로딩한다(#417).** react-markdown · remark 묶음이 따로 청크(gzip 약 54KB)로 빠져 로그인 화면의 첫 JS 는 gzip 147.38KB → 92.76KB 였다(#417 시점 실측, 이후 달라질 수 있음). 청크가 오기 전 답변 자리는 `<Suspense>` fallback 으로 같은 글을 평문(`whitespace-pre-wrap`)으로 보인다. **청크를 못 받으면(재배포로 옛 청크가 사라짐 · 망 끊김) 평문으로 물러선다** — 그대로 두면 lazy 의 오류가 최상위 ErrorBoundary 까지 가 앱 전체가 오류 화면이 된다. `ChatPage` 가 로그인 뒤 청크를 미리 받아 둔다.
 - **한국어 조사 앞의 굵게도 닫는다(#287).** 표준 강조 규칙은 닫는 `**` 앞이 문장부호 · 뒤가 글자면 굵게로 보지 않으므로
   `remark-cjk-friendly` 를 remark-gfm 뒤에 붙여 CJK 글자 옆에서만 이 규칙을 푼다.
 - **그림은 Bearer 로 받아 objectURL 로 그리고, 키별로 한 번만 받는다.** objectURL 과 404(`null`)를 모듈 캐시에 두고 회수하지 않는다 —
@@ -245,7 +245,7 @@ preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막�
 | `X-Frame-Options` | `DENY` | 프레임 삽입 거부(클릭재킹) |
 | `X-Content-Type-Options` | `nosniff` | 형식 추측 금지 |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | 다른 출처에는 경로 없이 출처만 |
-| `Content-Security-Policy` | 스크립트 `'self'` · 연결 · 이미지는 `'self'` + 백엔드 + `blob:` · `frame-ancestors 'none'` | **강제한다**(#411). Report-Only(#404)로 운영 화면 전부(대화 목록 · 스트리밍 · 첨부 업로드/미리보기/확대 · 문서 그림 · 마이페이지 · 관리자)를 돌아 위반 0 을 본 뒤 바꿨다. 정책을 넓힐 때는 Report-Only 로 먼저 올린다 |
+| `Content-Security-Policy` | 스크립트 `'self'` · 연결 `'self'` + 백엔드 · 이미지 `'self'` + 백엔드 + `blob:` + `data:` · `frame-ancestors 'none'` | **강제한다**(#411). Report-Only(#404)로 운영 화면 전부(대화 목록 · 스트리밍 · 첨부 업로드/미리보기/확대 · 문서 그림 · 마이페이지 · 관리자)를 돌아 위반 0 을 본 뒤 바꿨다. 정책을 넓힐 때는 Report-Only 로 먼저 올린다 |
 
 **CSP 에 백엔드 주소(`https://api.chseong.fyi`)가 박혀 있다.** `VITE_API_BASE_URL` 을 바꾸면 이 값도 함께 바꿔야 한다 —
 강제로 바꾼 뒤에 어긋나면 모든 API 호출 · 첨부 이미지가 막힌다.

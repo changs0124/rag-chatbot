@@ -1,0 +1,5 @@
+Using Node v24.19.0
+
+> rag-chatbot-frontend@0.0.1 lint
+> oxlint
+

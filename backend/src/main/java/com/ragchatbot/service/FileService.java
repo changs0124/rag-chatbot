@@ -27,7 +27,7 @@ import com.ragchatbot.dto.FileDtos.AttachmentResponse;
 
 /**
  * 파일 업로드/검증/서빙/고아 정리.
- * 검증 : MIME 허용목록 → 용량 상한(10MB) → 매직바이트. 서빙 : 서명 경로 토큰.
+ * 검증 : MIME 허용목록 → 용량 상한(10MB) → 사용자별 저장 한도(#418) → 매직바이트. 서빙 : 서명 경로 토큰.
  */
 @Service
 public class FileService {

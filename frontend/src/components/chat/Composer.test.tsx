@@ -4,6 +4,7 @@ import Composer from './Composer'
 import { ApiError } from '../../lib/api'
 import { deleteAttachment, uploadFile } from '../../lib/endpoints'
 import type { Attachment } from '../../lib/types'
+import { deferred } from '../../test/fixtures'
 
 vi.mock('../../lib/endpoints', () => ({
   uploadFile: vi.fn(),
@@ -12,17 +13,6 @@ vi.mock('../../lib/endpoints', () => ({
 
 const image = (name = 'photo_0001.png') => new File(['x'], name, { type: 'image/png' })
 const attachment = (id: string): Attachment => ({ id, fileType: 'image', url: `/api/files/${id}?token=t` })
-
-/** 해소 시점을 테스트가 쥐는 promise - "업로드 중" 상태를 관측하려면 필요함 */
-function deferred<T>() {
-  let resolve!: (v: T) => void
-  let reject!: (e: unknown) => void
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res
-    reject = rej
-  })
-  return { promise, resolve, reject }
-}
 
 function pick(file: File) {
   const input = document.querySelector('input[type="file"]') as HTMLInputElement

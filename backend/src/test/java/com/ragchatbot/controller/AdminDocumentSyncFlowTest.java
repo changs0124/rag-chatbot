@@ -9,15 +9,12 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 import com.ragchatbot.entity.RagDocument;
 import com.ragchatbot.openai.OpenAiMockService;
@@ -43,18 +40,8 @@ class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 	/** 업로드하고 그 문서의 OpenAI 파일 ID 를 돌려줌 */
 	@SuppressWarnings("rawtypes")
 	private String upload(String token, String filename) {
-		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-		HttpHeaders partHeaders = new HttpHeaders();
-		partHeaders.setContentType(MediaType.APPLICATION_PDF);
-		body.add("file", new HttpEntity<>(new ByteArrayResource(PDF) {
-			@Override
-			public String getFilename() {
-				return filename;
-			}
-		}, partHeaders));
-		HttpHeaders headers = bearer(token);
-		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-		ResponseEntity<Map> res = rest.postForEntity("/api/admin/documents", new HttpEntity<>(body, headers), Map.class);
+		ResponseEntity<Map> res = rest.postForEntity("/api/admin/documents",
+				multipart(token, filename, PDF, MediaType.APPLICATION_PDF), Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 		return jdbc.queryForObject("select openai_file_id from rag_documents where id = ?::uuid", String.class,
 				res.getBody().get("id"));
@@ -182,9 +169,9 @@ class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 	void alive_file_id_is_unique_but_deleted_rows_are_not_counted() {
 		String token = createAdminUser("sync-unique@b.com");
 		String fileId = upload(token, "유니크.pdf");
-		UUID adminId = jdbc.queryForObject("select id from users where email = ?", UUID.class, "sync-unique@b.com");
+		UUID adminId = userId("sync-unique@b.com");
 		RagDocument again = new RagDocument(UUID.randomUUID(), "유니크.pdf", fileId, "mock-vector-store", 1,
-				"completed", adminId, null, null);
+				"completed", adminId, null);
 
 		assertThat(documentRepository.insertIfAbsent(again)).isZero();
 		assertThat(catchThrowable(() -> documentRepository.insert(again))).isNotNull();

@@ -23,6 +23,7 @@ if [ "$target" = node ]; then
   # CI 가 검증한 버전과 실제 배포 산출물을 만든 버전이 달라짐
   pkg=frontend/package.json
   [ -f "$pkg" ] || { echo "수집 실패 : $pkg 없음"; exit 1; }
+  command -v node >/dev/null 2>&1 || { echo "수집 실패 : node 없음"; exit 1; }
   engines="$(node -p "JSON.parse(require('fs').readFileSync('$pkg','utf8')).engines?.node ?? ''")"
   [ -n "$engines" ] || { echo "수집 실패 : $pkg 에 engines.node 가 없음"; exit 1; }
   engines_major="${engines%%.*}"
@@ -42,6 +43,7 @@ else
   want_major="$want"
 
   # java -version 은 stderr 로 나오고 형식이 배포판마다 다름(17.0.19 · 1.8.0_402)
+  command -v java >/dev/null 2>&1 || { echo "수집 실패 : java 없음"; exit 1; }
   raw="$(java -version 2>&1 | head -1)"
   actual="$(printf '%s' "$raw" | grep -o '"[0-9][^"]*"' | tr -d '"' || true)"
   [ -n "$actual" ] || { echo "수집 실패 : java -version 출력에서 버전을 못 뽑음 - $raw"; exit 1; }

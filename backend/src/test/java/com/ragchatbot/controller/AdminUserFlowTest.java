@@ -19,10 +19,6 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  */
 class AdminUserFlowTest extends AbstractPgIntegrationTest {
 
-	private UUID idOf(String email) {
-		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
-	}
-
 	@SuppressWarnings("rawtypes")
 	private ResponseEntity<Map> reset(String token, UUID targetId) {
 		return rest.exchange("/api/admin/users/" + targetId + "/password-reset", HttpMethod.POST,
@@ -73,7 +69,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 		String adminToken = createAdminUser("reset-admin@b.com");
 		createUser("reset-target@b.com");
 
-		var res = reset(adminToken, idOf("reset-target@b.com"));
+		var res = reset(adminToken, userId("reset-target@b.com"));
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat((String) res.getBody().get("temporaryPassword")).isNotBlank();
@@ -85,7 +81,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	void temporary_password_works_for_login() {
 		String adminToken = createAdminUser("reset-admin2@b.com");
 		createUser("reset-login@b.com");
-		String temporary = (String) reset(adminToken, idOf("reset-login@b.com")).getBody()
+		String temporary = (String) reset(adminToken, userId("reset-login@b.com")).getBody()
 				.get("temporaryPassword");
 
 		ResponseEntity<Map> login = rest.postForEntity("/api/auth/login",
@@ -109,7 +105,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 		assertThat(rest.exchange("/api/auth/me", HttpMethod.GET, new HttpEntity<>(bearer(targetToken)),
 				Map.class).getStatusCode()).isEqualTo(HttpStatus.OK);
 
-		reset(adminToken, idOf("reset-kick@b.com"));
+		reset(adminToken, userId("reset-kick@b.com"));
 
 		ResponseEntity<Map> after = rest.exchange("/api/auth/me", HttpMethod.GET,
 				new HttpEntity<>(bearer(targetToken)), Map.class);
@@ -122,7 +118,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	void two_resets_produce_different_passwords() {
 		String adminToken = createAdminUser("reset-admin4@b.com");
 		createUser("reset-twice@b.com");
-		UUID target = idOf("reset-twice@b.com");
+		UUID target = userId("reset-twice@b.com");
 
 		String first = (String) reset(adminToken, target).getBody().get("temporaryPassword");
 		String second = (String) reset(adminToken, target).getBody().get("temporaryPassword");
@@ -136,7 +132,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 		createUser("reset-victim@b.com");
 		String plainToken = createUser("reset-intruder@b.com");
 
-		var res = reset(plainToken, idOf("reset-victim@b.com"));
+		var res = reset(plainToken, userId("reset-victim@b.com"));
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
@@ -146,7 +142,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	void admin_cannot_reset_self() {
 		String adminToken = createAdminUser("reset-self@b.com");
 
-		var res = reset(adminToken, idOf("reset-self@b.com"));
+		var res = reset(adminToken, userId("reset-self@b.com"));
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 	}
