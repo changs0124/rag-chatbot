@@ -1,0 +1,17 @@
+325-					completion == null ? null : completion.inputTokens(),
+326-					completion == null ? null : completion.outputTokens());
+327:		} catch (Exception ignored) {
+328-			// 저장 실패는 무시(이미 비정상 종료 경로)
+329-		}
+--
+354-		try {
+355-			emitter.send(SseEmitter.event().name(event).data(data));
+356:		} catch (Exception ignored) {
+357-			// 이미 끊긴 연결이면 보낼 곳이 없음
+358-		}
+--
+362-		try {
+363-			emitter.complete();
+364:		} catch (Exception ignored) {
+365-			// 이미 끊긴 연결
+366-		}
