@@ -1,0 +1,17 @@
+## new ByteArrayResource (backend test)
+backend/src/test/java/com/ragchatbot/support/AbstractPgIntegrationTest.java: 222:		var resource = new ByteArrayResource(content) {
+## PNG magic 0x89 constants
+backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java:114:		var res = upload(token, "photo.png", new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }, "image/png");
+backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java:260:		var res = upload(token, "위장.md", new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }, "image/png");
+backend/src/test/java/com/ragchatbot/controller/DocFigureFlowTest.java:31:		assertThat(res.getBody()).startsWith((byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47);
+backend/src/test/java/com/ragchatbot/support/AbstractPgIntegrationTest.java:210:	protected static final byte[] PNG_MAGIC = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
+## select id from users where email
+backend/src/test/java/com/ragchatbot/support/AbstractPgIntegrationTest.java:214:		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
+## rawChat / stub definitions
+backend/src/test/java/com/ragchatbot/controller/ChatConversationDeletedTest.java:37:	void stageLabel() {
+backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java:53:	void stageLabel() {
+## frontend deferred/msg/conv definitions
+## MessageListLazyFail Boundary / fixed wait
+## vi.mock endpoints deleteConversationIfEmpty
+frontend/src/hooks/useChatLoading.test.ts:1
+frontend/src/hooks/useChatRace.test.ts:1

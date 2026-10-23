@@ -1,0 +1,20 @@
+./.github/workflows/ci.yml:89:        run: npm test -- --reporter=default --reporter=json --outputFile.json=vitest-report.json
+./.gitignore:65:frontend/vitest-report.json
+./.issue/149/evidence/after/검증.txt:24:     `vitest-report.json` 을 **읽기만 하고 만들지 않으므로** 리포트를 먼저 다시 만들어야 한다.
+./.issue/149/evidence/after/변경-diff.patch:82:+  `vitest-report.json` 을 **읽기만 하고 만들지 않으므로** 리포트를 먼저 다시 만들어야 한다.
+./.issue/149/evidence/comment.md:21:- **측정 입력이 낡으면 조용히 속는다** — 백엔드는 `target/` 의 옛 surefire XML 때문에 `clean` 후 재야 하고(2026-07-28 에 실제로 6건 부풀려졌다), 프론트는 이 스크립트가 `vitest-report.json` 을 읽기만 하고 만들지 않는다
+./.issue/324/evidence/after/full-run.log:9:> vitest run --reporter=default --reporter=json --outputFile.json=vitest-report.json
+./.issue/324/evidence/after/full-run.log:43:JSON report written to D:/dev/rag-chatbot/.issue/worktrees/324-frontend-small-defects/frontend/vitest-report.json
+./.issue/331/evidence/after/i1-vitest-default-plus-json.txt:1:$ rm -f vitest-report.json && npm test -- --reporter=default --reporter=json --outputFile.json=vitest-report.json   (일부러 깨뜨린 src/zz-i331-broken.test.ts 포함)
+./.issue/331/evidence/after/i1-vitest-default-plus-json.txt:4:> vitest run --reporter=default --reporter=json --outputFile.json=vitest-report.json
+./.issue/331/evidence/after/i1-vitest-default-plus-json.txt:41:JSON report written to D:/dev/rag-chatbot/.issue/worktrees/331-scripts-ci-fixes/frontend/vitest-report.json
+./.issue/331/evidence/after/i1-vitest-default-plus-json.txt:44:$ ls -l vitest-report.json
+./.issue/331/evidence/after/i1-vitest-default-plus-json.txt:45:54938 vitest-report.json
+./.issue/331/evidence/before/i1-vitest-json-only.txt:1:$ npm test -- --reporter=json --outputFile=vitest-report.json   (ci.yml:96 · check-all.sh:132 현재 명령, 일부러 깨뜨린 src/zz-i331-broken.test.ts 포함)
+./.issue/331/evidence/before/i1-vitest-json-only.txt:4:> vitest run --reporter=json --outputFile=vitest-report.json
+./.issue/331/evidence/before/i1-vitest-json-only.txt:6:JSON report written to D:/dev/rag-chatbot/.issue/worktrees/331-scripts-ci-fixes/frontend/vitest-report.json
+./.issue/334/evidence/after/verify.txt:4:R1  applied  CONVENTIONS 게이트별 사고 이력 · 「못 잡는 것」 삭제, 무엇을 보는지 1~2줄. 정본: 각 scripts/check-*.sh 머리 주석 · CHANGELOG(#136 #138 #145 #210 #60 #52 #59). case-floor `clean` · vitest-report 재생성 경고 · shellcheck 경고 0/억제 규칙 · engines.node 는 유지
+./.issue/334/evidence/after/verify.txt:72:1	vitest-report.json
+./.issue/349/evidence/after/verify.txt:6:[frontend] npm test (vitest run --reporter=default --reporter=json --outputFile.json=vitest-report.json)
+./.issue/367/evidence/after/check-all.txt:1479:> vitest run --reporter=default --reporter=json --outputFile.json=vitest-report.json
+./.issue/367/evidence/after/check-all.txt:1513:JSON report written to D:/dev/rag-chatbot/.issue/worktrees/367-unreferenced-cleanup-continue/frontend/vitest-report.json

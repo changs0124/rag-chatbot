@@ -1,0 +1,7 @@
+Using Node v24.19.0
+수집 실패 : java 없음
+exit=1
+Using Node v24.19.0
+node : .nvmrc=24 / engines.node=24.x / 실행 중=24.19.0
+OK
+exit=0
