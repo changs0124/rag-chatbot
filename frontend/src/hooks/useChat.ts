@@ -242,11 +242,16 @@ export function useChat() {
 
       const patch = (updater: (m: ChatMessage) => ChatMessage) =>
         setMessages((prev) => prev.map((m) => (m.id === assistantId ? updater(m) : m)))
+      // 200 을 받았는지(#435). 서버는 질문을 저장한 뒤에 200 을 돌려주므로, 그 전에 끊긴 요청은 질문이 없을 수 있다
+      let opened = false
 
       try {
         await streamChat(
           { conversationId: convId, message: text, attachmentIds: attachments.map((a) => a.id) },
           {
+            onOpen: () => {
+              opened = true
+            },
             onStage: ({ label }) => {
               stageQueue.current.push(label)
               if (stageTimer.current === null) advanceStage()
@@ -276,6 +281,8 @@ export function useChat() {
           setMessages((prev) =>
             prev.filter((m) => !(m.id === assistantId && !m.content && m.status !== 'complete')),
           )
+          // 200 을 받기 전에 끊겼으면 질문 말풍선도 걷는다(#435) - 서버에 닿지 않은 요청이라, 남기면 새로고침에 사라진다
+          if (!opened) setMessages((prev) => prev.filter((m) => m.id !== userMsg.id))
         }
         patch((m) =>
           // onDone 이 이미 확정한 메시지는 건드리지 않음 - 서버는 그 답변을 stopped=false 로 저장했으므로,

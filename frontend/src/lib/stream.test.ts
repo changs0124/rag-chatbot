@@ -43,6 +43,19 @@ describe('chat SSE 수신 계약', () => {
     ])
   })
 
+  it('200 이면 이벤트보다 먼저 onOpen, 거절이면 부르지 않음 (#435)', async () => {
+    // 서버는 질문을 저장한 뒤에 200 을 돌려준다 - useChat 이 이것으로 중단 때 질문 말풍선을 남길지 정한다
+    stubFetch('event:token\ndata:{"delta":"본문"}\n\n' + 'event:done\ndata:{"finishReason":"stop","noSource":true}\n\n')
+    const seen: string[] = []
+    await streamChat(REQUEST, { onOpen: () => seen.push('open'), onToken: (d) => seen.push(d) })
+    expect(seen).toEqual(['open', '본문'])
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"code":"RATE_LIMIT","message":"x"}', { status: 429 })))
+    const opened = vi.fn()
+    await expect(streamChat(REQUEST, { onOpen: opened })).rejects.toBeTruthy()
+    expect(opened).not.toHaveBeenCalled()
+  })
+
   it('모르는 이벤트는 조용히 무시함(리스크 R-14)', async () => {
     stubFetch(
       'event:future_event\ndata:{"whatever":1}\n\n' +
