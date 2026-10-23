@@ -176,6 +176,8 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', []))
     expect(result.current.messages).toHaveLength(2)
+    // 서버가 받아 단계를 보낸 뒤의 중단 - 질문은 서버에 저장돼 있다
+    act(() => void stream.handlers?.onStage?.({ stage: 'analyzing', label: '질문 분석 중' }))
 
     await act(async () => {
       result.current.stop()
@@ -184,6 +186,22 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
 
     expect(result.current.messages).toHaveLength(1)
     expect(result.current.messages[0].role).toBe('user')
+  })
+
+  it('서버에서 아무것도 받기 전에 중단하면 질문 말풍선도 남기지 않음 (#435)', async () => {
+    // 요청이 서버 검증 전에 끊기면 질문도 저장되지 않는다 - 남기면 새로고침에 사라져 화면과 재조회가 어긋남
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+    expect(result.current.messages).toHaveLength(2)
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(result.current.messages).toHaveLength(0)
+    expect(result.current.error).toBeNull()
   })
 
   it('정상 완료 뒤 abort 예외가 나도 stopped 를 세우지 않음', async () => {

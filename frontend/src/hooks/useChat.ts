@@ -242,19 +242,29 @@ export function useChat() {
 
       const patch = (updater: (m: ChatMessage) => ChatMessage) =>
         setMessages((prev) => prev.map((m) => (m.id === assistantId ? updater(m) : m)))
+      // 서버가 보낸 첫 이벤트를 받았는지(#435). 받기 전에 끊긴 요청은 서버가 질문도 저장하지 않았을 수 있다
+      let received = false
 
       try {
         await streamChat(
           { conversationId: convId, message: text, attachmentIds: attachments.map((a) => a.id) },
           {
             onStage: ({ label }) => {
+              received = true
               stageQueue.current.push(label)
               if (stageTimer.current === null) advanceStage()
             },
             // 토큰이 와도 단계를 끊지 않음 - 남은 단계가 최소 표시 시간을 마치면 답변으로 교체됨
-            onToken: (delta) => patch((m) => ({ ...m, content: m.content + delta })),
-            onCitations: (items) => patch((m) => ({ ...m, citations: items })),
+            onToken: (delta) => {
+              received = true
+              patch((m) => ({ ...m, content: m.content + delta }))
+            },
+            onCitations: (items) => {
+              received = true
+              patch((m) => ({ ...m, citations: items }))
+            },
             onDone: () => {
+              received = true
               patch((m) => ({ ...m, status: 'complete' }))
               refreshConversations()
             },
@@ -276,6 +286,8 @@ export function useChat() {
           setMessages((prev) =>
             prev.filter((m) => !(m.id === assistantId && !m.content && m.status !== 'complete')),
           )
+          // 서버에서 아무것도 받기 전이면 질문 말풍선도 걷는다(#435) - 남기면 새로고침에 사라져 화면과 재조회가 어긋남
+          if (!received) setMessages((prev) => prev.filter((m) => m.id !== userMsg.id))
         }
         patch((m) =>
           // onDone 이 이미 확정한 메시지는 건드리지 않음 - 서버는 그 답변을 stopped=false 로 저장했으므로,

@@ -319,6 +319,26 @@ describe('Composer', () => {
     expect(box).toHaveValue('남아야 함')
   })
 
+  /** #435 - 보내기와 중단이 같은 자리라, 빠른 두 번 탭의 두 번째가 중단으로 떨어져 질문이 끊겼다 */
+  it('중단 버튼이 나타난 직후의 클릭은 무시하고, 잠시 뒤의 클릭은 중단한다 (#435)', () => {
+    vi.useFakeTimers()
+    try {
+      const onStop = vi.fn()
+      const { rerender } = render(<Composer onSend={accept} streaming={false} onStop={onStop} />)
+      rerender(<Composer onSend={accept} streaming onStop={onStop} />)
+
+      act(() => void vi.advanceTimersByTime(300))
+      fireEvent.click(screen.getByLabelText('중단'))
+      expect(onStop).not.toHaveBeenCalled()
+
+      act(() => void vi.advanceTimersByTime(300))
+      fireEvent.click(screen.getByLabelText('중단'))
+      expect(onStop).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('전송 전 카드도 눌러서 확대할 수 있음 - 업로드 완료를 기다리지 않음', () => {
     vi.mocked(uploadFile).mockReturnValue(deferred<Attachment>().promise)
     render(<Composer onSend={accept} streaming={false} onStop={noop} />)

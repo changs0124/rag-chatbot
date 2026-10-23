@@ -35,6 +35,10 @@ const MAX_ATTACHMENTS = 5
 // 입력줄의 둥근 버튼(첨부 · 중단 · 보내기). 크기 · 모양만 공유하고 색 · 움직임은 호출부가 덧붙인다(#390)
 const roundBtn = 'grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10'
 
+// 중단 버튼이 나타난 뒤 이 시간 안의 클릭은 무시한다(#435). 보내기와 같은 자리라, 빠른 두 번 탭의 두 번째가
+// 중단으로 떨어져 첫 토큰 전에 질문이 끊겼다. OS 기본 더블클릭 간격(500ms)
+const STOP_GUARD_MS = 500
+
 export default function Composer({
   onSend,
   streaming,
@@ -60,6 +64,11 @@ export default function Composer({
   draftsRef.current = drafts
   // 받아들임을 기다리는 동안 보낸 카드의 key(#349) - 곧 메시지에 실릴 첨부라 서버에서 지우면 안 된다
   const sendingRef = useRef<string[]>([])
+  // 중단 버튼이 나타난 시각(#435)
+  const stopShownAt = useRef(0)
+  useEffect(() => {
+    if (streaming) stopShownAt.current = Date.now()
+  }, [streaming])
 
   const startUpload = useCallback((draft: Draft) => {
     uploadFile(draft.file, draft.controller.signal)
@@ -309,7 +318,10 @@ export default function Composer({
           {streaming ? (
             <button
               type="button"
-              onClick={onStop}
+              onClick={() => {
+                if (Date.now() - stopShownAt.current < STOP_GUARD_MS) return
+                onStop()
+              }}
               aria-label="중단"
               className={roundBtn + ' bg-surface text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97]'}
             >
