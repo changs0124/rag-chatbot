@@ -154,7 +154,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   **마크다운 이미지(`![](url)`)도 그리지 않는다**(#359, 바깥 주소를 곧바로 불러 값이 새는 길) — 자리에는 **alt 문구만** 글자로 남긴다(#365, 이미지를 감싼 링크가 빈 링크로 남지 않게) ·
   **마크다운 링크(`[글](url)`)도 누를 수 없는 글자로 그린다**(#414, 모델 출력에 실린 바깥 주소로 한 번 클릭에 대화가 새는 길) — 글자 뒤에 ` (호스트)` 를 밝히고, 호스트를 못 읽는 값(상대 경로 · http(s) 아님)은 글자만 ·
   표는 가로 스크롤 상자 안. **사용자 메시지와 출처 스니펫은 평문 그대로**다.
-- **`Markdown` 은 `React.lazy` 로 지연 로딩한다(#417).** react-markdown · remark 묶음이 따로 청크(gzip 약 54KB)로 빠져 로그인 화면의 첫 JS 는 gzip 147.38KB → 92.76KB 다. 청크가 오기 전 답변 자리는 `<Suspense>` fallback 으로 같은 글을 평문(`whitespace-pre-wrap`)으로 보인다. **청크를 못 받으면(재배포로 옛 청크가 사라짐 · 망 끊김) 평문으로 물러선다** — 그대로 두면 lazy 의 오류가 최상위 ErrorBoundary 까지 가 앱 전체가 오류 화면이 된다. `ChatPage` 가 로그인 뒤 청크를 미리 받아 둔다.
+- **`Markdown` 은 `React.lazy` 로 지연 로딩한다(#417).** react-markdown · remark 묶음이 따로 청크(gzip 약 54KB)로 빠져 로그인 화면의 첫 JS 는 gzip 147.38KB → 92.76KB 였다(#417 시점 실측, 이후 달라질 수 있음). 청크가 오기 전 답변 자리는 `<Suspense>` fallback 으로 같은 글을 평문(`whitespace-pre-wrap`)으로 보인다. **청크를 못 받으면(재배포로 옛 청크가 사라짐 · 망 끊김) 평문으로 물러선다** — 그대로 두면 lazy 의 오류가 최상위 ErrorBoundary 까지 가 앱 전체가 오류 화면이 된다. `ChatPage` 가 로그인 뒤 청크를 미리 받아 둔다.
 - **한국어 조사 앞의 굵게도 닫는다(#287).** 표준 강조 규칙은 닫는 `**` 앞이 문장부호 · 뒤가 글자면 굵게로 보지 않으므로
   `remark-cjk-friendly` 를 remark-gfm 뒤에 붙여 CJK 글자 옆에서만 이 규칙을 푼다.
 - **그림은 Bearer 로 받아 objectURL 로 그리고, 키별로 한 번만 받는다.** objectURL 과 404(`null`)를 모듈 캐시에 두고 회수하지 않는다 —
@@ -245,7 +245,7 @@ preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막�
 | `X-Frame-Options` | `DENY` | 프레임 삽입 거부(클릭재킹) |
 | `X-Content-Type-Options` | `nosniff` | 형식 추측 금지 |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | 다른 출처에는 경로 없이 출처만 |
-| `Content-Security-Policy` | 스크립트 `'self'` · 연결 · 이미지는 `'self'` + 백엔드 + `blob:` · `frame-ancestors 'none'` | **강제한다**(#411). Report-Only(#404)로 운영 화면 전부(대화 목록 · 스트리밍 · 첨부 업로드/미리보기/확대 · 문서 그림 · 마이페이지 · 관리자)를 돌아 위반 0 을 본 뒤 바꿨다. 정책을 넓힐 때는 Report-Only 로 먼저 올린다 |
+| `Content-Security-Policy` | 스크립트 `'self'` · 연결 `'self'` + 백엔드 · 이미지 `'self'` + 백엔드 + `blob:` + `data:` · `frame-ancestors 'none'` | **강제한다**(#411). Report-Only(#404)로 운영 화면 전부(대화 목록 · 스트리밍 · 첨부 업로드/미리보기/확대 · 문서 그림 · 마이페이지 · 관리자)를 돌아 위반 0 을 본 뒤 바꿨다. 정책을 넓힐 때는 Report-Only 로 먼저 올린다 |
 
 **CSP 에 백엔드 주소(`https://api.chseong.fyi`)가 박혀 있다.** `VITE_API_BASE_URL` 을 바꾸면 이 값도 함께 바꿔야 한다 —
 강제로 바꾼 뒤에 어긋나면 모든 API 호출 · 첨부 이미지가 막힌다.

@@ -5,6 +5,7 @@
 ## [Unreleased]
 
 ### Docs
+- **같은 사실의 반복 · 갈린 정본 문장 · 낡을 수치를 정리했다(#451).** 모델명 `gpt-6-sol` 은 README 기술 스택 표와 `backend/.env.example` 에만 남기고 나머지는 `OPENAI_MODEL` 기본값을 가리킨다. 기본값 정본 문장을 「기본값 = `application.yml`, 의미 · 증상 = `.env.example`」로 통일했고, README 문서 표(INDEX 와 겹침)와 `USER_MAX_NAME_CHARS(50)` 반복, design-system 로고 표의 죽은 `#3F4444` 행 · 절 번호 7-1 결번, frontend 번들 크기 시점 표기 · CSP 이미지 출처 `data:` 누락을 고쳤다.
 - **코드와 어긋난 문서 서술 넷을 바로잡았다(#449).** `api.md` 409 표(공통 에러표 · HTTP 표)에 「이미 보낸 첨부 삭제 · `ifEmpty` 인데 메시지 있음」을 더하고 v1.8 로 올렸다 ·
   #447 배포 순서 불변식(백엔드 먼저, 롤백은 프론트 먼저)을 `api.md` API-DELETE-001 · `backend.md` 「배포」로 옮겼다 · 토큰 재발급 서술을 #390 구조
   (`adoptRefreshedToken` 은 `authFetch` 한 곳, 직접 `fetch` 는 `ImageLightbox` 다운로드뿐)로 `frontend.md` · `features.md` 에 맞췄다.

@@ -1,6 +1,6 @@
 # rag-chatbot
 
-> OpenAI API(모델은 `OPENAI_MODEL` — 기본·운영 `gpt-6-sol`) + OpenAI 플랫폼 Vector Store 기반 RAG 챗봇. 답변에 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론한다.
+> OpenAI API(모델은 `OPENAI_MODEL` 기본값) + OpenAI 플랫폼 Vector Store 기반 RAG 챗봇. 답변에 출처를 항상 표기하고, 자료가 없으면 그 사실을 밝힌 뒤 추론한다.
 
 모노레포 : `frontend/` (React + Vite) · `backend/` (Spring Boot + MyBatis) · `docs/` (이 폴더)
 
