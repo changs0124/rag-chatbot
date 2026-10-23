@@ -165,11 +165,46 @@ describe('Composer', () => {
       fireEvent.click(screen.getByLabelText('보내기'))
     })
 
-    expect(onSend).toHaveBeenCalledWith('두 장 설명해줘', [attachment('a1'), attachment('a2')])
+    expect(onSend).toHaveBeenCalledWith('두 장 설명해줘', [attachment('a1'), attachment('a2')], expect.any(Function))
     // 전송 시점에는 업로드가 없음(이미 올라가 있음)
     expect(uploadFile).toHaveBeenCalledTimes(2)
     expect(revokeObjectURL).toHaveBeenCalledTimes(2)
     expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
+  })
+
+  it('서버에 닿기 전에 끊긴 턴은 보낸 글과 카드가 입력창에 돌아오고, 그사이 쓴 글은 남음 (#440)', async () => {
+    vi.mocked(uploadFile).mockResolvedValueOnce(attachment('a1'))
+    let giveBack: () => void = () => {}
+    const onSend = vi.fn(async (_t: string, _a: Attachment[], back: () => void) => {
+      giveBack = back
+      return true
+    })
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+    const box = screen.getByPlaceholderText('메시지를 입력하세요') as HTMLTextAreaElement
+
+    pick(image('photo_0001.png'))
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    fireEvent.change(box, { target: { value: '이 사진 설명해줘' } })
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('보내기'))
+    })
+    expect(box.value).toBe('')
+    expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
+
+    fireEvent.change(box, { target: { value: '추가로' } })
+    act(() => giveBack())
+
+    expect(box.value).toBe('이 사진 설명해줘\n추가로')
+    // 보낼 때 회수한 미리보기는 파일에서 다시 만든다. 서버 첨부는 그대로라 다시 올리지 않는다
+    const thumb = screen.getByAltText('photo_0001.png') as HTMLImageElement
+    expect(thumb.src).toBe('blob:mock/1')
+    expect(uploadFile).toHaveBeenCalledTimes(1)
+
+    // 되돌린 카드는 다시 보내면 같은 첨부 id 로 나간다
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('보내기'))
+    })
+    expect(onSend).toHaveBeenLastCalledWith('이 사진 설명해줘\n추가로', [attachment('a1')], expect.any(Function))
   })
 
   /**
@@ -271,7 +306,7 @@ describe('Composer', () => {
       await settled.promise
     })
 
-    expect(onSend).toHaveBeenCalledWith('첫 질문', [attachment('a1')])
+    expect(onSend).toHaveBeenCalledWith('첫 질문', [attachment('a1')], expect.any(Function))
     expect(box).toHaveValue('다음 질문')
     expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
     expect(screen.getByAltText('photo_0002.png')).toBeInTheDocument()
@@ -288,7 +323,7 @@ describe('Composer', () => {
     pick(image())
     await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
     fireEvent.keyDown(screen.getByPlaceholderText('메시지를 입력하세요'), { key: 'Enter' })
-    expect(onSend).toHaveBeenCalledWith('', [attachment('a1')])
+    expect(onSend).toHaveBeenCalledWith('', [attachment('a1')], expect.any(Function))
 
     fireEvent.click(screen.getByLabelText('첨부 제거'))
     expect(deleteAttachment).not.toHaveBeenCalled()
@@ -410,7 +445,7 @@ describe('Composer', () => {
     await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
     fireEvent.click(screen.getByLabelText('보내기'))
 
-    expect(onSend).toHaveBeenCalledWith('', [attachment('a1')])
+    expect(onSend).toHaveBeenCalledWith('', [attachment('a1')], expect.any(Function))
   })
 
   it('이미지를 붙여넣으면 첨부되고, 텍스트만 붙여넣으면 첨부가 생기지 않음', () => {
@@ -619,5 +654,57 @@ describe('Composer', () => {
     pick(image('p7.png'))
     expect(screen.getByAltText('p7.png')).toBeInTheDocument()
     expect(uploadFile).toHaveBeenCalledTimes(6)
+  })
+
+  it('되돌린 카드와 그사이 더한 카드가 5장을 넘으면 뒤에 더한 것을 걷고 알린다 (#440)', async () => {
+    let seq = 0
+    vi.mocked(uploadFile).mockImplementation(async () => attachment(`a${++seq}`))
+    let giveBack: () => void = () => {}
+    const onSend = vi.fn(async (_t: string, _a: Attachment[], back: () => void) => {
+      giveBack = back
+      return true
+    })
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+
+    fireEvent.change(input, { target: { files: ['s1', 's2', 's3'].map((n) => image(`${n}.png`)) } })
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('보내기'))
+    })
+    fireEvent.change(input, { target: { files: ['n1', 'n2', 'n3'].map((n) => image(`${n}.png`)) } })
+    await waitFor(() => expect(screen.getAllByLabelText('첨부 제거')).toHaveLength(3))
+    await waitFor(() => expect(uploadFile).toHaveBeenCalledTimes(6))
+    await act(async () => {})
+
+    act(() => giveBack())
+
+    expect(screen.getAllByLabelText('첨부 제거')).toHaveLength(5)
+    expect(screen.getByAltText('s1.png')).toBeInTheDocument()
+    expect(screen.queryByAltText('n3.png')).not.toBeInTheDocument()
+    expect(deleteAttachment).toHaveBeenCalledWith('a6')
+    expect(screen.getByRole('alert')).toHaveTextContent('나중에 추가한 사진을 뺐습니다')
+  })
+
+  it('언마운트 뒤에 온 되돌리기는 무시한다 (#440)', async () => {
+    vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
+    let giveBack: () => void = () => {}
+    const onSend = vi.fn(async (_t: string, _a: Attachment[], back: () => void) => {
+      giveBack = back
+      return true
+    })
+    const { unmount } = render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+    pick(image())
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('보내기'))
+    })
+    const made = createObjectURL.mock.calls.length
+    unmount()
+
+    giveBack()
+
+    // 회수할 길이 없는 미리보기 URL 을 만들지 않는다
+    expect(createObjectURL.mock.calls.length).toBe(made)
   })
 })
