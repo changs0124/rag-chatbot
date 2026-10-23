@@ -1,0 +1,14 @@
+== Unreleased 줄 수: 200
+== Unreleased 안 소절
+1:## [Unreleased]
+3:### Fixed
+74:### Performance
+85:### Security
+148:### Changed
+173:### Removed
+180:### Refactored
+193:### Fixed
+== 항목 수
+30
+== current-sprint 줄 수
+48 docs/04_tasks/current-sprint.md

@@ -20,6 +20,12 @@ export default function ChatPage() {
 
   const activeTitle = chat.conversations.find((c) => c.id === chat.activeId)?.title
 
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
+  // 마크다운 청크를 미리 받아 둔다(#417) - 첫 답변 자리에서 평문→서식 깜빡임과, 오래 열어 둔 탭이 재배포 뒤 옛 청크를 찾는 창을 줄인다.
+  // 실패는 무시한다 - 그리는 쪽(MessageList)이 평문으로 물러선다
+  useEffect(() => {
+    import('../components/chat/Markdown').catch(() => {})
+  }, [])
   // 모바일에서 헤더가 밀려 올라가지 않게 함(#221). 실기기 브라우저 고유 동작 둘을 막는다 -
   // ① iOS 는 문서가 스크롤되지 않아도 가장자리에서 페이지 전체를 고무줄처럼 튕긴다 → 채팅 화면이 떠 있는
   //   동안만 문서 스크롤과 튕김을 끈다(관리·마이 페이지는 문서 스크롤을 그대로 쓴다).
@@ -27,12 +33,6 @@ export default function ChatPage() {
   //   루트 높이를 보이는 영역에 맞추고 끌려 올라간 문서를 되돌린다. Android Chrome 은 index.html 의
   //   interactive-widget=resizes-content 로 레이아웃 자체가 줄어 같은 결과가 된다.
   // 헤드리스 브라우저는 가상 키보드와 튕김을 재현하지 못해 실기기로만 확인된다
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
-  // 마크다운 청크를 미리 받아 둔다(#417) - 첫 답변 자리에서 평문→서식 깜빡임과, 오래 열어 둔 탭이 재배포 뒤 옛 청크를 찾는 창을 줄인다.
-  // 실패는 무시한다 - 그리는 쪽(MessageList)이 평문으로 물러선다
-  useEffect(() => {
-    import('../components/chat/Markdown').catch(() => {})
-  }, [])
   useEffect(() => {
     const html = document.documentElement
     const prev = { overflow: html.style.overflow, overscroll: html.style.overscrollBehavior }

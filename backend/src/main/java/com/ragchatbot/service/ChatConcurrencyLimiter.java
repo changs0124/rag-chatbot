@@ -41,7 +41,7 @@ public class ChatConcurrencyLimiter {
 		this.perUserMax = perUserMax;
 	}
 
-	/** 자리를 잡음. 못 잡으면 429 - 큐에 쌓아 두고 기다리게 하지 않음(무응답이 곧 결함이었음) */
+	/** 자리를 잡음. 못 잡으면 429 - 큐에 쌓아 두고 기다리게 하지 않음 */
 	public synchronized void acquire(UUID userId) {
 		if (perUser.getOrDefault(userId, 0) >= perUserMax) {
 			throw new RateLimitException("이미 응답을 받는 중임 - 끝난 뒤 다시 시도");

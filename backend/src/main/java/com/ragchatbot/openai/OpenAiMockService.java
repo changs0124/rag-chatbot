@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 /**
  * 목업 OpenAI (APP_MODE=mock). 모드에 기본값은 없다 - 지정하지 않으면 기동이 멈춘다(AppModeGuard). 실 API/키 없이 전 경로가 동작함(P-2).
  * 고정 코퍼스 키워드에 매칭되면 출처 포함 답변, 아니면 무자료 플래그(noSource, REQ-RAG-003).
- * 호출을 기록해 리소스 정리·첨부 전달을 테스트에서 검증할 수 있게 함.
+ * 마지막 호출의 첨부 개수와 이력을 기록해 첨부 전달을 테스트에서 검증할 수 있게 함.
  */
 @Service
 // 판정은 AppModeGuard.normalize 하나로(#248) - 가드가 받아 준 표기면 구현 선택도 같은 값을 본다

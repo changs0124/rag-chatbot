@@ -137,8 +137,8 @@ public abstract class AbstractPgIntegrationTest {
 	 * 계정 발급 후 그 계정의 JWT 반환(FEAT-AUTH-001).
 	 *
 	 * <p><b>실제 발급 경로를 그대로 탄다</b> - 관리자로 로그인해 {@code POST /api/admin/users} 를 부르고,
-	 * 돌려받은 임시 비밀번호로 다시 로그인한다. DB 에 행을 직접 넣으면 빠르지만, 그러면 16개 테스트
-	 * 파일이 전부 발급 로직을 **한 번도 밟지 않는다.**
+	 * 돌려받은 임시 비밀번호로 다시 로그인한다. DB 에 행을 직접 넣으면 빠르지만, 그러면 이 베이스를 쓰는 통합 테스트가
+	 * 전부 발급 로직을 **한 번도 밟지 않는다.**
 	 */
 	protected String createUser(String email) {
 		return login(email, issueAccount(email));

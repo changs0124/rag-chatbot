@@ -27,7 +27,7 @@
 - `APP_MODE=mock` 이면 OpenAI 호출 없이 전 경로가 목업 응답으로 돈다
 - 턴별 토큰 사용량 기록 · 요청 상관 ID · 고아 첨부 회수
 
-기본값의 정본은 `backend/.env.example` 이다.
+기본값의 정본은 `application.yml`, 각 항목의 의미와 빠뜨렸을 때의 증상은 `backend/.env.example` 이다.
 
 ## 구조
 
@@ -79,7 +79,7 @@ Maven Central 에서 내려받아, 그 요청이 거절되면 이미지 빌드�
 |------|------|
 | `APP_MODE` | `mock` \| `live`. **기본값이 없어** 비우면 기동에 실패한다 |
 | `JWT_SECRET` | 32바이트 이상. 짧거나 비면 기동에 실패한다 |
-| `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` · `OPENAI_MODEL` | `live` 에서만. 모델 기본값 `gpt-6-sol`. 스토어 ID 를 비우면 출처가 늘 0건(전부 「자료 없음」) |
+| `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` · `OPENAI_MODEL` | `live` 에서만. 모델 기본값은 `OPENAI_MODEL` 항목(`backend/.env.example`). 스토어 ID 를 비우면 출처가 늘 0건(전부 「자료 없음」) |
 | `ALLOWED_EMAIL_DOMAINS` | 계정을 만들 수 있는 도메인. **`live` 에서는 필수** |
 | `ADMIN_EMAILS` | 관리자 명단. 계정이 없는 주소는 기동 시 만들어지고 임시 비밀번호가 로그에 한 번 찍힌다 |
 | `ALLOWED_ORIGINS` | CORS 허용 출처. 기본값은 `http://localhost:5173` 하나뿐이다 |
@@ -140,20 +140,4 @@ GitHub Actions(`.github/workflows/ci.yml`)는 PR 과 `main` 푸시마다 7잡을
 
 ## 문서
 
-진입점은 [docs/INDEX.md](docs/INDEX.md) 다. 같은 사실은 한 곳에만 적는다.
-
-| 문서 | 담는 것 |
-|------|---------|
-| [요구사항정의서](docs/01_specs/requirements.md) | `REQ-` ID 정본 |
-| [기능명세서](docs/01_specs/features.md) | `FEAT-` ID · 처리 흐름 · 예외 · 범위 밖 |
-| [ERD 설계서](docs/01_specs/erd.md) | 테이블 정의 · 인덱스 · 설계 원칙 · 사용량 조회 SQL |
-| [API 명세서](docs/01_specs/api.md) | `API-` ID · 공통 규칙 · SSE 이벤트 · 에러 코드 |
-| [OpenAI 실 연동 투입 절차](docs/01_specs/live-integration.md) | `mock` → `live` 전환과 비용 발생 지점 |
-| [Architecture](docs/02_architecture/overview.md) | 시스템 구조 · 데이터 흐름 · 알려진 제약 |
-| [Backend](docs/02_architecture/backend.md) | 레이어 · 인증 · SSE 계약 · 유량 제어 · 배포 |
-| [Frontend](docs/02_architecture/frontend.md) | 라우팅 · 스트리밍 UI · 첨부 UI 계약 · 배포 |
-| [디자인 시스템](docs/02_architecture/design-system.md) | 색 토큰 · 타이포 · 컴포넌트 규칙 |
-| [Conventions](docs/CONVENTIONS.md) | 코드 스타일과 패턴 |
-| [Changelog](docs/06_changelog/CHANGELOG.md) | 변경 이력 |
-
-전체 목록은 `docs/INDEX.md` 에 있다.
+진입점은 [docs/INDEX.md](docs/INDEX.md) 다. 같은 사실은 한 곳에만 적는다. 문서 목록과 각 문서가 담는 것도 INDEX 에 있다.

@@ -37,7 +37,7 @@
 	     명단이 빈 경우 `case else ... end` 가 되어 문법 오류이고, 조건을 두 번 적게 됨.
 	     비교는 lower(email) 기준 - 앱의 정규화와 같은 눈금이어야 대소문자가 다른 명단도 맞음 -->
 
-	<!-- 명단에 없는 관리자를 내림. **명단이 비면 전원 강등**이며 그것이 맞음("관리자를 없앤다") -->
+	<!-- 명단에 없는 관리자를 내림. 빈 명단의 의미는 UserRepository.demoteAdminsNotIn 참고 -->
 	<update id="demoteAdminsNotIn">
 		update users set role = 'user'
 		where role = 'admin'

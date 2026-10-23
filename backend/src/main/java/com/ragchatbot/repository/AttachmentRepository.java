@@ -26,7 +26,7 @@ public interface AttachmentRepository {
 	/** 보내기 전(message_id 없음) 첨부만 지운다(#249). 지운 행 수 */
 	int deleteDraftByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
 
-	/** 대화에 속한 첨부(파일 삭제용 - 메시지 조인) */
+	/** 대화에 속한 첨부(메시지 조인). 호출처 : 대화 메시지 조회 · 대화 삭제의 파일 삭제(ConversationService) · 채팅 전송 시 첨부 있는 메시지 판별(ChatService) */
 	List<Attachment> findByConversation(@Param("conversationId") UUID conversationId);
 
 	/** 고아 첨부 : message_id 가 null 이고 cutoff 이전에 만들어진 것 */
