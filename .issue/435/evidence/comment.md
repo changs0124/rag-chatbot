@@ -3,7 +3,7 @@
 보내기와 중단 버튼이 같은 자리에 있어서, 보내기를 약 300ms 간격으로 두 번 누르면 두 번째 탭이 방금 나타난 중단 버튼을 눌렀습니다. 두 가지를 고쳤습니다.
 
 - `Composer` : 중단 버튼이 나타난 뒤 **500ms**(OS 기본 더블클릭 간격) 안의 클릭은 무시합니다. 그보다 뒤의 중단은 지금처럼 바로 동작합니다.
-- `useChat` : 서버 이벤트를 하나도 받기 전에 끊긴 턴은 **질문 말풍선도 걷습니다**. 요청이 서버 검증 전에 끊기면 질문도 저장되지 않으므로, 이렇게 해야 화면과 새로고침 결과가 같아집니다. 서버가 단계를 보낸 뒤의 중단은 지금처럼 질문과 받은 데까지를 남깁니다.
+- `useChat` : **200 응답을 받기 전에** 끊긴 턴은 질문 말풍선도 걷습니다. 서버는 질문을 저장한 뒤에 200 을 돌려주므로, 그 전에 끊긴 요청은 서버에 닿지 않았을 수 있습니다. 이렇게 해야 화면과 새로고침 결과가 같아집니다. 200 을 받은 뒤의 중단은 지금처럼 질문과 받은 데까지를 남깁니다. 200 을 받은 시점은 `streamChat` 이 새로 부르는 `onOpen` 으로 알립니다.
 
 ## 전후 비교
 
@@ -21,11 +21,18 @@
 ## 변경 파일
 
 - `frontend/src/components/chat/Composer.tsx` — 중단 클릭 무시 시간
-- `frontend/src/hooks/useChat.ts` — 첫 서버 이벤트 전 중단이면 질문 말풍선도 제거
-- 테스트 : `Composer.test.tsx` 1건 · `useChat.test.ts` 1건 추가(둘 다 변경 전 실패 확인). 기존 「받은 것 없이 중단」 테스트는 서버가 단계를 보낸 뒤의 중단으로 좁혔습니다
-- `docs/02_architecture/frontend.md` 「스트리밍 UI 규칙」 · `docs/06_changelog/CHANGELOG.md` · `scripts/case-floors.env`(프론트 하한 206 → 208)
+- `frontend/src/hooks/useChat.ts` — 200 을 받기 전 중단이면 질문 말풍선도 제거
+- `frontend/src/lib/endpoints.ts` — `streamChat` 이 200 에서 `onOpen` 을 부름
+- 테스트 : `Composer.test.tsx` · `useChat.test.ts` · `stream.test.ts` 각 1건 추가(앞 둘은 변경 전 실패 확인). `useChat` 테스트 목업은 실제처럼 스트림이 열릴 때 `onOpen` 을 부릅니다
+- `docs/02_architecture/frontend.md` 「스트리밍 UI 규칙」 · `docs/06_changelog/CHANGELOG.md` · `scripts/case-floors.env`(프론트 하한 206 → 209)
 
 ## 검증
 
-- `scripts/check-all.sh` 통과(`after/check-all.txt`) : 프론트 208/208 · 백엔드 348/348
+- `scripts/check-all.sh` 통과(`after/check-all.txt`) : 프론트 209/209 · 백엔드 348/348
 - shellcheck · gitleaks · trivy 는 로컬에 없어 건너뛰었습니다. 이 셋은 CI 에서 돕니다
+
+## 리뷰 반영 (opus 코드 리뷰)
+
+- [HIGH] 처음에는 첫 단계 · 토큰 이벤트를 받았는지로 질문 말풍선 제거를 정했습니다. 리뷰에서 「서버는 200 전에 질문을 저장하므로, 200 뒤 단계 이벤트 전의 중단에서는 저장된 질문을 지운다」는 지적이 나와, 기준을 200 응답(`onOpen`)으로 바꿨습니다
+- [LOW] 중단 버튼이 나타난 시각을 `useEffect` 대신 `useLayoutEffect` 에서 적습니다. 그래서 첫 프레임의 클릭도 막힙니다
+- 남은 한계 : 200 을 받기 전 중단(가드 500ms 뒤에도 응답이 늦는 경우)에서 새 대화였다면 빈 대화가 사이드바에 남고, 입력한 글은 입력창으로 돌아오지 않습니다. 가드 뒤에는 드물어 이번 범위에서는 다루지 않았습니다
