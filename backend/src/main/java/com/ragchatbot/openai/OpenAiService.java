@@ -1,6 +1,7 @@
 package com.ragchatbot.openai;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -28,6 +29,12 @@ public interface OpenAiService {
 	 *                토큰 예산 안에서 잘려 있음(ChatService 가 자름)
 	 */
 	record ChatInput(String userMessage, List<AttachmentRef> attachments, List<Turn> history) {
+		/** 구현체가 null 을 방어하지 않으므로 만들 때 막는다(#454) - 늦게 터지면 스트림이 열린 뒤 NPE 다 */
+		ChatInput {
+			Objects.requireNonNull(userMessage, "userMessage");
+			Objects.requireNonNull(attachments, "attachments");
+			Objects.requireNonNull(history, "history");
+		}
 	}
 
 	/** 출처 데이터 (응답 annotations 에 대응) */
