@@ -1,0 +1,3 @@
+145:		// 크기는 **힙에 올리기 전에** 본다(#453, FileService 의 #402 와 같은 원칙) - getBytes() 뒤에 재면
+147:		if (file.getSize() > MAX_SIZE) {
+152:			bytes = file.getBytes();

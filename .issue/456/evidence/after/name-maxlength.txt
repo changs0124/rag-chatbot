@@ -1,0 +1,14 @@
+# 이름 입력 상한
+src/pages/MyPage.tsx-80-              value={name}
+src/pages/MyPage.tsx-81-              onChange={(e) => setName(e.target.value)}
+src/pages/MyPage.tsx:82:              maxLength={MAX_NAME_CHARS}
+--
+src/pages/AdminPage.tsx-382-              value={newName}
+src/pages/AdminPage.tsx-383-              onChange={(e) => setNewName(e.target.value)}
+src/pages/AdminPage.tsx:384:              maxLength={MAX_NAME_CHARS}
+src/lib/limits.ts:1:// 이름 입력 상한(마이페이지 · 관리자 계정 추가). 서버 상한(USER_MAX_NAME_CHARS 기본값)과 같은 값. 정본은 서버라 넘긴 요청은 400 이다(#413).
+src/lib/limits.ts:3:export const MAX_NAME_CHARS = 50
+src/pages/AdminPage.tsx:21:import { MAX_NAME_CHARS } from '../lib/limits'
+src/pages/AdminPage.tsx:384:              maxLength={MAX_NAME_CHARS}
+src/pages/MyPage.tsx:12:import { MAX_NAME_CHARS } from '../lib/limits'
+src/pages/MyPage.tsx:82:              maxLength={MAX_NAME_CHARS}

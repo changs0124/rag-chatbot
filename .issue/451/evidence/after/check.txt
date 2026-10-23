@@ -1,0 +1,31 @@
+Using Node v24.19.0
+== gpt-6-sol (docs/README/env.example, CHANGELOG 제외)
+README.md:65:| 외부 연동 | OpenAI Responses API + Vector Store · 모델은 `OPENAI_MODEL`(기본 `gpt-6-sol`) |
+backend/.env.example:66:# 사용할 모델 (기본 gpt-6-sol - 운영과 같음. 인용 표기 필터(#277) · turnNfileM 복원(#281)이 이 계열 전제)
+backend/.env.example:67:# OPENAI_MODEL=gpt-6-sol
+== 정본 문장
+README.md:30:기본값의 정본은 `application.yml`, 각 항목의 의미와 빠뜨렸을 때의 증상은 `backend/.env.example` 이다.
+README.md:75:환경변수 전량과 빠뜨렸을 때의 증상은 `.env.example` 파일 셋이 정본이다 —
+docs/02_architecture/overview.md:43:경로 · 화면 · 보호 조건은 [frontend](./frontend.md) 「라우팅」이 정본이다(`frontend/src/App.tsx` 기준).
+docs/02_architecture/overview.md:122:환경변수 전량의 의미 · 빠뜨렸을 때의 증상은 **`backend/.env.example` 이 정본**이고, 기본값의 정본은
+docs/02_architecture/backend.md:256:기본값의 정본은 `application.yml`, 각 항목의 의미와 빠뜨렸을 때의 증상은 `backend/.env.example` 이다.
+docs/02_architecture/backend.md:404:필요한 환경변수와 각 값의 의미 · 빠뜨렸을 때의 증상은 `backend/.env.example`(compose 배선은 루트 `.env.example`)이 정본이다.
+docs/02_architecture/backend.md:527:`docker-compose.yml` 주석이 정본이다. `app` 만 `memswap_limit` = `mem_limit`(스왑 금지, #202) — 아래 「업로드 부하에서 스왑을 금지하기로 정했다」.
+docs/02_architecture/backend.md:540:주제별 근거는 `docker-compose.yml` 의 해당 서비스 주석이 정본이다 — `db` 의 `cap_add` 넷(실측으로 좁힘 · **빈 볼륨으로 초기화 경로를 태워야**
+docs/02_architecture/backend.md:651:케이스 수 하한은 `scripts/case-floors.env` 의 `BACKEND_MIN` 이 잠근다 - **실측값이 정본이라 여기 숫자를 적지 않는다.** 로컬 실행에 Docker 가 필요하다.
+backend/.env.example:2:# 기본값의 정본은 backend/src/main/resources/application.yml, 각 항목의 의미 · 빠뜨렸을 때의 증상은 이 파일이 정본임. 여기 없는 항목은 기본값을 씀
+== README 문서 표
+0
+== USER_MAX_NAME_CHARS 문서
+docs/01_specs/api.md:202:| `BAD_REQUEST` | 400 | 이름 빈 값 · **이름 50자 초과**(trim 뒤 코드 포인트, `U
+docs/01_specs/api.md:490:| `BAD_REQUEST` | 400 | 이메일 형식 · 이름 공백 · **이름 50자 초과**(trim 뒤 �
+docs/02_architecture/backend.md:252:| `ProfileService` · `AdminUserService` | 표시 이름 **길이**(이름 변경 ·
+== design-system 3F4444/셋/절번호
+28:로고에서 뽑은 값은 셋이다. **그중 둘은 글자·버튼 색으로 쓸 수 없다.**
+232:## 7-1. 모바일
+247:## 7-2. 파비콘 · 앱 아이콘
+315:## 7-3. 로고 자산
+== frontend.md 번들/CSP
+157:- **`Markdown` 은 `React.lazy` 로 지연 로딩한다(#417).** react-markdown · remark 묶음이 따로 청크(gzip 약 54KB)로 빠�
+== 하위 CLAUDE.md
+0

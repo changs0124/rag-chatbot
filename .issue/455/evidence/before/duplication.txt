@@ -1,0 +1,39 @@
+## new ByteArrayResource (backend test)
+backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java: 37:		ByteArrayResource resource = new ByteArrayResource(content) {
+backend/src/test/java/com/ragchatbot/controller/AdminDocumentSyncFlowTest.java: 49:		body.add("file", new HttpEntity<>(new ByteArrayResource(PDF) {
+backend/src/test/java/com/ragchatbot/controller/AttachmentQuotaTest.java: 49:		var resource = new ByteArrayResource(PNG_600K) {
+backend/src/test/java/com/ragchatbot/controller/ChatFlowTest.java: 40:		var resource = new ByteArrayResource(PNG) {
+backend/src/test/java/com/ragchatbot/controller/FileFlowTest.java: 50:		var resource = new ByteArrayResource(content) {
+backend/src/test/java/com/ragchatbot/controller/UploadRateLimitTest.java: 73:		body.add("file", new ByteArrayResource(PNG) {
+## PNG magic 0x89 constants
+backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java:136:		var res = upload(token, "photo.png", new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }, "image/png");
+backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java:282:		var res = upload(token, "위장.md", new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47 }, "image/png");
+backend/src/test/java/com/ragchatbot/controller/AttachmentQuotaTest.java:41:		byte[] magic = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+backend/src/test/java/com/ragchatbot/controller/ChatFlowTest.java:34:	private static final byte[] PNG = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
+backend/src/test/java/com/ragchatbot/controller/DocFigureFlowTest.java:31:		assertThat(res.getBody()).startsWith((byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47);
+backend/src/test/java/com/ragchatbot/controller/FileFlowTest.java:43:	private static final byte[] PNG = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
+backend/src/test/java/com/ragchatbot/controller/UploadRateLimitTest.java:66:	private static final byte[] PNG = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+## select id from users where email
+backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java:400:		UUID uploaderId = jdbc.queryForObject("select id from users where email = ?", UUID.class,
+backend/src/test/java/com/ragchatbot/controller/AdminDocumentSyncFlowTest.java:185:		UUID adminId = jdbc.queryForObject("select id from users where email = ?", UUID.class, "sync-unique@b.com");
+backend/src/test/java/com/ragchatbot/controller/AdminUserFlowTest.java:23:		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
+backend/src/test/java/com/ragchatbot/controller/AttachmentQuotaTest.java:63:		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
+backend/src/test/java/com/ragchatbot/controller/FileFlowTest.java:286:		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
+## rawChat / stub definitions
+backend/src/test/java/com/ragchatbot/controller/ChatConversationDeletedTest.java:41:	void stageLabel() {
+backend/src/test/java/com/ragchatbot/controller/ChatConversationDeletedTest.java:45:	private String rawChat(String token, String convId) throws Exception {
+backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java:57:	void stageLabel() {
+backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java:62:	private String rawChat(String token, String convId) throws Exception {
+## frontend deferred/msg/conv definitions
+frontend/src/components/chat/Composer.test.tsx:17:function deferred<T>() {
+frontend/src/hooks/useChatLoading.test.ts:18:function deferred<T>() {
+frontend/src/hooks/useChatLoading.test.ts:28:const msg = (id: string): ChatMessage => ({
+frontend/src/hooks/useChatRace.test.ts:19:function deferred<T>() {
+frontend/src/hooks/useChatRace.test.ts:27:const conv = (id: string): Conversation => ({ id, title: id, updatedAt: '' })
+frontend/src/hooks/useChatRace.test.ts:29:const msg = (id: string): ChatMessage => ({
+## MessageListLazyFail Boundary / fixed wait
+17:class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+45:      await new Promise((r) => setTimeout(r, 100))
+## vi.mock endpoints deleteConversationIfEmpty
+frontend/src/hooks/useChatLoading.test.ts:0
+frontend/src/hooks/useChatRace.test.ts:0

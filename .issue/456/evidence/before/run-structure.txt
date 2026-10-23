@@ -1,0 +1,24 @@
+# run() 범위와 최대 들여쓰기(공백 수 / 2 = 단계)
+run(): lines 181-372 (192 lines)
+max indent: 16 spaces (8 levels) at line 302
+
+# run() 안의 setMessages 호출 수
+6
+
+# 단계 큐 · 판정 식별자 위치
+src/hooks/useChat.ts:5:  deleteConversationIfEmpty as apiDeleteIfEmpty,
+src/hooks/useChat.ts:18:const STAGE_MIN_MS = 350
+src/hooks/useChat.ts:47:  const stageQueue = useRef<string[]>([])
+src/hooks/useChat.ts:48:  const stageTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+src/hooks/useChat.ts:50:  const advanceStage = useCallback(() => {
+src/hooks/useChat.ts:51:    const next = stageQueue.current.shift()
+src/hooks/useChat.ts:53:      stageTimer.current = null
+src/hooks/useChat.ts:58:    stageTimer.current = setTimeout(advanceStage, STAGE_MIN_MS)
+src/hooks/useChat.ts:62:    if (stageTimer.current) clearTimeout(stageTimer.current)
+src/hooks/useChat.ts:63:    stageTimer.current = null
+src/hooks/useChat.ts:64:    stageQueue.current = []
+src/hooks/useChat.ts:264:              stageQueue.current.push(label)
+src/hooks/useChat.ts:265:              if (stageTimer.current === null) advanceStage()
+src/hooks/useChat.ts:320:              await apiDeleteIfEmpty(id)
+src/hooks/useChat.ts:366:        // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(advanceStage)
+src/hooks/useChat.ts:371:    [activeId, refreshConversations, clearStages, advanceStage],

@@ -1,0 +1,13 @@
+backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java:73:		lastAttachmentCount = input.attachments() == null ? 0 : input.attachments().size();
+backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java:75:		lastHistory = input.history() == null ? List.of() : input.history();
+backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java:77:		boolean hasImage = input.attachments() != null && !input.attachments().isEmpty();
+backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java:80:		String message = input.userMessage() == null ? "" : input.userMessage();
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:283:		String text = input.userMessage() == null ? "" : input.userMessage();
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:284:		List<AttachmentRef> images = input.attachments() == null ? List.of() : input.attachments();
+backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:285:		List<Turn> history = input.history() == null ? List.of() : input.history();
+--- ChatInput 생성 지점(main)
+backend/src/main/java/com/ragchatbot/service/ChatService.java:245:					new ChatInput(prepared.message(), prepared.refs(), prepared.history()),
+--- test
+backend/src/test/java/com/ragchatbot/openai/OpenAiMockFigureTest.java:18:		return mock.streamChat(new ChatInput(message, List.of(), List.of()), tokens::add, (s, src) -> {
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealInstructionsTest.java:57:			service.streamChat(new ChatInput("연차는 언제 소멸하나요?", List.of(), List.of()),
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java:80:				new ChatInput("질문", List.of(), List.of()),
