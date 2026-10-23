@@ -108,6 +108,20 @@ class OpenAiRealInstructionsTest {
 	}
 
 	/**
+	 * 클레임 나열 · 표에 서비스 번호 · S/N 을 넣으라는 지시가 실린다(#432).
+	 *
+	 * <p>이 줄이 없으면 표가 호기까지만 적어, 같은 호기의 두 건이 표에서 갈리지 않았다 - 변경 전 실측 0/24.
+	 */
+	@Test
+	void tells_model_to_list_claims_with_service_number_and_serial() {
+		chat("shared-store");
+
+		assertThat(bodies.get(0))
+				.contains("서비스 번호 · S/N 을")
+				.contains("검색 결과에 없는 번호를 만들지 않는다");
+	}
+
+	/**
 	 * 스토어가 없으면 지시를 싣지 않는다.
 	 *
 	 * <p>검색 도구가 없는데 "사내 문서를 먼저 찾아본다" 고 지시하면 <b>모델에게 없는 도구를 쓰라고
