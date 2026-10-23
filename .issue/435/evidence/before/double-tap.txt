@@ -1,0 +1,10 @@
+0.3 REQ GET /api/auth/me
+0.3 REQ GET /api/conversations
+0.3 click 1
+0.4 REQ POST /api/conversations
+0.4 REQ POST /api/chat
+0.7 click 2 (300ms 뒤 같은 자리)
+0.7 REQ GET /api/conversations
+0.7 FAIL POST /api/chat net::ERR_ABORTED
+1.9 RES 200 /api/chat
+3.7 화면 : AL.2263 클레임 몇 건이야?
