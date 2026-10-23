@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ragchatbot.security.CurrentUser;
@@ -54,8 +55,14 @@ public class ConversationController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> delete(@PathVariable UUID id) {
-		conversationService.delete(CurrentUser.id(), id);
+	public ResponseEntity<Void> delete(@PathVariable UUID id,
+			@RequestParam(defaultValue = "false") boolean ifEmpty) {
+		// ifEmpty : 메시지가 있으면 409 로 남긴다(#447) - 200 전에 끊긴 새 대화를 화면이 치울 때
+		if (ifEmpty) {
+			conversationService.deleteIfEmpty(CurrentUser.id(), id);
+		} else {
+			conversationService.delete(CurrentUser.id(), id);
+		}
 		return ResponseEntity.noContent().build();
 	}
 }

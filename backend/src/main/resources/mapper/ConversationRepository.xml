@@ -24,6 +24,21 @@
 		where id = #{id} and user_id = #{userId}
 	</select>
 
+	<!-- 비었을 때만 지우기(#447) - 진행 중인 채팅 준비의 커밋을 기다린다(KEY SHARE 와 충돌) -->
+	<select id="lockByIdAndUser" resultType="java.util.UUID">
+		select id from conversations
+		where id = #{id} and user_id = #{userId}
+		for update
+	</select>
+
+	<!-- 채팅 준비의 소유 확인(#447) - 이 대화의 조건부 삭제와 순서를 정한다. 이름 변경 · touch 와는 충돌하지 않는다 -->
+	<select id="lockSharedByIdAndUser" resultMap="conversationResult">
+		select id, user_id, title, created_at, updated_at
+		from conversations
+		where id = #{id} and user_id = #{userId}
+		for key share
+	</select>
+
 	<select id="listByUser" resultMap="conversationResult">
 		select id, user_id, title, created_at, updated_at
 		from conversations

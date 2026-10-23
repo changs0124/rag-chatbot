@@ -19,6 +19,12 @@ public interface ConversationRepository {
 
 	Optional<Conversation> findByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
 
+	/** 조건부 삭제용 행 잠금(FOR UPDATE, #447) */
+	Optional<UUID> lockByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
+
+	/** 채팅 준비용 공유 잠금(FOR KEY SHARE, #447) */
+	Optional<Conversation> lockSharedByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
+
 	List<Conversation> listByUser(@Param("userId") UUID userId);
 
 	int deleteByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);

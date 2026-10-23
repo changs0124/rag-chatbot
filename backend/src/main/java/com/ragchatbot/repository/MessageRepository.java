@@ -16,5 +16,7 @@ public interface MessageRepository {
 
 	void insert(Message message);
 
+	boolean existsByConversation(@Param("conversationId") UUID conversationId);
+
 	List<Message> listByConversation(@Param("conversationId") UUID conversationId);
 }

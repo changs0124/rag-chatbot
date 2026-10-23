@@ -77,7 +77,8 @@ public class ChatService {
 	/** 동기 준비 - 소유권/검증 + 사용자 메시지 저장 + 첨부 연결 */
 	@Transactional
 	public PreparedChat prepare(UUID userId, ChatRequest req) {
-		Conversation conversation = conversationService.requireOwned(req.conversationId(), userId);
+		// 잠가서 확인한다(#447) - 조건부 삭제와 엇갈려도 질문이 지워지거나 외래 키 위반으로 끝나지 않는다
+		Conversation conversation = conversationService.requireOwnedLocked(req.conversationId(), userId);
 
 		String message = req.message() == null ? "" : req.message().trim();
 		List<UUID> attachmentIds = req.attachmentIds() == null ? List.of() : req.attachmentIds();

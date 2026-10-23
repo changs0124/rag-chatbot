@@ -10,11 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ragchatbot.entity.Attachment;
 import com.ragchatbot.entity.Citation;
 import com.ragchatbot.entity.Conversation;
 import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+import com.ragchatbot.exception.ApiExceptions.ConflictException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.repository.AttachmentRepository;
 import com.ragchatbot.repository.CitationRepository;
@@ -133,6 +136,27 @@ public class ConversationService {
 		}
 	}
 
+	/**
+	 * 메시지가 하나도 없을 때만 지운다(#447) - 있으면 409, 아무것도 지우지 않는다.
+	 *
+	 * <p>화면이 200 전에 끊긴 새 대화를 치울 때 쓴다(#440). 조건 없는 {@link #delete} 는 그사이 채팅 준비가 커밋한 질문 · 첨부를
+	 * cascade 로 지웠다. 행을 FOR UPDATE 로 잠그면 준비({@link ChatService#prepare} 의 KEY SHARE · 질문 삽입의 외래 키 잠금)가
+	 * 끝나기를 기다리고, 그 뒤의 존재 확인은 새 문장이라 막 커밋된 질문을 본다. 삭제가 먼저 잠그면 준비가 기다렸다가 404 로 끝난다.
+	 * 메시지가 없으니 연결된 첨부도 없어 파일 정리는 하지 않는다 - 올려 둔 초안 첨부는 그대로 다시 쓸 수 있다.
+	 *
+	 * <p><b>READ COMMITTED 전제</b> - 존재 확인이 잠금 대기 뒤의 새 스냅샷을 봐야 한다. 더 높은 격리면 대기 전 스냅샷을 써서
+	 * 막 커밋된 질문을 못 본다. 잠금을 쥔 채 기다리므로 준비는 짧아야 한다(원격 호출을 넣지 않는다 - 지금은 DB 만 쓴다).
+	 */
+	@Transactional(isolation = Isolation.READ_COMMITTED)
+	public void deleteIfEmpty(UUID userId, UUID conversationId) {
+		conversationRepository.lockByIdAndUser(conversationId, userId)
+				.orElseThrow(() -> new NotFoundException("대화 없음"));
+		if (messageRepository.existsByConversation(conversationId)) {
+			throw new ConflictException("메시지가 있는 대화는 지우지 않음");
+		}
+		conversationRepository.deleteByIdAndUser(conversationId, userId);
+	}
+
 	/** 제목 길이 상한(#371). 잘라 저장하지 않고 거절한다 - 자르면 사용자가 쓴 것과 다른 제목이 조용히 남는다 */
 	private String requireTitleLength(String title) {
 		TextInputs.requireStorable(title, "제목");
@@ -142,9 +166,18 @@ public class ConversationService {
 		return title;
 	}
 
-	/** 소유 확인의 단일 경로 - 채팅 전송(ChatService.prepare)도 이것을 탄다(#389) */
+	/** 소유 확인의 단일 경로(#389). 채팅 준비(ChatService.prepare)는 잠그는 변형 {@link #requireOwnedLocked} 를 쓴다(#447) */
 	Conversation requireOwned(UUID conversationId, UUID userId) {
 		return conversationRepository.findByIdAndUser(conversationId, userId)
+				.orElseThrow(() -> new NotFoundException("대화 없음"));
+	}
+
+	/**
+	 * 채팅 준비의 소유 확인(#447) - 행을 KEY SHARE 로 잠가 같은 대화의 {@link #deleteIfEmpty} 와 순서를 정한다.
+	 * 잠그지 않으면 확인과 질문 삽입 사이에 삭제가 끼어 외래 키 위반으로 끝났다. 트랜잭션 안에서 불러야 한다
+	 */
+	Conversation requireOwnedLocked(UUID conversationId, UUID userId) {
+		return conversationRepository.lockSharedByIdAndUser(conversationId, userId)
 				.orElseThrow(() -> new NotFoundException("대화 없음"));
 	}
 

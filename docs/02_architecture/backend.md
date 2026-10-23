@@ -314,6 +314,10 @@ SSE 타임아웃까지 기다리게 된다. 그 결합을 지키는 것이 「�
   집계 질의는 [erd.md](../01_specs/erd.md) 에 있다. 여기서 알아야 할 것은 **조회할 때 반드시 걸러야 한다**는 것뿐이다.
 - `rag_documents` 만 **소프트 삭제 + `on delete restrict`** 이고 나머지는 hard delete + cascade 다.
   **의도된 차이**이며 판단 근거는 [features.md](../01_specs/features.md) FEAT-ADMIN-002 「soft delete 를 쓰는 이유」에 있다.
+- **대화의 조건부 삭제와 채팅 준비는 대화 행 잠금으로 순서를 정한다**(#447). `deleteIfEmpty` 는 `FOR UPDATE` 로 잠근 뒤 메시지가
+  있는지 보고(있으면 409), `ChatService.prepare` 의 소유 확인은 `FOR KEY SHARE` 다. 준비가 먼저면 삭제가 그 커밋을 기다렸다가 새 문장으로
+  막 들어간 질문을 보고, 삭제가 먼저면 준비가 기다렸다가 대화가 없어 404 다. `KEY SHARE` 라 이름 변경 · `touch` 와는 막히지 않는다.
+  잠그지 않으면 확인과 삭제 사이에 커밋된 질문 · 첨부를 cascade 로 지웠다(API-DELETE-001).
 
 ## 파일
 
