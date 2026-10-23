@@ -1,0 +1,9 @@
+# 운영(rag-chatbot-jade-pi.vercel.app, 백엔드 2f064e4) 재현 — 2026-10-23, playwright, 1440x900
+# 보내기 버튼 중앙을 300ms 간격으로 두 번 클릭(QA 폴더 ui/f8.mjs click2). 시간은 스크립트 시작 기준 초
+2.8 ---- start click2
+3.2 REQ  POST /api/chat
+3.2 FAIL POST /api/chat net::ERR_ABORTED
+28.2 화면 : 질문 말풍선만 있음 — 답 · 중단 표시 · 오류 없음 · 중단 버튼 0 · 입력창 사용 가능
+서버 저장(GET /api/conversations/{id}/messages) : []  — 사이드바에 빈 대화만 남음
+
+# 대조 : 같은 화면에서 한 번 클릭 · Enter 두 번 · dblclick(같은 순간 두 번)은 모두 답이 끝까지 나오고 질문 · 답이 저장됨

@@ -1,0 +1,9 @@
+0.4 REQ GET /api/auth/me
+0.5 REQ GET /api/conversations
+0.5 click 1
+0.6 REQ POST /api/conversations
+0.6 REQ POST /api/chat
+0.9 click 2 (300ms 뒤 같은 자리)
+2.1 RES 200 /api/chat
+2.1 REQ GET /api/conversations
+3.9 화면 : AL.2263 클레임 몇 건이야? / 자료 없음 - 관련 자료를 찾지 못해 추론으로 답변함 / AL.2263 클레임은 46건입니다.
