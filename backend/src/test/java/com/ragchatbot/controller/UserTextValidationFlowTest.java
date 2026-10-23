@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -110,8 +111,24 @@ class UserTextValidationFlowTest extends AbstractPgIntegrationTest {
 		reject(HttpMethod.POST, "/api/chat", chatJson(escaped), "서로게이트");
 	}
 
+	static Stream<Arguments> invalidAfterPair() {
+		return Stream.of(
+				Arguments.of("가\\ud83d\\ude00\\u0000나", "NUL"),
+				Arguments.of("가\\ud83d\\ude00\\u0000", "NUL"),
+				Arguments.of("\\ud83d\\ude00\\ud800", "서로게이트"));
+	}
+
+	@ParameterizedTest
+	@MethodSource("invalidAfterPair")
+	void valid_pair_then_invalid_text_is_rejected_before_storage_and_model(String escaped, String reason) {
+		reject(HttpMethod.POST, "/api/chat", chatJson(escaped), reason);
+	}
+
 	static Stream<Arguments> validMessages() {
-		return Stream.of(Arguments.of("안녕하세요", "안녕하세요"), Arguments.of("한글\\ud83d\\ude00입니다", "한글😀입니다"));
+		return Stream.of(
+				Arguments.of("안녕하세요", "안녕하세요"),
+				Arguments.of("한글\\ud83d\\ude00입니다", "한글😀입니다"),
+				Arguments.of("\\ud83d\\ude00\\ud83d\\ude03", "😀😃"));
 	}
 
 	@ParameterizedTest
@@ -131,5 +148,51 @@ class UserTextValidationFlowTest extends AbstractPgIntegrationTest {
 		assertThat(jdbc.queryForObject("select count(*) from messages where conversation_id = ?::uuid",
 				Integer.class, conversationId)).isEqualTo(2);
 		verify(openAi).streamChat(argThat(input -> input.userMessage().equals(expected)), any(), any());
+	}
+
+	@Test
+	void create_title_with_valid_pair_is_saved_exactly() {
+		String title = "한글😀제목";
+		var res = rest.exchange("/api/conversations", HttpMethod.POST,
+				new HttpEntity<>(Map.of("title", title), bearer(token)), Map.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(res.getBody().get("title")).isEqualTo(title);
+		assertThat(jdbc.queryForObject("select title from conversations where id = ?::uuid", String.class,
+				res.getBody().get("id"))).isEqualTo(title);
+	}
+
+	@Test
+	void rename_title_with_valid_pair_is_saved_exactly() {
+		String title = "바꾼😀제목";
+		var res = rest.exchange("/api/conversations/" + conversationId, HttpMethod.PATCH,
+				new HttpEntity<>(Map.of("title", title), bearer(token)), Map.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(res.getBody().get("title")).isEqualTo(title);
+		assertThat(jdbc.queryForObject("select title from conversations where id = ?::uuid", String.class,
+				conversationId)).isEqualTo(title);
+	}
+
+	@Test
+	void profile_name_with_valid_pair_is_saved_exactly() {
+		String name = "한글😀이름";
+		var res = rest.exchange("/api/profile/name", HttpMethod.PATCH,
+				new HttpEntity<>(Map.of("name", name), bearer(token)), Map.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(res.getBody().get("name")).isEqualTo(name);
+		assertThat(jdbc.queryForObject("select name from users where id = ?::uuid", String.class,
+				res.getBody().get("id"))).isEqualTo(name);
+	}
+
+	@Test
+	void issued_name_with_valid_pair_is_saved_exactly() {
+		String email = "issued-" + UUID.randomUUID() + "@b.com";
+		String name = "발급😀이름";
+		var res = issueRaw(email, name);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+		assertThat(jdbc.queryForObject("select name from users where email = ?", String.class, email)).isEqualTo(name);
 	}
 }
