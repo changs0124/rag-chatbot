@@ -324,8 +324,13 @@ public class ChatService {
 					completion == null ? List.of() : completion.citations(),
 					completion == null ? null : completion.inputTokens(),
 					completion == null ? null : completion.outputTokens());
-		} catch (Exception ignored) {
-			// 저장 실패는 무시(이미 비정상 종료 경로)
+		} catch (Exception e) {
+			// 이미 비정상 종료 경로라 던지지 않는다 - 다만 흔적은 남긴다(#453). 대화가 지워진 탓이면(#437) 오류가 아니다
+			if (conversationGone(prepared.conversationId(), userId)) {
+				log.info("부분 답 저장 생략 - 대화가 삭제됨 conversation={} cause={}", prepared.conversationId(), e.toString());
+			} else {
+				log.warn("부분 답 저장 실패 conversation={} status={}", prepared.conversationId(), status, e);
+			}
 		}
 	}
 

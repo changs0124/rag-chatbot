@@ -142,12 +142,18 @@ public class AdminDocumentService {
 			String shown = isUnknownType(file.getContentType()) ? file.getOriginalFilename() : file.getContentType();
 			throw new BadRequestException("지원하지 않는 문서 형식: " + shown + " (허용: PDF · TXT · MD · DOCX)");
 		}
+		// 크기는 **힙에 올리기 전에** 본다(#453, FileService 의 #402 와 같은 원칙) - getBytes() 뒤에 재면
+		// 멀티파트 한도(26MB)까지의 파일이 거절되기 전에 힙을 잡는다
+		if (file.getSize() > MAX_SIZE) {
+			throw new BadRequestException("용량 초과(최대 " + (MAX_SIZE / MB) + "MB)");
+		}
 		byte[] bytes;
 		try {
 			bytes = file.getBytes();
 		} catch (IOException e) {
 			throw new BadRequestException("파일을 읽을 수 없음");
 		}
+		// getSize() 를 실제보다 작게 보고하는 구현에 대비한 방어선 - 저장 크기는 bytes 로 정해진다
 		if (bytes.length > MAX_SIZE) {
 			throw new BadRequestException("용량 초과(최대 " + (MAX_SIZE / MB) + "MB)");
 		}

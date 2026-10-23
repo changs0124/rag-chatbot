@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Fixed
+- **관리자 업로드 크기 선검사 · 부분 저장 실패 로그 · 런타임 버전 검사 안내(#453).** 2026-10-23 전체 리뷰에서 나온 동작 보정 셋
+  - `AdminDocumentService.upload` : `getSize()` 로 25MB 를 먼저 본다. 변경 전에는 `getBytes()` 로 다 읽은 뒤 비교해, 멀티파트 한도 안의 거절 대상 파일이 힙에 먼저 올랐다(`FileService` 의 #402 와 같은 원칙)
+  - `ChatService.savePartial` : `catch (Exception ignored)` 를 로그로 바꿨다. 대화가 삭제된 탓이면(#437 과 같은 `conversationGone` 판정) INFO, 아니면 예외와 함께 WARN
+  - `scripts/check-runtime-versions.sh` : `java` · `node` 가 PATH 에 없으면 `command -v` 로 먼저 보고 「수집 실패 : java 없음」을 출력하고 exit 1 (변경 전에는 `set -e` 아래 exit 127 로 말없이 죽음)
+  - 테스트 : `AdminDocumentSizeCheckTest`(getBytes 호출 안 함 확인) · `ChatPartialSaveFailureLogTest`(저장 실패가 WARN 에 남음). **하한 백엔드 364 → 366**
+
 ### Docs
 - **코드 주석을 정리했다(#452).** 동작 · 테스트 수는 그대로이고 주석과 문서만 바뀐다. `RAG_INSTRUCTIONS` 머리 주석(약 60줄)의
   줄별 실측 수치를 `live-integration.md` 3-2 「지시문 줄별 실측」 표로 옮기고 주석에는 줄마다 이유 · 이슈 번호만 남겼다(지시문 문자열은 그대로).
