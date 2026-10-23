@@ -1,0 +1,4 @@
+backend/src/main/java/com/ragchatbot/repository/UserRepository.java:45:	 * 지워도 영구히 남음. 명단이 비면 전원 강등이며 그것이 맞는 동작임("관리자를 없앤다").
+backend/src/main/resources/db/migration/V1__init.sql:1:-- rag-chatbot 초기 스키마 (Phase 1)
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java:91:						+ "= RestClient 가 응답을 통째로 버퍼링함(M3 스파이크의 무효화 조건)")
+scripts/check-all.sh:155:# --- 의존성 취약점 (CI 의 deps-backend · deps-frontend 잡 · 변경마다) ---------------------------------------------
