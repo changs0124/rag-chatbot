@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Docs
+- **코드 주석을 정리했다(#452).** 동작 · 테스트 수는 그대로이고 주석과 문서만 바뀐다. `RAG_INSTRUCTIONS` 머리 주석(약 60줄)의
+  줄별 실측 수치를 `live-integration.md` 3-2 「지시문 줄별 실측」 표로 옮기고 주석에는 줄마다 이유 · 이슈 번호만 남겼다(지시문 문자열은 그대로).
+  낡은 주석(Mock 「리소스 정리 기록」 · `trackedKeys` 「운영 점검용」 · `findByConversation` 호출처 · `AdminDtos` · 409 의미 · `FileService` 검증 순서의 #418)을 바로잡고,
+  반복(SSE 순서 · 명단이 비면 전원 강등 · OpenAiService/Real 무자료 표시)과 이력(`pom.xml` Phase · Boot 3.5.16, `JwtService` 라이브러리 버전, 테스트 「스파이크 · 이전에는」)을 줄였다.
+  프론트는 `Markdown.tsx` JSDoc 을 컴포넌트로, `ChatPage` 뷰포트 설명을 해당 effect 로, `useChat.run` 설명을 `useCallback(` 밖으로 옮기고 `abortActiveStream` 의 인과 문구를 정정했다.
+  `Dockerfile` 은 없는 「다이제스트 고정」 단락 대신 `backend.md` 「배포」 #416 단락을, `check-all.sh` 는 실제 잡 ID(`deps-backend` · `deps-frontend`)를 가리킨다
+
 ### Fixed
 - **200 전 중단 시 새 대화 삭제가 막 저장된 질문 · 첨부까지 지울 수 있던 것을 고쳤다(#447, #440 후속).** #440 은 이력을 물어(확인) 「없음」이면
   대화를 조건 없이 지웠는데, 확인이 채팅 준비의 커밋보다 먼저 처리되면 그 뒤 삭제가 막 커밋된 질문 · 첨부를 cascade 로 지웠다

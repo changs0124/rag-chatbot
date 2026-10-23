@@ -16,7 +16,7 @@ public final class ApiExceptions {
 		}
 	}
 
-	/** 409 - 중복(이메일 등) */
+	/** 409 - 상태 충돌(이미 있는 이메일 · 메시지가 있는 대화 · 이미 보낸 첨부 등) */
 	public static class ConflictException extends RuntimeException {
 		public ConflictException(String message) {
 			super(message);
