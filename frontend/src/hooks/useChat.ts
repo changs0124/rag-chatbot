@@ -194,7 +194,8 @@ export function useChat() {
         creatingRef.current = true
         setCreating(true)
         try {
-          const conv = await createConversation(text.slice(0, 30) || '새 대화')
+          // 코드 포인트로 자른다(#434) - slice 는 UTF-16 단위라 이모지를 반으로 가르고, 서버는 반쪽 문자를 400 으로 거절한다
+          const conv = await createConversation(Array.from(text).slice(0, 30).join('') || '새 대화')
           // 생성을 기다리는 동안 사용자가 다른 대화를 골랐으면 이 턴을 버린다. 그냥 진행하면 방금
           // 고른 대화의 이력 위에 이 메시지가 얹히고, 사이드바는 새 대화를 가리키는데 본문은 남의
           // 것이 된다. 만들어진 대화는 목록에는 남긴다 - 서버에 실재하기 때문이다

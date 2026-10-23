@@ -82,6 +82,8 @@ public class ChatService {
 		}
 		// 길이 상한(#371) - 횟수 상한·이력 예산은 이번 메시지의 크기를 묶지 못한다. **저장·모델 호출 전에** 거른다.
 		// 코드 포인트로 셈 - length() 면 이모지 하나가 두 자로 세진다
+		// NUL · 짝 없는 서로게이트(#434) - 저장(0x00)이나 모델 요청 직렬화(invalid_json)에서 터지므로 미리 거절한다
+		TextInputs.requireStorable(message, "메시지");
 		if (message.codePointCount(0, message.length()) > maxMessageChars) {
 			throw new BadRequestException("메시지는 " + maxMessageChars + "자까지 보낼 수 있음");
 		}

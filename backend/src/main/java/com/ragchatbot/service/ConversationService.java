@@ -135,6 +135,7 @@ public class ConversationService {
 
 	/** 제목 길이 상한(#371). 잘라 저장하지 않고 거절한다 - 자르면 사용자가 쓴 것과 다른 제목이 조용히 남는다 */
 	private String requireTitleLength(String title) {
+		TextInputs.requireStorable(title, "제목");
 		if (title.codePointCount(0, title.length()) > maxTitleChars) {
 			throw new BadRequestException("제목은 " + maxTitleChars + "자까지 쓸 수 있음");
 		}
