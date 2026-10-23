@@ -9,8 +9,8 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 |------|------|
 | `frontend/src/pages/` | 라우트 단위 화면 — `LoginPage` · `ChatPage` · `MyPage` · `AdminPage` |
 | `frontend/src/components/` | 재사용 컴포넌트. 기능이 커지면 `components/chat/` 처럼 하위 폴더 |
-| `frontend/src/hooks/` | 도메인 훅 — 현재 `useChat.ts` 하나 |
-| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `docFigures.ts`(그림 표식 파서) |
+| `frontend/src/hooks/` | 도메인 훅 — `useChat.ts` 와, 그것이 쓰는 진행 단계 표시 큐 `useStageQueue.ts` |
+| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `limits.ts`(서버 상한과 맞춘 입력 상한) · `docFigures.ts`(그림 표식 파서) |
 | `frontend/src/auth/` | Context Provider |
 | `frontend/src/test/` | Vitest 셋업 |
 

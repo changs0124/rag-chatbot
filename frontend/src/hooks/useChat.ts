@@ -10,12 +10,54 @@ import {
 } from '../lib/endpoints'
 import { ApiError, errorMessage } from '../lib/api'
 import type { Attachment, ChatMessage, Conversation } from '../lib/types'
+import { useStageQueue } from './useStageQueue'
 
 /**
- * 한 단계를 화면에 유지하는 최소 시간(ms). 목업은 단계가 같은 순간에 도착해 표시 시간이 0이 되므로,
- * 실제로 도달한 단계를 읽을 수 있을 만큼만 붙잡아 둠. 없는 단계를 만들거나 순서를 바꾸지는 않음(REQ-RAG-004).
+ * 200 전 중단의 판정 결과(#440 · #447). 훅은 이것을 화면에 적용만 한다.
+ * - `stored` : 질문이 저장된 것이 확실하다 - 이력(`saved`)을 못 받았어도 되돌리지 않는다
+ * - `deleted` : 새 대화가 비어 있어 지웠다(또는 이미 없다) - 저장된 것이 없다
+ * - `unknown` : 저장을 확인하지 못했다 - 글만 되돌리고 대화는 둔다
  */
-const STAGE_MIN_MS = 350
+type EarlyAbortOutcome =
+  | { kind: 'stored'; saved: ChatMessage[] | null }
+  | { kind: 'deleted' }
+  | { kind: 'unknown' }
+
+/**
+ * 200 을 받기 전에 끊긴 턴의 질문이 서버에 있는지 서버에 물어 가른다(#440). 화면 상태는 건드리지 않는다.
+ *
+ * **200 이 없었다고 서버에 없는 것은 아니다**(#440 리뷰) - 서버는 질문 저장 · 첨부 연결을 커밋한 뒤에
+ * 200 을 돌려주므로, 그 사이에 끊으면 질문은 저장돼 있고 첨부는 이미 쓰였다.
+ * 계약 : 409 = 저장됨, 404 = 이미 지움, 그 밖 = 모름
+ */
+async function judgeEarlyAbort(id: string, isNew: boolean, text: string): Promise<EarlyAbortOutcome> {
+  if (isNew) {
+    // 새 대화는 「비었을 때만 지우기」로 묻는다(#447) - 확인과 삭제를 따로 하면 그 사이에 커밋된 질문 · 첨부까지
+    // 지웠다. 서버가 한 잠금 안에서 가른다 : 지워졌으면 저장 전이었고(뒤늦은 채팅은 404), 409 면 저장된 것이다
+    try {
+      await apiDeleteIfEmpty(id)
+      return { kind: 'deleted' }
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        return { kind: 'stored', saved: await getMessages(id).catch(() => null) }
+      }
+      if (e instanceof ApiError && e.status === 404) {
+        // 이미 지워졌다(다른 탭 · 앞선 삭제) - 저장된 것이 없으니 지운 것과 같게 처리한다
+        return { kind: 'deleted' }
+      }
+      // 그 밖의 실패는 모른다 - 지우지 못했으니 글만 되돌린다
+      return { kind: 'unknown' }
+    }
+  }
+  try {
+    const server = await getMessages(id)
+    const last = server.at(-1)
+    if (last?.role === 'user' && last.content === text.trim()) return { kind: 'stored', saved: server }
+  } catch {
+    // 모르면 되돌린다 - 기존 대화는 지우지 않으므로 잃는 것은 없다
+  }
+  return { kind: 'unknown' }
+}
 
 export function useChat() {
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -27,7 +69,7 @@ export function useChat() {
   const loadingRef = useRef(false)
   const [streaming, setStreaming] = useState(false)
   // 진행 단계(REQ-CHAT-005) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
-  const [stage, setStage] = useState<string | null>(null)
+  const { stage, pushStage, clearStages } = useStageQueue()
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   /**
@@ -43,27 +85,6 @@ export function useChat() {
   const creatingRef = useRef(false)
   // 입력창이 전송 버튼을 막을 수 있게 같은 사실을 상태로도 드러낸다(#323)
   const [creating, setCreating] = useState(false)
-  // 실제 도달한 단계를 순서대로 담아 최소 표시 시간만큼 유지함(단계를 만들지 않고 읽을 시간만 줌)
-  const stageQueue = useRef<string[]>([])
-  const stageTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const advanceStage = useCallback(() => {
-    const next = stageQueue.current.shift()
-    if (next === undefined) {
-      stageTimer.current = null
-      setStage(null)
-      return
-    }
-    setStage(next)
-    stageTimer.current = setTimeout(advanceStage, STAGE_MIN_MS)
-  }, [])
-
-  const clearStages = useCallback(() => {
-    if (stageTimer.current) clearTimeout(stageTimer.current)
-    stageTimer.current = null
-    stageQueue.current = []
-    setStage(null)
-  }, [])
 
   // 답변 뒤 갱신 실패는 목록이 그대로 남으니 조용히 넘긴다
   const refreshConversations = useCallback(() => {
@@ -260,10 +281,7 @@ export function useChat() {
             onOpen: () => {
               opened = true
             },
-            onStage: ({ label }) => {
-              stageQueue.current.push(label)
-              if (stageTimer.current === null) advanceStage()
-            },
+            onStage: ({ label }) => pushStage(label),
             // 토큰이 와도 단계를 끊지 않음 - 남은 단계가 최소 표시 시간을 마치면 답변으로 교체됨
             onToken: (delta) => patch((m) => ({ ...m, content: m.content + delta })),
             onCitations: (items) => patch((m) => ({ ...m, citations: items })),
@@ -282,71 +300,38 @@ export function useChat() {
       } catch {
         // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지). 중단·절단 모두 단계는 즉시 비움
         clearStages()
-        if (controller.signal.aborted) {
-          // 받은 것이 없으면 빈 버블을 남기지 않음 - 서버도 부분 텍스트가 비면 저장하지 않으므로,
-          // 남겨 두면 새로고침에 사라져 화면과 재조회가 어긋남
-          // 단 onDone 이 이미 확정한 메시지는 서버가 정상 경로로 저장했으므로 지우지 않음
-          setMessages((prev) =>
-            prev.filter((m) => !(m.id === assistantId && !m.content && m.status !== 'complete')),
-          )
-          // 200 을 받기 전에 끊겼으면 질문 말풍선도 걷는다(#435) - 서버에 닿지 않았을 수 있어, 남기면 새로고침에 사라진다.
-          // 닿았는지는 아래에서 서버에 물어 저장됐으면 다시 보인다(#440)
-          if (!opened) setMessages((prev) => prev.filter((m) => m.id !== userMsg.id))
-        }
-        patch((m) =>
+        const aborted = controller.signal.aborted
+        // 중단이면 받은 것이 없는 빈 버블을 남기지 않음 - 서버도 부분 텍스트가 비면 저장하지 않으므로,
+        // 남겨 두면 새로고침에 사라져 화면과 재조회가 어긋남
+        // 단 onDone 이 이미 확정한 메시지는 서버가 정상 경로로 저장했으므로 지우지 않음
+        const emptyAnswer = (m: ChatMessage) => m.id === assistantId && !m.content && m.status !== 'complete'
+        // 200 을 받기 전에 끊겼으면 질문 말풍선도 걷는다(#435) - 서버에 닿지 않았을 수 있어, 남기면 새로고침에 사라진다.
+        // 닿았는지는 아래에서 서버에 물어 저장됐으면 다시 보인다(#440)
+        const unsentQuestion = (m: ChatMessage) => !opened && m.id === userMsg.id
+        const settled = (m: ChatMessage): ChatMessage =>
           // onDone 이 이미 확정한 메시지는 건드리지 않음 - 서버는 그 답변을 stopped=false 로 저장했으므로,
           // 여기서 stopped 를 세우면 화면(배너 없음)과 재조회(배너 있음)가 어긋남
-          m.status === 'complete'
+          m.id !== assistantId || m.status === 'complete'
             ? m
             : {
                 ...m,
-                status: controller.signal.aborted ? 'complete' : 'error',
+                status: aborted ? 'complete' : 'error',
                 // 서버 저장분과 같은 표시 - 중단은 출처 판정 전에 끝나므로 무자료 배너를 붙이면 안 됨
-                stopped: controller.signal.aborted,
-              },
-        )
-        if (controller.signal.aborted && !opened) {
-          // **200 이 없었다고 서버에 없는 것은 아니다**(#440 리뷰) - 서버는 질문 저장 · 첨부 연결을 커밋한 뒤에
-          // 200 을 돌려주므로, 그 사이에 끊으면 질문은 저장돼 있고 첨부는 이미 쓰였다. 서버에 물어서 가른다.
+                stopped: aborted,
+              }
+        setMessages((prev) => prev.filter((m) => !(aborted && (emptyAnswer(m) || unsentQuestion(m)))).map(settled))
+        if (aborted && !opened) {
+          // 200 전 중단은 서버에 물어서 가른다(judgeEarlyAbort).
           // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다
           const id = convId
-          let stored = false // 저장된 것이 확실하다 - 이력을 못 받았어도 되돌리지 않는다
-          let saved: ChatMessage[] | null = null
-          let deleted = false
-          if (isNew) {
-            // 새 대화는 「비었을 때만 지우기」로 묻는다(#447) - 확인과 삭제를 따로 하면 그 사이에 커밋된 질문 · 첨부까지
-            // 지웠다. 서버가 한 잠금 안에서 가른다 : 지워졌으면 저장 전이었고(뒤늦은 채팅은 404), 409 면 저장된 것이다
-            try {
-              await apiDeleteIfEmpty(id)
-              deleted = true
-            } catch (e) {
-              if (e instanceof ApiError && e.status === 409) {
-                stored = true
-                saved = await getMessages(id).catch(() => null)
-              } else if (e instanceof ApiError && e.status === 404) {
-                // 이미 지워졌다(다른 탭 · 앞선 삭제) - 저장된 것이 없으니 지운 것과 같게 처리한다
-                deleted = true
-              }
-              // 그 밖의 실패는 모른다 - 지우지 못했으니 글만 되돌린다
-            }
-          } else {
-            try {
-              const server = await getMessages(id)
-              const last = server.at(-1)
-              if (last?.role === 'user' && last.content === text.trim()) {
-                stored = true
-                saved = server
-              }
-            } catch {
-              // 모르면 되돌린다 - 기존 대화는 지우지 않으므로 잃는 것은 없다
-            }
-          }
+          const outcome = await judgeEarlyAbort(id, isNew, text)
+          // 세대는 판정을 기다린 **뒤에** 본다 - 그사이 대화를 옮겼으면 화면 · 입력창을 건드리지 않는다
           const here = generation.current === mine
-          if (stored) {
+          if (outcome.kind === 'stored') {
             // 저장된 질문은 남기고, 서버는 답을 끝까지 만들어 저장한다(#76) - 다시 열면 보인다.
             // 이력을 못 받았으면 걷었던 질문 말풍선을 되살린다 - 안 그러면 저장된 질문이 화면 어디에도 없다(#447 리뷰)
             if (here) {
-              if (saved) setMessages(saved)
+              if (outcome.saved) setMessages(outcome.saved)
               else setMessages((prev) => [...prev, userMsg])
             }
           } else if (here) {
@@ -354,7 +339,7 @@ export function useChat() {
             // 따로가 아니라서, 옮겨 간 대화로 그 글이 잘못 나갈 수 있다
             giveBack?.()
           }
-          if (deleted) {
+          if (outcome.kind === 'deleted') {
             // 남은 화면은 새 대화와 같게 되돌려 다음 전송이 지운 대화로 나가지 않게 한다
             if (here) setActiveId(null)
             setConversations((prev) => prev.filter((c) => c.id !== id))
@@ -363,12 +348,12 @@ export function useChat() {
           if (isNew) refreshConversations()
         } else if (isNew) refreshConversations()
       } finally {
-        // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(advanceStage)
+        // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(useStageQueue)
         setStreaming(false)
         abortRef.current = null
       }
     },
-    [activeId, refreshConversations, clearStages, advanceStage],
+    [activeId, refreshConversations, clearStages, pushStage],
   )
 
   /**

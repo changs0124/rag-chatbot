@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Refactored
+- **`useChat.run` 의 200 전 중단 판정 · 단계 큐 · `Composer` 카드 폐기 · 이름 입력 상한을 묶었다(#456, 동작 불변).** 10-23 전체 리뷰 지적
+  - `useChat` : 200 전 중단 판정(`deleteConversationIfEmpty` · `getMessages` → `stored | deleted | unknown`)을 모듈 함수 `judgeEarlyAbort` 로 빼고
+    훅은 결과만 적용한다(세대 확인은 판정을 기다린 뒤 · 판정 동안 `streaming` 유지 그대로). 같은 `catch` 의 `setMessages` 셋을 하나로
+  - 진행 단계 큐(`STAGE_MIN_MS` 포함)를 `hooks/useStageQueue.ts` 로
+  - `Composer` : 카드 폐기(abort · 서버 삭제 · URL 회수)를 `discardDraft` 하나로 — 카드 제거 · 언마운트 · 되돌리기 넘침이 같이 쓴다
+  - 이름 입력 `maxLength` 를 `lib/limits.ts` 의 `MAX_NAME_CHARS` 로(마이페이지 · 관리자 계정 추가). `frontend.md` 폴더 표
+  - 테스트는 고치지 않았다(하한 그대로)
 ### Fixed
 - **200 전 중단 시 새 대화 삭제가 막 저장된 질문 · 첨부까지 지울 수 있던 것을 고쳤다(#447, #440 후속).** #440 은 이력을 물어(확인) 「없음」이면
   대화를 조건 없이 지웠는데, 확인이 채팅 준비의 커밋보다 먼저 처리되면 그 뒤 삭제가 막 커밋된 질문 · 첨부를 cascade 로 지웠다
