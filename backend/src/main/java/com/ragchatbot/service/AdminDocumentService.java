@@ -157,6 +157,8 @@ public class AdminDocumentService {
 		}
 
 		String filename = file.getOriginalFilename() == null ? "문서." + extension : file.getOriginalFilename();
+		// 스토어에 올린 뒤 행 저장에서 터지면 올린 것을 되돌려야 한다 - 저장 못 할 이름은 올리기 전에 거른다(#434)
+		TextInputs.requireStorable(filename, "파일 이름");
 		UploadedDocument uploaded = openAiService.uploadDocument(filename, bytes);
 
 		UUID id = UUID.randomUUID();

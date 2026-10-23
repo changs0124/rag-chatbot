@@ -83,6 +83,7 @@ public class ProfileService {
 	 * 코드 포인트로 셈 - length() 면 이모지 하나가 두 자로 세진다. 계정 발급({@code AdminUserService})도 같은 규칙을 쓴다
 	 */
 	static String requireNameLength(String name, int maxNameChars) {
+		TextInputs.requireStorable(name, "이름");
 		if (name.codePointCount(0, name.length()) > maxNameChars) {
 			throw new BadRequestException("이름은 " + maxNameChars + "자까지 쓸 수 있음");
 		}

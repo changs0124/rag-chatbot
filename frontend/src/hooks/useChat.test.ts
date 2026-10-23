@@ -329,3 +329,21 @@ describe('useChat 대화 전환 시 이전 스트림 중단', () => {
     expect(result.current.stage).toBeNull()
   })
 })
+
+describe('useChat 새 대화 제목(#434)', () => {
+  afterEach(() => vi.clearAllMocks())
+
+  it('제목은 코드 포인트 30자로 자른다 - 이모지를 반으로 가르지 않음', async () => {
+    // UTF-16 slice 면 29번째 자리의 이모지가 반쪽 서로게이트로 잘려, 서버가 400 으로 거절한다
+    openStream()
+    const { createConversation } = await import('../lib/endpoints')
+    const { result } = renderHook(() => useChat())
+    const text = '가'.repeat(29) + '😀' + '뒤'
+
+    await startStream(() => result.current.send(text, []))
+
+    const title = vi.mocked(createConversation).mock.calls[0][0]
+    expect(title).toBe('가'.repeat(29) + '😀')
+    expect(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(title)).toBe(false)
+  })
+})
