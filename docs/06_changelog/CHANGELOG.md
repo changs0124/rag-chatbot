@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Refactored
+- **테스트 복붙을 정리했다(#455).** 케이스 수 · 이름 · 단언은 그대로(백엔드 364 · 프론트 222).
+  - 백엔드 : 멀티파트 업로드 조립 · PNG 매직바이트 · 이메일로 사용자 ID 읽기를 `AbstractPgIntegrationTest` 의 `multipart(...)` · `PNG_MAGIC` · `userId(email)` 로 모았다(6개 파일 + `AdminUserFlowTest`). `rawChat` · `stageLabel` 스텁은 `support/SseTestSupport` 로
+  - 프론트 : `deferred` · `msg` · `conv` 를 `src/test/fixtures.ts` 로. `MessageListLazyFail.test` 는 자체 `Boundary` 대신 실제 `ErrorBoundary` 를 쓰고 100ms 고정 대기를 실패하는 import 대기로 바꿨다. `useChatLoading` · `useChatRace` 목에 빠진 `deleteConversationIfEmpty` 를 더했다
 ### Removed
 - **쓰이지 않던 테스트 의존성 · 설정 줄 · 코드를 지웠다(#454).** 전체 리뷰(10-23)에서 grep 0건으로 확인된 것만 — #105 의 대화별 Vector Store 경로는 그대로 둔다
   - `backend/pom.xml` 테스트 의존성 4개 : `spring-security-test` · `spring-boot-testcontainers` · `testcontainers-junit-jupiter` · `mybatis-spring-boot-starter-test`

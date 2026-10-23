@@ -1,9 +1,23 @@
 package com.ragchatbot.support;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-/** SSE 본문을 읽는 테스트 공용 도우미 - 테스트 클래스끼리 서로 기대지 않게 여기에 둔다(#329) */
+import org.springframework.boot.resttestclient.TestRestTemplate;
+
+import com.ragchatbot.openai.OpenAiService;
+
+/** SSE 본문을 읽고 스트림을 여는 테스트 공용 도우미 - 테스트 클래스끼리 서로 기대지 않게 여기에 둔다(#329) */
 public final class SseTestSupport {
 
 	private SseTestSupport() {
@@ -18,5 +32,25 @@ public final class SseTestSupport {
 			}
 		}
 		return names;
+	}
+
+	/** 목 {@link OpenAiService} 의 단계 라벨을 채운다 - 목은 null 을 돌려주는데 단계 이벤트가 Map.of 로 라벨을 실어 NPE 가 난다 */
+	public static void stubStageLabel(OpenAiService openAi) {
+		when(openAi.stageLabel(any(), any(), anyBoolean())).thenReturn("단계");
+	}
+
+	/** 실 톰캣에 원시 HTTP 로 /api/chat 을 열고 SSE 본문을 문자열로 읽는다 - TestRestTemplate 의 변환을 거치지 않는다 */
+	public static String rawChat(TestRestTemplate rest, String token, String convId) throws Exception {
+		var req = HttpRequest.newBuilder(URI.create(rest.getRootUri() + "/api/chat"))
+				.timeout(Duration.ofSeconds(10))
+				.header("Authorization", "Bearer " + token)
+				.header("Content-Type", "application/json")
+				.header("Accept", "text/event-stream")
+				.POST(HttpRequest.BodyPublishers.ofString(
+						"{\"conversationId\":\"" + convId + "\",\"message\":\"안녕\"}"))
+				.build();
+		var res = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
+		assertThat(res.statusCode()).isEqualTo(200);
+		return res.body();
 	}
 }

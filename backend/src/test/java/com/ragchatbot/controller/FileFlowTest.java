@@ -13,13 +13,11 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.util.LinkedMultiValueMap;
 
 import com.ragchatbot.security.FileAccessTokenService;
 import com.ragchatbot.service.FileService;
@@ -39,32 +37,16 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Autowired
 	private com.ragchatbot.storage.FileStorage fileStorage;
 
-	// 유효 PNG 매직바이트(89 50 4E 47 0D 0A 1A 0A) + 패딩
-	private static final byte[] PNG = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
-
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private org.springframework.http.ResponseEntity<Map> upload(String token, byte[] content, MediaType partType,
 			String filename) {
-		var partHeaders = new HttpHeaders();
-		partHeaders.setContentType(partType);
-		var resource = new ByteArrayResource(content) {
-			@Override
-			public String getFilename() {
-				return filename;
-			}
-		};
-		var body = new LinkedMultiValueMap<String, Object>();
-		body.add("file", new HttpEntity<>(resource, partHeaders));
-
-		var headers = bearer(token);
-		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-		return rest.postForEntity("/api/files", new HttpEntity<>(body, headers), Map.class);
+		return rest.postForEntity("/api/files", multipart(token, filename, content, partType), Map.class);
 	}
 
 	@Test
 	void upload_valid_png_then_serve_ok() {
 		String token = createUser("file1@b.com");
-		var res = upload(token, PNG, MediaType.IMAGE_PNG, "a.png");
+		var res = upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png");
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(res.getBody().get("fileType")).isEqualTo("image");
 		String url = (String) res.getBody().get("url");
@@ -73,13 +55,13 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 		// 서명 URL로 서빙(비인증 헤더로도 접근 - 토큰이 게이트)
 		var served = rest.getForEntity(url, byte[].class);
 		assertThat(served.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(served.getBody()).isEqualTo(PNG);
+		assertThat(served.getBody()).isEqualTo(PNG_MAGIC);
 	}
 
 	@Test
 	void serve_without_token_404() {
 		String token = createUser("file2@b.com");
-		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 		String idOnly = url.substring(0, url.indexOf('?')); // 토큰 제거
 		var res = rest.getForEntity(idOnly, Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
@@ -88,7 +70,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void serve_with_tampered_token_404() {
 		String token = createUser("file3@b.com");
-		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 		var res = rest.getForEntity(url + "tampered", Map.class);
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
@@ -97,7 +79,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void serve_missing_file_on_disk_404() throws Exception {
 		String token = createUser("file-gone@b.com");
-		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 		Files.delete(pathOf(idOf(url)));
 
 		var res = rest.getForEntity(url, Map.class);
@@ -127,7 +109,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	void upload_oversized_image_400() {
 		String token = createUser("file10@b.com");
 		byte[] oversized = new byte[11 * 1024 * 1024]; // 상한 10MB 초과
-		System.arraycopy(PNG, 0, oversized, 0, PNG.length); // 매직바이트는 유효하게 둠
+		System.arraycopy(PNG_MAGIC, 0, oversized, 0, PNG_MAGIC.length); // 매직바이트는 유효하게 둠
 		var res = upload(token, oversized, MediaType.IMAGE_PNG, "big.png");
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 		assertThat(String.valueOf(res.getBody())).contains("용량 초과");
@@ -143,9 +125,9 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	void valid_token_of_other_user_404() {
 		String tokenA = createUser("file-own-a@b.com");
 		createUser("file-own-b@b.com");
-		String url = (String) upload(tokenA, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(tokenA, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 		UUID fileId = idOf(url);
-		UUID strangerId = userIdOf("file-own-b@b.com");
+		UUID strangerId = userId("file-own-b@b.com");
 
 		String forged = fileTokenService.issue(fileId, strangerId);
 		// byte[] 로 받음 - Map 으로 받으면 소유자 관문이 뚫렸을 때 단언 대신 컨버터 오류가 나 실패가 안 읽힘
@@ -158,7 +140,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	void stranger_cannot_delete_others_file_404() {
 		String tokenA = createUser("file-del-a@b.com");
 		String tokenB = createUser("file-del-b@b.com");
-		String url = (String) upload(tokenA, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(tokenA, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 
 		var del = rest.exchange("/api/files/" + idOf(url), HttpMethod.DELETE,
 				new HttpEntity<>(bearer(tokenB)), Map.class);
@@ -172,7 +154,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void delete_own_then_gone() {
 		String token = createUser("file6@b.com");
-		var up = upload(token, PNG, MediaType.IMAGE_PNG, "a.png");
+		var up = upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png");
 		String url = (String) up.getBody().get("url");
 		String id = url.substring(url.indexOf("/api/files/") + 11, url.indexOf('?'));
 
@@ -196,7 +178,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void orphan_cleanup_removes_unlinked() {
 		String token = createUser("file7@b.com");
-		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 		// 유예(10분)보다 오래된 고아만 회수 대상이므로 생성 시각을 과거로 옮겨 조건을 만듦
 		jdbc.update("update attachments set created_at = now() - interval '2 hours' where id = ?", idOf(url));
 
@@ -214,7 +196,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void orphan_cleanup_keeps_fresh_upload_even_with_future_cutoff() {
 		String token = createUser("file8@b.com");
-		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 
 		fileService.cleanupOrphans(OffsetDateTime.now().plusMinutes(1));
 
@@ -229,7 +211,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void unreferenced_old_file_is_removed_by_scan() throws Exception {
 		String token = createUser("scan-a@b.com");
-		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 		UUID id = idOf(url);
 		Path file = pathOf(id);
 
@@ -245,7 +227,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void referenced_file_is_kept_by_scan() throws Exception {
 		String token = createUser("scan-b@b.com");
-		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 		Path file = pathOf(idOf(url));
 		age(file);
 
@@ -258,7 +240,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void fresh_unreferenced_file_is_kept_by_scan() {
 		String token = createUser("scan-c@b.com");
-		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 		UUID id = idOf(url);
 		Path file = pathOf(id);
 		jdbc.update("delete from attachments where id = ?", id);
@@ -272,7 +254,7 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 	@Test
 	void served_file_has_nosniff_header() {
 		String token = createUser("file9@b.com");
-		String url = (String) upload(token, PNG, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
+		String url = (String) upload(token, PNG_MAGIC, MediaType.IMAGE_PNG, "a.png").getBody().get("url");
 
 		var served = rest.getForEntity(url, byte[].class);
 		assertThat(served.getHeaders().getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
@@ -280,10 +262,6 @@ class FileFlowTest extends AbstractPgIntegrationTest {
 
 	private static UUID idOf(String url) {
 		return UUID.fromString(url.substring(url.indexOf("/api/files/") + 11, url.indexOf('?')));
-	}
-
-	private UUID userIdOf(String email) {
-		return jdbc.queryForObject("select id from users where email = ?", UUID.class, email);
 	}
 
 	/** 첨부 id → 실제 파일 경로(행이 지워지기 전에 뽑아 둘 것) */

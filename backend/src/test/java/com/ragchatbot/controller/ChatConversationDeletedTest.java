@@ -1,15 +1,11 @@
 package com.ragchatbot.controller;
 
+import static com.ragchatbot.support.SseTestSupport.rawChat;
+import static com.ragchatbot.support.SseTestSupport.stubStageLabel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -39,21 +35,7 @@ class ChatConversationDeletedTest extends AbstractPgIntegrationTest {
 
 	@BeforeEach
 	void stageLabel() {
-		when(openAi.stageLabel(any(), any(), anyBoolean())).thenReturn("단계");
-	}
-
-	private String rawChat(String token, String convId) throws Exception {
-		var req = HttpRequest.newBuilder(URI.create(rest.getRootUri() + "/api/chat"))
-				.timeout(Duration.ofSeconds(10))
-				.header("Authorization", "Bearer " + token)
-				.header("Content-Type", "application/json")
-				.header("Accept", "text/event-stream")
-				.POST(HttpRequest.BodyPublishers.ofString(
-						"{\"conversationId\":\"" + convId + "\",\"message\":\"안녕\"}"))
-				.build();
-		var res = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
-		assertThat(res.statusCode()).isEqualTo(200);
-		return res.body();
+		stubStageLabel(openAi);
 	}
 
 	@Test
@@ -68,7 +50,7 @@ class ChatConversationDeletedTest extends AbstractPgIntegrationTest {
 			return new ChatCompletion("끝까지 만든 답", List.of(), true, null, null);
 		});
 
-		String body = rawChat(token, convId);
+		String body = rawChat(rest, token, convId);
 
 		assertThat(body).contains("event:meta");
 		assertThat(body).doesNotContain("event:error");
@@ -90,7 +72,7 @@ class ChatConversationDeletedTest extends AbstractPgIntegrationTest {
 			throw new IllegalStateException("upstream boom after delete");
 		});
 
-		String body = rawChat(token, convId);
+		String body = rawChat(rest, token, convId);
 
 		assertThat(body).doesNotContain("event:error");
 		assertThat(output).doesNotContain("처리되지 않은 예외");
