@@ -1,0 +1,156 @@
+19:58:03.404 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStreamContractTest]: ChatStreamContractTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:58:03.709 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStreamContractTest
+19:58:03.881 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStreamContractTest]: ChatStreamContractTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:58:03.882 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:58:03.887 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStreamContractTest
+19:58:04.004 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+19:58:04.009 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+19:58:04.172 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+19:58:05.838 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with Environment variables, system properties and defaults. Resolved dockerHost=npipe:////./pipe/dockerDesktopLinuxEngine
+19:58:05.840 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+19:58:05.871 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 29.9.2
+  API Version: 1.56
+  Operating System: Docker Desktop
+  Total Memory: 31942 MB
+  Labels: 
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+19:58:06.129 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+19:58:06.372 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/
+19:58:06.632 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: c4a501b02763b6f9523ac40b35b95f2f6b0d272508ef04a5534a41623cd535b6
+19:58:07.255 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT1.1266964S
+19:58:07.266 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+19:58:07.266 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+19:58:07.268 [main] INFO org.testcontainers.DockerClientFactory -- ?? Docker server version should be at least 1.6.0
+19:58:07.360 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Creating container for image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+19:58:07.473 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea is starting: 2da48716f5cb1dafe5420beb35682a022bd202f436f4b7ba45b62b0e94d6f51e
+19:58:10.287 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea started in PT2.927132S
+19:58:10.288 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container is started (JDBC URL: jdbc:postgresql://localhost:60595/test?loggerLevel=OFF)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-23T19:58:11.377+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] c.r.controller.ChatStreamContractTest    : Starting ChatStreamContractTest using Java 17.0.19 with PID 23608 (started by User in D:\dev\rag-chatbot\.issue\worktrees\454-dead-code-deps\backend)
+2026-10-23T19:58:11.380+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] c.r.controller.ChatStreamContractTest    : No active profile set, falling back to 1 default profile: "default"
+2026-10-23T19:58:14.904+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-23T19:58:14.935+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-23T19:58:14.936+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-23T19:58:15.065+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 3647 ms
+2026-10-23T19:58:16.090+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:60595/test?loggerLevel=OFF (PostgreSQL 16.15)
+2026-10-23T19:58:16.268+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-23T19:58:16.276+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 10 migrations (execution time 00:00.056s)
+2026-10-23T19:58:16.306+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-23T19:58:16.457+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-10-23T19:58:16.507+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - init"
+2026-10-23T19:58:16.604+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_users_updated_at" for relation "users" does not exist, skipping
+2026-10-23T19:58:16.608+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_conversations_updated_at" for relation "conversations" does not exist, skipping
+2026-10-23T19:58:16.658+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - auth hardening"
+2026-10-23T19:58:16.697+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - message stopped"
+2026-10-23T19:58:16.731+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - message token usage"
+2026-10-23T19:58:16.766+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - user role"
+2026-10-23T19:58:16.803+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - rag documents"
+2026-10-23T19:58:16.848+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - message timed out"
+2026-10-23T19:58:16.884+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - drop user theme"
+2026-10-23T19:58:16.924+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - rag documents alive file unique"
+2026-10-23T19:58:16.966+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "10 - drop unused openai columns"
+2026-10-23T19:58:17.017+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 10 migrations to schema "public", now at version v10 (execution time 00:00.256s)
+2026-10-23T19:58:17.056+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.c.i.c.SqlScriptCallbackFactory       : Executing SQL callback: afterMigrate - 
+2026-10-23T19:58:20.332+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 60603 (http) with context path '/'
+2026-10-23T19:58:20.348+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] c.r.controller.ChatStreamContractTest    : Started ChatStreamContractTest in 9.658 seconds (process running for 18.929)
+2026-10-23T19:58:20.391+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-23T19:58:20.439+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@951053f
+2026-10-23T19:58:20.442+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-23T19:58:20.599+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 계정 발급 : root@rag.test · 임시 비밀번호 k7Td-h82E-qYWg (최초 로그인 후 마이페이지에서 변경할 것)
+2026-10-23T19:58:20.656+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 1건 · 승격 0건 · 강등 0건
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-10-23T19:58:22.282+09:00  INFO 23608 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-23T19:58:22.282+09:00  INFO 23608 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-23T19:58:22.284+09:00  INFO 23608 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-10-23T19:58:23.485+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStreamExceptionHandlerTest]: ChatStreamExceptionHandlerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:58:23.503+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+2026-10-23T19:58:23.506+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatStreamExceptionHandlerTest]: ChatStreamExceptionHandlerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:58:23.507+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:58:23.516+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-23T19:58:23.596+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] c.r.c.ChatStreamExceptionHandlerTest     : Starting ChatStreamExceptionHandlerTest using Java 17.0.19 with PID 23608 (started by User in D:\dev\rag-chatbot\.issue\worktrees\454-dead-code-deps\backend)
+2026-10-23T19:58:23.597+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] c.r.c.ChatStreamExceptionHandlerTest     : No active profile set, falling back to 1 default profile: "default"
+2026-10-23T19:58:27.092+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-23T19:58:27.095+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-23T19:58:27.098+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-23T19:58:27.232+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 3631 ms
+2026-10-23T19:58:27.612+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:60595/test?loggerLevel=OFF (PostgreSQL 16.15)
+2026-10-23T19:58:27.756+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 10 migrations (execution time 00:00.040s)
+2026-10-23T19:58:27.957+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 10
+2026-10-23T19:58:27.961+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-23T19:58:28.048+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.f.c.i.c.SqlScriptCallbackFactory       : Executing SQL callback: afterMigrate - 
+2026-10-23T19:58:29.594+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 52667 (http) with context path '/'
+2026-10-23T19:58:29.616+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] c.r.c.ChatStreamExceptionHandlerTest     : Started ChatStreamExceptionHandlerTest in 6.078 seconds (process running for 28.197)
+2026-10-23T19:58:29.618+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-10-23T19:58:29.748+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection org.postgresql.jdbc.PgConnection@7625bfbd
+2026-10-23T19:58:29.749+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-10-23T19:58:29.774+09:00  INFO 23608 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 0건 · 승격 0건 · 강등 0건
+2026-10-23T19:58:30.306+09:00  INFO 23608 --- [rag-chatbot-backend] [o-auto-2-exec-4] o.a.c.c.C.[Tomcat-1].[localhost].[/]     : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-23T19:58:30.307+09:00  INFO 23608 --- [rag-chatbot-backend] [o-auto-2-exec-4] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-23T19:58:30.312+09:00  INFO 23608 --- [rag-chatbot-backend] [o-auto-2-exec-4] o.s.web.servlet.DispatcherServlet        : Completed initialization in 4 ms
+2026-10-23T19:58:31.316+09:00 ERROR 23608 --- [rag-chatbot-backend] [o-auto-2-exec-7] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [0f177f48] POST /api/chat
+
+java.lang.IllegalStateException: upstream boom
+	at com.ragchatbot.controller.ChatStreamExceptionHandlerTest.lambda$stream_failure_keeps_error_log_but_writes_no_json$1(ChatStreamExceptionHandlerTest.java:135) ~[test-classes/:na]
+	at org.mockito.internal.stubbing.StubbedInvocationMatcher.answer(StubbedInvocationMatcher.java:42) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.handler.MockHandlerImpl.handle(MockHandlerImpl.java:103) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.handler.NullResultGuardian.handle(NullResultGuardian.java:29) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.handler.InvocationNotifierHandler.handle(InvocationNotifierHandler.java:34) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.creation.bytebuddy.access.MockMethodInterceptor.doIntercept(MockMethodInterceptor.java:84) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.creation.bytebuddy.access.MockMethodInterceptor.doIntercept(MockMethodInterceptor.java:58) ~[mockito-core-5.23.0.jar:na]
+	at org.mockito.internal.creation.bytebuddy.access.MockMethodInterceptor$DispatcherDefaultingToRealMethod.interceptAbstract(MockMethodInterceptor.java:163) ~[mockito-core-5.23.0.jar:na]
+	at com.ragchatbot.openai.OpenAiService$MockitoMock$8G6eU6RW.streamChat(Unknown Source) ~[classes/:na]
+	at com.ragchatbot.service.ChatService.stream(ChatService.java:244) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359) ~[spring-aop-7.0.9.jar:7.0.9]
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:715) ~[spring-aop-7.0.9.jar:7.0.9]
+	at com.ragchatbot.service.ChatService$$SpringCGLIB$$0.stream(<generated>) ~[classes/:na]
+	at com.ragchatbot.controller.ChatController.lambda$chat$0(ChatController.java:60) ~[classes/:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+2026-10-23T19:58:31.569+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.r.exception.GlobalExceptionHandler     : 비동기 요청 타임아웃 POST /api/chat
+2026-10-23T19:58:31.598+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.r.exception.GlobalExceptionHandler     : 비동기 요청 타임아웃 POST /api/chat
+2026-10-23T19:58:35.613+09:00  WARN 23608 --- [rag-chatbot-backend] [o-auto-2-exec-1] c.r.exception.GlobalExceptionHandler     : 비동기 요청 타임아웃 POST /api/chat
+  POST /files  OpenAI-Beta=(없음)
+  POST /vector_stores/shared-store/files  OpenAI-Beta=assistants=v2
+  GET /vector_stores/shared-store/files/file-1  OpenAI-Beta=assistants=v2
+  DELETE /vector_stores/shared-store/files/file-1  OpenAI-Beta=assistants=v2
+  DELETE /files/file-1  OpenAI-Beta=(없음)
+  POST /files  OpenAI-Beta=(없음)
+  POST /vector_stores/shared-store/files  OpenAI-Beta=assistants=v2
+  GET /vector_stores/shared-store/files/file-1  OpenAI-Beta=assistants=v2
+  DELETE /vector_stores/shared-store/files/file-1  OpenAI-Beta=assistants=v2
+  DELETE /files/file-1  OpenAI-Beta=(없음)
+2026-10-23T19:58:36.021+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai vector_store_file 삭제 실패 file-1: 500 Internal Server Error: [no body]
+2026-10-23T19:58:36.022+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : 스토어 연결 해제 실패로 file file-1 은 지우지 않음 - 동기화하면 목록에 다시 보여 다시 지울 수 있음
+2026-10-23T19:58:36.076+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-23T19:58:36.096+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-23T19:58:36.115+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-23T19:58:36.129+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-23T19:58:36.144+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-23T19:58:36.160+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
+2026-10-23T19:58:36.172+09:00  WARN 23608 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai responses api error 500 INTERNAL_SERVER_ERROR: 
