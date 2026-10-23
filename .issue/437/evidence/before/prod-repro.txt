@@ -1,0 +1,9 @@
+# 변경 전 — 운영(d450e4a), 2026-10-23. 관리자 토큰, 긴 답 요청 → 첫 token 이벤트에서 DELETE → 스트림 끝까지 읽기(QA del437.py)
+# 대화는 삭제됐는데(204 · 이후 조회 404) 서버는 생성을 끝까지 하고 저장에서 FK 위반 → error 이벤트 + ERROR 로그
+DELETE 204 · 이벤트 meta → stage → token → error · 스트림 33.6 초 · 대화 조회 404
+2026-10-23T06:54:52.833Z ERROR 1 --- [rag-chatbot-backend] [nio-8080-exec-8] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [49db503b] POST /api/chat
+
+org.springframework.dao.DataIntegrityViolationException: 
+### Error updating database.  Cause: org.postgresql.util.PSQLException: ERROR: insert or update on table "messages" violates foreign key constraint "messages_conversation_id_fkey"
+  Detail: Key (conversation_id)=(76da301b-3c88-4a89-a1c3-66d189c7fb78) is not present in table "conversations".
+### The error may exist in class path resource [mapper/MessageRepository.xml]
