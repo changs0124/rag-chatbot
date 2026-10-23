@@ -30,7 +30,7 @@ public interface OpenAiService {
 	 */
 	record ChatInput(String userMessage, List<AttachmentRef> attachments, List<Turn> history) {
 		/** 구현체가 null 을 방어하지 않으므로 만들 때 막는다(#454) - 늦게 터지면 스트림이 열린 뒤 NPE 다 */
-		ChatInput {
+		public ChatInput {
 			Objects.requireNonNull(userMessage, "userMessage");
 			Objects.requireNonNull(attachments, "attachments");
 			Objects.requireNonNull(history, "history");
