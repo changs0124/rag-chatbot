@@ -1,0 +1,76 @@
+▶ 셸 구문 검사
+  ✓ 셸 구문 검사
+▶ 셸 정적 분석
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+▶ 병합 충돌 표시
+  ✓ 병합 충돌 표시
+▶ 문서 참조 실재
+  ✓ 문서 참조 실재
+▶ 문서 섹션 이름 대조
+  ✓ 문서 섹션 이름 대조
+▶ 응답 계약 대조
+✓ 응답 계약 4곳 일치 (6필드)
+  ✓ 응답 계약 대조
+▶ 런타임 버전 대조(java)
+  ✓ 런타임 버전 대조(java)
+▶ 런타임 버전 대조(node)
+  ✓ 런타임 버전 대조(node)
+▶ 백엔드 clean verify
+  ✓ 백엔드 clean verify
+▶ 백엔드 케이스 수 하한
+케이스 수(backend) : 실측 355 / 하한 355
+  ✓ 백엔드 케이스 수 하한
+▶ 문서 버전 주장 대조
+  ✓ 문서 버전 주장 대조
+▶ 프론트 의존성 설치
+  ✓ 프론트 의존성 설치
+▶ 프론트 lint
+  ✓ 프론트 lint
+▶ 프론트 test
+ ✓ src/components/chat/scroll.test.ts (10 tests) 7ms
+ ✓ src/lib/api.test.ts (10 tests) 19ms
+ ✓ src/lib/stream.test.ts (6 tests) 23ms
+ ✓ src/lib/refresh.test.ts (8 tests) 19ms
+ ✓ src/lib/docFigures.test.ts (15 tests) 21ms
+ ✓ src/hooks/useChatLoading.test.ts (8 tests) 57ms
+ ✓ src/hooks/useChatRace.test.ts (13 tests) 71ms
+ ✓ src/hooks/useChat.test.ts (14 tests) 98ms
+ ✓ src/components/chat/ResizableSidebar.test.tsx (8 tests) 256ms
+ ✓ src/components/chat/ImageLightbox.test.tsx (6 tests) 356ms
+ ✓ src/pages/ChatPage.test.tsx (9 tests) 546ms
+ ✓ src/pages/MyPage.test.tsx (7 tests) 569ms
+ ✓ src/components/chat/MessageList.test.tsx (24 tests) 1189ms
+ ✓ src/components/chat/Composer.test.tsx (35 tests) 1312ms
+ ✓ src/auth/AuthContext.test.tsx (3 tests) 86ms
+ ✓ src/pages/ChatPageRender.test.tsx (1 test) 152ms
+ ✓ src/components/chat/MessageListLazyFail.test.tsx (1 test) 230ms
+ ✓ src/pages/AdminPage.test.tsx (20 tests) 1645ms
+ ✓ src/components/chat/Sidebar.test.tsx (1 test) 92ms
+ ✓ src/scrollbar.test.ts (2 tests) 7ms
+ ✓ src/components/chat/MessageListRender.test.tsx (1 test) 190ms
+ ✓ src/pages/LoginPage.test.tsx (2 tests) 159ms
+ ✓ src/components/ErrorBoundary.test.tsx (1 test) 79ms
+ ✓ src/no-emoji.test.ts (1 test) 6ms
+ ✓ src/components/chat/MessageListLazy.test.tsx (1 test) 361ms
+     ✓ 청크가 오기 전에는 같은 글이 평문으로 보이고, 오면 서식으로 바뀐다  359ms
+ ✓ src/smoke.test.tsx (1 test) 25ms
+ ✓ src/theme-tokens.test.ts (2 tests) 5ms
+      Tests  210 passed (210)
+  ✓ 프론트 test
+▶ 프론트 build
+[2Ktransforming...✓ 374 modules transformed.
+✓ built in 429ms
+  ✓ 프론트 build
+▶ 프론트 케이스 수 하한
+케이스 수(frontend) : 실측 210 / 하한 210
+  ✓ 프론트 케이스 수 하한
+▶ 백엔드 이미지 빌드
+  ✓ 백엔드 이미지 빌드
+▶ 시크릿 스캔
+  - 건너뜀: gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것
+▶ 프론트 의존성 audit
+  ✓ 프론트 의존성 audit
+▶ 백엔드 의존성 스캔
+  - 건너뜀: trivy 없음
+돌린 검사는 전부 통과
+건너뜀 3건 - 이 검사들은 돌지 않았다:

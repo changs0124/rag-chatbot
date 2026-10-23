@@ -1,0 +1,9 @@
+# 변경 후 — ClientGoneLoggingTest(Testcontainers, 실 톰캣 + OutputCapture), 2026-10-23
+# 테스트 전용 컨트롤러가 컨테이너가 넘기는 것과 같은 AsyncRequestNotUsableException(원인 IOException "Broken pipe")을 던진다
+# 판정 : 로그에 「처리되지 않은 예외」 · "Broken pipe" 가 없어야 한다
+
+변경 전 코드(GlobalExceptionHandler 를 HEAD 로 되돌려 실행) : FAIL — 캡처된 로그에 「처리되지 않은 예외」가 찍힘(최종 폴백이 ERROR + 스택)
+변경 후 코드                                               : PASS (tests=2 failures=0 errors=0 — 처리기 경로 + 처리기 직접 호출)
+
+# 다른 예외는 그대로 ERROR 로 남는다 — GlobalExceptionFallbackTest · ChatStreamExceptionHandlerTest(stream_failure_keeps_error_log…) 통과(check-all)
+# 배포 뒤 운영에서 같은 끊기 5회(abort436.py)를 다시 돌려 「처리되지 않은 예외」 0 을 merge 단계에서 확인한다
