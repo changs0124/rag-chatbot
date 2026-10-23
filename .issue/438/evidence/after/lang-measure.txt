@@ -1,0 +1,21 @@
+# #438 답변 언어 실측 (after) — 운영 서버에서 OpenAI 직접 호출(qprobe2/3), 지시문 = javac 로 뽑은 최종 문자열 instr-438b.json
+# 질문 : E1 영어 · E2 일본어 · E3 중국어(요청 없음 → ko) · E4 · E5 영어 명시 요청(→ en) · E6 한국어 질문 + 일본어 명시 요청(→ ja) · K1 한국어
+# 다중 턴(qprobe3, 이력 = 앱과 같은 role/content) : M1 · M2 앞 턴 영어 요청 뒤 한국어 후속(→ en) · M3 앞 턴 영어 요청 뒤 「이제 한국어로」(→ ko) · M4 요청 없는 한국어 대화 뒤 영어 질문(→ ko)
+# 각 3회 · 배터리 qa-questions.json 31문항 1회 · 언어 판정 = 글자 중 한글/가나/한자/라틴 비율
+
+질문  기대  답 언어(회차별)  언어 적중  사실값 적중
+E1    ko    ko ko ko         3/3  3/3
+E2    ko    ko ko ko         3/3  3/3
+E3    ko    ko ko ko         3/3  3/3
+E4    en    en en en         3/3  -
+E5    en    en en en         3/3  3/3
+E6    ja    ja ja ja         3/3  3/3
+K1    ko    ko ko ko         3/3  3/3
+배터리 : 기대 출처 모두 인용 28/28 · 무자료 문항 인용 0/3 · 한국어 답 31/31
+
+== 다중 턴
+질문  기대  답 언어(회차별)  언어 적중  사실값 적중
+M1    en    en en en         3/3  3/3
+M2    en    en en en         3/3  -
+M3    ko    ko ko ko         3/3  3/3
+M4    ko    ko ko ko         3/3  3/3
