@@ -23,15 +23,19 @@
 
 2026-10-23 오후 : 헤비 QA 후속 [#432](https://github.com/changs0124/rag-chatbot/issues/432) 클레임 나열 · 표에 서비스 번호 · S/N 기본 포함(제품 결정 후 지시문 한 줄)을 merge 하고(main `2f064e4`) 운영 배포 · 운영 배터리(기대 출처 28/28 · 무자료 문항 인용 0/3 · 누출 0 · 빈칸 0)까지 마쳤다. 건수만 묻는 질문에는 번호를 넣지 않는다(10-21 C7 기준). 롤백 이미지 `prev-a25ee42`.
 
-2026-10-23 저녁 : 새 축 QA(거짓 전제 · 입력 경계 · 수명주기 경합 · 30턴 이력 예산 · 다국어 · 화면 조작)에서 나온 [#434](https://github.com/changs0124/rag-chatbot/issues/434) NUL · 짝 없는 서로게이트 입력 500 · [#435](https://github.com/changs0124/rag-chatbot/issues/435) 보내기 두 번 탭이 중단을 눌러 질문 소실 · [#436](https://github.com/changs0124/rag-chatbot/issues/436) 클라이언트 끊김 ERROR 로그 · [#437](https://github.com/changs0124/rag-chatbot/issues/437) 스트리밍 중 대화 삭제 FK ERROR 를 merge 하고(main `ce72d02`) 운영 배포 · 운영 재현 확인까지 마쳤다. 롤백 이미지 `prev-d450e4a`. 후속으로 [#438](https://github.com/changs0124/rag-chatbot/issues/438) 답변 언어 기준(제품 결정) · [#440](https://github.com/changs0124/rag-chatbot/issues/440) 200 전 중단 시 보낸 글 미복원이 열려 있다.
+2026-10-23 저녁 : 새 축 QA(거짓 전제 · 입력 경계 · 수명주기 경합 · 30턴 이력 예산 · 다국어 · 화면 조작)에서 나온 [#434](https://github.com/changs0124/rag-chatbot/issues/434) NUL · 짝 없는 서로게이트 입력 500 · [#435](https://github.com/changs0124/rag-chatbot/issues/435) 보내기 두 번 탭이 중단을 눌러 질문 소실 · [#436](https://github.com/changs0124/rag-chatbot/issues/436) 클라이언트 끊김 ERROR 로그 · [#437](https://github.com/changs0124/rag-chatbot/issues/437) 스트리밍 중 대화 삭제 FK ERROR 를 merge 하고(main `ce72d02`) 운영 배포 · 운영 재현 확인까지 마쳤다. 롤백 이미지 `prev-d450e4a`. 후속 두 건은 아래 같은 날 저녁 회차에서 닫았다.
+
+2026-10-23 저녁 2 : [#440](https://github.com/changs0124/rag-chatbot/issues/440) 200 응답 전 중단 시 서버에 물어 보낸 글을 되돌리고 빈 새 대화를 지움(PR #445, 남은 한계 넷은 수용 — `frontend.md` 중단 절) · [#438](https://github.com/changs0124/rag-chatbot/issues/438) 다른 언어로 답해 달라는 명시 요청이면 그 언어로, 그 대화에서 이어감(제품 결정, PR #446)을 merge 하고(main `056ba4c`) 프론트 Vercel · 백엔드 운영 배포 · 운영 앱 확인(E4 · E5 영어 · E1~E3 한국어 · battery 기대 출처 27/28)까지 마쳤다. 롤백 이미지 `prev-ce72d02`.
 
 **관찰(닫은 이슈)** : 세 주제를 한 질문에 묶으면 한 절에서 「N건」 중 일부 건의 세부를 「확인하지 못했다」로 남긴다 — [#431](https://github.com/changs0124/rag-chatbot/issues/431) 측정(10-23, OpenAI 직접) 묶음 L1 4/8 · 단독 질문 4/4. 원인은 묶음 질문의 검색 누락이고, 「빠진 건을 다시 검색」 지시문은 v1 5/12 · v2 3/8 로 효과가 없어 넣지 않았다(검색은 이미 턴당 7~20회 돈다). 모델은 지어내지 않는다. 다시 보이면 횟수를 여기에 더한다.
 
 **관찰(이슈 아님)** : F2(알람 + 과거 사례) 답이 매뉴얼 내용을 쓰고도 출처에 매뉴얼을 빼는 경우가 있다 — 운영 battery 10-21 2회 중 1회 · 10-23 2회 중 0회, 원 API 6회 중 0회(인용 표기 0건 1회 · 클레임만 1회는 답에도 매뉴얼 내용 없음). 모델의 인용 표기 누락 변동이라 코드 결함은 아니다. 다시 보이면 횟수를 여기에 더하고, 잦아지면 이슈로 올린다.
 
+**관찰(이슈 아님)** : battery H3(알람 번호 오타 질문)이 클레임 문서만 인용하고 매뉴얼 인용을 빼는 경우가 있다 — 10-23 운영 battery 회차 중 2회(각 28문항 중 1, #438 배포 전 · 후 1회씩). 같은 지시문의 원 API 측정(10-23 #438, 2회)에서는 28/28. F2 와 같은 인용 표기 누락 변동으로 본다. 다시 보이면 횟수를 더한다.
+
 **관찰(이슈 아님)** : 이력 예산(6000토큰) 밖으로 밀린 앞 턴은 모델이 「대화에서 확인되지 않는다」고 답한다 — 지어내지는 않지만 사용자는 말한 것을 잊었다고 느낄 수 있다(10-23 30턴 세션 1회). Cloudflare 502(cloudflared `malformed MIME header line ":"`)가 battery 1회 나왔다 — 7일 로그 중 1건, 재현 0/10(10-23). 다시 보이면 횟수를 더한다.
 
-다음 할 일 : #438(제품 결정) · #440. 그 밖에는 [backlog.md](./backlog.md) 에서 고른다.
+다음 할 일 : 없음. 후보 — #440 남은 한계(확인과 저장의 경합 · 같은 글 오판)를 막는 서버 「비었을 때만 지우기」(이슈 미등록). 그 밖에는 [backlog.md](./backlog.md) 에서 고른다.
 
 ## 블로커
 
