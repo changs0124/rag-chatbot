@@ -20,12 +20,12 @@ import com.ragchatbot.openai.OpenAiService.ChatInput;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * 스파이크 : <b>동기형 {@code RestClient} 가 SSE 를 증분으로 흘려주는가.</b>
+ * 검증 : <b>동기형 {@code RestClient} 가 SSE 를 증분으로 흘려주는가.</b>
  *
  * <p>{@code OpenAiRealStageMappingTest} 는 캔드 {@code ByteArrayInputStream} 을 파서에 직접 먹이므로
  * <b>파싱 로직만</b> 검증함 - 이미 메모리에 다 있는 바이트라, RestClient 가 응답을 통째로 버퍼링하는지
  * 아닌지는 그 테스트로 드러나지 않음. 버퍼링한다면 라이브에서 토큰이 끝에 한꺼번에 도착해
- * <b>스트리밍이 조용히 죽는데 어떤 테스트도 빨간불이 되지 않음</b> - 그래서 이 스파이크가 있었음.
+ * <b>스트리밍이 조용히 죽는데 어떤 테스트도 빨간불이 되지 않음</b> - 그래서 이 테스트가 있음.
  *
  * <p>타이밍으로 재지 않고 <b>핸드셰이크</b>로 증명함 : 서버가 첫 delta 를 흘린 뒤 <b>클라이언트가
  * 그것을 받았다는 신호를 기다림</b>. 버퍼링이면 클라이언트는 응답이 끝나야 첫 토큰을 보므로 신호가

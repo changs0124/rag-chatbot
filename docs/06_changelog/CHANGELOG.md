@@ -8,6 +8,39 @@
 - **테스트 복붙을 정리했다(#455).** 케이스 수 · 이름 · 단언은 그대로(백엔드 364 · 프론트 222).
   - 백엔드 : 멀티파트 업로드 조립 · PNG 매직바이트 · 이메일로 사용자 ID 읽기를 `AbstractPgIntegrationTest` 의 `multipart(...)` · `PNG_MAGIC` · `userId(email)` 로 모았다(6개 파일 + `AdminUserFlowTest`). `rawChat` · `stageLabel` 스텁은 `support/SseTestSupport` 로
   - 프론트 : `deferred` · `msg` · `conv` 를 `src/test/fixtures.ts` 로. `MessageListLazyFail.test` 는 자체 `Boundary` 대신 실제 `ErrorBoundary` 를 쓰고 100ms 고정 대기를 실패하는 import 대기로 바꿨다. `useChatLoading` · `useChatRace` 목에 빠진 `deleteConversationIfEmpty` 를 더했다
+### Removed
+- **쓰이지 않던 테스트 의존성 · 설정 줄 · 코드를 지웠다(#454).** 전체 리뷰(10-23)에서 grep 0건으로 확인된 것만 — #105 의 대화별 Vector Store 경로는 그대로 둔다
+  - `backend/pom.xml` 테스트 의존성 4개 : `spring-security-test` · `spring-boot-testcontainers` · `testcontainers-junit-jupiter` · `mybatis-spring-boot-starter-test`
+    (`backend/src` 에서 import 0건. 컨테이너는 `AbstractPgIntegrationTest` 가 `testcontainers-postgresql` 로 직접 띄운다)
+  - `.gitignore` 의 `maven-wrapper.jar` 예외(wrapper 는 `only-script` 라 jar 가 없다) · `.linkignore` 의 vitest 리포트 경로 항목(참조하는 문서가 없다)
+  - `RagDocument.deletedAt` — 읽는 select 가 `deleted_at is null` 로 걸러 늘 null 이었다(레코드 · resultMap · select 컬럼 · 생성자 호출)
+  - `ChatInput` 의 null 방어(`OpenAiMockService` · `OpenAiRealService`) — 유일한 생성자 `ChatService` 가 늘 non-null 을 넘긴다
+  - `AuthContext.tsx` 의 `eslint-disable` 는 oxlint 규칙 이름(`oxlint-disable-next-line react/only-export-components`)으로 바꿨다. 테스트 수 불변
+
+### Fixed
+- **관리자 업로드 크기 선검사 · 부분 저장 실패 로그 · 런타임 버전 검사 안내(#453).** 2026-10-23 전체 리뷰에서 나온 동작 보정 셋
+  - `AdminDocumentService.upload` : `getSize()` 로 25MB 를 먼저 본다. 변경 전에는 `getBytes()` 로 다 읽은 뒤 비교해, 멀티파트 한도 안의 거절 대상 파일이 힙에 먼저 올랐다(`FileService` 의 #402 와 같은 원칙)
+  - `ChatService.savePartial` : `catch (Exception ignored)` 를 로그로 바꿨다. 대화가 삭제된 탓이면(#437 과 같은 `conversationGone` 판정) INFO, 아니면 예외와 함께 WARN
+  - `scripts/check-runtime-versions.sh` : `java` · `node` 가 PATH 에 없으면 `command -v` 로 먼저 보고 「수집 실패 : java 없음」을 출력하고 exit 1 (변경 전에는 `set -e` 아래 exit 127 로 말없이 죽음)
+  - 테스트 : `AdminDocumentSizeCheckTest`(getBytes 호출 안 함 확인) · `ChatPartialSaveFailureLogTest`(저장 실패가 WARN 에 남음). **하한 백엔드 364 → 366**
+
+### Docs
+- **코드 주석을 정리했다(#452).** 동작 · 테스트 수는 그대로이고 주석과 문서만 바뀐다. `RAG_INSTRUCTIONS` 머리 주석(약 60줄)의
+  줄별 실측 수치를 `live-integration.md` 3-2 「지시문 줄별 실측」 표로 옮기고 주석에는 줄마다 이유 · 이슈 번호만 남겼다(지시문 문자열은 그대로).
+  낡은 주석(Mock 「리소스 정리 기록」 · `trackedKeys` 「운영 점검용」 · `findByConversation` 호출처 · `AdminDtos` · 409 의미 · `FileService` 검증 순서의 #418)을 바로잡고,
+  반복(SSE 순서 · 명단이 비면 전원 강등 · OpenAiService/Real 무자료 표시)과 이력(`pom.xml` Phase · Boot 3.5.16, `JwtService` 라이브러리 버전, 테스트 「스파이크 · 이전에는」)을 줄였다.
+  프론트는 `Markdown.tsx` JSDoc 을 컴포넌트로, `ChatPage` 뷰포트 설명을 해당 effect 로, `useChat.run` 설명을 `useCallback(` 밖으로 옮기고 `abortActiveStream` 의 인과 문구를 정정했다.
+  `Dockerfile` 은 없는 「다이제스트 고정」 단락 대신 `backend.md` 「배포」 #416 단락을, `check-all.sh` 는 실제 잡 ID(`deps-backend` · `deps-frontend`)를 가리킨다
+- **같은 사실의 반복 · 갈린 정본 문장 · 낡을 수치를 정리했다(#451).** 모델명 `gpt-6-sol` 은 README 기술 스택 표와 `backend/.env.example` 에만 남기고 나머지는 `OPENAI_MODEL` 기본값을 가리킨다. 기본값 정본 문장을 「기본값 = `application.yml`, 의미 · 증상 = `.env.example`」로 통일했고, README 문서 표(INDEX 와 겹침)와 `USER_MAX_NAME_CHARS(50)` 반복, design-system 로고 표의 죽은 `#3F4444` 행 · 절 번호 7-1 결번, frontend 번들 크기 시점 표기 · CSP 이미지 출처 `data:` 누락을 고쳤다.
+- **코드와 어긋난 문서 서술 넷을 바로잡았다(#449).** `api.md` 409 표(공통 에러표 · HTTP 표)에 「이미 보낸 첨부 삭제 · `ifEmpty` 인데 메시지 있음」을 더하고 v1.8 로 올렸다 ·
+  #447 배포 순서 불변식(백엔드 먼저, 롤백은 프론트 먼저)을 `api.md` API-DELETE-001 · `backend.md` 「배포」로 옮겼다 · 토큰 재발급 서술을 #390 구조
+  (`adoptRefreshedToken` 은 `authFetch` 한 곳, 직접 `fetch` 는 `ImageLightbox` 다운로드뿐)로 `frontend.md` · `features.md` 에 맞췄다.
+  코드 쪽은 `api.ts` 의 낡은 주석과 쓰이지 않는 `authHeaders` 의 `export` 를 정리했다
+- **current-sprint 의 끝난 일지를 지우고 이 파일의 `[Unreleased]` 를 배포별 구획으로 나눴다(#450).** 항목 본문은 그대로 옮겼다.
+
+## [2026-10-23]
+
+운영 배포 5회 — `a25ee42`(#429, 롤백 `prev-4ce4f12`) · `2f064e4`(#432, 롤백 `prev-a25ee42`) · `ce72d02`(#434 #435 #436 #437, 롤백 `prev-d450e4a`) · `056ba4c`(#438 #440, 롤백 `prev-ce72d02`) · `20f26b3`(#447, 롤백 `prev-056ba4c`, 백엔드를 merge 전에 먼저 배포하고 되돌릴 때는 프론트를 먼저).
 
 ### Fixed
 - **200 전 중단 시 새 대화 삭제가 막 저장된 질문 · 첨부까지 지울 수 있던 것을 고쳤다(#447, #440 후속).** #440 은 이력을 물어(확인) 「없음」이면
@@ -73,6 +106,28 @@
   - 「이 · 가 · 도 · 로 · 과」는 명사 끝 · 단어 첫 글자로 흔해 판정에서 뺐다(리뷰 지적 — 「점검 결과 <표기> 이상 없음」에 이름이 끼어들었다).
     공백을 둔 표기 두 개는 이름 하나로, 확장자는 알려진 꼬리(`.md` 등)만 자른다
   - 테스트 : `CitationMarkupFilterTest` 9건 추가(운영 사례 · 공백 없음 · 조각 경계 · 정상 위치 불변(오탐 문장 포함) · 연속 표기 · 점 든 이름 · 못 푸는 참조 · 보류 공백 · 스트림 경로). **백엔드 하한 338 → 347**
+
+### Changed
+- **다른 언어로 답해 달라고 명시적으로 요청하면 그 언어로 답한다(#438).** 지시문 마지막 줄 「한국어로 답한다」가 「answer in English please」 ·
+  「Reply only in English」 같은 요청보다 앞서 늘 한국어로 답했다(10-23 새 축 QA). 10-23 제품 결정 : 명시 요청만 따르고, 질문 언어만 다르면 한국어로 둔다
+  - 지시문 마지막 줄 : 기본 한국어 · 명시 요청이면 그 언어(같은 대화에서 다른 언어를 다시 요청할 때까지 이어짐 — 리뷰 지적 뒤 결정) · 질문 언어만으로는 요청이 아님 · 문서 이름 · 알람 번호 · 파라미터 번호 · S/N 표기는 원문 그대로
+  - 실측(배포될 문자열, 각 3회) : 명시 요청 E4 · E5(영어) · E6(일본어) 0 → 9/9 · 요청 없는 영 · 일 · 중 질문 한국어 9/9 그대로(한국어 질문 3/3 포함 12/12) ·
+    앞 턴 요청 뒤 한국어 후속 질문 M1 · M2 0 → 6/6 · 「이제 한국어로」 M3 · 요청 없는 대화의 영어 질문 M4 한국어 6/6 ·
+    사실값 회귀 없음 · 배터리 31문항 기대 출처 인용 28/28 · 무자료 인용 0/3 · 한국어 답 31/31 그대로
+  - `backend.md` 지시문 절 · 테스트 `OpenAiRealInstructionsTest` 1건. **백엔드 하한 357 → 358**
+- **클레임을 나열하거나 표로 정리할 때 서비스 번호와 S/N 을 기본으로 넣는다(#432).** 10-22 헤비 QA 10턴 세션에서 표 · 나열이
+  호기까지만 적고 같은 호기의 건을 가르는 S/N · 서비스 번호를 뺐다(틀린 값은 없었다). 10-23 제품 결정으로 「기본 포함」
+  - 지시문에 한 줄 : 클레임 번호와 함께 검색 결과에 있는 서비스 번호 · S/N 을 넣고, 검색 결과에 없는 번호는 만들지 않는다
+  - 실측(운영 키 · 스토어, 배포될 실제 문자열을 javac 로 추출, 10-22 세션의 기록된 이력을 앱과 같은 예산으로 잘라 대상 턴만 4회) :
+    식별값 적중 SB3 0/16 → 16/16 · SB9 0/4 → 4/4 · SB10 표 0/24 → 24/24. 값은 전부 기대 답과 같다.
+    건수 질문 SA3 은 0/16 그대로(건수만 묻는 질문이라 늘이지 않는다 — 10-21 C7 기준). 짧은 계산 답 SB8 평균 86 → 101자
+  - 테스트 : `OpenAiRealInstructionsTest` 1건. **백엔드 하한 347 → 348**
+
+## [2026-10-22]
+
+운영 배포 3회 — `634deee`(#401~#405, 롤백 `prev-50f13a2`) · `ad55f58`(#411~#418, 롤백 `prev-634deee`; 런타임 계정을 끄려면 서버 `.env` 의 `APP_DB_*` 를 비운다(`.env.bak-415`)) · `4ce4f12`(#427, 롤백 `prev-ad55f58`).
+
+### Fixed
 - **「그림 전부」를 요청해도 단계마다 대표 그림 하나씩만 나오던 것을 고쳤다(#427).** 10-22 헤비 QA 에서 터릿 · ATC 교체 절차를 함께 묻고 그림을 모두 보여 달라고 하면
   그 절 그림 25개 중 6~8개만 나왔다(틀린 그림은 없었다)
   - 원인 : 검색이 아니라 옮기기 — 검색 결과에는 25개 중 23~25개 표식이 와 있었고 답이 단계별로 하나씩 골랐다(서버에서 OpenAI 직접 호출로 확인)
@@ -80,6 +135,7 @@
     뒤 문장 없이 재면 그림을 요청하지 않은 ATC 교체 순서 질문도 그림이 1~2 → 2~11개로 늘었다
   - 실측(운영 키 · 스토어, 배포될 실제 문자열을 javac 로 추출) : F6 4~8 → 25/25 · F2 27~30 → 35/35 · 요청 없는 질문 0~4(변경 전 1~2) · 검색에 없는 표식 0 ·
     배터리 31문항 기대 출처 인용 28/28 · 무자료 문항 인용 0 · 그림 기대 8문항 적중 변경 전과 같음. 검색에 그림이 덜 오는 경우(F7, 28개 중 17~22개)는 그대로다
+
 ### Performance
 - **`Markdown` 을 지연 로딩해 첫 화면 JS 를 줄인다(#417).** react-markdown + remark/micromark 가 엔트리 청크에 함께 묶여, 마크다운을 쓰지 않는 로그인 화면도
   전부 받았다. `MessageList` 가 `React.lazy` 로 불러 `Markdown` 이 별도 청크(175.89KB, gzip 53.86KB)로 빠졌다 — 엔트리 청크 gzip 147.38KB → 92.76KB(-54.62KB, -37%).
@@ -91,6 +147,7 @@
   - `MessageBubble` · `Sidebar` 를 `memo` 로, `ChatPage` 의 사이드바 핸들러(`onSelect` · 새 대화)를 `useCallback` 으로. 화면 동작은 그대로다
   - `frontend.md` 「스트리밍 UI 규칙」에 객체 동일성 계약 추가
   - 테스트 : `MessageListRender` · `ChatPageRender` 각 1건(변경 전 실패 확인). **프론트 하한 191 → 193**(통합 후 193 → 195)
+
 ### Security
 - **CSP 를 Report-Only 에서 강제로 바꾼다(#411).** #404 에서 위반을 기록만 하던 정책을 운영 화면 전부에서 위반 0 으로 확인한 뒤
   `Content-Security-Policy` 로 올렸다. 확인은 브라우저 `ReportingObserver`(buffered)로 했고, 허용 밖 이미지를 일부러 불러 위반이 잡히는 것도 확인했다
@@ -154,21 +211,11 @@
   - `api.md` API-POST-005 · `features.md` FEAT-CHAT-001 · `backend.md` 「유량 제어」 · `.env.example`
   - 테스트 : 백엔드 2건(`ChatFlowTest`) · 프론트 2건(`Composer`). 상한 초과 3건은 변경 전 실패 확인. **백엔드 하한 319 → 321 · 프론트 하한 191 → 193**
 
+## [2026-10-21 저녁]
+
+운영 배포 `50f13a2`(#385~#392).
+
 ### Changed
-- **다른 언어로 답해 달라고 명시적으로 요청하면 그 언어로 답한다(#438).** 지시문 마지막 줄 「한국어로 답한다」가 「answer in English please」 ·
-  「Reply only in English」 같은 요청보다 앞서 늘 한국어로 답했다(10-23 새 축 QA). 10-23 제품 결정 : 명시 요청만 따르고, 질문 언어만 다르면 한국어로 둔다
-  - 지시문 마지막 줄 : 기본 한국어 · 명시 요청이면 그 언어(같은 대화에서 다른 언어를 다시 요청할 때까지 이어짐 — 리뷰 지적 뒤 결정) · 질문 언어만으로는 요청이 아님 · 문서 이름 · 알람 번호 · 파라미터 번호 · S/N 표기는 원문 그대로
-  - 실측(배포될 문자열, 각 3회) : 명시 요청 E4 · E5(영어) · E6(일본어) 0 → 9/9 · 요청 없는 영 · 일 · 중 질문 한국어 9/9 그대로(한국어 질문 3/3 포함 12/12) ·
-    앞 턴 요청 뒤 한국어 후속 질문 M1 · M2 0 → 6/6 · 「이제 한국어로」 M3 · 요청 없는 대화의 영어 질문 M4 한국어 6/6 ·
-    사실값 회귀 없음 · 배터리 31문항 기대 출처 인용 28/28 · 무자료 인용 0/3 · 한국어 답 31/31 그대로
-  - `backend.md` 지시문 절 · 테스트 `OpenAiRealInstructionsTest` 1건. **백엔드 하한 357 → 358**
-- **클레임을 나열하거나 표로 정리할 때 서비스 번호와 S/N 을 기본으로 넣는다(#432).** 10-22 헤비 QA 10턴 세션에서 표 · 나열이
-  호기까지만 적고 같은 호기의 건을 가르는 S/N · 서비스 번호를 뺐다(틀린 값은 없었다). 10-23 제품 결정으로 「기본 포함」
-  - 지시문에 한 줄 : 클레임 번호와 함께 검색 결과에 있는 서비스 번호 · S/N 을 넣고, 검색 결과에 없는 번호는 만들지 않는다
-  - 실측(운영 키 · 스토어, 배포될 실제 문자열을 javac 로 추출, 10-22 세션의 기록된 이력을 앱과 같은 예산으로 잘라 대상 턴만 4회) :
-    식별값 적중 SB3 0/16 → 16/16 · SB9 0/4 → 4/4 · SB10 표 0/24 → 24/24. 값은 전부 기대 답과 같다.
-    건수 질문 SA3 은 0/16 그대로(건수만 묻는 질문이라 늘이지 않는다 — 10-21 C7 기준). 짧은 계산 답 SB8 평균 86 → 101자
-  - 테스트 : `OpenAiRealInstructionsTest` 1건. **백엔드 하한 347 → 348**
 - **운영 되돌리기 절차를 실제로 되는 방법으로 바로잡고, 코드와 어긋나거나 겹친 문서를 정리했다(#387).**
   - `live-integration.md` §6 : 운영 되돌리기는 직전 백엔드 이미지(`:previous` · `prev-<sha>`)로. `APP_MODE=mock` 은 `prod` 프로필에서 `AppModeGuard` 가 기동을 거부해(#305) 로컬 전용으로 낮춤
   - 코드와 다르던 곳 : 진행 단계에 `reviewing`(overview), 동기화 `total` = 스토어 파일 수 − 끊은 연결 수(features · `AdminDtos` 주석), 매퍼 쓰기 수 `<delete>` 2 · 수정·삭제 11건(V10 이후), 파일 토큰 TTL 은 기본 15분(`FILE_ACCESS_TOKEN_TTL_MINUTES`), 컨테이너 하드닝 실측은 이전 GCP VM 기준임을 밝힘
@@ -186,6 +233,7 @@
   - 관리자 문서(`rag_documents`)의 같은 이름 컬럼과 문서 삭제 정리는 살아 있는 경로라 그대로다
   - 프론트 : 첨부 `fileType` 을 `'image'` 로 좁히고 과거 문서 첨부 칩 분기를 지웠다
   - 테스트 : `OpenAiRealDeleteResourcesTest` 2건 삭제(지운 메서드 전용) · `ChatFlowTest` 의 목업 호출 수 단언을 삭제 후 404 단언으로 바꿈. **백엔드 하한 321 → 319**
+
 ### Refactored
 - **백엔드 중복을 정리하고 출처 스니펫 고르기를 `SnippetPicker` 로 뗐다(#389).** 동작은 그대로다(테스트 319개 변화 없음)
   - `MeResponse` 를 `MeResponse.of(User)` 한 곳에서 만든다. 로그인(`AuthService`)과 마이페이지(`ProfileService`)가 각자 만들고 있었다

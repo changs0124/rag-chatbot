@@ -142,12 +142,18 @@ public class AdminDocumentService {
 			String shown = isUnknownType(file.getContentType()) ? file.getOriginalFilename() : file.getContentType();
 			throw new BadRequestException("지원하지 않는 문서 형식: " + shown + " (허용: PDF · TXT · MD · DOCX)");
 		}
+		// 크기는 **힙에 올리기 전에** 본다(#453, FileService 의 #402 와 같은 원칙) - getBytes() 뒤에 재면
+		// 멀티파트 한도(26MB)까지의 파일이 거절되기 전에 힙을 잡는다
+		if (file.getSize() > MAX_SIZE) {
+			throw new BadRequestException("용량 초과(최대 " + (MAX_SIZE / MB) + "MB)");
+		}
 		byte[] bytes;
 		try {
 			bytes = file.getBytes();
 		} catch (IOException e) {
 			throw new BadRequestException("파일을 읽을 수 없음");
 		}
+		// getSize() 를 실제보다 작게 보고하는 구현에 대비한 방어선 - 저장 크기는 bytes 로 정해진다
 		if (bytes.length > MAX_SIZE) {
 			throw new BadRequestException("용량 초과(최대 " + (MAX_SIZE / MB) + "MB)");
 		}
@@ -164,7 +170,7 @@ public class AdminDocumentService {
 		UUID id = UUID.randomUUID();
 		try {
 			documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
-					bytes.length, "in_progress", adminId, null, null));
+					bytes.length, "in_progress", adminId, null));
 		} catch (RuntimeException e) {
 			// 여기서 되돌리지 않으면 스토어에는 있는데 목록에는 없는 문서가 남는다 - 화면에 안 보여
 			// 지울 수 없고, 검색에는 잡혀 **삭제한 적 없는 문서가 계속 인용된다.** 고아 회수 스케줄러는
@@ -246,7 +252,7 @@ public class AdminDocumentService {
 				continue;
 			}
 			added += documentRepository.insertIfAbsent(new RagDocument(UUID.randomUUID(), file.filename(),
-					file.openaiFileId(), file.vectorStoreId(), file.byteSize(), file.status(), adminId, null, null));
+					file.openaiFileId(), file.vectorStoreId(), file.byteSize(), file.status(), adminId, null));
 		}
 		if (orphans > 0) {
 			log.warn("스토어 동기화 : 파일이 없는 스토어 연결 {}건을 정리함", orphans);

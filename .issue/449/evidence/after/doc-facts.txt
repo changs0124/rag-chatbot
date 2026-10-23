@@ -1,0 +1,27 @@
+## api.md 409 서술
+80:| `CONFLICT` | 409 | 이메일 중복 · **이미 보낸 메시지에 붙은 첨부 삭제**(API-DELETE-002) · **`?ifEmpty=true` 인데 메시지가 있는 대화 삭제**(API-DELETE-001) |
+100:| 409 | 충돌 | 이메일 중복 · 이미 보낸 첨부 삭제 · `ifEmpty` 삭제인데 메시지가 있음 |
+270:| `CONFLICT` | 409 | `ifEmpty=true` 인데 메시지가 있음 |
+354:| `CONFLICT` | 409 | **이미 보낸 메시지에 붙은 첨부** |
+495:| `CONFLICT` | 409 | 이미 있는 이메일 |
+## api.md 버전
+| 문서 버전 | v1.8 |
+| 최종 수정일 | 2026-10-23 |
+## 옛 서버 ifEmpty 무시 서술(api.md/backend.md)
+docs/01_specs/api.md:262:**배포 순서 불변식(#447).** 옛 서버는 `ifEmpty` 를 모르는 쿼리로 무시하고 **조건 없이 지운다** — 새 프론트가 옛 백엔드를 만나면 안전장치가 조용히 사라진다.
+docs/01_specs/api.md:263:그래서 백엔드를 먼저 배포하고, 롤백은 프론트를 먼저 되돌린다([backend.md](../02_architecture/backend.md) 「배포」).
+docs/02_architecture/backend.md:409:**배포 순서(#447).** `DELETE /api/conversations/{id}?ifEmpty=true` 를 부르는 프론트보다 **백엔드를 먼저 배포한다.** 옛 백엔드는 `ifEmpty` 를 무시하고 조건 없이 지우므로,
+docs/02_architecture/backend.md:494:서로 다른 DB 에 쓰인다 — 그래서 **옛 서버의 `app` 과 `cloudflared` 를 먼저 멈추고**, DB 덤프 · `uploads` · `doc-figures` 를
+docs/02_architecture/backend.md:495:옮겨 복원한 **뒤에** 새 서버를 띄운다. 헬스체크와 e2e 를 확인하기 전에는 옛 서버를 지우지 않는다(되돌릴 길이다).
+## 토큰 재발급 서술
+docs/01_specs/features.md:91:- **objectURL 은 반드시 회수한다.** 회수 지점은 **카드 제거 · 전송 완료 · 컴포저 언마운트** 세 곳이다.
+## authHeaders export
+frontend/src/lib/api.ts:144:function authHeaders(): Record<string, string> {
+frontend/src/lib/api.ts:160:  const res = await fetch(BASE + path, { ...init, headers: { ...init.headers, ...authHeaders() } })
+## features.md 507
+1. JWT 검증 성공 후, 남은 수명이 임계 미만이고 **절대 수명 안이면** 새 토큰을 발급한다. 새 토큰은 처음 인증 시각(`auth_time`)을 그대로 옮긴다(#403)
+2. 응답 헤더 `X-Refresh-Token` 에 싣는다
+3. 프론트가 헤더를 보면 토큰을 교체한다 — 자리와 규칙은 `docs/02_architecture/frontend.md` 「API 통신」이 정본이다
+
+**성공 응답:** 헤더만 추가된다. 본문은 그대로다.
+

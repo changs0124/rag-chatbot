@@ -1,0 +1,2 @@
+Using Node v24.19.0
+exit=127

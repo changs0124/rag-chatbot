@@ -249,11 +249,11 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 | `RateLimiterService` | 사용자별 **분당 횟수**(채팅 · 업로드 · 비밀번호 변경) · 계정별 분당 로그인 **실패**(성공은 세지 않음, 검사 전에 선점 · 성공하면 선점한 분의 창에만 반환, #365) | `RATELIMIT_*` |
 | `ChatConcurrencyLimiter` | **지금 열려 있는 스트림 수**(전역 · 사용자별) | `CHAT_MAX_CONCURRENT_*` |
 | `ChatService.prepare` · `ConversationService` | 입력 **길이**(메시지 · 대화 제목, trim 뒤 코드 포인트, #371) | `CHAT_MAX_*_CHARS` |
-| `ProfileService` · `AdminUserService` | 표시 이름 **길이**(이름 변경 · 계정 발급, trim 뒤 코드 포인트, #413). `/api/auth/me` · 사용자 목록 · 문서 목록이 이름을 매번 싣는다 | `USER_MAX_NAME_CHARS`(50) |
+| `ProfileService` · `AdminUserService` | 표시 이름 **길이**(이름 변경 · 계정 발급, trim 뒤 코드 포인트, #413). `/api/auth/me` · 사용자 목록 · 문서 목록이 이름을 매번 싣는다 | `USER_MAX_NAME_CHARS` |
 | `FileService.upload` | 사용자별 **첨부 저장 총량**(사용자 폴더의 실제 파일 크기 합, 디스크에 쓰기 전, #418). 분당 · 장수 상한은 쌓이는 속도만 줄여, 한 계정이 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다 | `ATTACHMENT_QUOTA_MB` |
 | `ChatService.prepare` | 메시지 1건의 **첨부 개수**(중복 id 를 접은 뒤, #401). 이미지는 전부 base64 로 한꺼번에 힙에 오르므로 이 값이 요청 하나의 메모리를 묶는다 | `CHAT_MAX_ATTACHMENTS` |
 
-기본값의 정본은 `backend/.env.example` 이다.
+기본값의 정본은 `application.yml`, 각 항목의 의미와 빠뜨렸을 때의 증상은 `backend/.env.example` 이다.
 
 **길이 상한은 횟수 상한이 못 묶는 턴당 크기를 묶는다(#371).** 이력 토큰 예산은 **이전** 메시지에만 걸려, 이번 메시지는
 운영에서 13만 자가 그대로 모델까지 갔다. 메시지 검사는 `prepare` 안 빈 값 검사 바로 뒤라 사용자 메시지 저장 · 모델 호출 전이며,
@@ -405,6 +405,10 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 기동을 막는 것과 나중에야 드러나는 것의 구분은 [live-integration](../01_specs/live-integration.md) 1절에 있다.
 
 스키마는 기동 시 Flyway 가 적용하므로 별도 마이그레이션 단계가 필요 없다.
+
+**배포 순서(#447).** `DELETE /api/conversations/{id}?ifEmpty=true` 를 부르는 프론트보다 **백엔드를 먼저 배포한다.** 옛 백엔드는 `ifEmpty` 를 무시하고 조건 없이 지우므로,
+프론트가 먼저 나가면 메시지가 있는 대화까지 지워진다. **롤백은 반대로 프론트를 먼저 되돌린다.**
+
 헬스체크 경로는 `GET /api/health`(인증 불필요)다.
 첨부는 compose `uploads` 볼륨에 있다 — 소실 조건은 [overview](./overview.md) 「알려진 제약」.
 

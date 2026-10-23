@@ -155,7 +155,7 @@ public class RateLimiterService {
 		}
 	}
 
-	/** 테스트·운영 점검용 - 지금 추적 중인 키 수 */
+	/** 테스트용 - 지금 추적 중인 키 수 */
 	synchronized int trackedKeys() {
 		return windows.size();
 	}

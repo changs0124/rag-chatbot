@@ -1,0 +1,18 @@
+backend/pom.xml:101:		<!-- Phase 1 테스트 : Testcontainers(실 PostgreSQL) + MyBatis 테스트 지원 -->
+backend/pom.xml:24:		<!-- postgresql 수동 고정을 뺐음(#48). Boot 3.5.16 BOM 관리분이 42.7.11이라
+backend/pom.xml:31:		<!-- Phase 0 기반: webmvc + validation. (Boot 4 에서 starter-web → starter-webmvc 로 개명됨) MyBatis/PostgreSQL(Phase 1), Security/JWT(Phase 2)는 해당 Phase에서 추가 -->
+backend/pom.xml:41:		<!-- Phase 2 : 인증 (Spring Security + JWT + BCrypt) -->
+backend/pom.xml:52:		<!-- Phase 1 : 퍼시스턴스 (MyBatis 4.1.0 - SB4.1 트랙, PostgreSQL, Flyway 마이그레이션) -->
+backend/pom.xml:7:	<!-- Spring Boot 4.1.1 - 3.5 는 OSS 지원이 끝나(2026-06-30) 마지막 무상 패치 3.5.16 에 묶여 있었음(#48).
+backend/src/main/java/com/ragchatbot/repository/UserRepository.java:45:	 * 지워도 영구히 남음. 명단이 비면 전원 강등이며 그것이 맞는 동작임("관리자를 없앤다").
+backend/src/main/java/com/ragchatbot/service/ChatConcurrencyLimiter.java:44:	/** 자리를 잡음. 못 잡으면 429 - 큐에 쌓아 두고 기다리게 하지 않음(무응답이 곧 결함이었음) */
+backend/src/main/java/com/ragchatbot/service/RateLimiterService.java:158:	/** 테스트·운영 점검용 - 지금 추적 중인 키 수 */
+backend/src/main/resources/db/migration/V1__init.sql:1:-- rag-chatbot 초기 스키마 (Phase 1)
+backend/src/main/resources/mapper/UserRepository.xml:40:	<!-- 명단에 없는 관리자를 내림. **명단이 비면 전원 강등**이며 그것이 맞음("관리자를 없앤다") -->
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java:23: * 스파이크 : <b>동기형 {@code RestClient} 가 SSE 를 증분으로 흘려주는가.</b>
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java:28: * <b>스트리밍이 조용히 죽는데 어떤 테스트도 빨간불이 되지 않음</b> - 그래서 이 스파이크가 있었음.
+backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java:91:						+ "= RestClient 가 응답을 통째로 버퍼링함(M3 스파이크의 무효화 조건)")
+backend/src/test/java/com/ragchatbot/repository/UserRepositoryUuidTest.java:14: * MyBatis + PostgreSQL uuid 왕복 스파이크 + 마이그레이션 검증.
+backend/src/test/java/com/ragchatbot/service/ChatStreamAbortTest.java:22: * <p>이전에는 서버가 중단을 {@code error}로 저장하고 프론트는 같은 상황을 {@code complete}로 표시해
+backend/src/test/java/com/ragchatbot/support/AbstractPgIntegrationTest.java:140:	 * 돌려받은 임시 비밀번호로 다시 로그인한다. DB 에 행을 직접 넣으면 빠르지만, 그러면 16개 테스트
+scripts/check-all.sh:155:# --- 의존성 취약점 (CI 의 deps 잡 · 변경마다) ---------------------------------------------

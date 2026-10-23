@@ -21,6 +21,5 @@ public record RagDocument(
 		long byteSize,
 		String status,
 		UUID uploadedBy,
-		OffsetDateTime createdAt,
-		OffsetDateTime deletedAt) {
+		OffsetDateTime createdAt) {
 }

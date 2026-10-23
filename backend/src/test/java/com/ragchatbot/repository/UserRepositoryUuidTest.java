@@ -11,7 +11,7 @@ import com.ragchatbot.entity.User;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * MyBatis + PostgreSQL uuid 왕복 스파이크 + 마이그레이션 검증.
+ * MyBatis + PostgreSQL uuid 왕복 + 마이그레이션 검증.
  * 실 PostgreSQL(Testcontainers, 공유 싱글턴)에 Flyway가 스키마를 적용한 뒤 검사함.
  */
 class UserRepositoryUuidTest extends AbstractPgIntegrationTest {

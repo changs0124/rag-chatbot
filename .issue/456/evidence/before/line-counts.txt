@@ -1,0 +1,7 @@
+$ wc -l (useChat 계열 · Composer · MyPage · AdminPage · lib)
+   411 src/hooks/useChat.ts
+   483 src/components/chat/Composer.tsx
+   144 src/pages/MyPage.tsx
+   481 src/pages/AdminPage.tsx
+    65 src/lib/types.ts
+  2651 total

@@ -171,7 +171,7 @@ class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 		String fileId = upload(token, "유니크.pdf");
 		UUID adminId = userId("sync-unique@b.com");
 		RagDocument again = new RagDocument(UUID.randomUUID(), "유니크.pdf", fileId, "mock-vector-store", 1,
-				"completed", adminId, null, null);
+				"completed", adminId, null);
 
 		assertThat(documentRepository.insertIfAbsent(again)).isZero();
 		assertThat(catchThrowable(() -> documentRepository.insert(again))).isNotNull();
