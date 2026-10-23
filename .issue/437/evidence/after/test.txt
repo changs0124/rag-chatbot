@@ -1,0 +1,9 @@
+# 변경 후 — ChatConversationDeletedTest(Testcontainers 실 PostgreSQL · 실 톰캣, OpenAiService 목), 2026-10-23
+# 목이 토큰 하나를 보낸 뒤 대화를 DB 에서 지우고 완료를 돌려준다(다른 탭에서 지운 것과 같음)
+# 판정 : 스트림에 event:error 없음 · 로그에 「처리되지 않은 예외」 없음 · INFO 「스트리밍 중 대화가 삭제돼 답을 버림」 · 메시지 0행
+
+변경 전 코드(ChatService 를 HEAD 로 되돌려 실행) : FAIL — 스트림 본문에 event:error(STREAM_ERROR)
+변경 후 코드                                      : PASS (tests=2 failures=0 errors=0 — 저장 실패 · 모델 실패가 삭제와 겹침)
+
+# 대화가 있는데 생긴 진짜 오류는 지금처럼 error 이벤트 + ERROR — ChatStreamExceptionHandlerTest.stream_failure_keeps_error_log… 통과(check-all)
+# 배포 뒤 운영에서 같은 재현(del437.py)으로 merge 단계에서 확인한다
