@@ -80,4 +80,94 @@ class CitationMarkupFilterTest {
 		// 저장 텍스트 = 스트리밍으로 내보낸 것과 같음
 		assertThat(result.fullText()).isEqualTo("됩니다. \n끝").isEqualTo(String.join("", tokens));
 	}
+
+	// ── #429 : 문서 이름 자리에 온 표기는 문서 이름으로 바꿈 ──────────────────────────
+
+	private static final String REF0 = "fileciteturn0file0";
+
+	private static String runWithSearch(String... deltas) {
+		CitationMarkupFilter f = new CitationMarkupFilter();
+		f.addSearch(List.of("필드클레임현황.md"));
+		StringBuilder out = new StringBuilder();
+		for (String d : deltas) {
+			out.append(f.accept(d));
+		}
+		return out.append(f.flush()).toString();
+	}
+
+	@Test
+	void noun_slot_before_comma_and_particle_gets_document_name() {
+		// 2026-10-23 운영 C8 1턴 답 그대로의 모양
+		assertThat(runWithSearch("클레임 3의 상세 기록은 " + REF0 + " , 클레임 145의 상세 기록은 " + REF0 + " 에서 확인됩니다."))
+				.isEqualTo("클레임 3의 상세 기록은 필드클레임현황, 클레임 145의 상세 기록은 필드클레임현황에서 확인됩니다.");
+	}
+
+	@Test
+	void noun_slot_without_spaces_gets_name_with_one_space() {
+		assertThat(runWithSearch("결과는" + REF0 + "에 기록돼 있습니다.")).isEqualTo("결과는 필드클레임현황에 기록돼 있습니다.");
+	}
+
+	@Test
+	void noun_slot_split_across_tokens_gets_document_name() {
+		CitationMarkupFilter f = new CitationMarkupFilter();
+		f.addSearch(List.of("필드클레임현황.md"));
+		assertThat(f.accept("기록은 file")).isEqualTo("기록은 ");
+		assertThat(f.accept("citeturn0file0")).isEmpty();
+		assertThat(f.accept(" ")).isEmpty(); // 첫 글자를 볼 때까지 보류
+		assertThat(f.accept("에서 확인됩니다.")).isEqualTo("필드클레임현황에서 확인됩니다.");
+	}
+
+	@Test
+	void marker_outside_noun_slot_is_only_removed() {
+		assertThat(runWithSearch("확인됩니다. " + REF0 + "\n다음 단계")).isEqualTo("확인됩니다. \n다음 단계");
+		assertThat(runWithSearch("확인됩니다 " + REF0 + ".")).isEqualTo("확인됩니다 .");
+		assertThat(runWithSearch("| R64 | 설계불량 " + REF0 + " |")).isEqualTo("| R64 | 설계불량  |");
+		assertThat(runWithSearch("가" + REF0 + "나")).isEqualTo("가나");
+		// 명사 끝 · 단어 첫 글자로 흔한 「과 · 도 · 로 · 이」 둘레(리뷰 지적)
+		assertThat(runWithSearch("점검 결과 " + REF0 + " 이상 없음")).isEqualTo("점검 결과  이상 없음");
+		assertThat(runWithSearch("모터 온도는 80도" + REF0 + ", 전류는")).isEqualTo("모터 온도는 80도, 전류는");
+		assertThat(runWithSearch("축 방향으로" + REF0 + ", 다음")).isEqualTo("축 방향으로, 다음");
+	}
+
+	@Test
+	void two_markers_with_space_between_in_noun_slot_get_one_name() {
+		assertThat(runWithSearch("기록은 " + REF0 + " " + REF0 + " 에서")).isEqualTo("기록은 필드클레임현황에서");
+	}
+
+	@Test
+	void name_keeps_dots_that_are_not_an_extension() {
+		CitationMarkupFilter f = new CitationMarkupFilter();
+		f.addSearch(List.of("매뉴얼 v1.2"));
+		assertThat(f.accept("기록은 " + REF0 + "에서")).isEqualTo("기록은 매뉴얼 v1.2에서");
+	}
+
+	@Test
+	void unresolved_reference_is_only_removed() {
+		// 검색 결과로 풀리지 않는 참조는 이름을 지어내지 않고 지금처럼 지우기만 함
+		assertThat(run("기록은 " + REF0 + " 에서 확인됩니다.")).isEqualTo("기록은  에서 확인됩니다.");
+	}
+
+	@Test
+	void spaces_held_after_last_marker_come_back_on_flush() {
+		CitationMarkupFilter f = new CitationMarkupFilter();
+		assertThat(f.accept("끝 " + REF0 + "  ")).isEqualTo("끝 ");
+		assertThat(f.flush()).isEqualTo("  ");
+	}
+
+	@Test
+	void stream_puts_name_from_search_results_into_noun_slot() {
+		String sse = """
+				data:{"type":"response.output_item.done","item":{"type":"file_search_call","results":[{"filename":"TM매뉴얼.md","text":"a"},{"filename":"필드클레임현황.md","text":"b"}]}}
+				data:{"type":"response.output_text.delta","delta":"기록은 \\ue200filecite\\ue202turn0file1\\ue201"}
+				data:{"type":"response.output_text.delta","delta":" 에서 확인됩니다. \\ue200filecite\\ue202turn0file1\\ue201 "}
+				data:{"type":"response.completed","response":{"output":[]}}
+				""";
+		List<String> tokens = new ArrayList<>();
+		OpenAiRealService service = OpenAiRealTestSupport.parserOnly();
+
+		ChatCompletion result = service.consumeStream(new ByteArrayInputStream(sse.getBytes(StandardCharsets.UTF_8)),
+				tokens::add, (stage, sources) -> { });
+
+		assertThat(result.fullText()).isEqualTo("기록은 필드클레임현황에서 확인됩니다.  ").isEqualTo(String.join("", tokens));
+	}
 }

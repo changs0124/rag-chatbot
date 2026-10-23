@@ -98,6 +98,7 @@ public class OpenAiRealService implements OpenAiService {
 	 * ({@code 「…결과는 <표기>에 기록돼 있습니다」}) {@link CitationMarkupFilter} 가 지운 뒤 「결과는 에 기록돼」 로
 	 * 문장이 깨진다. 필터는 스트림 조각 단위라 앞 조각에서 이미 나간 공백을 되돌릴 수 없어 지시로 막았다.
 	 * 실측(같은 질문 36회) 깨진 답 1 → 0, 출처 회귀 없음(배터리 31문항 × 2 : 출처 0건 2 → 0).
+	 * 지시로도 남는 경우(10-23 운영 940턴 중 1)는 필터가 그 자리에 문서 이름을 넣는다(#429).
 	 *
 	 * <p><b>무자료 일반 설명에서 절차를 단계로 쓰지 말라는 줄(#376)</b> — 「일반적인 설명을 덧붙인다」만 두면
 	 * 장비 연결 질문에 「모델 확인 → ESI 확보 → 포트 연결 → 매핑 → 시운전」 같은 절차를 붙여, 출처 0건인데도
@@ -352,17 +353,29 @@ public class OpenAiRealService implements OpenAiService {
 					// 검색 결과가 실제로 도착한 경계(#375). include: file_search_call.results 로 결과가 실려 옴.
 					// 이름은 출처와 같은 규칙(resultFilename)으로 뽑음 - 진행 문구와 출처 목록이 어긋나지 않게 함
 					boolean added = false;
+					List<String> names = new ArrayList<>();
 					for (JsonNode r : ev.path("item").path("results")) {
 						String name = resultFilename(r);
+						names.add(name);
 						if (!name.isEmpty()) {
 							added |= reviewedSources.add(name);
 						}
 					}
+					markup.addSearch(names); // 명사 자리 표기를 문서 이름으로 바꿀 때 씀(#429)
 					// 0건이면 확인할 문서가 없으므로 단계를 만들지 않음(REQ-RAG-004)
 					if (added) {
 						onStage.accept(Stage.REVIEWING, List.copyOf(reviewedSources));
 					}
 				} else if ("response.completed".equals(type)) {
+					String rest = markup.flush(); // 마지막 표기 뒤에 보류해 둔 공백
+					if (!rest.isEmpty()) {
+						if (!generatingSent) {
+							onStage.accept(Stage.GENERATING, List.of());
+							generatingSent = true;
+						}
+						buffer.append(rest);
+						onToken.accept(rest);
+					}
 					JsonNode response = ev.path("response");
 					citations = extractCitations(response, markup.fileRefs(), buffer.toString());
 					inputTokens = intOrNull(response.path("usage"), "input_tokens");
