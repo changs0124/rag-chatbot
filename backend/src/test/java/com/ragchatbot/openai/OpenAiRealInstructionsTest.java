@@ -122,6 +122,21 @@ class OpenAiRealInstructionsTest {
 	}
 
 	/**
+	 * 다른 언어로 답해 달라는 명시 요청만 따르고, 질문 언어만 다르면 한국어로 답하라는 지시가 실린다(#438).
+	 *
+	 * <p>「한국어로 답한다」만 두면 「answer in English please」 같은 요청에도 한국어로 답했다 - 변경 전 실측 명시 요청(E4 · E5 · E6) 0/9 · 앞 턴 요청 뒤 후속 질문(M1 · M2) 0/6.
+	 */
+	@Test
+	void tells_model_to_follow_only_an_explicit_answer_language_request() {
+		chat("shared-store");
+
+		assertThat(bodies.get(0))
+				.contains("다른 언어로 답해 달라고 명시적으로 요청하면")
+				.contains("같은 대화에서 사용자가 다른 언어를 다시 요청할 때까지 이어진다")
+				.contains("질문이 다른 언어로 쓰였다는 것만으로는 요청이 아니므로 한국어로 답한다");
+	}
+
+	/**
 	 * 스토어가 없으면 지시를 싣지 않는다.
 	 *
 	 * <p>검색 도구가 없는데 "사내 문서를 먼저 찾아본다" 고 지시하면 <b>모델에게 없는 도구를 쓰라고
