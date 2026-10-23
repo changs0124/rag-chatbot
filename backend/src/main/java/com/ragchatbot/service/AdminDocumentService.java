@@ -153,6 +153,10 @@ public class AdminDocumentService {
 		} catch (IOException e) {
 			throw new BadRequestException("파일을 읽을 수 없음");
 		}
+		// getSize() 를 실제보다 작게 보고하는 구현에 대비한 방어선 - 저장 크기는 bytes 로 정해진다
+		if (bytes.length > MAX_SIZE) {
+			throw new BadRequestException("용량 초과(최대 " + (MAX_SIZE / MB) + "MB)");
+		}
 		// 검사할 수 있는 형식만 검사한다 - 나머지를 검사하는 척하지 않음
 		if ("pdf".equals(extension) && !FileService.regionEquals(bytes, 0, PDF_MAGIC)) {
 			throw new BadRequestException("파일 내용이 형식과 일치하지 않음");
