@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ClipboardEvent, FormEvent } from 'react'
 import ImageLightbox from './ImageLightbox'
 import { errorMessage } from '../../lib/api'
@@ -64,9 +64,9 @@ export default function Composer({
   draftsRef.current = drafts
   // 받아들임을 기다리는 동안 보낸 카드의 key(#349) - 곧 메시지에 실릴 첨부라 서버에서 지우면 안 된다
   const sendingRef = useRef<string[]>([])
-  // 중단 버튼이 나타난 시각(#435)
+  // 중단 버튼이 나타난 시각(#435). 화면에 그리기 전에 적어야 첫 프레임의 클릭도 막는다
   const stopShownAt = useRef(0)
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (streaming) stopShownAt.current = Date.now()
   }, [streaming])
 

@@ -18,8 +18,11 @@ vi.mock('../lib/endpoints', () => ({
 
 const { streamChat } = await import('../lib/endpoints')
 
-/** 스트림을 열어 둔 채 핸들러를 직접 호출할 수 있게 함 */
-function openStream() {
+/**
+ * 스트림을 열어 둔 채 핸들러를 직접 호출할 수 있게 함.
+ * `opened` 가 false 면 200 을 받기 전(서버에 닿기 전)인 요청을 흉내 낸다(#435)
+ */
+function openStream({ opened = true } = {}) {
   const control: {
     handlers?: ChatStreamHandlers
     signal?: AbortSignal
@@ -29,6 +32,7 @@ function openStream() {
   vi.mocked(streamChat).mockImplementation((_body, handlers, signal) => {
     control.handlers = handlers
     control.signal = signal
+    if (opened) handlers.onOpen?.()
     return new Promise<void>((resolve, reject) => {
       control.finish = resolve
       control.fail = reject
@@ -176,8 +180,6 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', []))
     expect(result.current.messages).toHaveLength(2)
-    // 서버가 받아 단계를 보낸 뒤의 중단 - 질문은 서버에 저장돼 있다
-    act(() => void stream.handlers?.onStage?.({ stage: 'analyzing', label: '질문 분석 중' }))
 
     await act(async () => {
       result.current.stop()
@@ -188,9 +190,10 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.messages[0].role).toBe('user')
   })
 
-  it('서버에서 아무것도 받기 전에 중단하면 질문 말풍선도 남기지 않음 (#435)', async () => {
-    // 요청이 서버 검증 전에 끊기면 질문도 저장되지 않는다 - 남기면 새로고침에 사라져 화면과 재조회가 어긋남
-    const stream = openStream()
+  it('200 을 받기 전에 중단하면 질문 말풍선도 남기지 않음 (#435)', async () => {
+    // 서버에 닿지 않은 요청은 질문도 저장되지 않는다 - 남기면 새로고침에 사라져 화면과 재조회가 어긋남.
+    // 200 을 받은 뒤의 중단은 위 테스트처럼 질문을 남긴다 - 서버가 200 전에 질문을 저장하기 때문이다
+    const stream = openStream({ opened: false })
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', []))
     expect(result.current.messages).toHaveLength(2)

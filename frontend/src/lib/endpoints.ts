@@ -56,6 +56,8 @@ export function uploadDocument(file: File): Promise<RagDocument> {
 }
 
 export interface ChatStreamHandlers {
+  /** 200 을 받았음 - 서버가 질문을 저장했다(#435) */
+  onOpen?: () => void
   /** 진행 단계(REQ-CHAT-005) - 라벨 문자열은 서버가 소유함(모드별로 다름) */
   onStage?: (data: { stage: string; label: string }) => void
   onToken?: (delta: string) => void
@@ -91,6 +93,8 @@ export async function streamChat(
     handlers.onError?.(err.message)
     throw err
   }
+  // 서버는 질문을 저장한 뒤에 200 을 돌려준다(검증은 동기, 스트리밍은 비동기)
+  handlers.onOpen?.()
 
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
