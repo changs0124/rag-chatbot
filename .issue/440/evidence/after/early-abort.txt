@@ -1,0 +1,15 @@
+0.3 REQ GET /api/auth/me
+0.3 REQ GET /api/conversations
+0.3 send
+0.4 REQ POST /api/conversations
+0.4 REQ POST /api/chat
+1.4 click stop
+1.4 REQ GET /api/conversations/new-1/messages
+1.4 FAIL POST /api/chat net::ERR_ABORTED
+1.4 REQ DELETE /api/conversations/new-1
+1.4 RES 204 DELETE
+1.4 FAIL DELETE /api/conversations/new-1 net::ERR_ABORTED
+1.4 REQ GET /api/conversations
+2.9 입력창 : "AL.2263 클레임 몇 건이야?"
+2.9 사이드바 : "새 대화 지난 7일 이전 대화 Q QA"
+2.9 서버 대화 : ["이전 대화"]
