@@ -1,0 +1,8 @@
+# 변경 전 — 운영(백엔드 2f064e4), 2026-10-23. 시험 계정 qa-p434 로 요청 6개(QA 스크립트 probe434.py), 끝나고 계정 삭제
+# 오류 번호는 운영 로그의 DataIntegrityViolationException(0x00) · OpenAI 400 invalid_json 과 대응
+1 대화 생성 title "가<NUL>나" : HTTP 500 · {"code":"INTERNAL_ERROR","message":"처리 중 오류가 발생했습니다 (오류 번호: 50154c96)"} · 대화 수 1→1
+2 제목 변경 "가<NUL>나" : HTTP 500 · {"code":"INTERNAL_ERROR","message":"처리 중 오류가 발생했습니다 (오류 번호: 18325713)"} · 제목 지금 「원래 제목」
+3 이름 변경 "가<NUL>나" : HTTP 500 · {"code":"INTERNAL_ERROR","message":"처리 중 오류가 발생했습니다 (오류 번호: 18e918f1)"}
+4 계정 발급 name "가<NUL>나" : HTTP 500 · {"code":"INTERNAL_ERROR","message":"처리 중 오류가 발생했습니다 (오류 번호: 9bde3bfb)"} · 계정 생김 False
+5 채팅 메시지 "AL.2263<NUL> …" : HTTP 500 · {"code":"INTERNAL_ERROR","message":"처리 중 오류가 발생했습니다 (오류 번호: 642e64a7)"} · 메시지 수 0→0
+6 채팅 외톨이 서로게이트 "\ud800 AL.2263" : HTTP 200 · text/event-stream · 이벤트 meta,stage,error · 메시지 수 0→2 · 저장된 답 상태 ['error']
