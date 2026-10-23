@@ -5,6 +5,11 @@
 ## [Unreleased]
 
 ### Fixed
+- **관리자 업로드 크기 선검사 · 부분 저장 실패 로그 · 런타임 버전 검사 안내(#453).** 2026-10-23 전체 리뷰에서 나온 동작 보정 셋
+  - `AdminDocumentService.upload` : `getSize()` 로 25MB 를 먼저 본다. 변경 전에는 `getBytes()` 로 다 읽은 뒤 비교해, 멀티파트 한도 안의 거절 대상 파일이 힙에 먼저 올랐다(`FileService` 의 #402 와 같은 원칙)
+  - `ChatService.savePartial` : `catch (Exception ignored)` 를 로그로 바꿨다. 대화가 삭제된 탓이면(#437 과 같은 `conversationGone` 판정) INFO, 아니면 예외와 함께 WARN
+  - `scripts/check-runtime-versions.sh` : `java` · `node` 가 PATH 에 없으면 `command -v` 로 먼저 보고 「수집 실패 : java 없음」을 출력하고 exit 1 (변경 전에는 `set -e` 아래 exit 127 로 말없이 죽음)
+  - 테스트 : `AdminDocumentSizeCheckTest`(getBytes 호출 안 함 확인) · `ChatPartialSaveFailureLogTest`(저장 실패가 WARN 에 남음). **하한 백엔드 364 → 366**
 - **200 전 중단 시 새 대화 삭제가 막 저장된 질문 · 첨부까지 지울 수 있던 것을 고쳤다(#447, #440 후속).** #440 은 이력을 물어(확인) 「없음」이면
   대화를 조건 없이 지웠는데, 확인이 채팅 준비의 커밋보다 먼저 처리되면 그 뒤 삭제가 막 커밋된 질문 · 첨부를 cascade 로 지웠다
   (#440 merge 때 남은 한계 ① 로 수용했던 데이터 손실 경로. 실 PostgreSQL 재현 : 삭제가 잠금에서 기다렸다가 커밋 뒤 204, 질문 0개)
