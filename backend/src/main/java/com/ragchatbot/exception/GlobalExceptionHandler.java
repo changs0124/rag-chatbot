@@ -15,6 +15,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -210,6 +211,21 @@ public class GlobalExceptionHandler {
 		}
 		return json(HttpStatus.SERVICE_UNAVAILABLE)
 				.body(new ApiError("SERVICE_UNAVAILABLE", "응답 시간이 초과됨"));
+	}
+
+	/**
+	 * 클라이언트가 연결을 끊음 - 채팅 중단 버튼 · 화면 이동 · 네트워크 단절(#436).
+	 *
+	 * <p><b>오류가 아니다.</b> 중단은 {@code ChatService} 가 받은 데까지 {@code stopped=true} 로 저장하는 정상 경로이고,
+	 * 컨테이너는 끊긴 연결을 알리려고 이 예외를 비동기 디스패치로 넘긴다. 이 핸들러가 없으면 {@link #handleUnexpected} 가
+	 * 받아 끊길 때마다 ERROR + 스택 트레이스를 남겼다(10-23 운영, 끊기 5회 → ERROR 5건 · 스택 330줄) - 진짜 오류를 셀 수 없게 된다.
+	 *
+	 * <p>응답을 쓸 수 없는 상태라 아무것도 쓰지 않는다(null = 처리 완료).
+	 */
+	@ExceptionHandler(AsyncRequestNotUsableException.class)
+	public ResponseEntity<ApiError> handleClientGone(AsyncRequestNotUsableException ex, HttpServletRequest request) {
+		log.debug("클라이언트가 연결을 끊음 {} {}", request.getMethod(), request.getRequestURI());
+		return null;
 	}
 
 	/**

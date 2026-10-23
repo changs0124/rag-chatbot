@@ -5,6 +5,12 @@
 ## [Unreleased]
 
 ### Fixed
+- **클라이언트가 끊은 SSE 가 「처리되지 않은 예외」 ERROR 로 남던 것을 고쳤다(#436).** 중단 버튼 · 화면 이동으로 연결이 끊기면 컨테이너가
+  `AsyncRequestNotUsableException`(Broken pipe)을 넘기고, 최종 폴백이 받아 ERROR + 스택을 남겼다. 10-23 운영에서 끊기 5회 → ERROR 5건 · 스택 330줄.
+  정상 동작이 ERROR 를 만들어 진짜 오류를 셀 수 없었다(#326 의 타임아웃과 같은 모양)
+  - `GlobalExceptionHandler.handleClientGone` : DEBUG 한 줄, 아무것도 쓰지 않음. 중단분 저장(`stopped=true`)은 그대로
+  - `backend.md` 예외 표
+  - 테스트 : `ClientGoneLoggingTest` 1건(변경 전 실패 확인). **백엔드 하한 353 → 354**
 - **NUL 이 든 텍스트 입력이 500 을 내던 것을 고쳤다(#434).** PostgreSQL 은 text 에 0x00 을 저장하지 못하는데 검증이 길이만 봐서,
   가운데 NUL 이 든 채팅 메시지 · 대화 생성 제목 · 제목 변경 · 이름 변경 · 계정 발급 이름이 모두 500 이었다(`trim()` 은 끝의 NUL 만 지운다).
   짝 없는 서로게이트가 든 채팅 메시지는 저장된 뒤 모델 요청 직렬화에서 OpenAI `invalid_json` 으로 거절돼 스트림 오류로 끝났다(10-23 새 축 QA, 운영 재현)
