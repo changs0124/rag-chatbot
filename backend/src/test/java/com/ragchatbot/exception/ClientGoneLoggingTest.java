@@ -12,6 +12,8 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,9 +53,26 @@ class ClientGoneLoggingTest extends AbstractPgIntegrationTest {
 	void client_disconnect_is_not_logged_as_unhandled_error(CapturedOutput output) {
 		String token = createUser("client-gone@b.com");
 
-		rest.exchange("/api/test-client-gone", HttpMethod.GET, new HttpEntity<>(bearer(token)), String.class);
+		var res = rest.exchange("/api/test-client-gone", HttpMethod.GET, new HttpEntity<>(bearer(token)), String.class);
 
+		// 전용 처리기가 받았다는 증거 - 폴백이었다면 500 INTERNAL_ERROR 본문이 나간다
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(res.getBody()).isNull();
 		assertThat(output).doesNotContain("처리되지 않은 예외");
 		assertThat(output).doesNotContain("Broken pipe");
+	}
+
+	/**
+	 * 실제 끊김은 비동기 디스패치에서, 이미 쓸 수 없는 응답으로 온다. 처리기는 응답을 받지도 않고 null(처리 완료 · 본문 없음)을
+	 * 돌려준다 - 쓸 수 없는 응답에 쓰려다 다시 예외가 나는 일이 없다(실 경로는 배포 뒤 운영 끊기 재현으로 확인 - #436 리포트)
+	 */
+	@Test
+	void handler_returns_no_body() {
+		var request = new MockHttpServletRequest("POST", "/api/chat");
+
+		var result = new GlobalExceptionHandler().handleClientGone(
+				new AsyncRequestNotUsableException("disconnected", new IOException("Broken pipe")), request);
+
+		assertThat(result).isNull();
 	}
 }
