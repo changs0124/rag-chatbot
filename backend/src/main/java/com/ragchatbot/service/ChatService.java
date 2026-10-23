@@ -75,7 +75,9 @@ public class ChatService {
 	public PreparedChat prepare(UUID userId, ChatRequest req) {
 		Conversation conversation = conversationService.requireOwned(req.conversationId(), userId);
 
-		String message = req.message() == null ? "" : req.message().trim();
+		String message = req.message() == null ? "" : req.message();
+		UserTextValidation.requireValid(message);
+		message = message.trim();
 		List<UUID> attachmentIds = req.attachmentIds() == null ? List.of() : req.attachmentIds();
 		if (message.isEmpty() && attachmentIds.isEmpty()) {
 			throw new BadRequestException("메시지 또는 첨부가 필요함");

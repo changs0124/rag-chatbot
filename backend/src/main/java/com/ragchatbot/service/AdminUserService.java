@@ -56,7 +56,7 @@ public class AdminUserService {
 		if (!emailDomainPolicy.isAllowed(email)) {
 			throw new BadRequestException(emailDomainPolicy.rejectionMessage());
 		}
-		String name = ProfileService.requireNameLength(req.name().trim(), maxNameChars);
+		String name = ProfileService.requireNameLength(req.name(), maxNameChars);
 		userRepository.findByEmail(email).ifPresent(u -> {
 			throw new ConflictException("이미 있는 이메일");
 		});

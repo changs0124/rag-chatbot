@@ -57,14 +57,14 @@ public class ConversationService {
 
 	public ConversationResponse create(UUID userId, String title) {
 		UUID id = UUID.randomUUID();
-		String finalTitle = (title == null || title.isBlank()) ? "새 대화" : requireTitleLength(title.trim());
+		String finalTitle = (title == null || title.isBlank()) ? "새 대화" : requireTitleLength(title);
 		conversationRepository.insert(new Conversation(id, userId, finalTitle, null, null));
 		return findOwnedResponse(id, userId);
 	}
 
 	public ConversationResponse rename(UUID userId, UUID conversationId, String title) {
 		requireOwned(conversationId, userId);
-		conversationRepository.updateTitle(conversationId, userId, requireTitleLength(title.trim()));
+		conversationRepository.updateTitle(conversationId, userId, requireTitleLength(title));
 		return findOwnedResponse(conversationId, userId);
 	}
 
@@ -135,6 +135,8 @@ public class ConversationService {
 
 	/** 제목 길이 상한(#371). 잘라 저장하지 않고 거절한다 - 자르면 사용자가 쓴 것과 다른 제목이 조용히 남는다 */
 	private String requireTitleLength(String title) {
+		UserTextValidation.requireValid(title);
+		title = title.trim();
 		if (title.codePointCount(0, title.length()) > maxTitleChars) {
 			throw new BadRequestException("제목은 " + maxTitleChars + "자까지 쓸 수 있음");
 		}

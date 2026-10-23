@@ -46,7 +46,7 @@ public class ProfileService {
 
 	/** 갱신 후 한 번만 읽음 - 없는 사용자면 갱신이 0행이고 그 뒤 조회가 404 를 냄(선행 조회가 불필요) */
 	public MeResponse updateName(UUID userId, String name) {
-		userRepository.updateName(userId, requireNameLength(name.trim(), maxNameChars));
+		userRepository.updateName(userId, requireNameLength(name, maxNameChars));
 		return MeResponse.of(require(userId));
 	}
 
@@ -83,6 +83,8 @@ public class ProfileService {
 	 * 코드 포인트로 셈 - length() 면 이모지 하나가 두 자로 세진다. 계정 발급({@code AdminUserService})도 같은 규칙을 쓴다
 	 */
 	static String requireNameLength(String name, int maxNameChars) {
+		UserTextValidation.requireValid(name);
+		name = name.trim();
 		if (name.codePointCount(0, name.length()) > maxNameChars) {
 			throw new BadRequestException("이름은 " + maxNameChars + "자까지 쓸 수 있음");
 		}
