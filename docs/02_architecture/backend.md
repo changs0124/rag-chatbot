@@ -69,6 +69,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
 | `HttpMediaTypeNotSupportedException` | 415 | `UNSUPPORTED_MEDIA_TYPE` |
 | `MissingServletRequestPartException` · `MultipartException` | 400 | `BAD_REQUEST` |
 | `AsyncRequestTimeoutException`(SSE 타임아웃) | 503 · **커밋 뒤면 본문 없음** | `SERVICE_UNAVAILABLE` |
+| `AsyncRequestNotUsableException`(클라이언트가 끊음 — 중단 · 화면 이동, #436) | 본문 없음 · **DEBUG 한 줄**(오류가 아님) | — |
 | **그 밖의 모든 예외** | 500 · **커밋 뒤면 본문 없음** | `INTERNAL_ERROR` |
 
 마지막 줄이 **최종 폴백**이다(FEAT-OPS-002). 없으면 예상 못 한 예외가 Spring 기본 형태로 나가 응답 계약이 깨진다.

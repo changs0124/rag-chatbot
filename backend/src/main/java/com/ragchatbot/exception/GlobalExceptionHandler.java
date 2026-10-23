@@ -15,6 +15,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -210,6 +211,25 @@ public class GlobalExceptionHandler {
 		}
 		return json(HttpStatus.SERVICE_UNAVAILABLE)
 				.body(new ApiError("SERVICE_UNAVAILABLE", "응답 시간이 초과됨"));
+	}
+
+	/**
+	 * 클라이언트가 연결을 끊음 - 채팅 중단 버튼 · 화면 이동 · 네트워크 단절(#436).
+	 *
+	 * <p><b>오류가 아니다.</b> 중단은 {@code ChatService} 가 받은 데까지 {@code stopped=true} 로 저장하는 정상 경로이고,
+	 * 컨테이너는 끊긴 연결을 알리려고 이 예외를 비동기 디스패치로 넘긴다. 이 핸들러가 없으면 {@link #handleUnexpected} 가
+	 * 받아 끊길 때마다 ERROR + 스택 트레이스를 남겼다(10-23 운영, 끊기 5회 → ERROR 5건 · 스택 330줄) - 진짜 오류를 셀 수 없게 된다.
+	 *
+	 * <p>응답을 쓸 수 없는 상태라 아무것도 쓰지 않는다(null = 처리 완료).
+	 *
+	 * <p>같은 예외는 <b>이미 끝난 비동기 응답에 쓰려 할 때</b>도 난다 - 그 경우도 DEBUG 로 내려간다. 지금 비동기 응답은
+	 * 채팅 SSE 하나이고, 그 쓰기는 {@code ChatService} 가 {@code ClientGoneException} 으로 받아 중단으로 저장한다.
+	 * 스트리밍 경로를 새로 만들면 이 처리기가 그쪽 오류도 가릴 수 있음을 염두에 둔다. 원인 메시지는 DEBUG 줄에 남긴다.
+	 */
+	@ExceptionHandler(AsyncRequestNotUsableException.class)
+	public ResponseEntity<ApiError> handleClientGone(AsyncRequestNotUsableException ex, HttpServletRequest request) {
+		log.debug("클라이언트가 연결을 끊음 {} {} : {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+		return null;
 	}
 
 	/**
