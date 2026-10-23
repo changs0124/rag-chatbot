@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Refactored
+- **테스트 복붙을 정리했다(#455).** 케이스 수 · 이름 · 단언은 그대로(백엔드 364 · 프론트 222).
+  - 백엔드 : 멀티파트 업로드 조립 · PNG 매직바이트 · 이메일로 사용자 ID 읽기를 `AbstractPgIntegrationTest` 의 `multipart(...)` · `PNG_MAGIC` · `userId(email)` 로 모았다(6개 파일 + `AdminUserFlowTest`). `rawChat` · `stageLabel` 스텁은 `support/SseTestSupport` 로
+  - 프론트 : `deferred` · `msg` · `conv` 를 `src/test/fixtures.ts` 로. `MessageListLazyFail.test` 는 자체 `Boundary` 대신 실제 `ErrorBoundary` 를 쓰고 100ms 고정 대기를 실패하는 import 대기로 바꿨다. `useChatLoading` · `useChatRace` 목에 빠진 `deleteConversationIfEmpty` 를 더했다
+
 ### Fixed
 - **200 전 중단 시 새 대화 삭제가 막 저장된 질문 · 첨부까지 지울 수 있던 것을 고쳤다(#447, #440 후속).** #440 은 이력을 물어(확인) 「없음」이면
   대화를 조건 없이 지웠는데, 확인이 채팅 준비의 커밋보다 먼저 처리되면 그 뒤 삭제가 막 커밋된 질문 · 첨부를 cascade 로 지웠다

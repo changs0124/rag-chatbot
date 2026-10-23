@@ -11,9 +11,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.core.io.ByteArrayResource;
 
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
@@ -62,21 +59,10 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
 		"app.ratelimit.password-change-per-minute=1" })
 class UploadRateLimitTest extends AbstractPgIntegrationTest {
 
-	/** 앞 4바이트가 PNG 매직인 최소 파일 - 매직바이트 검사를 통과하되 내용은 중요하지 않다 */
-	private static final byte[] PNG = { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
-
 	@SuppressWarnings("rawtypes")
 	private HttpStatus upload(String token) {
-		HttpHeaders headers = bearer(token);
-		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-		body.add("file", new ByteArrayResource(PNG) {
-			@Override
-			public String getFilename() {
-				return "a.png";
-			}
-		});
-		var res = rest.exchange("/api/files", HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+		var res = rest.exchange("/api/files", HttpMethod.POST,
+				multipart(token, "a.png", PNG_MAGIC, MediaType.IMAGE_PNG), Map.class);
 		return HttpStatus.valueOf(res.getStatusCode().value());
 	}
 

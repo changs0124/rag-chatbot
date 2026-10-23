@@ -1,15 +1,11 @@
 package com.ragchatbot.controller;
 
+import static com.ragchatbot.support.SseTestSupport.rawChat;
+import static com.ragchatbot.support.SseTestSupport.stubStageLabel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -56,21 +52,7 @@ class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 	@BeforeEach
 	void stageLabel() {
 		// 목은 null 을 돌려주는데 단계 이벤트가 Map.of 로 라벨을 실어 NPE 가 난다 - 다른 경로로 새지 않게 채움
-		when(openAi.stageLabel(any(), any(), anyBoolean())).thenReturn("단계");
-	}
-
-	private String rawChat(String token, String convId) throws Exception {
-		var req = HttpRequest.newBuilder(URI.create(rest.getRootUri() + "/api/chat"))
-				.timeout(Duration.ofSeconds(10))
-				.header("Authorization", "Bearer " + token)
-				.header("Content-Type", "application/json")
-				.header("Accept", "text/event-stream")
-				.POST(HttpRequest.BodyPublishers.ofString(
-						"{\"conversationId\":\"" + convId + "\",\"message\":\"안녕\"}"))
-				.build();
-		var res = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
-		assertThat(res.statusCode()).isEqualTo(200);
-		return res.body();
+		stubStageLabel(openAi);
 	}
 
 	/**
@@ -91,7 +73,7 @@ class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 
 		String body;
 		try {
-			body = rawChat(token, convId);
+			body = rawChat(rest, token, convId);
 		} finally {
 			upstream.countDown();
 		}
@@ -136,7 +118,7 @@ class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 		});
 		String token = createUser("sse-fail@b.com");
 
-		String body = rawChat(token, createConversation(token));
+		String body = rawChat(rest, token, createConversation(token));
 
 		assertThat(body).contains("event:error").contains("STREAM_ERROR");
 		assertThat(body).doesNotContain("INTERNAL_ERROR");

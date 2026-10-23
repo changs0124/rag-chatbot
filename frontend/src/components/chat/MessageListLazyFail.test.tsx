@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { Component, type ReactNode } from 'react'
 import { act, render, screen } from '@testing-library/react'
+import ErrorBoundary from '../ErrorBoundary'
 import MessageList from './MessageList'
 import type { ChatMessage } from '../../lib/types'
 
@@ -13,17 +13,6 @@ vi.mock('./Markdown', () => {
   throw new Error('청크 로드 실패')
 })
 
-// 최상위(main.tsx)와 같은 역할 - 오류가 여기까지 올라오면 앱 전체가 이 화면으로 바뀐다
-class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false }
-  static getDerivedStateFromError() {
-    return { failed: true }
-  }
-  render() {
-    return this.state.failed ? <p>문제가 발생했습니다</p> : this.props.children
-  }
-}
-
 describe('MessageList 마크다운 청크 실패 (#417)', () => {
   it('청크를 못 받아도 답변은 평문으로 남고 화면이 무너지지 않는다', async () => {
     const message: ChatMessage = {
@@ -35,16 +24,16 @@ describe('MessageList 마크다운 청크 실패 (#417)', () => {
     }
     vi.spyOn(console, 'error').mockImplementation(() => {})
     render(
-      <Boundary>
+      <ErrorBoundary>
         <MessageList messages={[message]} />
-      </Boundary>,
+      </ErrorBoundary>,
     )
 
-    // 청크 실패가 처리될 때까지 기다린다 - 고치기 전에는 여기서 경계가 오류 화면으로 바뀐다
+    // 청크 로드 실패가 정착할 때까지 기다린다(고정 대기 대신 실패하는 import 자체를 기다림) - 고치기 전에는 여기서 경계가 오류 화면으로 바뀐다
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 100))
+      await import('./Markdown').catch(() => {})
     })
-    expect(screen.queryByText('문제가 발생했습니다')).not.toBeInTheDocument()
+    expect(screen.queryByText(/문제가 발생했습니다/)).not.toBeInTheDocument()
     expect(screen.getByText('핀은 **CN3** 이다')).toBeInTheDocument()
     expect(screen.getByText('매뉴얼')).toBeInTheDocument()
   })

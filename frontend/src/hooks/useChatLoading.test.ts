@@ -2,36 +2,19 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useChat } from './useChat'
 import type { ChatMessage } from '../lib/types'
+import { deferred, msg } from '../test/fixtures'
 
 vi.mock('../lib/endpoints', () => ({
   listConversations: vi.fn().mockResolvedValue([]),
   createConversation: vi.fn(),
   getMessages: vi.fn(),
   deleteConversation: vi.fn(),
+  deleteConversationIfEmpty: vi.fn().mockResolvedValue(undefined),
   renameConversation: vi.fn(),
   streamChat: vi.fn().mockResolvedValue(undefined),
 }))
 
 const { getMessages, listConversations, streamChat } = await import('../lib/endpoints')
-
-/** 손으로 끝낼 수 있는 프라미스 - 「이력이 도착하는 순간」을 테스트가 정함 */
-function deferred<T>() {
-  let resolve!: (v: T) => void
-  let reject!: (e: unknown) => void
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res
-    reject = rej
-  })
-  return { promise, resolve, reject }
-}
-
-const msg = (id: string): ChatMessage => ({
-  id,
-  role: 'user',
-  content: id,
-  status: 'complete',
-  citations: [],
-})
 
 /** 대화를 고른 뒤 이력이 올 때까지의 로딩 상태(#291) */
 describe('useChat 이력 불러오는 중', () => {
