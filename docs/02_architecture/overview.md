@@ -35,7 +35,7 @@ flowchart LR
 | 대화·메시지 | 대화 CRUD, 메시지 조회, 소유권 검증 | `backend/src/main/java/com/ragchatbot/service/ConversationService.java` |
 | 첨부 | 업로드·서빙·삭제, 고아 첨부 회수 스케줄러 | `backend/src/main/java/com/ragchatbot/service/FileService.java` · `storage/` |
 | 유량 제어 | 사용자별 분당 상한 + 동시 스트림 상한(back-pressure) | `service/RateLimiterService.java` · `service/ChatConcurrencyLimiter.java` |
-| 화면 상태 | 대화 목록·메시지·스트리밍·진행 단계를 한 훅이 보유 | `frontend/src/hooks/useChat.ts` |
+| 화면 상태 | 대화 목록·메시지·스트리밍·진행 단계를 한 훅이 보유(단계 큐는 `useStageQueue`) | `frontend/src/hooks/useChat.ts` |
 | API 클라이언트 | fetch 래퍼 + 엔드포인트 함수 + SSE 파서 | `frontend/src/lib/` |
 
 ## 페이지 URL 맵

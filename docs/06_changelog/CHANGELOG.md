@@ -5,6 +5,14 @@
 ## [Unreleased]
 
 ### Refactored
+- **`useChat.run` 의 200 전 중단 판정 · 단계 큐 · `Composer` 카드 폐기 · 이름 입력 상한을 묶었다(#456, 동작 불변).** 10-23 전체 리뷰 지적
+  - `useChat` : 200 전 중단 판정(`deleteConversationIfEmpty` · `getMessages` → `stored | deleted | unknown`)을 모듈 함수 `judgeEarlyAbort` 로 빼고
+    훅은 결과만 적용한다(세대 확인은 판정을 기다린 뒤 · 판정 동안 `streaming` 유지 그대로). 같은 `catch` 의 `setMessages` 셋을 하나로
+  - 진행 단계 큐(`STAGE_MIN_MS` 포함)를 `hooks/useStageQueue.ts` 로
+  - `Composer` : 카드 폐기(abort · 서버 삭제 · URL 회수)를 `discardDraft` 하나로 — 카드 제거 · 언마운트 · 되돌리기 넘침이 같이 쓴다
+    (되돌리기 넘침 경로에도 「보내는 중인 카드는 서버에서 지우지 않음」(#349) 조건이 붙는다 — 그 시점엔 보내는 중인 카드가 없어 도달 경로 없음, 리뷰 확인)
+  - 이름 입력 `maxLength` 를 `lib/limits.ts` 의 `MAX_NAME_CHARS` 로(마이페이지 · 관리자 계정 추가). `frontend.md` 폴더 표
+  - 테스트는 고치지 않았다(하한 그대로)
 - **테스트 복붙을 정리했다(#455).** 케이스 수 · 이름 · 단언은 그대로(백엔드 364 · 프론트 222).
   - 백엔드 : 멀티파트 업로드 조립 · PNG 매직바이트 · 이메일로 사용자 ID 읽기를 `AbstractPgIntegrationTest` 의 `multipart(...)` · `PNG_MAGIC` · `userId(email)` 로 모았다(6개 파일 + `AdminUserFlowTest`). `rawChat` · `stageLabel` 스텁은 `support/SseTestSupport` 로
   - 프론트 : `deferred` · `msg` · `conv` 를 `src/test/fixtures.ts` 로. `MessageListLazyFail.test` 는 자체 `Boundary` 대신 실제 `ErrorBoundary` 를 쓰고 100ms 고정 대기를 실패하는 import 대기로 바꿨다. `useChatLoading` · `useChatRace` 목에 빠진 `deleteConversationIfEmpty` 를 더했다

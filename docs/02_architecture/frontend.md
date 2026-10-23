@@ -9,8 +9,8 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 |------|------|
 | `frontend/src/pages/` | 라우트 단위 화면 — `LoginPage` · `ChatPage` · `MyPage` · `AdminPage` |
 | `frontend/src/components/` | 재사용 컴포넌트. 기능이 커지면 `components/chat/` 처럼 하위 폴더 |
-| `frontend/src/hooks/` | 도메인 훅 — 현재 `useChat.ts` 하나 |
-| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `docFigures.ts`(그림 표식 파서) |
+| `frontend/src/hooks/` | 도메인 훅 — `useChat.ts` 와, 그것이 쓰는 진행 단계 표시 큐 `useStageQueue.ts` |
+| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `limits.ts`(서버 상한과 맞춘 입력 상한) · `docFigures.ts`(그림 표식 파서) |
 | `frontend/src/auth/` | Context Provider |
 | `frontend/src/test/` | Vitest 셋업 |
 
@@ -39,7 +39,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | 상태 | 보유자 | 비고 |
 |------|--------|------|
 | 로그인 사용자 | `frontend/src/auth/AuthContext.tsx` | 기동 시 `/api/auth/me` 로 토큰 유효성 확인. **401 일 때만 토큰 폐기** — 네트워크 · 5xx 면 토큰을 두고 3초 간격으로 최대 10회 다시 묻는다(#250, 배포 · 재기동 중 새로고침) |
-| 대화·메시지·스트리밍 | `frontend/src/hooks/useChat.ts` | 대화 목록, 활성 대화, 메시지 배열, 스트리밍 여부, 진행 단계, 오류를 한 훅이 보유 |
+| 대화·메시지·스트리밍 | `frontend/src/hooks/useChat.ts` | 대화 목록, 활성 대화, 메시지 배열, 스트리밍 여부, 진행 단계, 오류를 한 훅이 보유(진행 단계 큐는 `useStageQueue` 에 위임) |
 | 인증 토큰 | `frontend/src/lib/api.ts` 모듈 변수 + `localStorage` | React 상태가 아님 — 렌더링과 무관하게 요청 시점에 읽혀야 함 |
 
 테마 상태는 없다 — 화면은 라이트 하나다([design-system.md](./design-system.md) §1).

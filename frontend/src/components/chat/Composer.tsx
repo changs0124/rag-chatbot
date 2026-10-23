@@ -124,13 +124,21 @@ export default function Composer({
     [startUpload],
   )
 
+  /**
+   * 카드 하나를 버린다(#456) - 업로드 중단 · 미리보기 URL 회수 · 이미 올라간 것은 서버에서도 지움.
+   * abort 는 서버가 이미 받은 것을 되돌리지 않는다. 지우기가 실패해도 카드는 버림 - 남은 파일은 고아 회수가 가져감.
+   * 보내는 중인 카드는 서버에서 지우지 않는다(#349) - 곧 메시지에 실릴 첨부다. ref 만 읽어 언마운트 정리에서도 쓴다
+   */
+  const discardDraft = useCallback((d: Draft) => {
+    d.controller.abort()
+    if (d.attachment && !sendingRef.current.includes(d.key)) deleteAttachment(d.attachment.id).catch(() => {})
+    URL.revokeObjectURL(d.previewUrl)
+  }, [])
+
   function removeDraft(key: string) {
     const target = draftsRef.current.find((d) => d.key === key)
     if (!target || sendingRef.current.includes(key)) return
-    target.controller.abort()
-    // 이미 올라갔으면 서버에서도 지움. 실패해도 카드는 지움 - 남은 파일은 고아 회수가 가져감
-    if (target.attachment) deleteAttachment(target.attachment.id).catch(() => {})
-    URL.revokeObjectURL(target.previewUrl)
+    discardDraft(target)
     setDrafts((prev) => prev.filter((d) => d.key !== key))
     setOverLimit(false)
   }
@@ -163,15 +171,11 @@ export default function Composer({
    */
   useEffect(
     () => () => {
-      draftsRef.current.forEach((d) => {
-        URL.revokeObjectURL(d.previewUrl)
-        d.controller.abort()
-        // 이미 올라간 것은 지금 지운다 - abort 는 서버가 이미 받은 것을 되돌리지 않는다. 보내는 중인 것은 빼고(#349)
-        if (d.attachment && !sendingRef.current.includes(d.key)) deleteAttachment(d.attachment.id).catch(() => {})
-      })
+      // 이미 올라간 것은 지금 지운다 - 보내는 중인 것은 빼고(#349, discardDraft 가 가른다)
+      draftsRef.current.forEach(discardDraft)
       draftsRef.current = []
     },
-    [],
+    [discardDraft],
   )
 
   /**
@@ -256,11 +260,7 @@ export default function Composer({
     // 그사이 더한 카드와 합쳐 상한을 넘으면 뒤에 더한 것을 걷는다 - 보낼 수 없는 묶음이 남으면 서버가 400 으로 거절한다(#401)
     const room = Math.max(0, MAX_ATTACHMENTS - back.length)
     const dropped = draftsRef.current.slice(room)
-    dropped.forEach((d) => {
-      d.controller.abort()
-      if (d.attachment) deleteAttachment(d.attachment.id).catch(() => {})
-      URL.revokeObjectURL(d.previewUrl)
-    })
+    dropped.forEach(discardDraft)
     if (dropped.length > 0) setOverLimit('returned')
     // key 로 가른다 - 그사이 업로드 완료가 같은 카드를 새 객체로 바꿨을 수 있다
     const droppedKeys = new Set(dropped.map((d) => d.key))
