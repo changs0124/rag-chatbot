@@ -77,4 +77,23 @@ class ChatConversationDeletedTest extends AbstractPgIntegrationTest {
 		assertThat(jdbc.queryForObject("select count(*) from messages where conversation_id = ?", Integer.class,
 				UUID.fromString(convId))).isZero();
 	}
+
+	/** 모델 호출이 실패한 사이 대화도 지워졌다 - 이벤트 없이 닫되, 원인은 INFO 줄에 남는다 */
+	@Test
+	@SuppressWarnings("unchecked")
+	void upstream_failure_on_deleted_conversation_keeps_cause_in_log(CapturedOutput output) throws Exception {
+		String token = createUser("deleted-upstream-fail@b.com");
+		String convId = createConversation(token);
+		when(openAi.streamChat(any(), any(), any())).thenAnswer(inv -> {
+			((Consumer<String>) inv.getArgument(1)).accept("부분");
+			jdbc.update("delete from conversations where id = ?", UUID.fromString(convId));
+			throw new IllegalStateException("upstream boom after delete");
+		});
+
+		String body = rawChat(token, convId);
+
+		assertThat(body).doesNotContain("event:error");
+		assertThat(output).doesNotContain("처리되지 않은 예외");
+		assertThat(output).contains("스트리밍 중 대화가 삭제돼 답을 버림").contains("upstream boom after delete");
+	}
 }

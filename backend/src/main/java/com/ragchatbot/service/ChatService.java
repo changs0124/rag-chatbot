@@ -285,7 +285,8 @@ public class ChatService {
 			// 스트리밍 중 대화가 삭제됨(#437) - 다른 탭 · 기기에서 지웠다. 저장은 외래 키 위반으로 실패하지만 오류가 아니라
 			// 사용자가 버린 것이다. 이 검사가 없으면 지운 대화에 대고 error 이벤트를 보내고 「처리되지 않은 예외」 ERROR 를 남겼다
 			if (conversationGone(prepared.conversationId(), userId)) {
-				log.info("스트리밍 중 대화가 삭제돼 답을 버림 conversation={}", prepared.conversationId());
+				// 원인은 남긴다 - 모델 오류가 삭제와 우연히 겹쳤을 수도 있다(리뷰 지적)
+				log.info("스트리밍 중 대화가 삭제돼 답을 버림 conversation={} cause={}", prepared.conversationId(), ex.toString());
 				completeQuietly(emitter);
 				return;
 			}
