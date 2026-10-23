@@ -1,6 +1,6 @@
 # Current Sprint
 
-> 마지막 업데이트 : 2026-10-22
+> 마지막 업데이트 : 2026-10-23
 
 여기에는 **아직 안 끝난 것만** 둔다. 끝난 일의 경위는 [CHANGELOG](../06_changelog/CHANGELOG.md) 가 정본이다.
 아직 착수하지 않은 항목은 [backlog.md](./backlog.md) 에 있다.
@@ -17,7 +17,11 @@
 
 2026-10-22 : 전체 QA(보안 · 성능 리뷰 · 스캔 · 테스트) 후속 [#401](https://github.com/changs0124/rag-chatbot/issues/401) 첨부 5장 상한 + OOM 시 JVM 종료 · [#402](https://github.com/changs0124/rag-chatbot/issues/402) 업로드 용량 선검사 · [#403](https://github.com/changs0124/rag-chatbot/issues/403) 토큰 절대 수명 12시간 · [#404](https://github.com/changs0124/rag-chatbot/issues/404) Vercel 보안 헤더 · [#405](https://github.com/changs0124/rag-chatbot/issues/405) 스트리밍 재렌더 memo 를 merge 하고(main `634deee`) 운영 배포 · 운영 스모크까지 마쳤다. 이어서 남은 항목 [#411](https://github.com/changs0124/rag-chatbot/issues/411) CSP 강제 전환 · [#412](https://github.com/changs0124/rag-chatbot/issues/412) 탭 간 로그아웃 · [#413](https://github.com/changs0124/rag-chatbot/issues/413) 이름 50자 · [#414](https://github.com/changs0124/rag-chatbot/issues/414) 답변 링크를 글자로 · [#415](https://github.com/changs0124/rag-chatbot/issues/415) 앱 DB 런타임 계정(`ragapp`) · [#416](https://github.com/changs0124/rag-chatbot/issues/416) 베이스 이미지 · CI 액션 고정 · [#417](https://github.com/changs0124/rag-chatbot/issues/417) Markdown 지연 로딩 · [#418](https://github.com/changs0124/rag-chatbot/issues/418) 사용자별 첨부 한도 500MB 를 merge 하고(main `ad55f58`) 운영 배포 · 운영 확인(런타임 계정 접속 · 강제 CSP 위반 0 · 스모크)까지 마쳤다. 롤백 이미지 `prev-634deee` · `prev-50f13a2`, 런타임 계정을 끄려면 서버 `.env` 의 `APP_DB_*` 를 비운다(`.env.bak-415`).
 
-**관찰(이슈 아님)** : F2(알람 + 과거 사례) 답이 매뉴얼 내용을 쓰고도 출처에 매뉴얼을 빼는 경우가 있다 — 운영 battery 10-21 2회 중 1회, 원 API 6회 중 0회(인용 표기 0건 1회 · 클레임만 1회는 답에도 매뉴얼 내용 없음). 모델의 인용 표기 누락 변동이라 코드 결함은 아니다. 다시 보이면 횟수를 여기에 더하고, 잦아지면 이슈로 올린다.
+2026-10-22 저녁 : 헤비 QA 후속 [#427](https://github.com/changs0124/rag-chatbot/issues/427) 「그림 전부」 요청 지시문을 merge 하고(main `4ce4f12`) 운영 배포 · 앱 경로 확인(F6 25/25 · F2 35/35)까지 마쳤다.
+
+2026-10-23 : 운영 토큰 소모 QA(940턴, 오류 · 누출 · 저장 불일치 0)에서 나온 [#429](https://github.com/changs0124/rag-chatbot/issues/429) 인용 표기 지운 자리 빈칸 잔여 사례(#372 후속, 필터가 문서 이름을 넣음)를 merge 하고(main `a25ee42`) 운영 배포 · 운영 배터리(기대 출처 33/33 · 누출 0 · 빈칸 0)까지 마쳤다. 롤백 이미지 `prev-4ce4f12`.
+
+**관찰(이슈 아님)** : F2(알람 + 과거 사례) 답이 매뉴얼 내용을 쓰고도 출처에 매뉴얼을 빼는 경우가 있다 — 운영 battery 10-21 2회 중 1회 · 10-23 1회 중 0회, 원 API 6회 중 0회(인용 표기 0건 1회 · 클레임만 1회는 답에도 매뉴얼 내용 없음). 모델의 인용 표기 누락 변동이라 코드 결함은 아니다. 다시 보이면 횟수를 여기에 더하고, 잦아지면 이슈로 올린다.
 
 다음 할 일 : 없음. [backlog.md](./backlog.md) 에서 고른다.
 
