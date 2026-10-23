@@ -36,7 +36,7 @@ import com.ragchatbot.dto.ChatDtos.ChatRequest;
 /**
  * 채팅 오케스트레이션(SSE).
  * prepare(동기) : 소유권/검증 + 사용자 메시지 저장 → 400/404를 정상 HTTP로 반환.
- * stream(비동기) : OpenAI 토큰을 SSE(meta→stage*→token*→citations→done)로 흘림.
+ * stream(비동기) : OpenAI 토큰을 SSE 로 흘림(이벤트 순서는 ChatController 참고).
  * 스트리밍 이후 영속화는 ChatPersistenceService에 위임(원자적 저장, 스트리밍 구간 비트랜잭션).
  */
 @Service

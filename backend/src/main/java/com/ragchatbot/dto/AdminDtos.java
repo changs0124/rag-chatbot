@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 관리자 API 응답 DTO(FEAT-ADMIN-002 · 003).
+ * 관리자 API 요청·응답 DTO(FEAT-ADMIN-002 · 003).
  */
 public final class AdminDtos {
 

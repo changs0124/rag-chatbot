@@ -13,7 +13,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 /**
- * JWT 발급/검증 (HS256, java-jwt 4.6.0). subject=userId 뿐이고 개인정보 클레임은 싣지 않음(#328).
+ * JWT 발급/검증 (HS256, java-jwt). subject=userId 뿐이고 개인정보 클레임은 싣지 않음(#328).
  * 토큰에 email 클레임이 남아 있어도 검증에서 보지 않으므로 그대로 통과함.
  * 시크릿은 app.jwt.secret(env 주입). 비어 있으면 기동 시 실패시킴(운영 안전).
  *

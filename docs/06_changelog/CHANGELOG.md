@@ -5,6 +5,12 @@
 ## [Unreleased]
 
 ### Docs
+- **코드 주석을 정리했다(#452).** 동작 · 테스트 수는 그대로이고 주석과 문서만 바뀐다. `RAG_INSTRUCTIONS` 머리 주석(약 60줄)의
+  줄별 실측 수치를 `live-integration.md` 3-2 「지시문 줄별 실측」 표로 옮기고 주석에는 줄마다 이유 · 이슈 번호만 남겼다(지시문 문자열은 그대로).
+  낡은 주석(Mock 「리소스 정리 기록」 · `trackedKeys` 「운영 점검용」 · `findByConversation` 호출처 · `AdminDtos` · 409 의미 · `FileService` 검증 순서의 #418)을 바로잡고,
+  반복(SSE 순서 · 명단이 비면 전원 강등 · OpenAiService/Real 무자료 표시)과 이력(`pom.xml` Phase · Boot 3.5.16, `JwtService` 라이브러리 버전, 테스트 「스파이크 · 이전에는」)을 줄였다.
+  프론트는 `Markdown.tsx` JSDoc 을 컴포넌트로, `ChatPage` 뷰포트 설명을 해당 effect 로, `useChat.run` 설명을 `useCallback(` 밖으로 옮기고 `abortActiveStream` 의 인과 문구를 정정했다.
+  `Dockerfile` 은 없는 「다이제스트 고정」 단락 대신 `backend.md` 「배포」 #416 단락을, `check-all.sh` 는 실제 잡 ID(`deps-backend` · `deps-frontend`)를 가리킨다
 - **같은 사실의 반복 · 갈린 정본 문장 · 낡을 수치를 정리했다(#451).** 모델명 `gpt-6-sol` 은 README 기술 스택 표와 `backend/.env.example` 에만 남기고 나머지는 `OPENAI_MODEL` 기본값을 가리킨다. 기본값 정본 문장을 「기본값 = `application.yml`, 의미 · 증상 = `.env.example`」로 통일했고, README 문서 표(INDEX 와 겹침)와 `USER_MAX_NAME_CHARS(50)` 반복, design-system 로고 표의 죽은 `#3F4444` 행 · 절 번호 7-1 결번, frontend 번들 크기 시점 표기 · CSP 이미지 출처 `data:` 누락을 고쳤다.
 - **코드와 어긋난 문서 서술 넷을 바로잡았다(#449).** `api.md` 409 표(공통 에러표 · HTTP 표)에 「이미 보낸 첨부 삭제 · `ifEmpty` 인데 메시지 있음」을 더하고 v1.8 로 올렸다 ·
   #447 배포 순서 불변식(백엔드 먼저, 롤백은 프론트 먼저)을 `api.md` API-DELETE-001 · `backend.md` 「배포」로 옮겼다 · 토큰 재발급 서술을 #390 구조
