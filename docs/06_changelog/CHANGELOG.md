@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Removed
+- **쓰이지 않던 테스트 의존성 · 설정 줄 · 코드를 지웠다(#454).** 전체 리뷰(10-23)에서 grep 0건으로 확인된 것만 — #105 의 대화별 Vector Store 경로는 그대로 둔다
+  - `backend/pom.xml` 테스트 의존성 4개 : `spring-security-test` · `spring-boot-testcontainers` · `testcontainers-junit-jupiter` · `mybatis-spring-boot-starter-test`
+    (`backend/src` 에서 import 0건. 컨테이너는 `AbstractPgIntegrationTest` 가 `testcontainers-postgresql` 로 직접 띄운다)
+  - `.gitignore` 의 `maven-wrapper.jar` 예외(wrapper 는 `only-script` 라 jar 가 없다) · `.linkignore` 의 vitest 리포트 경로 항목(참조하는 문서가 없다)
+  - `RagDocument.deletedAt` — 읽는 select 가 `deleted_at is null` 로 걸러 늘 null 이었다(레코드 · resultMap · select 컬럼 · 생성자 호출)
+  - `ChatInput` 의 null 방어(`OpenAiMockService` · `OpenAiRealService`) — 유일한 생성자 `ChatService` 가 늘 non-null 을 넘긴다
+  - `AuthContext.tsx` 의 `eslint-disable` 는 oxlint 규칙 이름(`oxlint-disable-next-line react/only-export-components`)으로 바꿨다. 테스트 수 불변
+
 ### Fixed
 - **관리자 업로드 크기 선검사 · 부분 저장 실패 로그 · 런타임 버전 검사 안내(#453).** 2026-10-23 전체 리뷰에서 나온 동작 보정 셋
   - `AdminDocumentService.upload` : `getSize()` 로 25MB 를 먼저 본다. 변경 전에는 `getBytes()` 로 다 읽은 뒤 비교해, 멀티파트 한도 안의 거절 대상 파일이 힙에 먼저 올랐다(`FileService` 의 #402 와 같은 원칙)

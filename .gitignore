@@ -36,7 +36,6 @@ uploads/
 target/
 *.class
 *.jar
-!/backend/.mvn/wrapper/maven-wrapper.jar
 
 # === IDE / 도구 상태 ===
 .idea/

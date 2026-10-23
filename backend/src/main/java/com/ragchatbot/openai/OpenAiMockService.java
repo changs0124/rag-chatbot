@@ -70,14 +70,14 @@ public class OpenAiMockService implements OpenAiService {
 
 	@Override
 	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage) {
-		lastAttachmentCount = input.attachments() == null ? 0 : input.attachments().size();
+		lastAttachmentCount = input.attachments().size();
 		// 목 응답은 고정 코퍼스 키워드로만 정해짐(이력에 좌우되지 않음). 전달 여부만 기록해 둠
-		lastHistory = input.history() == null ? List.of() : input.history();
+		lastHistory = input.history();
 
-		boolean hasImage = input.attachments() != null && !input.attachments().isEmpty();
+		boolean hasImage = !input.attachments().isEmpty();
 		String imagePrefix = hasImage ? "(첨부 이미지를 확인함) " : "";
 
-		String message = input.userMessage() == null ? "" : input.userMessage();
+		String message = input.userMessage();
 		boolean figure = message.contains(FIGURE_KEYWORD);
 		boolean matched = figure || CORPUS_KEYWORDS.stream().anyMatch(message::contains);
 

@@ -253,9 +253,9 @@ public class OpenAiRealService implements OpenAiService {
 	 * 구조화 content(비전 입력)는 <b>이번 턴에만</b> 씀.
 	 */
 	private Object buildInput(ChatInput input) {
-		String text = input.userMessage() == null ? "" : input.userMessage();
-		List<AttachmentRef> images = input.attachments() == null ? List.of() : input.attachments();
-		List<Turn> history = input.history() == null ? List.of() : input.history();
+		String text = input.userMessage();
+		List<AttachmentRef> images = input.attachments();
+		List<Turn> history = input.history();
 
 		if (history.isEmpty() && images.isEmpty()) {
 			return text;
