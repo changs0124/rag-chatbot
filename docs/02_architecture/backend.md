@@ -408,6 +408,7 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 
 **배포 순서(#447).** `DELETE /api/conversations/{id}?ifEmpty=true` 를 부르는 프론트보다 **백엔드를 먼저 배포한다.** 옛 백엔드는 `ifEmpty` 를 무시하고 조건 없이 지우므로,
 프론트가 먼저 나가면 메시지가 있는 대화까지 지워진다. **롤백은 반대로 프론트를 먼저 되돌린다.**
+
 헬스체크 경로는 `GET /api/health`(인증 불필요)다.
 첨부는 compose `uploads` 볼륨에 있다 — 소실 조건은 [overview](./overview.md) 「알려진 제약」.
 
