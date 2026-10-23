@@ -11,6 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,8 @@ import com.ragchatbot.dto.ChatDtos.ChatRequest;
  */
 @Service
 public class ChatService {
+
+	private static final Logger log = LoggerFactory.getLogger(ChatService.class);
 
 	/** 과거 턴의 이미지 자리표시자 - 이미지를 다시 보내지 않아도 "그때 첨부가 있었다"는 사실은 남김 */
 	static final String IMAGE_PLACEHOLDER = "(이미지 첨부)";
@@ -278,6 +282,14 @@ public class ChatService {
 			}
 			completeQuietly(emitter);
 		} catch (Exception ex) {
+			// 스트리밍 중 대화가 삭제됨(#437) - 다른 탭 · 기기에서 지웠다. 저장은 외래 키 위반으로 실패하지만 오류가 아니라
+			// 사용자가 버린 것이다. 이 검사가 없으면 지운 대화에 대고 error 이벤트를 보내고 「처리되지 않은 예외」 ERROR 를 남겼다
+			if (conversationGone(prepared.conversationId(), userId)) {
+				// 원인은 남긴다 - 모델 오류가 삭제와 우연히 겹쳤을 수도 있다(리뷰 지적)
+				log.info("스트리밍 중 대화가 삭제돼 답을 버림 conversation={} cause={}", prepared.conversationId(), ex.toString());
+				completeQuietly(emitter);
+				return;
+			}
 			// 진짜 오류 - 부분 텍스트를 error 상태로 저장(질문만 남고 답변 소실 방지).
 			//
 			// 완주 후 저장 실패(saveAssistant 가 던짐)면 completion 을 그대로 넘긴다(#97) - savePartial 주석
@@ -313,6 +325,18 @@ public class ChatService {
 					completion == null ? null : completion.outputTokens());
 		} catch (Exception ignored) {
 			// 저장 실패는 무시(이미 비정상 종료 경로)
+		}
+	}
+
+	/** 대화가 없어졌는지(#437). 확인 자체가 실패하면 모른다고 보고 지금처럼 오류로 다룬다 - 진짜 오류를 숨기지 않는다 */
+	private boolean conversationGone(UUID conversationId, UUID userId) {
+		try {
+			conversationService.requireOwned(conversationId, userId);
+			return false;
+		} catch (NotFoundException gone) {
+			return true;
+		} catch (RuntimeException unknown) {
+			return false;
 		}
 	}
 

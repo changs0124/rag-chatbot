@@ -83,6 +83,9 @@ exception/    ApiExceptions + GlobalExceptionHandler
   쓰면 열린 이벤트 스트림에 JSON 을 넣으려다 변환기가 실패해 연결이 깨진다. 사용자에게 알리는 것은 `ChatService` 의
   `event: error` 이고, 타임아웃은 아무 이벤트 없이 끝난다(api.md API-POST-005 의 세 번째 종료 경로). 로그는 타임아웃이 `WARN` 한 줄,
   도중 오류는 폴백의 `ERROR` 그대로다 — 후자는 실제 원인의 유일한 서버 기록이다. TC-OPS-032~034 이 잠근다.
+  **단, 스트리밍 중 대화가 삭제돼 생긴 저장 실패는 오류가 아니다**(#437) — 다른 탭 · 기기에서 지운 경우로, `ChatService` 가 대화가
+  없어진 것을 확인하면 INFO 한 줄을 남기고 `error` 이벤트 없이 닫는다(확인 자체가 실패하면 지금처럼 오류). 생성은 끝까지 간다 — 워커의
+  블로킹 read 를 끊을 수단이 없다(#76).
 - 스프링은 더 구체적인 핸들러를 먼저 고르므로, `@ExceptionHandler(Exception.class)` 를 두어도
   전용 핸들러가 있는 예외는 그쪽으로 간다. 폴백과 도메인 예외는 `GlobalExceptionFallbackTest` 가 잠근다
   (`ApiError` 모양 · 상관 ID · 내부 메시지 비노출 · 도메인 예외가 제 상태를 지킨다).
