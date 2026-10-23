@@ -1,0 +1,9 @@
+--- RagDocument( 생성자
+backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java:166:			documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
+backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java:248:			added += documentRepository.insertIfAbsent(new RagDocument(UUID.randomUUID(), file.filename(),
+backend/src/test/java/com/ragchatbot/controller/AdminDocumentSyncFlowTest.java:186:		RagDocument again = new RagDocument(UUID.randomUUID(), "유니크.pdf", fileId, "mock-vector-store", 1,
+backend/src/test/java/com/ragchatbot/service/AdminDocumentStatusRefreshTest.java:39:		return new RagDocument(DOC_ID, "규정.pdf", FILE_ID, STORE_ID, 1024, "in_progress",
+--- select deleted_at 컬럼
+17:			<arg column="deleted_at" javaType="java.time.OffsetDateTime"/>
+72:		       created_at, deleted_at
+79:		       created_at, deleted_at

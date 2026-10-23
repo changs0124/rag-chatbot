@@ -1,0 +1,90 @@
+19:56:45.100 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminDocumentFlowTest]: AdminDocumentFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:56:45.458 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminDocumentFlowTest
+19:56:45.638 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminDocumentFlowTest]: AdminDocumentFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:56:45.640 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:56:45.651 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminDocumentFlowTest
+19:56:45.784 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+19:56:45.790 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+19:56:45.985 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+19:56:47.670 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with Environment variables, system properties and defaults. Resolved dockerHost=npipe:////./pipe/dockerDesktopLinuxEngine
+19:56:47.674 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+19:56:47.714 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 29.9.2
+  API Version: 1.56
+  Operating System: Docker Desktop
+  Total Memory: 31942 MB
+  Labels: 
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+19:56:48.121 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+19:56:48.645 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/
+19:56:49.054 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: 08770266e76e4b7bf925b454637e7e3fd31d4916aaf4cf9afb524fcf0535305b
+19:56:50.262 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT2.1410918S
+19:56:50.273 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+19:56:50.274 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+19:56:50.275 [main] INFO org.testcontainers.DockerClientFactory -- ?? Docker server version should be at least 1.6.0
+19:56:50.390 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Creating container for image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+19:56:50.522 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea is starting: 9ecd4bc71ca62265612ed48c3afbe9c59fc1c9414e4acf53fbd9cbb5618768f0
+19:56:53.736 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea started in PT3.3457299S
+19:56:53.737 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container is started (JDBC URL: jdbc:postgresql://localhost:59515/test?loggerLevel=OFF)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-23T19:56:54.691+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] c.r.controller.AdminDocumentFlowTest     : Starting AdminDocumentFlowTest using Java 17.0.19 with PID 23612 (started by User in D:\dev\rag-chatbot\.issue\worktrees\454-dead-code-deps\backend)
+2026-10-23T19:56:54.693+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] c.r.controller.AdminDocumentFlowTest     : No active profile set, falling back to 1 default profile: "default"
+2026-10-23T19:56:58.735+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-23T19:56:58.781+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-23T19:56:58.783+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-23T19:56:58.941+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 4215 ms
+2026-10-23T19:56:59.827+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:59515/test?loggerLevel=OFF (PostgreSQL 16.15)
+2026-10-23T19:57:00.011+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-23T19:57:00.024+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 10 migrations (execution time 00:00.065s)
+2026-10-23T19:57:00.067+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-23T19:57:00.185+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-10-23T19:57:00.226+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - init"
+2026-10-23T19:57:00.327+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_users_updated_at" for relation "users" does not exist, skipping
+2026-10-23T19:57:00.332+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_conversations_updated_at" for relation "conversations" does not exist, skipping
+2026-10-23T19:57:00.386+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - auth hardening"
+2026-10-23T19:57:00.431+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - message stopped"
+2026-10-23T19:57:00.465+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - message token usage"
+2026-10-23T19:57:00.501+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - user role"
+2026-10-23T19:57:00.539+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - rag documents"
+2026-10-23T19:57:00.580+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - message timed out"
+2026-10-23T19:57:00.610+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - drop user theme"
+2026-10-23T19:57:00.639+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - rag documents alive file unique"
+2026-10-23T19:57:00.668+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "10 - drop unused openai columns"
+2026-10-23T19:57:00.703+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 10 migrations to schema "public", now at version v10 (execution time 00:00.245s)
+2026-10-23T19:57:00.739+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.f.c.i.c.SqlScriptCallbackFactory       : Executing SQL callback: afterMigrate - 
+2026-10-23T19:57:04.494+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 49501 (http) with context path '/'
+2026-10-23T19:57:04.516+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] c.r.controller.AdminDocumentFlowTest     : Started AdminDocumentFlowTest in 10.419 seconds (process running for 21.842)
+2026-10-23T19:57:04.574+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-23T19:57:04.646+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@1f031994
+2026-10-23T19:57:04.651+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-23T19:57:04.915+09:00  WARN 23612 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 계정 발급 : root@rag.test · 임시 비밀번호 Bcp9-8sDC-C2Gw (최초 로그인 후 마이페이지에서 변경할 것)
+2026-10-23T19:57:05.010+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : 관리자 명단 동기화 : 명단 1건 · 생성 1건 · 승격 0건 · 강등 0건
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-10-23T19:57:07.027+09:00  INFO 23612 --- [rag-chatbot-backend] [o-auto-1-exec-3] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-23T19:57:07.028+09:00  INFO 23612 --- [rag-chatbot-backend] [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-23T19:57:07.030+09:00  INFO 23612 --- [rag-chatbot-backend] [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-10-23T19:57:19.741+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminDocumentSyncFlowTest]: AdminDocumentSyncFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:57:19.747+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminDocumentSyncFlowTest
+2026-10-23T19:57:19.749+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.AdminDocumentSyncFlowTest]: AdminDocumentSyncFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:57:19.750+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:57:19.753+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AdminDocumentSyncFlowTest
+2026-10-23T19:57:20.251+09:00  WARN 23612 --- [rag-chatbot-backend] [o-auto-1-exec-6] c.r.service.AdminDocumentService         : 스토어 동기화 : 파일이 없는 스토어 연결 1건을 정리함
+2026-10-23T19:57:23.632+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatFlowTest]: ChatFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:57:23.635+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatFlowTest
+2026-10-23T19:57:23.637+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatFlowTest]: ChatFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:57:23.638+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:57:23.640+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatFlowTest
+2026-10-23T19:57:34.445+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ConversationDeleteIfEmptyTest]: ConversationDeleteIfEmptyTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:57:34.448+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ConversationDeleteIfEmptyTest
+2026-10-23T19:57:34.450+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.controller.ConversationDeleteIfEmptyTest]: ConversationDeleteIfEmptyTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:57:34.450+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-23T19:57:34.452+09:00  INFO 23612 --- [rag-chatbot-backend] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ConversationDeleteIfEmptyTest

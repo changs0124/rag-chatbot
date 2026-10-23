@@ -1,0 +1,12 @@
+# Composer 카드 폐기 반복(abort · deleteAttachment · revokeObjectURL)
+83:          deleteAttachment(attachment.id).catch(() => {})
+132:  const discardDraft = useCallback((d: Draft) => {
+133:    d.controller.abort()
+134:    if (d.attachment && !sendingRef.current.includes(d.key)) deleteAttachment(d.attachment.id).catch(() => {})
+135:    URL.revokeObjectURL(d.previewUrl)
+141:    discardDraft(target)
+174:      // 이미 올라간 것은 지금 지운다 - 보내는 중인 것은 빼고(#349, discardDraft 가 가른다)
+175:      draftsRef.current.forEach(discardDraft)
+178:    [discardDraft],
+246:    sent.forEach((d) => URL.revokeObjectURL(d.previewUrl))
+263:    dropped.forEach(discardDraft)
