@@ -28,6 +28,10 @@
 		        #{inputTokens}, #{outputTokens})
 	</insert>
 
+	<select id="existsByConversation" resultType="boolean">
+		select exists(select 1 from messages where conversation_id = #{conversationId})
+	</select>
+
 	<select id="listByConversation" resultMap="messageResult">
 		select id, conversation_id, role, content, status, stopped, timed_out,
 		       input_tokens, output_tokens, created_at

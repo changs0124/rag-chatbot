@@ -41,7 +41,7 @@ class AttachmentLinkRaceTest {
 
 	private static final UUID USER = UUID.randomUUID();
 
-	/** 소유 확인은 ConversationService.requireOwned 를 탄다(#389) - 저장소 목만 있으면 되므로 나머지는 비운다 */
+	/** 소유 확인은 ConversationService 를 탄다(#389, 채팅 준비는 잠그는 requireOwnedLocked #447) - 저장소 목만 있으면 되므로 나머지는 비운다 */
 	private static ConversationService owned(ConversationRepository conversations) {
 		return new ConversationService(conversations, null, null, null, null, null, 100);
 	}
@@ -74,7 +74,7 @@ class AttachmentLinkRaceTest {
 		var repo = mock(AttachmentRepository.class);
 		UUID convId = UUID.randomUUID();
 		var att = draft(UUID.randomUUID());
-		when(conversations.findByIdAndUser(convId, USER)).thenReturn(Optional.of(
+		when(conversations.lockSharedByIdAndUser(convId, USER)).thenReturn(Optional.of(
 				new Conversation(convId, USER, "t", OffsetDateTime.now(), OffsetDateTime.now())));
 		when(repo.findByIdAndUser(att.id(), USER)).thenReturn(Optional.of(att));
 		when(repo.linkToMessage(any(), any(), any())).thenReturn(0);
@@ -139,7 +139,7 @@ class AttachmentLinkRaceTest {
 		UUID convId = UUID.randomUUID();
 		var low = draft(new UUID(0, 1));
 		var high = draft(new UUID(0, 2));
-		when(conversations.findByIdAndUser(convId, USER)).thenReturn(Optional.of(
+		when(conversations.lockSharedByIdAndUser(convId, USER)).thenReturn(Optional.of(
 				new Conversation(convId, USER, "t", OffsetDateTime.now(), OffsetDateTime.now())));
 		when(repo.findByIdAndUser(low.id(), USER)).thenReturn(Optional.of(low));
 		when(repo.findByIdAndUser(high.id(), USER)).thenReturn(Optional.of(high));

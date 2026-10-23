@@ -12,11 +12,15 @@ vi.mock('../lib/endpoints', () => ({
   }),
   getMessages: vi.fn().mockResolvedValue([]),
   deleteConversation: vi.fn().mockResolvedValue(undefined),
+  deleteConversationIfEmpty: vi.fn().mockResolvedValue(undefined),
   renameConversation: vi.fn(),
   streamChat: vi.fn(),
 }))
 
-const { streamChat, deleteConversation, listConversations, getMessages } = await import('../lib/endpoints')
+const { streamChat, deleteConversation, deleteConversationIfEmpty, listConversations, getMessages } = await import(
+  '../lib/endpoints'
+)
+const { ApiError } = await import('../lib/api')
 
 /**
  * 스트림을 열어 둔 채 핸들러를 직접 호출할 수 있게 함.
@@ -221,12 +225,15 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     await abort(stream)
 
     expect(giveBack).toHaveBeenCalledTimes(1)
-    expect(deleteConversation).toHaveBeenCalledWith('c1')
+    // 비었을 때만 지우기로 묻는다(#447) - 확인과 삭제를 따로 하지 않는다
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+    expect(deleteConversation).not.toHaveBeenCalled()
+    expect(getMessages).not.toHaveBeenCalled()
     expect(result.current.conversations).toEqual([])
     // 다음 전송이 지운 대화로 나가지 않게 새 대화 상태로 돌아간다
     expect(result.current.activeId).toBeNull()
     // 목록은 지운 뒤에 다시 받는다 - 먼저 받으면 지우기 전 목록으로 되살아난다
-    const deleteOrder = vi.mocked(deleteConversation).mock.invocationCallOrder[0]
+    const deleteOrder = vi.mocked(deleteConversationIfEmpty).mock.invocationCallOrder[0]
     const lastList = vi.mocked(listConversations).mock.invocationCallOrder.at(-1)!
     expect(lastList).toBeGreaterThan(deleteOrder)
   })
@@ -252,16 +259,18 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
 
     expect(giveBack).toHaveBeenCalledTimes(1)
     expect(deleteConversation).not.toHaveBeenCalled()
+    expect(deleteConversationIfEmpty).not.toHaveBeenCalled()
     expect(result.current.activeId).toBe('c1')
   })
 
-  it('200 전에 끊었어도 서버가 질문을 저장했으면 남기고, 되돌리지도 지우지도 않음 (#440)', async () => {
+  it('200 전에 끊었어도 서버가 질문을 저장했으면(409) 남기고, 되돌리지도 지우지도 않음 (#440 · #447)', async () => {
     // 서버는 질문 저장 · 첨부 연결을 커밋한 뒤 200 을 돌려준다 - 그 사이의 중단은 이미 저장된 턴이다.
     // 지우면 저장된 질문이 사라지고, 되돌린 첨부는 이미 쓰여 다시 보낼 수 없다
     const stream = openStream({ opened: false })
     const giveBack = vi.fn()
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', [], giveBack))
+    vi.mocked(deleteConversationIfEmpty).mockRejectedValueOnce(new ApiError(409, '메시지가 있는 대화는 지우지 않음'))
     vi.mocked(getMessages).mockResolvedValueOnce([
       { id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] },
     ])
@@ -277,13 +286,13 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.messages.map((m) => m.content)).toEqual(['환불 정책'])
   })
 
-  it('서버 확인이 실패하면 글은 되돌리되 대화는 지우지 않음 (#440)', async () => {
-    // 모르면 지우지 않는다 - 저장된 질문이 든 대화를 지우는 쪽이 더 나쁘다
+  it('조건부 삭제가 실패하면 글은 되돌리되 대화는 남음 (#440 · #447)', async () => {
+    // 지우지 못했으니 대화는 그대로다 - 저장됐는지 모르지만 입력은 잃지 않는다
     const stream = openStream({ opened: false })
     const giveBack = vi.fn()
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', [], giveBack))
-    vi.mocked(getMessages).mockRejectedValueOnce(new Error('network'))
+    vi.mocked(deleteConversationIfEmpty).mockRejectedValueOnce(new Error('network'))
 
     await act(async () => {
       result.current.stop()
@@ -293,6 +302,71 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(giveBack).toHaveBeenCalledTimes(1)
     expect(deleteConversation).not.toHaveBeenCalled()
     expect(result.current.activeId).toBe('c1')
+  })
+
+  it('409 인데 이력을 못 받아도 되돌리지 않음 (#447)', async () => {
+    // 저장된 것은 확실하다 - 되돌리면 같은 질문이 두 번 나가고, 이미 쓰인 첨부는 400 이다
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    vi.mocked(deleteConversationIfEmpty).mockRejectedValueOnce(new ApiError(409, '메시지가 있는 대화는 지우지 않음'))
+    vi.mocked(getMessages).mockRejectedValueOnce(new Error('network'))
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(result.current.activeId).toBe('c1')
+    // 저장된 질문이 화면에서 사라지지 않게 말풍선을 되살린다
+    expect(result.current.messages.map((m) => m.content)).toEqual(['환불 정책'])
+  })
+
+  it('조건부 삭제가 404 면 이미 지워진 것으로 보고 새 대화 상태로 돌아간다 (#447)', async () => {
+    // 다른 탭에서 지웠거나 앞선 삭제의 응답을 잃은 경우 - 대화를 남겨 두면 다음 전송이 「대화 없음」이다
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    vi.mocked(deleteConversationIfEmpty).mockRejectedValueOnce(new ApiError(404, '대화 없음'))
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    expect(result.current.activeId).toBeNull()
+    expect(result.current.conversations).toEqual([])
+  })
+
+  it('기존 대화는 이력으로 가른다 - 마지막이 보낸 질문이면 남기고 되돌리지 않음 (#440)', async () => {
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+    vi.mocked(getMessages).mockResolvedValueOnce([
+      { id: 'm1', role: 'user', content: '첫 질문', status: 'complete', citations: [] },
+      { id: 'm2', role: 'assistant', content: '답', status: 'complete', citations: [] },
+      { id: 'm3', role: 'user', content: '둘째 질문', status: 'complete', citations: [] },
+    ])
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(deleteConversationIfEmpty).not.toHaveBeenCalled()
+    expect(result.current.messages.map((m) => m.content)).toEqual(['첫 질문', '답', '둘째 질문'])
   })
 
   it('200 을 받은 뒤의 중단은 되돌리지도 지우지도 않음 (#440)', async () => {
@@ -325,7 +399,7 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     await abort(stream)
 
     expect(giveBack).not.toHaveBeenCalled()
-    expect(deleteConversation).toHaveBeenCalledWith('c1')
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
     expect(result.current.conversations).toEqual([])
   })
 

@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   createConversation,
   deleteConversation as apiDelete,
+  deleteConversationIfEmpty as apiDeleteIfEmpty,
   getMessages,
   listConversations,
   renameConversation as apiRename,
   streamChat,
 } from '../lib/endpoints'
-import { errorMessage } from '../lib/api'
+import { ApiError, errorMessage } from '../lib/api'
 import type { Attachment, ChatMessage, Conversation } from '../lib/types'
 
 /**
@@ -308,33 +309,58 @@ export function useChat() {
           // **200 이 없었다고 서버에 없는 것은 아니다**(#440 리뷰) - 서버는 질문 저장 · 첨부 연결을 커밋한 뒤에
           // 200 을 돌려주므로, 그 사이에 끊으면 질문은 저장돼 있고 첨부는 이미 쓰였다. 서버에 물어서 가른다.
           // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다
+          const id = convId
+          let stored = false // 저장된 것이 확실하다 - 이력을 못 받았어도 되돌리지 않는다
           let saved: ChatMessage[] | null = null
-          let unsent = false
-          try {
-            const server = await getMessages(convId)
-            const last = server.at(-1)
-            if (last?.role === 'user' && last.content === text.trim()) saved = server
-            else unsent = true
-          } catch {
-            // 모르면 지우지 않는다 - 저장된 질문이 든 대화를 지우는 쪽이 글을 한 번 더 보이는 쪽보다 나쁘다
+          let deleted = false
+          if (isNew) {
+            // 새 대화는 「비었을 때만 지우기」로 묻는다(#447) - 확인과 삭제를 따로 하면 그 사이에 커밋된 질문 · 첨부까지
+            // 지웠다. 서버가 한 잠금 안에서 가른다 : 지워졌으면 저장 전이었고(뒤늦은 채팅은 404), 409 면 저장된 것이다
+            try {
+              await apiDeleteIfEmpty(id)
+              deleted = true
+            } catch (e) {
+              if (e instanceof ApiError && e.status === 409) {
+                stored = true
+                saved = await getMessages(id).catch(() => null)
+              } else if (e instanceof ApiError && e.status === 404) {
+                // 이미 지워졌다(다른 탭 · 앞선 삭제) - 저장된 것이 없으니 지운 것과 같게 처리한다
+                deleted = true
+              }
+              // 그 밖의 실패는 모른다 - 지우지 못했으니 글만 되돌린다
+            }
+          } else {
+            try {
+              const server = await getMessages(id)
+              const last = server.at(-1)
+              if (last?.role === 'user' && last.content === text.trim()) {
+                stored = true
+                saved = server
+              }
+            } catch {
+              // 모르면 되돌린다 - 기존 대화는 지우지 않으므로 잃는 것은 없다
+            }
           }
           const here = generation.current === mine
-          if (saved) {
-            // 저장된 질문은 남기고, 서버는 답을 끝까지 만들어 저장한다(#76) - 다시 열면 보인다
-            if (here) setMessages(saved)
+          if (stored) {
+            // 저장된 질문은 남기고, 서버는 답을 끝까지 만들어 저장한다(#76) - 다시 열면 보인다.
+            // 이력을 못 받았으면 걷었던 질문 말풍선을 되살린다 - 안 그러면 저장된 질문이 화면 어디에도 없다(#447 리뷰)
+            if (here) {
+              if (saved) setMessages(saved)
+              else setMessages((prev) => [...prev, userMsg])
+            }
           } else if (here) {
             // 입력창에 되돌린다(#440). 대화를 옮겨 끊긴 경우는 되돌리지 않는다 - 입력창은 대화마다
             // 따로가 아니라서, 옮겨 간 대화로 그 글이 잘못 나갈 수 있다
             giveBack?.()
           }
-          if (unsent && isNew) {
-            // 이 턴이 만든 대화는 메시지 0개다(#440) - 지운다. 남은 화면은 새 대화와 같게 되돌려 다음 전송이
-            // 지우는 중인 대화로 나가지 않게 한다. 지운 뒤에 목록을 받아야 되살아나 보이지 않는다
-            const emptyId = convId
+          if (deleted) {
+            // 남은 화면은 새 대화와 같게 되돌려 다음 전송이 지운 대화로 나가지 않게 한다
             if (here) setActiveId(null)
-            setConversations((prev) => prev.filter((c) => c.id !== emptyId))
-            apiDelete(emptyId).catch(() => {}).finally(refreshConversations)
-          } else if (isNew) refreshConversations()
+            setConversations((prev) => prev.filter((c) => c.id !== id))
+          }
+          // 지운 뒤에 목록을 받아야 되살아나 보이지 않는다
+          if (isNew) refreshConversations()
         } else if (isNew) refreshConversations()
       } finally {
         // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(advanceStage)
