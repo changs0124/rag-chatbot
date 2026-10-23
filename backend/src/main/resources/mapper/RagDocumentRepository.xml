@@ -14,7 +14,6 @@
 			<arg column="status" javaType="java.lang.String"/>
 			<arg column="uploaded_by" javaType="java.util.UUID"/>
 			<arg column="created_at" javaType="java.time.OffsetDateTime"/>
-			<arg column="deleted_at" javaType="java.time.OffsetDateTime"/>
 		</constructor>
 	</resultMap>
 
@@ -69,14 +68,14 @@
 	<!-- 컬럼은 findAliveById 와 같다. 행을 통째로 받아 id 별 재조회(N+1)를 없앰(#300) -->
 	<select id="findInProgress" resultMap="documentResult">
 		select id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by,
-		       created_at, deleted_at
+		       created_at
 		from rag_documents
 		where deleted_at is null and status = 'in_progress'
 	</select>
 
 	<select id="findAliveById" resultMap="documentResult">
 		select id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by,
-		       created_at, deleted_at
+		       created_at
 		from rag_documents
 		where id = #{id} and deleted_at is null
 	</select>

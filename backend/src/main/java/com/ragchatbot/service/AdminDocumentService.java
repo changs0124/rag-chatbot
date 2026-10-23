@@ -164,7 +164,7 @@ public class AdminDocumentService {
 		UUID id = UUID.randomUUID();
 		try {
 			documentRepository.insert(new RagDocument(id, filename, uploaded.openaiFileId(), uploaded.vectorStoreId(),
-					bytes.length, "in_progress", adminId, null, null));
+					bytes.length, "in_progress", adminId, null));
 		} catch (RuntimeException e) {
 			// 여기서 되돌리지 않으면 스토어에는 있는데 목록에는 없는 문서가 남는다 - 화면에 안 보여
 			// 지울 수 없고, 검색에는 잡혀 **삭제한 적 없는 문서가 계속 인용된다.** 고아 회수 스케줄러는
@@ -246,7 +246,7 @@ public class AdminDocumentService {
 				continue;
 			}
 			added += documentRepository.insertIfAbsent(new RagDocument(UUID.randomUUID(), file.filename(),
-					file.openaiFileId(), file.vectorStoreId(), file.byteSize(), file.status(), adminId, null, null));
+					file.openaiFileId(), file.vectorStoreId(), file.byteSize(), file.status(), adminId, null));
 		}
 		if (orphans > 0) {
 			log.warn("스토어 동기화 : 파일이 없는 스토어 연결 {}건을 정리함", orphans);

@@ -37,7 +37,7 @@ class AdminDocumentStatusRefreshTest {
 
 	private static RagDocument inProgress() {
 		return new RagDocument(DOC_ID, "규정.pdf", FILE_ID, STORE_ID, 1024, "in_progress",
-				UUID.randomUUID(), null, null);
+				UUID.randomUUID(), null);
 	}
 
 	private static RagDocumentRepository repoWithInProgressDoc() {

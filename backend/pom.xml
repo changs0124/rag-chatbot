@@ -78,11 +78,6 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
-			<scope>test</scope>
-		</dependency>
 		<!-- Boot 4 에서 @SpringBootTest 가 TestRestTemplate 을 더 이상 자동 제공하지 않음.
 		     전용 모듈을 명시하고 @AutoConfigureTestRestTemplate 을 붙여야 함(#48) -->
 		<dependency>
@@ -98,26 +93,10 @@
 			<artifactId>spring-boot-restclient</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- Phase 1 테스트 : Testcontainers(실 PostgreSQL) + MyBatis 테스트 지원 -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-testcontainers</artifactId>
-			<scope>test</scope>
-		</dependency>
+		<!-- Phase 1 테스트 : Testcontainers(실 PostgreSQL) -->
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers-postgresql</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers-junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.mybatis.spring.boot</groupId>
-			<artifactId>mybatis-spring-boot-starter-test</artifactId>
-			<version>4.1.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
