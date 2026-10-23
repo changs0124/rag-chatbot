@@ -11,12 +11,12 @@ vi.mock('../lib/endpoints', () => ({
     updatedAt: '',
   }),
   getMessages: vi.fn().mockResolvedValue([]),
-  deleteConversation: vi.fn(),
+  deleteConversation: vi.fn().mockResolvedValue(undefined),
   renameConversation: vi.fn(),
   streamChat: vi.fn(),
 }))
 
-const { streamChat } = await import('../lib/endpoints')
+const { streamChat, deleteConversation, listConversations, getMessages } = await import('../lib/endpoints')
 
 /**
  * 스트림을 열어 둔 채 핸들러를 직접 호출할 수 있게 함.
@@ -205,6 +205,128 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
 
     expect(result.current.messages).toHaveLength(0)
     expect(result.current.error).toBeNull()
+  })
+
+  it('200 을 받기 전에 중단하면 보낸 것을 입력창에 되돌리고, 그 턴이 만든 빈 대화를 지운다 (#440)', async () => {
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    expect(result.current.activeId).toBe('c1')
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['c1'])
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    expect(deleteConversation).toHaveBeenCalledWith('c1')
+    expect(result.current.conversations).toEqual([])
+    // 다음 전송이 지운 대화로 나가지 않게 새 대화 상태로 돌아간다
+    expect(result.current.activeId).toBeNull()
+    // 목록은 지운 뒤에 다시 받는다 - 먼저 받으면 지우기 전 목록으로 되살아난다
+    const deleteOrder = vi.mocked(deleteConversation).mock.invocationCallOrder[0]
+    const lastList = vi.mocked(listConversations).mock.invocationCallOrder.at(-1)!
+    expect(lastList).toBeGreaterThan(deleteOrder)
+  })
+
+  it('기존 대화에서 200 전에 중단하면 글만 되돌리고 대화는 지우지 않음 (#440)', async () => {
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    // 첫 턴이 열려 있으면 두 번째 전송이 거절되므로 끝낸다
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    vi.mocked(deleteConversation).mockClear()
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    expect(deleteConversation).not.toHaveBeenCalled()
+    expect(result.current.activeId).toBe('c1')
+  })
+
+  it('200 전에 끊었어도 서버가 질문을 저장했으면 남기고, 되돌리지도 지우지도 않음 (#440)', async () => {
+    // 서버는 질문 저장 · 첨부 연결을 커밋한 뒤 200 을 돌려준다 - 그 사이의 중단은 이미 저장된 턴이다.
+    // 지우면 저장된 질문이 사라지고, 되돌린 첨부는 이미 쓰여 다시 보낼 수 없다
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    vi.mocked(getMessages).mockResolvedValueOnce([
+      { id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] },
+    ])
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(deleteConversation).not.toHaveBeenCalled()
+    expect(result.current.activeId).toBe('c1')
+    expect(result.current.messages.map((m) => m.content)).toEqual(['환불 정책'])
+  })
+
+  it('서버 확인이 실패하면 글은 되돌리되 대화는 지우지 않음 (#440)', async () => {
+    // 모르면 지우지 않는다 - 저장된 질문이 든 대화를 지우는 쪽이 더 나쁘다
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    vi.mocked(getMessages).mockRejectedValueOnce(new Error('network'))
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    expect(deleteConversation).not.toHaveBeenCalled()
+    expect(result.current.activeId).toBe('c1')
+  })
+
+  it('200 을 받은 뒤의 중단은 되돌리지도 지우지도 않음 (#440)', async () => {
+    // 서버가 질문을 저장했으므로 말풍선이 남고, 입력창에 되돌리면 같은 글이 두 번 보인다
+    const stream = openStream()
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(deleteConversation).not.toHaveBeenCalled()
+    expect(result.current.activeId).toBe('c1')
+  })
+
+  it('대화를 옮겨서 200 전에 끊기면 글은 되돌리지 않고 빈 대화는 지운다 (#440)', async () => {
+    // 입력창은 대화마다 따로가 아니다 - 되돌리면 옮겨 간 대화로 그 글이 잘못 나갈 수 있다
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+
+    await act(async () => {
+      result.current.newConversation()
+    })
+    await abort(stream)
+
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(deleteConversation).toHaveBeenCalledWith('c1')
+    expect(result.current.conversations).toEqual([])
   })
 
   it('정상 완료 뒤 abort 예외가 나도 stopped 를 세우지 않음', async () => {

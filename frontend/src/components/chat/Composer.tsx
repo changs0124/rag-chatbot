@@ -45,8 +45,11 @@ export default function Composer({
   busy = false,
   onStop,
 }: {
-  /** 받아들였으면 true - 거절된 전송은 입력과 첨부 초안을 그대로 둔다(#323). 새 대화는 생성 왕복 뒤에 정해진다(#349) */
-  onSend: (text: string, attachments: Attachment[]) => Promise<boolean>
+  /**
+   * 받아들였으면 true - 거절된 전송은 입력과 첨부 초안을 그대로 둔다(#323). 새 대화는 생성 왕복 뒤에 정해진다(#349).
+   * 받아들인 턴이 서버에 닿기 전에 끊기면 `giveBack` 을 부른다 - 보낸 글과 첨부를 입력창에 되돌린다(#440)
+   */
+  onSend: (text: string, attachments: Attachment[], giveBack: () => void) => Promise<boolean>
   streaming: boolean
   /** 이력 로딩 · 대화 생성 중 - 이때 보낸 것은 어차피 거절되므로 비우기 전에 막는다(#323) */
   busy?: boolean
@@ -57,7 +60,8 @@ export default function Composer({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   // 상한을 넘겨 버린 파일이 있었는지 - 카드를 지우거나 보내면 걷는다
-  const [overLimit, setOverLimit] = useState(false)
+  // 'returned' 는 되돌린 카드와 합쳐 넘쳐 이미 붙어 있던 카드를 걷은 경우(#440) - 안내 문구가 다르다
+  const [overLimit, setOverLimit] = useState<false | 'added' | 'returned'>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   // 언마운트 정리용 - 정리 시점에 최신 목록을 봐야 해서 상태가 아니라 ref 로 들고 있음
   const draftsRef = useRef<Draft[]>([])
@@ -103,7 +107,7 @@ export default function Composer({
       const images = Array.from(list).filter((file) => file.type.startsWith('image/'))
       // 남은 자리만큼만 받는다. 넘친 것은 올리지 않는다 - 올리면 보낼 수 없는 첨부가 서버에 쌓인다(#401)
       const room = Math.max(0, MAX_ATTACHMENTS - draftsRef.current.length)
-      if (images.length > room) setOverLimit(true)
+      if (images.length > room) setOverLimit('added')
       const next = images
         .slice(0, room)
         .map((file) => ({
@@ -138,6 +142,15 @@ export default function Composer({
     setDrafts((prev) => prev.map((d) => (d.key === key ? retried : d)))
     startUpload(retried)
   }
+
+  // 언마운트 뒤에 오는 giveBack 을 무시하려고 든다(#440)
+  const mountedRef = useRef(false)
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   /**
    * 언마운트 정리 - 미리보기 URL 회수 + **진행 중인 업로드 중단과 고아 회수**(#94).
@@ -220,6 +233,7 @@ export default function Composer({
     const accepted = await onSend(
       text.trim(),
       sent.map((d) => d.attachment).filter((a): a is Attachment => !!a),
+      () => giveBack(text, sent),
     )
     sendingRef.current = []
     if (!accepted) return
@@ -228,6 +242,29 @@ export default function Composer({
     sent.forEach((d) => URL.revokeObjectURL(d.previewUrl))
     setDrafts((prev) => prev.filter((d) => !sent.includes(d)))
     setOverLimit(false)
+  }
+
+  /**
+   * 서버에 닿지 못한 턴의 글과 카드를 되돌린다(#440). 그사이 새로 쓴 글은 지우지 않고 뒤에 잇는다.
+   * 카드는 보낼 때 미리보기 URL 을 회수했으므로 파일에서 다시 만든다 - 서버 첨부는 그대로라 다시 올리지 않는다
+   */
+  function giveBack(sentText: string, sent: Draft[]) {
+    // 언마운트 뒤(로그아웃 등)에는 되돌릴 곳이 없다 - 만든 미리보기 URL 을 회수할 길도 없다
+    if (!mountedRef.current) return
+    setText((cur) => [sentText, cur].filter(Boolean).join('\n'))
+    const back = sent.map((d) => ({ ...d, key: `d${draftSeq++}`, previewUrl: URL.createObjectURL(d.file) }))
+    // 그사이 더한 카드와 합쳐 상한을 넘으면 뒤에 더한 것을 걷는다 - 보낼 수 없는 묶음이 남으면 서버가 400 으로 거절한다(#401)
+    const room = Math.max(0, MAX_ATTACHMENTS - back.length)
+    const dropped = draftsRef.current.slice(room)
+    dropped.forEach((d) => {
+      d.controller.abort()
+      if (d.attachment) deleteAttachment(d.attachment.id).catch(() => {})
+      URL.revokeObjectURL(d.previewUrl)
+    })
+    if (dropped.length > 0) setOverLimit('returned')
+    // key 로 가른다 - 그사이 업로드 완료가 같은 카드를 새 객체로 바꿨을 수 있다
+    const droppedKeys = new Set(dropped.map((d) => d.key))
+    setDrafts((prev) => [...back, ...prev.filter((d) => !droppedKeys.has(d.key))])
   }
 
   function submit(e: FormEvent) {
@@ -264,7 +301,8 @@ export default function Composer({
 
         {overLimit && (
           <p role="alert" className="mb-2 px-1 text-[13px] text-danger">
-            첨부는 한 번에 {MAX_ATTACHMENTS}장까지 보낼 수 있습니다 — 넘친 사진은 추가하지 않았습니다
+            첨부는 한 번에 {MAX_ATTACHMENTS}장까지 보낼 수 있습니다 —{' '}
+            {overLimit === 'returned' ? '되돌린 사진과 합쳐 넘쳐, 나중에 추가한 사진을 뺐습니다' : '넘친 사진은 추가하지 않았습니다'}
           </p>
         )}
 

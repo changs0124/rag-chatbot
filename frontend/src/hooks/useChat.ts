@@ -180,8 +180,14 @@ export function useChat() {
   const run = useCallback(
     // 첨부는 입력창이 **고르는 즉시** 올려 두므로 여기서는 이미 올라간 것만 받음(업로드 책임이 컴포저에 있음).
     // settle 은 이 턴을 보냈는지를 생성 왕복이 끝나는 시점에 알린다(#349) - 스트림 완료는 기다리지 않는다.
-    // 스트림 전에 끝나는 모든 경로가 settle 을 불러야 한다 - 빠뜨리면 입력창이 영영 기다린다
-    async (text: string, attachments: Attachment[], settle: (accepted: boolean) => void) => {
+    // 스트림 전에 끝나는 모든 경로가 settle 을 불러야 한다 - 빠뜨리면 입력창이 영영 기다린다.
+    // giveBack 은 받아들인 턴이 서버에 닿기 전에 끊겨 입력창이 보낸 것을 되돌려야 할 때 부른다(#440)
+    async (
+      text: string,
+      attachments: Attachment[],
+      settle: (accepted: boolean) => void,
+      giveBack?: () => void,
+    ) => {
       setError(null)
 
       let convId = activeId
@@ -282,7 +288,8 @@ export function useChat() {
           setMessages((prev) =>
             prev.filter((m) => !(m.id === assistantId && !m.content && m.status !== 'complete')),
           )
-          // 200 을 받기 전에 끊겼으면 질문 말풍선도 걷는다(#435) - 서버에 닿지 않은 요청이라, 남기면 새로고침에 사라진다
+          // 200 을 받기 전에 끊겼으면 질문 말풍선도 걷는다(#435) - 서버에 닿지 않았을 수 있어, 남기면 새로고침에 사라진다.
+          // 닿았는지는 아래에서 서버에 물어 저장됐으면 다시 보인다(#440)
           if (!opened) setMessages((prev) => prev.filter((m) => m.id !== userMsg.id))
         }
         patch((m) =>
@@ -297,7 +304,38 @@ export function useChat() {
                 stopped: controller.signal.aborted,
               },
         )
-        if (isNew) refreshConversations()
+        if (controller.signal.aborted && !opened) {
+          // **200 이 없었다고 서버에 없는 것은 아니다**(#440 리뷰) - 서버는 질문 저장 · 첨부 연결을 커밋한 뒤에
+          // 200 을 돌려주므로, 그 사이에 끊으면 질문은 저장돼 있고 첨부는 이미 쓰였다. 서버에 물어서 가른다.
+          // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다
+          let saved: ChatMessage[] | null = null
+          let unsent = false
+          try {
+            const server = await getMessages(convId)
+            const last = server.at(-1)
+            if (last?.role === 'user' && last.content === text.trim()) saved = server
+            else unsent = true
+          } catch {
+            // 모르면 지우지 않는다 - 저장된 질문이 든 대화를 지우는 쪽이 글을 한 번 더 보이는 쪽보다 나쁘다
+          }
+          const here = generation.current === mine
+          if (saved) {
+            // 저장된 질문은 남기고, 서버는 답을 끝까지 만들어 저장한다(#76) - 다시 열면 보인다
+            if (here) setMessages(saved)
+          } else if (here) {
+            // 입력창에 되돌린다(#440). 대화를 옮겨 끊긴 경우는 되돌리지 않는다 - 입력창은 대화마다
+            // 따로가 아니라서, 옮겨 간 대화로 그 글이 잘못 나갈 수 있다
+            giveBack?.()
+          }
+          if (unsent && isNew) {
+            // 이 턴이 만든 대화는 메시지 0개다(#440) - 지운다. 남은 화면은 새 대화와 같게 되돌려 다음 전송이
+            // 지우는 중인 대화로 나가지 않게 한다. 지운 뒤에 목록을 받아야 되살아나 보이지 않는다
+            const emptyId = convId
+            if (here) setActiveId(null)
+            setConversations((prev) => prev.filter((c) => c.id !== emptyId))
+            apiDelete(emptyId).catch(() => {}).finally(refreshConversations)
+          } else if (isNew) refreshConversations()
+        } else if (isNew) refreshConversations()
       } finally {
         // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(advanceStage)
         setStreaming(false)
@@ -312,16 +350,17 @@ export function useChat() {
    * 조용히 버리면 입력이 사라지고 이미 올린 첨부는 회수 크론을 기다리는 고아가 된다.
    *
    * 기존 대화는 곧바로, 새 대화는 **생성 왕복이 끝난 뒤에** 정해진다(#349) - 생성이 실패하면 보낸 것이 없다.
+   * 받아들인 뒤 200 전에 중단됐고 서버에 질문이 없으면 `giveBack` 으로 알린다(#440) - 입력창은 이미 비웠으므로 되돌릴 몫이 거기 있다.
    * 거절 판정과 생성 중 표시는 같은 틱에 끝나므로 같은 틱의 두 번째 전송도 막힌다.
    *
    * 이력 로딩 중에도 거절한다. 받아 들이면 말풍선이 직전 대화의 목록에 붙고, 곧 도착한 이력이 목록을
    * 갈아 끼워 답 말풍선이 사라진다 - send 는 세대를 올리지 않으므로 그 이력은 버려지지 않는다.
    */
   const send = useCallback(
-    (text: string, attachments: Attachment[]): Promise<boolean> => {
+    (text: string, attachments: Attachment[], giveBack?: () => void): Promise<boolean> => {
       if (streaming || creatingRef.current || loadingRef.current) return Promise.resolve(false)
       return new Promise<boolean>((resolve) => {
-        void run(text, attachments, resolve)
+        void run(text, attachments, resolve, giveBack)
       })
     },
     [streaming, run],
