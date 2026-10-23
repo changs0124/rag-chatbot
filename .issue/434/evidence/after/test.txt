@@ -1,0 +1,11 @@
+# 변경 후 — TextInputCharsTest(Testcontainers 실 PostgreSQL 16), 커밋 후 check-all 의 ./mvnw verify 에서
+# 같은 요청을 운영 probe(before/probe.txt)와 같은 경로로 보낸다. 변경 전 코드로 돌리면 거르는 4건이 실패(NUL 3건 500, 서로게이트 1건은 200 뒤 저장)
+
+PASS  nul_in_chat_message_is_400_before_saving
+PASS  lone_surrogate_in_chat_message_is_400_before_saving
+PASS  surrogate_pairs_and_trailing_nul_still_pass
+PASS  nul_in_conversation_title_is_400_on_create_and_rename
+PASS  nul_in_name_is_400_on_profile_and_account_issue
+
+# 기대 : NUL 다섯 경로(대화 생성 · 제목 변경 · 이름 변경 · 계정 발급 · 채팅) 400 + DB 무변화, 서로게이트 채팅 400 + 사용자 메시지 0행,
+#        이모지 쌍 · 끝의 NUL 은 통과(200)
