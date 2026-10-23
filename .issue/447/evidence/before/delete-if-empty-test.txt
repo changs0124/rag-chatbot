@@ -1,0 +1,14 @@
+# #447 before — 제품 코드 변경 전, 새 테스트 ConversationDeleteIfEmptyTest 만 추가해 실행(실 PostgreSQL)
+# 지금 서버는 ?ifEmpty 를 모른다 → 조건 없이 지운다
+# race : 다른 트랜잭션이 질문을 넣고 커밋 전 → 삭제 요청은 잠금에서 기다림(500ms 뒤 미완 확인) → 커밋 → 204, 막 커밋된 질문까지 cascade 로 삭제
+
+ but was: 204 NO_CONTENT
+[ERROR] Tests run: 4, Failures: 2, Errors: 0, Skipped: 0
+[ERROR] Tests run: 4, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 17.54 s <<< FAILURE! -- in com.ragchatbot.controller.ConversationDeleteIfEmptyTest
+[ERROR] com.ragchatbot.controller.ConversationDeleteIfEmptyTest.conversation_with_message_is_kept_with_409 -- Time elapsed: 0.374 s <<< FAILURE!
+[ERROR] com.ragchatbot.controller.ConversationDeleteIfEmptyTest.delete_racing_an_uncommitted_question_waits_and_keeps_it -- Time elapsed: 0.837 s <<< FAILURE!
+expected: 409 CONFLICT
+
+# 리뷰 뒤 추가한 반대 순서 경합(삭제가 먼저 행을 잠금 → 그사이 채팅) — 채팅 준비의 소유 확인을 잠그지 않는 예전 방식(requireOwned)으로 되돌려 실행
+# 결과 : 확인을 통과한 채팅이 질문 삽입의 외래 키에서 기다리다가 삭제 커밋 뒤 외래 키 위반 → 500
+ConversationDeleteIfEmptyTest.chat_racing_a_delete_that_holds_the_lock_gets_404 — expected: 404 but was: 500
