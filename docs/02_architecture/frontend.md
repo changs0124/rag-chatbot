@@ -47,9 +47,9 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ## API 통신
 
 - API 호출은 `frontend/src/lib/api.ts` 의 `api.get/post/patch/del/postForm` 을 통한다.
-  **래퍼 밖에서 `fetch` 를 직접 부르는 곳은 셋** — 채팅 스트림(아래, `endpoints.ts`), 문서 그림 로드
-  (`docFigures.ts` — blob 을 objectURL 로), 첨부 저장(`ImageLightbox.download()` 이 blob 으로 받아야 해서).
-  앞의 둘은 컴포넌트가 아니라 `lib/` 에 있다.
+  **모든 인증 요청은 `authFetch` 를 거친다**(#390) — `api.*` 의 `request` · 채팅 스트림(`endpoints.ts` `streamChat`) · 문서 그림 로드
+  (`docFigures.ts` `loadFigure`, blob 을 objectURL 로)가 같은 `authFetch` 를 지난다. **직접 `fetch` 하는 곳은 `ImageLightbox.download()` 하나**다 —
+  서명 URL(`?token=`)이라 Bearer 가 필요 없고 blob 으로 받아야 해서다.
 - 엔드포인트 함수는 `frontend/src/lib/endpoints.ts` 에 둔다. **대부분은 `api.*` 를 한 줄로 감싼 것**이고,
   래퍼로 안 되는 것만 함수로 편다 — 멀티파트 업로드 둘(`uploadFile` · `uploadDocument`)과 채팅 스트림이다.
   **`AuthContext` 는 예외로 `/api/auth/me` 와 `/api/auth/login` 을 직접 부른다** — 세션 수명을 그 안에서
@@ -60,11 +60,11 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 - **401 이면 어떤 요청에서든 세션을 비우고 로그인으로 돌아간다**(`setUnauthorizedHandler`). 단 로그인·비밀번호 변경의 401 은
   "자격 증명이 틀렸다"는 뜻이라 세션을 유지한다(`CREDENTIAL_PATHS`) — 그러지 않으면 비밀번호 오타 한 번에 로그아웃된다.
 - **응답 헤더 `X-Refresh-Token` 이 오면 토큰을 교체한다**(FEAT-OPS-003). 만료가 임박했을 때만 온다.
-  교체는 **세 곳에서** 일어나야 한다 — `api.ts` 의 fetch 래퍼, `endpoints.ts` 의 채팅 스트림, `docFigures.ts` 의 그림 로드
-  (셋 다 `adoptRefreshedToken` 을 쓴다). 스트림은 래퍼를 거치지 않으므로 한쪽만 하면 **채팅만 쓰는 사용자는 갱신을 못 받고** 두 시간마다 튕긴다.
+  교체는 **`authFetch` 한 곳**에서 일어난다 — `adoptRefreshedToken` 을 부르는 곳이 그곳뿐이다. `request` · 채팅 스트림 · 그림 로드가 모두 `authFetch` 를 지나므로
+  새 인증 요청도 `authFetch` 를 거쳐야 한다. 우회하면 그 경로만 쓰는 사용자(예: **채팅만 쓰는 사용자**)는 갱신을 못 받고 두 시간마다 튕긴다.
   헤더가 없으면 기존 토큰을 그대로 둔다 — 서버가 CORS 노출 헤더 등록을 빠뜨리면 `null` 이 오는데,
   그때 토큰을 지우면 멀쩡한 세션이 날아간다.
-  **요청을 보낸 세션과 지금 세션이 다르면 헤더를 버린다(#363)** — 세 곳 모두 송신 시점 토큰을 넘긴다. 로그아웃 → 다른 계정 로그인 사이에
+  **요청을 보낸 세션과 지금 세션이 다르면 헤더를 버린다(#363)** — `authFetch` 가 송신 시점 토큰을 넘긴다. 로그아웃 → 다른 계정 로그인 사이에
   늦게 돌아온 응답이 이전 계정의 새 토큰으로 지금 세션을 덮기 때문이다.
 - **다른 탭이 토큰을 지우거나 바꾸면 따라간다(#412)** — `api.ts` 가 `storage` 이벤트(다른 탭의 변경에만 온다)를 듣는다. 같은 계정의 재발급이면
   모듈 토큰만 맞추고, 지워지거나 다른 계정 · `clear()` 면 **저장소를 건드리지 않고 페이지를 다시 읽는다** — 토큰만 바꾸면 화면과 요청의 계정이 갈리고,

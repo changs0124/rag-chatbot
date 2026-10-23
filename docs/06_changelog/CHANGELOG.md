@@ -5,6 +5,10 @@
 ## [Unreleased]
 
 ### Docs
+- **코드와 어긋난 문서 서술 넷을 바로잡았다(#449).** `api.md` 409 표(공통 에러표 · HTTP 표)에 「이미 보낸 첨부 삭제 · `ifEmpty` 인데 메시지 있음」을 더하고 v1.8 로 올렸다 ·
+  #447 배포 순서 불변식(백엔드 먼저, 롤백은 프론트 먼저)을 `api.md` API-DELETE-001 · `backend.md` 「배포」로 옮겼다 · 토큰 재발급 서술을 #390 구조
+  (`adoptRefreshedToken` 은 `authFetch` 한 곳, 직접 `fetch` 는 `ImageLightbox` 다운로드뿐)로 `frontend.md` · `features.md` 에 맞췄다.
+  코드 쪽은 `api.ts` 의 낡은 주석과 쓰이지 않는 `authHeaders` 의 `export` 를 정리했다
 - **current-sprint 의 끝난 일지를 지우고 이 파일의 `[Unreleased]` 를 배포별 구획으로 나눴다(#450).** 항목 본문은 그대로 옮겼다.
 
 ## [2026-10-23]
