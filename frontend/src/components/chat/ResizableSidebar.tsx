@@ -10,7 +10,13 @@ const KEY_STEP = 16
 const clampWidth = (v: number) => Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, v))
 
 function readStoredWidth(): number {
-  const raw = Number(localStorage.getItem(STORAGE_KEY))
+  let raw: number
+  try {
+    raw = Number(localStorage.getItem(STORAGE_KEY))
+  } catch {
+    // 저장소가 막힌 브라우저(#483 F12) - 기본 폭으로 연다
+    return SIDEBAR_DEFAULT_WIDTH
+  }
   // 범위 밖 값(수동 변조 · 규격 변경)은 무시함 - 화면 밖으로 나간 사이드바를 복원하지 않기 위함
   if (!Number.isFinite(raw) || raw < SIDEBAR_MIN_WIDTH || raw > SIDEBAR_MAX_WIDTH) {
     return SIDEBAR_DEFAULT_WIDTH
@@ -19,7 +25,11 @@ function readStoredWidth(): number {
 }
 
 function persist(width: number) {
-  localStorage.setItem(STORAGE_KEY, String(width))
+  try {
+    localStorage.setItem(STORAGE_KEY, String(width))
+  } catch {
+    // 저장소가 막혔으면 이번 탭에서만 그 폭을 쓴다(#483 F12)
+  }
 }
 
 /**

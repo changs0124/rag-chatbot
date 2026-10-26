@@ -7,14 +7,32 @@ if (import.meta.env.PROD && !import.meta.env.VITE_API_BASE_URL) {
 }
 
 const TOKEN_KEY = 'rag_chatbot_token'
-let token: string | null = localStorage.getItem(TOKEN_KEY)
+// 사이트 데이터를 막은 브라우저는 저장소 접근에서 SecurityError 를 던진다(#483 F12). 이 모듈은 import 그래프 최상단이라
+// 여기서 터지면 ErrorBoundary 도 못 잡는 백지가 된다 - 모듈 변수(메모리)만으로 물러선다. 세션은 새로고침 전까지다.
+// 저장소가 막히면 storage 이벤트도 없어 다른 탭의 로그아웃이 이 탭에 전파되지 않는다
+let token: string | null = (() => {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+})()
 
 export function setToken(next: string | null): void {
   token = next
-  if (next) {
-    localStorage.setItem(TOKEN_KEY, next)
-  } else {
-    localStorage.removeItem(TOKEN_KEY)
+  try {
+    if (next) {
+      localStorage.setItem(TOKEN_KEY, next)
+    } else {
+      localStorage.removeItem(TOKEN_KEY)
+    }
+  } catch {
+    // 저장소가 막혔다 - 메모리 토큰만 쓴다(위 주석). setItem 만 던졌으면(용량 초과 등) 옛 계정 토큰이 남지 않게 지워 본다
+    try {
+      localStorage.removeItem(TOKEN_KEY)
+    } catch {
+      // 지우기도 막혔다 - 읽기도 막혔을 것이라 남은 값이 쓰이지 않는다
+    }
   }
 }
 

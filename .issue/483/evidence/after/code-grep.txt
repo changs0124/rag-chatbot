@@ -1,0 +1,45 @@
+## F4 loaded
+72:  const [loaded, setLoaded] = useState(false)
+90:      setLoaded(true)
+250:        {loaded && documents.length === 0 ? (
+## F5 title
+21:  // Enter · Esc 로 닫으면 세운다(#483 F5) - Chromium 은 포커스된 입력을 언마운트할 때 blur 를 내는데, 그 onBlur 는
+23:  const skipBlurRef = useRef(false)
+74:  function commitTitle() {
+154:                  onBlur={() => {
+155:                    if (!skipBlurRef.current) commitTitle()
+162:                      skipBlurRef.current = true
+163:                      commitTitle()
+164:                    } else if (e.key === 'Escape') {
+165:                      skipBlurRef.current = true
+175:                    skipBlurRef.current = false
+## F12 storage
+lib/api.ts:14:    return localStorage.getItem(TOKEN_KEY)
+lib/api.ts:24:      localStorage.setItem(TOKEN_KEY, next)
+lib/api.ts:26:      localStorage.removeItem(TOKEN_KEY)
+components/chat/ResizableSidebar.tsx:15:    raw = Number(localStorage.getItem(STORAGE_KEY))
+components/chat/ResizableSidebar.tsx:29:    localStorage.setItem(STORAGE_KEY, String(width))
+## F13 generation
+74:   * 목록 요청 세대(#483 F13, useChat 의 generation 과 같은 패턴). refresh 가 올리고 폴링은 떠날 때 값을 적어 둔다.
+78:  const listGen = useRef(0)
+83:    const mine = ++listGen.current
+86:      if (listGen.current !== mine) return
+92:      if (listGen.current !== mine) return
+104:    const mine = listGen.current
+107:      if (listGen.current !== mine) return
+111:      if (listGen.current !== mine) return
+## F14 limits
+lib/limits.ts:3:export const MAX_NAME_CHARS = 50
+lib/limits.ts:7:export const MAX_ATTACHMENTS = 5
+lib/limits.ts:9:export const MAX_MESSAGE_CHARS = 4000
+lib/limits.ts:11:export const MAX_TITLE_CHARS = 100
+## F17 settling
+hooks/useChat.ts:72:  const [settling, setSettling] = useState(false)
+hooks/useChat.ts:343:          // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다. 그 구간을 settling 으로 드러낸다(#483)
+hooks/useChat.ts:426:    settling,
+components/chat/Composer.tsx:44:  settling = false,
+components/chat/Composer.tsx:58:  settling?: boolean
+components/chat/Composer.tsx:361:          {streaming && !settling ? (
+components/chat/Composer.tsx:379:              disabled={settling || busy || pending || (!text.trim() && drafts.length === 0)}
+components/chat/Composer.tsx:382:                settling
+pages/ChatPage.tsx:223:          settling={chat.settling}

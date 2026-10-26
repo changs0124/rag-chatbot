@@ -1,0 +1,37 @@
+## D6 CHANGELOG 머리 · 10-26 소절 순서
+5:배포 구획의 소절에 배포 커밋 라벨(예 : `### Fixed (62b3c3f)`)을 붙이는 형식은 `[2026-10-26]` 부터다. 그 이전 구획은 구획 머리 줄의 배포 → 이슈 매핑만 있고 소급하지 않는다.
+24: ### Changed (ef68f53 · 테스트)
+32: ### Fixed (ef68f53)
+54: ### Docs (ef68f53)
+62: ### Fixed (Vector Store 교체)
+71: ### Fixed (62b3c3f)
+84: ### Fixed (a05d994)
+90: ### Docs (a05d994)
+93: ### Refactored (a89fb83)
+105: ### Removed (a89fb83)
+114: ### Fixed (a89fb83)
+125: ### Docs (a89fb83)
+
+## 10-26 각 항목의 이슈 번호와 소절
+### Changed (ef68f53 · 테스트) <- #482
+### Fixed (ef68f53) <- #485
+### Fixed (ef68f53) <- #479
+### Fixed (ef68f53) <- #481
+### Fixed (ef68f53) <- #484
+### Fixed (ef68f53) <- #480
+### Docs (ef68f53) <- #487
+### Docs (ef68f53) <- #486
+### Fixed (Vector Store 교체) <- #467
+### Fixed (62b3c3f) <- #468
+### Fixed (62b3c3f) <- #476
+### Fixed (a05d994) <- #469
+### Docs (a05d994) <- #466
+### Refactored (a89fb83) <- #456
+### Refactored (a89fb83) <- #455
+### Removed (a89fb83) <- #454
+### Fixed (a89fb83) <- #470
+### Fixed (a89fb83) <- #453
+### Docs (a89fb83) <- #452
+### Docs (a89fb83) <- #451
+### Docs (a89fb83) <- #449
+### Docs (a89fb83) <- #450

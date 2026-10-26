@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import ResizableSidebar, {
   SIDEBAR_DEFAULT_WIDTH,
@@ -23,6 +23,25 @@ describe('ResizableSidebar', () => {
   beforeEach(() => localStorage.clear())
 
   const subject = <ResizableSidebar><div data-testid="panel">목록</div></ResizableSidebar>
+
+  // #483 F12 : 저장소가 막힌 브라우저에서도 기본 폭으로 그리고, 끌기를 끝내도 터지지 않는다
+  it('저장소 접근이 던지면 기본 폭으로 연다', () => {
+    const denied = () => {
+      throw new DOMException('denied', 'SecurityError')
+    }
+    const spies = [
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(denied),
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(denied),
+    ]
+    try {
+      render(subject)
+      expect(panel()).toHaveStyle({ width: `${SIDEBAR_DEFAULT_WIDTH}px` })
+      drag(330)
+      expect(panel()).toHaveStyle({ width: '330px' })
+    } finally {
+      spies.forEach((s) => s.mockRestore())
+    }
+  })
 
   it('손잡이를 끌면 폭이 따라온다', () => {
     render(subject)

@@ -598,6 +598,37 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(giveBack).not.toHaveBeenCalled()
   })
 
+  it('판정 중에 대화를 옮기면 옮겨 간 화면에는 settling 이 없고 곧바로 보낼 수 있다 (#483 · #489 통합)', async () => {
+    // 200 뒤 토큰 0개 중단도 판정 구간이다 - 재확인 동안 settling 이 서고, 옮기면 잠금과 함께 내린다
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+    holdStored([{ id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] }], true)
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+    expect(result.current.settling).toBe(true)
+
+    await act(async () => {
+      await result.current.selectConversation('c9')
+    })
+    expect(result.current.settling).toBe(false)
+    const next = openStream()
+    let accepted = false
+    await act(async () => {
+      accepted = await result.current.send('다른 질문', [])
+    })
+    expect(accepted).toBe(true)
+    // 뒤에서 이어 간 판정이 끝나도 옮겨 간 화면의 스트림 · settling 을 덮지 않는다
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
+    expect(result.current.settling).toBe(false)
+    expect(result.current.streaming).toBe(true)
+    expect(next.handlers).toBeDefined()
+  })
+
   it('기존 대화의 재확인 중에 대화를 옮기면 재확인을 곧바로 멈춘다 (#489 리뷰)', async () => {
     const { result } = await existingConversation()
     const stream = openStream({ opened: false })
@@ -936,6 +967,28 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.conversations.map((c) => c.id)).toEqual(['c1'])
     expect(result.current.activeId).toBe('c1')
     expect(result.current.messages).toHaveLength(0)
+  })
+
+  // #483 F17 : 판정 중에는 다시 보내기가 거절된다. 그 사실을 settling 으로 드러내 입력창이 정지 버튼 대신 비활성 보내기를 보이게 한다
+  it('200 전 판정이 도는 동안 settling 이 참이고 끝나면 거짓이다 (#483)', async () => {
+    const stream = openStream({ opened: false })
+    let finishDelete: () => void = () => {}
+    vi.mocked(deleteConversationIfEmpty).mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishDelete = resolve)),
+    )
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], vi.fn()))
+    expect(result.current.settling).toBe(false)
+
+    await act(async () => {
+      stream.fail?.(new TypeError('Failed to fetch'))
+    })
+    expect(result.current.settling).toBe(true)
+    expect(result.current.streaming).toBe(true)
+
+    await act(async () => finishDelete())
+    expect(result.current.settling).toBe(false)
+    expect(result.current.streaming).toBe(false)
   })
 
   it('비중단 실패 뒤 판정 중에 대화를 옮기면 되돌리지 않고 빈 대화는 지운다 (#480)', async () => {

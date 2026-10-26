@@ -1,0 +1,7 @@
+## D10 INDEX
+29:| [Feedback](./FEEDBACK.md) | 다건 수정 요청을 모아 한 번에 전달 · **지금 비어 있음** |
+30:| [References](./03_references/) | 외부 레퍼런스(디자인 · API · 라이브러리) · **지금 비어 있음** |
+32:| [Backlog](./04_tasks/backlog.md) | 전체 태스크 |
+33:| [Open Issues](./05_issues/open/) | 처리 중인 이슈(해결분은 `05_issues/resolved/`) · **지금 비어 있음** |
+39:**비어 있는 자리** : `지금 비어 있음` 표시 · `99_inbox/` · `02_architecture/diagrams/` · `04_tasks/completed/` 는 `project-docs` 골격용 `.gitkeep` 뿐이다.
+57:루트 `CLAUDE.md`의 행동 지침(가정 금지 · 단순함 우선 · 외과적 변경 · 목표 기반 실행)이 위 규칙보다 우선한다.

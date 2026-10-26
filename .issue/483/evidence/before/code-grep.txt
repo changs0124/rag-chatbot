@@ -1,0 +1,22 @@
+## F4 loaded
+71:  const [loaded, setLoaded] = useState(false)
+84:      setLoaded(true)
+237:        {loaded && documents.length === 0 ? (
+## F5 title
+70:  function commitTitle() {
+151:                  onBlur={commitTitle}
+157:                      commitTitle()
+158:                    } else if (e.key === 'Escape') {
+## F12 storage
+lib/api.ts:10:let token: string | null = localStorage.getItem(TOKEN_KEY)
+lib/api.ts:15:    localStorage.setItem(TOKEN_KEY, next)
+lib/api.ts:17:    localStorage.removeItem(TOKEN_KEY)
+components/chat/ResizableSidebar.tsx:13:  const raw = Number(localStorage.getItem(STORAGE_KEY))
+components/chat/ResizableSidebar.tsx:22:  localStorage.setItem(STORAGE_KEY, String(width))
+## F13 generation
+## F14 limits
+components/chat/Composer.tsx:33:const MAX_ATTACHMENTS = 5
+components/chat/Composer.tsx:350:            maxLength={4000}
+pages/ChatPage.tsx:149:                  maxLength={100}
+lib/limits.ts:3:export const MAX_NAME_CHARS = 50
+## F17 settling

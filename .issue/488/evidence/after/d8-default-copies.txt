@@ -1,0 +1,13 @@
+## D8 TTL 15분
+docs/01_specs/api.md:363:| 토큰 TTL | 기본 15분(`FILE_ACCESS_TOKEN_TTL_MINUTES`) |
+
+## D8 토큰 120분 · 12시간 · 30분
+docs/01_specs/api.md:35:- 만료 : 기본 120분 (`JWT_EXPIRATION_MINUTES`)
+docs/01_specs/api.md:37:- 절대 수명 : 최초 인증(로그인 · 비밀번호 변경)부터 기본 12시간(`JWT_MAX_SESSION_HOURS`, #403)이 지나면 재발급하지 않는다.
+docs/01_specs/features.md:500:| `JWT_REFRESH_THRESHOLD_MINUTES` | int | N | 기본 30. **`0` 이면 기능을 끈다**(종전 고정 만료로 되돌리는 경로) |
+
+## D8 입력 상한 (features)
+57:| attachments | File[] | N | **서버 상한까지**(#401, `CHAT_MAX_ATTACHMENTS`) — 넘친 파일은 올리지 않고 「첨부는 한 번에 5장까지」를 알린다(카드를 지우거나 �
+
+## D8 전역 동시 스트림 16
+docs/02_architecture/backend.md:255:**전역 상한은 16 이다(#278).** 스트림 하나는 대부분의 시간을 모델 응답을 기다리며 보내 CPU · 메모리를 거의 쓰지 않는다.

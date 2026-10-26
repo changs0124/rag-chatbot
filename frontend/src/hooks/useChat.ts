@@ -142,6 +142,8 @@ export function useChat() {
   // send 의 거절 판정용 사본(#323) - 고른 직후 같은 틱의 전송도 막으려고 상태와 함께 바로 쓴다
   const loadingRef = useRef(false)
   const [streaming, setStreaming] = useState(false)
+  // 200 전에 끊긴 턴을 서버에 물어 가르는 중(#483 F17). streaming 도 참인 구간이다 - 입력창이 정지 버튼 대신 비활성 보내기를 보이게 한다
+  const [settling, setSettling] = useState(false)
   // 진행 단계(REQ-CHAT-005) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
   const { stage, pushStage, clearStages } = useStageQueue()
   const [error, setError] = useState<string | null>(null)
@@ -186,9 +188,11 @@ export function useChat() {
     clearStages()
     // 판정(재확인) 중에 떠나면 옮겨 간 화면의 보내기를 막지 않게 놓아 준다(#489 리뷰). 판정은 뒤에서 이어 가고,
     // 그 턴의 finally 는 자기 컨트롤러가 아니면 상태를 건드리지 않는다
+    // 확인 중 문구(settling, #483)도 함께 내린다 - 옮겨 간 화면에 남지 않게
     if (judgingRef.current && judgingRef.current === abortRef.current) {
       abortRef.current = null
       setStreaming(false)
+      setSettling(false)
     }
   }, [clearStages])
 
@@ -432,8 +436,11 @@ export function useChat() {
           prev.filter((m) => !(((aborted || unconfirmed) && emptyAnswer(m)) || unsentQuestion(m))).map(settled),
         )
         if (unconfirmed) {
-          // 200 전 중단 · 실패는 서버에 물어서 가른다(judgeEarlyAbort, #480 에서 실패까지, #489 에서 200 뒤 토큰 0개 중단까지 넓힘).
-          // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다
+          // 200 전 중단 · 실패는 서버에 물어서 가른다(judgeEarlyAbort, #480 에서 실패까지, #489 에서 200 뒤 토큰 0개 중단 · 끊김까지 넓힘).
+          // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다. 그 구간을 settling 으로 드러낸다(#483)
+          setSettling(true)
+          // 판정 구간 전체를 판정 턴으로 표시한다 - 그사이 대화를 옮기면 abortActiveStream 이 잠금 · settling 을 푼다(#489 리뷰)
+          judgingRef.current = controller
           const id = convId
           // 4xx 거절은 저장되지 않은 것이 확실해 기존 대화는 묻지 않는다. 새 대화는 빈 대화를 지워야 하므로 조건부 삭제는 그대로 탄다.
           // 단 기존 대화의 404 는 대화가 지워졌을 수 있어(다른 탭) 이력으로 확인한다 - 「첨부 없음」도 404 라 코드만으로는 못 가른다
@@ -447,9 +454,7 @@ export function useChat() {
               if (gone) outcome = { kind: 'deleted' }
             }
           } else if (!unauthorized) {
-            judgingRef.current = controller
             outcome = await judgeEarlyAbort(id, isNew, text, opened, () => generation.current === mine)
-            judgingRef.current = null
           }
           // 세대는 판정을 기다린 **뒤에** 본다 - 그사이 대화를 옮겼으면 화면 · 입력창을 건드리지 않는다
           const here = generation.current === mine
@@ -483,10 +488,11 @@ export function useChat() {
         } else if (isNew) refreshConversations()
       } finally {
         // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(useStageQueue).
-        // 판정 중에 대화를 옮겨 이미 놓아 줬으면(#489 리뷰) 옮겨 간 화면의 새 스트림 상태를 덮지 않는다
+        // 판정 중에 대화를 옮겨 이미 놓아 줬으면(#489 리뷰) 옮겨 간 화면의 새 스트림 · settling 상태를 덮지 않는다
         judgingRef.current = null
         if (abortRef.current === controller) {
           setStreaming(false)
+          setSettling(false)
           abortRef.current = null
         }
       }
@@ -522,6 +528,7 @@ export function useChat() {
     loadingMessages,
     creating,
     streaming,
+    settling,
     stage,
     error,
     send,
