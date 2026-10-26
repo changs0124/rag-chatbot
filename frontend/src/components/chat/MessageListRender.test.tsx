@@ -27,7 +27,8 @@ describe('MessageList 스트리밍 재렌더 (#405)', () => {
     const streaming: ChatMessage = { id: 'a2', role: 'assistant', content: '둘', status: 'streaming', citations: [] }
     const { rerender } = render(<MessageList messages={[...done, streaming]} />)
     // Markdown 은 지연 로딩(#417) - 청크가 와서 첫 답변이 그려진 뒤부터 센다
-    // 콜드 실행에서는 첫 렌더가 waitFor 기본 1초를 넘긴다(#482)
+    // 청크 import 를 명시적으로 기다린 뒤 본다(#482) - 콜드 실행에서는 첫 변환이 waitFor 기본 1초를 넘긴다
+    await import('./Markdown')
     await waitFor(() => expect(parsed).toEqual(expect.arrayContaining(['첫 답변', '둘'])), { timeout: 10_000 })
     // 같은 입력으로 한 번 더 그려 청크 도착으로 밀려 있던 재시도를 비운다
     rerender(<MessageList messages={[...done, streaming]} />)

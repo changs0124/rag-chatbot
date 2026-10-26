@@ -115,7 +115,7 @@ class OpenAiRealStageMappingTest {
 	 * 그 꼬리는 response.completed 의 flush 로만 나감 - 내보낸 토큰 합 == 저장 본문 == 짧은 이름이어야 함
 	 */
 	@Test
-	void file_name_held_at_the_last_delta_comes_out_only_from_the_completed_flush() {
+	void file_name_held_at_the_last_delta_comes_out_at_the_completed_flush() {
 		String sse = """
 				data:{"type":"response.output_item.done","item":{"type":"file_search_call","results":[{"filename":"TM매뉴얼_VSVDTMNOPK10_v3.md","text":"발췌"}]}}
 				data:{"type":"response.output_text.delta","delta":"근거는 TM매뉴얼_VSVDTMNOPK10_v3"}
