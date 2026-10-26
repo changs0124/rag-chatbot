@@ -1,0 +1,69 @@
+Using Node v24.19.0
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/480-early-failure-giveback/frontend
+
+ ❯ src/hooks/useChat.test.ts (27 tests | 4 failed | 23 skipped) 99ms
+     × 200 전 429 거절은 판정 없이 보낸 것을 되돌리고, 말풍선 · 빈 대화를 남기지 않고, 오류를 보인다 (#480) 52ms
+     × 기존 대화의 200 전 4xx 거절은 서버에 묻지 않고 되돌리며 대화는 지우지 않음 (#480) 11ms
+     × 200 전 fetch reject(네트워크)는 서버에 물어 되돌리고, 빈 대화를 지우고, 오류 배너를 보인다 (#480) 23ms
+     × 200 전 5xx 는 닿았을 수 있어 서버에 묻는다 - 질문이 저장됐으면 남기고 되돌리지 않음 (#480) 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 200 전 429 거절은 판정 없이 보낸 것을 되돌리고, 말풍선 · 빈 대화를 남기지 않고, 오류를 보인다 (#480)
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/hooks/useChat.test.ts:481:22
+    479|     await reject(stream, 429, '동시 스트림 상한 초과')
+    480|
+    481|     expect(giveBack).toHaveBeenCalledTimes(1)
+       |                      ^
+    482|     expect(result.current.messages).toHaveLength(0)
+    483|     // 새 대화는 비었을 때만 지우기로 정리한다(#447) - 이력으로 묻지 않는다
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 기존 대화의 200 전 4xx 거절은 서버에 묻지 않고 되돌리며 대화는 지우지 않음 (#480)
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/hooks/useChat.test.ts:505:22
+    503|     await reject(stream, 400, '메시지는 4000자까지 보낼 수 있음')
+    504|
+    505|     expect(giveBack).toHaveBeenCalledTimes(1)
+       |                      ^
+    506|     expect(getMessages).not.toHaveBeenCalled()
+    507|     expect(deleteConversationIfEmpty).not.toHaveBeenCalled()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 200 전 fetch reject(네트워크)는 서버에 물어 되돌리고, 빈 대화를 지우고, 오류 배너를 보인다 (#480)
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/hooks/useChat.test.ts:524:22
+    522|     })
+    523|
+    524|     expect(giveBack).toHaveBeenCalledTimes(1)
+       |                      ^
+    525|     expect(result.current.messages).toHaveLength(0)
+    526|     expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 200 전 5xx 는 닿았을 수 있어 서버에 묻는다 - 질문이 저장됐으면 남기고 되돌리지 않음 (#480)
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'c1' ]
+
+Number of calls: 0
+
+ ❯ src/hooks/useChat.test.ts:552:25
+    550|     await reject(stream, 502, '요청 실패 (502)')
+    551|
+    552|     expect(getMessages).toHaveBeenCalledWith('c1')
+       |                         ^
+    553|     expect(giveBack).not.toHaveBeenCalled()
+    554|     expect(result.current.messages.map((m) => m.id)).toEqual(['u1', 'a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 23 skipped (27)
+   Start at  17:05:00
+   Duration  3.02s (transform 428ms, setup 540ms, import 437ms, tests 99ms, environment 1.39s)
+

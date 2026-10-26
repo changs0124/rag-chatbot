@@ -1,0 +1,65 @@
+[ERROR] Tests run: 9, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.901 s <<< FAILURE! -- in com.ragchatbot.openai.OpenAiRealStageMappingTest
+[ERROR] com.ragchatbot.openai.OpenAiRealStageMappingTest.file_name_held_at_the_last_delta_comes_out_only_from_the_completed_flush -- Time elapsed: 0.076 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+Expecting actual:
+  ["근거는 "]
+to contain exactly (and in same order):
+  ["근거는 ", "TM매뉴얼"]
+but could not find the following elements:
+  ["TM매뉴얼"]
+
+	at com.ragchatbot.openai.OpenAiRealStageMappingTest.file_name_held_at_the_last_delta_comes_out_only_from_the_completed_flush(OpenAiRealStageMappingTest.java:129)
+
+[ERROR] Tests run: 13, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 0.073 s <<< FAILURE! -- in com.ragchatbot.openai.SourceNameRewriterTest
+[ERROR] com.ragchatbot.openai.SourceNameRewriterTest.documents_sharing_a_short_name_keep_their_stems -- Time elapsed: 0.005 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "TM매뉴얼_A_v1 와 TM매뉴얼_B_v2, 필드클레임현황 를 보면 "
+ but was: "TM매뉴얼 와 TM매뉴얼, 필드클레임현황 를 보면 "
+	at com.ragchatbot.openai.SourceNameRewriterTest.documents_sharing_a_short_name_keep_their_stems(SourceNameRewriterTest.java:92)
+
+[ERROR] com.ragchatbot.openai.SourceNameRewriterTest.a_later_search_with_the_same_short_name_downgrades_to_stems_for_the_rest_of_the_text -- Time elapsed: 0.003 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "TM매뉴얼_A_v1 그리고 TM매뉴얼_B_v2 "
+ but was: "TM매뉴얼 그리고 TM매뉴얼 "
+	at com.ragchatbot.openai.SourceNameRewriterTest.a_later_search_with_the_same_short_name_downgrades_to_stems_for_the_rest_of_the_text(SourceNameRewriterTest.java:114)
+
+[ERROR] com.ragchatbot.openai.SourceNameRewriterTest.two_documents_sharing_a_short_name_only_lose_extension_even_when_one_has_no_underscore -- Time elapsed: 0.002 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: "TM매뉴얼 와 TM매뉴얼_B_v2 를 비교 "
+ but was: "TM매뉴얼 와 TM매뉴얼 를 비교 "
+	at com.ragchatbot.openai.SourceNameRewriterTest.two_documents_sharing_a_short_name_only_lose_extension_even_when_one_has_no_underscore(SourceNameRewriterTest.java:102)
+
+[ERROR] Failures: 
+[ERROR]   OpenAiRealStageMappingTest.file_name_held_at_the_last_delta_comes_out_only_from_the_completed_flush:129 
+Expecting actual:
+  ["근거는 "]
+to contain exactly (and in same order):
+  ["근거는 ", "TM매뉴얼"]
+but could not find the following elements:
+  ["TM매뉴얼"]
+
+[ERROR]   SourceNameRewriterTest.a_later_search_with_the_same_short_name_downgrades_to_stems_for_the_rest_of_the_text:114 
+expected: "TM매뉴얼_A_v1 그리고 TM매뉴얼_B_v2 "
+ but was: "TM매뉴얼 그리고 TM매뉴얼 "
+[ERROR]   SourceNameRewriterTest.documents_sharing_a_short_name_keep_their_stems:92 
+expected: "TM매뉴얼_A_v1 와 TM매뉴얼_B_v2, 필드클레임현황 를 보면 "
+ but was: "TM매뉴얼 와 TM매뉴얼, 필드클레임현황 를 보면 "
+[ERROR]   SourceNameRewriterTest.two_documents_sharing_a_short_name_only_lose_extension_even_when_one_has_no_underscore:102 
+expected: "TM매뉴얼 와 TM매뉴얼_B_v2 를 비교 "
+ but was: "TM매뉴얼 와 TM매뉴얼 를 비교 "
+[ERROR] Tests run: 22, Failures: 4, Errors: 0, Skipped: 0
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project backend: There are test failures.
+[ERROR] 
+[ERROR] See D:\dev\rag-chatbot\.issue\worktrees\482-test-gaps\backend\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

@@ -1,0 +1,16 @@
+pages/AdminPage.tsx:127:            <p key={i} role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
+pages/AdminPage.tsx:233:        {syncNotice && <p role="status" className="mt-2 text-xs text-ink-muted">{syncNotice}</p>}
+pages/AdminPage.tsx:439:        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={issuedTitleId}>
+pages/AdminPage.tsx:458:                  autoFocus
+pages/ChatPage.tsx:146:                  autoFocus
+pages/ChatPage.tsx:195:              <div role="status" aria-label="대화 불러오는 중" className="grid h-full place-items-center">
+pages/ChatPage.tsx:209:          <div role="alert" className="px-4 pb-1 text-center text-[13px] text-danger">{chat.error}</div>
+pages/LoginPage.test.tsx:46:    expect(text).toHaveAttribute('aria-live', 'assertive')
+pages/LoginPage.tsx:75:              <p aria-live="assertive" className="min-h-5 text-[13px] leading-5 text-danger">{error}</p>
+pages/MyPage.tsx:70:        <p role="status" className="mb-4 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-accent">{notice}</p>
+pages/MyPage.tsx:73:        <p role="alert" className="mb-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</p>
+components/ConfirmModal.tsx:26:    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+components/ConfirmModal.tsx:36:              autoFocus
+components/chat/Sidebar.tsx:92:                    aria-label={`'${c.title}' 대화 삭제`}
+components/chat/ImageLightbox.tsx:128:    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+components/chat/ImageLightbox.tsx:143:          autoFocus

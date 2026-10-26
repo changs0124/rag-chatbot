@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Changed (테스트)
+- **콜드 실행 간헐 실패 · 거짓 통과 단언 · 빠진 경계를 테스트로 메웠다(#482).** 제품 코드는 그대로다. 케이스 수 하한 백엔드 386 → 389 · 프론트 222 → 226
+  - `MessageListLazy.test.tsx` · `MessageListRender.test.tsx` : 콜드 실행에서 findBy · waitFor 기본 1초에 걸리던 것을 청크 import 대기 + 10초 타임아웃으로 바꿨다
+  - `stream.test.ts` : 프레임 중간 · 줄바꿈 사이 · 한글(3바이트) · 이모지(4바이트) 바이트 중간 · 한 바이트씩 자른 청크 4건. `stream: true` 를 빼거나 버퍼를 이어 붙이지 않으면 실패한다
+  - `AdminDocumentFlowTest` · `AdminDocumentSyncFlowTest` : `isNotNull()` → `DataIntegrityViolationException`(`rag_documents_uploaded_by_fkey`) · `DuplicateKeyException`(`uq_rag_documents_alive_file`). 제약 이름을 바꾸면 실패한다
+  - `SourceNameRewriterTest` : 짧은 이름이 겹치는 문서 중 하나가 `_` 없는 경우 · 겹치는 이름이 나중 검색에서 처음 오는 경우 2건
+  - `OpenAiRealStageMappingTest` : 마지막 delta 가 파일 이름으로 끝나 completed flush 로만 나오는 꼬리(내보낸 토큰 합 == 저장 본문 == 짧은 이름) 1건
+
 ### Fixed
 - **확장자 정규식 사본 하나로 · 스니펫 200자 절단이 이모지를 가르지 않게(#485).** `CitationMarkupFilter` 와 `SourceNameRewriter` 에 같은 값으로 두 벌 있던 확장자 정규식을 리라이터 것 하나로 모았다(동작 불변). `SnippetPicker.truncate` 는 200번째 자리가 서로게이트 쌍(BMP 밖 문자)의 앞 절반이면 199자에서 자른다. ZWJ 이모지 · 국기 같은 결합 문자열은 여전히 갈릴 수 있다 - 전에는 반쪽 글자가 DB 에 깨져 남을 수 있었다(`SnippetPickTest` 경계 케이스 2개 추가)
 

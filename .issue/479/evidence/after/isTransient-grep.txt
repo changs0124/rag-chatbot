@@ -1,0 +1,12 @@
+6:import java.net.ConnectException;
+7:import java.net.NoRouteToHostException;
+8:import java.net.UnknownHostException;
+526:			if (isTransient(e)) {
+556:			deleteDocument(sharedVectorStoreId, fileId);
+557:			if (isTransient(e)) {
+719:				if (!isTransient(e) || attempt >= DELETE_ATTEMPTS) {
+740:	private static boolean isTransient(Exception e) {
+742:				|| e instanceof HttpClientErrorException.TooManyRequests
+743:				|| (e instanceof ResourceAccessException && (e.getCause() instanceof ConnectException
+744:						|| e.getCause() instanceof UnknownHostException
+745:						|| e.getCause() instanceof NoRouteToHostException));
