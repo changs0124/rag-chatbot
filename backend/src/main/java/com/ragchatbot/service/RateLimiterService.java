@@ -74,11 +74,10 @@ public class RateLimiterService {
 	/**
 	 * 첨부 업로드 상한(#95).
 	 *
-	 * <p>{@code MultipartFile.getBytes()} 가 파일 전체를 힙에 올리므로, 26MB 요청을 병렬로 퍼부으면
-	 * Tomcat 기본 200 스레드 × 26MB ≈ 5GB 로 <b>단일 인스턴스가 OOM</b> 된다. 고아 회수는 매시 정각이고
-	 * 최소 유예 10분이라 그 사이 쌓인 파일이 {@code uploads} 볼륨을 채우는데, compose 에서
-	 * {@code uploads} 와 {@code pgdata} 가 같은 호스트 파일시스템이라 <b>디스크가 차면 Postgres 가
-	 * 먼저 멎는다.</b>
+	 * <p>{@code MultipartFile.getBytes()} 가 파일 전체를 힙에 올리지만, 크기는 그 전에 {@code getSize()} 로 보므로
+	 * 힙에 오르는 것은 한 건에 10MB 이하뿐이다(#402). 이 상한은 그 10MB 를 동시에 몇 건 올릴 수 있는지(병렬도)를 묶는다.
+	 * 디스크({@code uploads} 와 {@code pgdata} 가 같은 호스트 파일시스템이라 차면 Postgres 가 먼저 멎는다)는
+	 * 사용자별 저장 한도(#418)가 묶는다.
 	 *
 	 * <p>채팅보다 높게 잡음 - 한 메시지에 이미지를 여러 장 붙이는 것이 정상 사용이기 때문임.
 	 * <b>힙 적재 자체는 이 축으로 사라지지 않음</b>(스트리밍 저장은 원인이 다른 별건임) - 병렬도를

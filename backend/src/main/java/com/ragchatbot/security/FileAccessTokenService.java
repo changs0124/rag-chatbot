@@ -13,7 +13,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 /**
- * 파일 서빙용 서명 경로 토큰.
+ * 파일 서빙용 서명 쿼리 토큰.
  * stateless JWT 하에서 <img src>는 Authorization 헤더를 못 실으므로,
  * 파일 URL에 짧은 만료의 서명 토큰(subject=fileId, claim=userId)을 실어 검증함.
  */
