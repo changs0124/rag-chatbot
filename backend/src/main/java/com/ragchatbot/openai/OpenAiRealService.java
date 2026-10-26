@@ -528,8 +528,8 @@ public class OpenAiRealService implements OpenAiService {
 			}
 			// 파일 내용 때문에 거절됐다(손상 docx 등, #479) - 다시 시도해도 같다. 업스트림 원문은 로그에만 남긴다
 			if (e instanceof HttpClientErrorException http && isContentRejection(http.getStatusCode().value())) {
-				log.warn("OpenAI 가 파일 {} 을 거절함 {}: {}", filename, http.getStatusCode().value(),
-						http.getResponseBodyAsString());
+				log.warn("OpenAI 가 파일 {} 을 거절함 {}: {}", oneLine(filename), http.getStatusCode().value(),
+						upstreamSummary(http));
 				throw new BadRequestException(UPSTREAM_REJECTED_MESSAGE);
 			}
 			throw e;
@@ -552,8 +552,11 @@ public class OpenAiRealService implements OpenAiService {
 					.toBodilessEntity();
 		} catch (Exception e) {
 			// 연결에 실패하면 파일만 덩그러니 남음. 여기서 지우지 않으면 아무도 그 존재를 모름.
-			// 실패 응답이어도 연결이 만들어졌을 수 있다 - File 만 지우면 스토어에 File 없는 연결이 남으므로 해제부터 한다(#479)
-			deleteDocument(sharedVectorStoreId, fileId);
+			// 실패 응답이어도 연결이 만들어졌을 수 있다 - File 만 지우면 스토어에 File 없는 연결이 남으므로 해제부터 한다(#479).
+			// **해제가 끝내 실패해도 File 은 지운다** - deleteDocument(#271)와 다른 규칙이다. 연결이 실제로 안 생겼다면(대부분)
+			// 남긴 File 은 스토어 밖 고아라 동기화로도 보이지 않는다. 연결이 남았더라도 동기화가 File 404 를 MISSING 으로 잡아 끊는다
+			deleteQuietly("/vector_stores/" + sharedVectorStoreId + "/files/" + fileId, "vector_store_file", fileId);
+			deleteFileOrReport(fileId);
 			if (isTransient(e)) {
 				throw new UpstreamUnavailableException(UPSTREAM_RETRY_MESSAGE, e);
 			}
@@ -737,16 +740,51 @@ public class OpenAiRealService implements OpenAiService {
 	 * 연결 실패는 거절 · DNS 실패 · 경로 없음이다. <b>읽기 타임아웃은 넣지 않는다</b> - 요청은 닿았고 처리됐는지 모른다.
 	 * 연결 타임아웃도 넣지 않는다 - 읽기 타임아웃과 같은 예외 타입이라 메시지로만 갈린다
 	 */
-	private static boolean isTransient(Exception e) {
+	private boolean isTransient(Exception e) {
+		if (e instanceof HttpClientErrorException.TooManyRequests tooMany) {
+			// 할당량 소진도 429 로 온다 - 결제 · 한도 문제라 다시 시도해도 같다. 폴백(500 · ERROR)으로 보낸다(#479)
+			JsonNode error = readError(tooMany.getResponseBodyAsString());
+			return error == null || !"insufficient_quota".equals(error.path("code").asString(""));
+		}
 		return e instanceof HttpServerErrorException
-				|| e instanceof HttpClientErrorException.TooManyRequests
 				|| (e instanceof ResourceAccessException && (e.getCause() instanceof ConnectException
 						|| e.getCause() instanceof UnknownHostException
 						|| e.getCause() instanceof NoRouteToHostException));
 	}
 
-	/** Files 업로드가 파일 내용 때문에 거절된 응답 - 잘못된 요청 · 너무 큼 · 지원하지 않는 형식(#479) */
+	/**
+	 * Files 업로드가 파일 내용 때문에 거절된 응답 - 너무 큼 · 지원하지 않는 형식(#479). <b>400 은 넣지 않는다</b> - 우리 요청
+	 * 형식이 틀린 결함과 갈리지 않아, 고정 문구로 덮으면 고칠 단서가 사라진다(폴백 500 · ERROR)
+	 */
 	private static boolean isContentRejection(int status) {
-		return status == 400 || status == 413 || status == 415;
+		return status == 413 || status == 415;
+	}
+
+	/** 오류 응답 본문의 {@code error} 객체. JSON 이 아니거나 없으면 null */
+	private JsonNode readError(String body) {
+		try {
+			JsonNode error = mapper.readTree(body).get("error");
+			return error != null && error.isObject() ? error : null;
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
+	/**
+	 * 업스트림 오류 본문을 로그 한 줄로 줄인다(#479). JSON 이면 {@code error.code} · {@code error.message} 만, 아니면 앞 300자.
+	 * 본문은 바깥에서 온 값이라 줄바꿈을 그대로 두면 로그 줄을 위조할 수 있다
+	 */
+	private String upstreamSummary(HttpClientErrorException e) {
+		String body = e.getResponseBodyAsString();
+		JsonNode error = readError(body);
+		String text = error != null
+				? "code=" + error.path("code").asString("") + " message=" + error.path("message").asString("")
+				: body.length() > 300 ? body.substring(0, 300) : body;
+		return oneLine(text);
+	}
+
+	/** 로그에 싣는 바깥 값의 CR · LF 를 공백으로 */
+	private static String oneLine(String s) {
+		return s == null ? null : s.replace('\r', ' ').replace('\n', ' ');
 	}
 }
