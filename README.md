@@ -85,7 +85,7 @@ Maven Central 에서 내려받아, 그 요청이 거절되면 이미지 빌드�
 | `ALLOWED_ORIGINS` | CORS 허용 출처. 기본값은 `http://localhost:5173` 하나뿐이다 |
 | `VITE_API_BASE_URL` | 프론트가 부를 백엔드 주소. 빌드 시점에 번들에 박힌다 |
 
-**목업 모드**(OpenAI 키 불필요)는 `APP_MODE=mock` · `JWT_SECRET` · `DB_*` 만 있으면 기동된다. 로그인하려면 `ADMIN_EMAILS` 도 준다 — 가입 화면이 없어 기동 때 만들어지는 계정(임시 비밀번호는 로그에 찍힌다)이 첫 계정의 유일한 출처다.
+**목업 모드**(OpenAI 키 불필요)는 `APP_MODE=mock` · `JWT_SECRET` · `DB_*` 만 있으면 기동된다. 로그인하려면 `ADMIN_EMAILS` 도 준다(위 표 — 첫 계정은 여기서만 생긴다).
 **실 연동 모드**는 여기에 `APP_MODE=live` · `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` · `ALLOWED_EMAIL_DOMAINS` 를 더한다.
 
 백엔드 — 둘 중 하나로 띄운다 :

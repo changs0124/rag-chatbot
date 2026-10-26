@@ -5,7 +5,7 @@
 ## [Unreleased]
 
 ### Docs
-- **코드와 어긋난 문서 · 주석 문장을 코드에 맞췄다(#486).** 동작 변경 없음 — 문서 · 주석 · yml 주석 · `.env.example` 주석만 고쳤다. 발급 계정 역할(`ADMIN_EMAILS` 면 admin) · 역할 조회는 관리자 경로의 `AdminAccessGuard` 가 따로 한다 · RAG 문서 삭제는 soft delete 먼저(#98) · 실 연동 필수에 `ALLOWED_EMAIL_DOMAINS`, 목업 로그인에 `ADMIN_EMAILS` · 첨부 검증 순서에 사용자별 한도(#418) · permitAll 은 `GET /api/files/**` 만 · `DOC_FIGURES_DIR` 를 비웠을 때 mock 은 견본 · 동기화 `total` 의 뜻 · 업로드 상한 주석의 26MB OOM 계산을 10MB(#402) · #418 로 · 「서명 경로 토큰」→「서명 쿼리 토큰」 · overview 「알려진 제약」에 로그인 상한의 계정 잠금 지렛대를 되살렸다. 문서끼리의 끊긴 문장 · 용어 · 포인터와 api · features · live-integration · design-system 헤더 버전 · 수정일도 함께 고쳤다. `V5__user_role.sql` 의 없는 문서 참조는 Flyway 체크섬 때문에 그대로 둔다
+- **코드와 어긋난 문서 · 주석 문장을 코드에 맞췄다(#486).** 동작 변경 없음 — 문서 · 주석 · yml 주석 · `.env.example` 주석만 고쳤다. 발급 계정 역할(`ADMIN_EMAILS` 면 admin) · 역할 조회는 관리자 경로의 `AdminAccessGuard` 가 따로 한다 · RAG 문서 삭제는 soft delete 먼저(#98) · 실 연동 필수에 `ALLOWED_EMAIL_DOMAINS`, 목업 로그인에 `ADMIN_EMAILS` · 첨부 검증 순서에 사용자별 한도(#418) · permitAll 은 `GET /api/files/**` 만 · `DOC_FIGURES_DIR` 를 비웠을 때 mock 은 견본 · 동기화 `total` 의 뜻 · 업로드 상한 주석의 26MB OOM 계산을 10MB(#402) · #418 로 · 「서명 경로 토큰」→「서명 쿼리 토큰」 · overview 「알려진 제약」에 로그인 상한의 계정 잠금 지렛대를 되살렸다. 문서끼리의 끊긴 문장 · 용어 · 포인터와 api · features · live-integration · design-system 헤더 버전 · 수정일도 함께 고쳤다. `V5__user_role.sql` 의 없는 문서 참조는 Flyway 체크섬 때문에 그대로 둔다. #451 항목의 「모델명 `gpt-6-sol` 은 README · `.env.example` 에만」은 `live-integration.md` 의 측정 · 관측 기록(당시 모델명)을 뺀 말이다
 
 ## [2026-10-26]
 
@@ -79,7 +79,7 @@
   반복(SSE 순서 · 명단이 비면 전원 강등 · OpenAiService/Real 무자료 표시)과 이력(`pom.xml` Phase · Boot 3.5.16, `JwtService` 라이브러리 버전, 테스트 「스파이크 · 이전에는」)을 줄였다.
   프론트는 `Markdown.tsx` JSDoc 을 컴포넌트로, `ChatPage` 뷰포트 설명을 해당 effect 로, `useChat.run` 설명을 `useCallback(` 밖으로 옮기고 `abortActiveStream` 의 인과 문구를 정정했다.
   `Dockerfile` 은 없는 「다이제스트 고정」 단락 대신 `backend.md` 「배포」 #416 단락을, `check-all.sh` 는 실제 잡 ID(`deps-backend` · `deps-frontend`)를 가리킨다
-- **같은 사실의 반복 · 갈린 정본 문장 · 낡을 수치를 정리했다(#451).** 모델명 `gpt-6-sol` 은 README 기술 스택 표와 `backend/.env.example` 에만 남기고(`live-integration.md` 의 측정 · 관측 기록은 당시 모델명 그대로) 나머지는 `OPENAI_MODEL` 기본값을 가리킨다. 기본값 정본 문장을 「기본값 = `application.yml`, 의미 · 증상 = `.env.example`」로 통일했고, README 문서 표(INDEX 와 겹침)와 `USER_MAX_NAME_CHARS(50)` 반복, design-system 로고 표의 죽은 `#3F4444` 행 · 절 번호 7-1 결번, frontend 번들 크기 시점 표기 · CSP 이미지 출처 `data:` 누락을 고쳤다.
+- **같은 사실의 반복 · 갈린 정본 문장 · 낡을 수치를 정리했다(#451).** 모델명 `gpt-6-sol` 은 README 기술 스택 표와 `backend/.env.example` 에만 남기고 나머지는 `OPENAI_MODEL` 기본값을 가리킨다. 기본값 정본 문장을 「기본값 = `application.yml`, 의미 · 증상 = `.env.example`」로 통일했고, README 문서 표(INDEX 와 겹침)와 `USER_MAX_NAME_CHARS(50)` 반복, design-system 로고 표의 죽은 `#3F4444` 행 · 절 번호 7-1 결번, frontend 번들 크기 시점 표기 · CSP 이미지 출처 `data:` 누락을 고쳤다.
 - **코드와 어긋난 문서 서술 넷을 바로잡았다(#449).** `api.md` 409 표(공통 에러표 · HTTP 표)에 「이미 보낸 첨부 삭제 · `ifEmpty` 인데 메시지 있음」을 더하고 v1.8 로 올렸다 ·
   #447 배포 순서 불변식(백엔드 먼저, 롤백은 프론트 먼저)을 `api.md` API-DELETE-001 · `backend.md` 「배포」로 옮겼다 · 토큰 재발급 서술을 #390 구조
   (`adoptRefreshedToken` 은 `authFetch` 한 곳, 직접 `fetch` 는 `ImageLightbox` 다운로드뿐)로 `frontend.md` · `features.md` 에 맞췄다.

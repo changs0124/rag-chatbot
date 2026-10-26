@@ -27,7 +27,7 @@ import com.ragchatbot.dto.AdminDtos.SyncResponse;
 /**
  * RAG 문서 관리(FEAT-ADMIN-002). 업로드 · 목록 · 삭제 · 스토어 동기화(#193).
  *
- * <p>권한 검사는 컨트롤러가 본문 첫 줄에서 {@link AdminAccessGuard} 로 하므로 여기서는 다루지 않는다.
+ * <p>권한 검사는 컨트롤러가 본문 앞부분에서 {@link AdminAccessGuard} 로 하므로 여기서는 다루지 않는다.
  *
  * <p><b>허용 형식이 채팅 첨부와 반대다.</b> 채팅 첨부(`FileService`)는 비전 입력용이라 이미지만
  * 받고, 여기는 색인용이라 문서만 받는다. 두 목록이 서로 새면 안 된다.

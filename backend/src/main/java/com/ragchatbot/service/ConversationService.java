@@ -30,7 +30,7 @@ import com.ragchatbot.dto.ConversationDtos.MessageResponse;
 import com.ragchatbot.dto.FileDtos.AttachmentResponse;
 
 /**
- * 대화 CRUD. 모든 접근에 소유자 조건(user_id)을 검(P-3) - 단건은 requireOwned 와 잠그는 변형(requireOwnedLocked ·
+ * 대화 CRUD. 모든 접근에 소유자 조건(user_id)을 건다(P-3) - 단건은 requireOwned 와 잠그는 변형(requireOwnedLocked ·
  * lockByIdAndUser), 목록은 user_id 조건 질의. 남의 것은 404로 은닉.
  */
 @Service
