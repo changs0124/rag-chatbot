@@ -1,0 +1,18 @@
+## D18 낡을 수치
+docs/02_architecture/backend.md:515:`docker save` → `scp` → `docker load` 로 서버에 넣는다. 압축 후 90MB 남짓이고 Lightsail 월 전송량(4TB)
+docs/02_architecture/frontend.md:172:- **`Markdown` 은 `React.lazy` 로 지연 로딩한다(#417).** react-markdown · remark 묶음이 따로 청크(gzip 약 54KB)로 빠져 로그인 화면의 첫 JS 는 gzip 147.38KB
+docs/04_tasks/backlog.md:12:- [ ] **`postgresql` 드라이버 버전 하한을 주장하는 것이 없다** — #48 에서 수동 고정을 뺐다(현재 BOM 해석값 42.7.13 이라 노출 없음). BOM 이 낮은 버전
+
+## D19 live-integration 실측표 머리
+227:**지시문 줄별 실측** — `RAG_INSTRUCTIONS` 의 줄마다 한 번 잰 값이다(줄이 막는 증상은 `OpenAiRealService` 머리 주석에 이유만 남겼다). 지시문을 한 글자라도 바꾸면 아래
+228:「배터리」는 31문항 × 2 회귀 세트다.
+240:| #469 사용자가 다른 값을 주장해도 앞선 답이 기록과 같으면 사과하지 않는다 · 이력의 앞선 답에 인용 표기가 없는 것은 저장 때 지운 탓 | 틀린 최종원인 · 수치�
+
+## D22 backend.md 시점 측정표
+269:운영 실측(2026-10-15 15:15 KST, Lightsail 2 vCPU · 4GB · app 1GiB · Hikari 5, 공개 API 경유, 상한 16) :
+273:| 8 | 8 / 0 | 7.2 / 8.4초 | 207MiB |
+274:| 12 | 12 / 0 | 6.5 / 8.7초 | 212MiB |
+275:| 16 | 16 / 0 | 5.6 / 9.7초 | 223MiB |
+276:| 17 | 16 / 1 | 6.6 / 7.9초 | 224MiB |
+279:짧은 저장에만 잡힌다). 측정 전 178MiB 대비 늘어난 몫이 50MiB 남짓이라, 한도를 정하는 것은 메모리가 아니라 모델 호출 비용과 OpenAI 계정 한도다.
+541:**메모리 상한을 셋 다 걸어 두었다(#127).** `app` 1g · `db` 512m · `cloudflared` 64m(#243)이고, 기동 직후 실측은 `app` 151MiB · `db` 27MiB 다

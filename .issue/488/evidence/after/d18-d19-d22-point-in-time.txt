@@ -1,0 +1,10 @@
+## D18 낡을 수치
+docs/02_architecture/backend.md:495:`docker save` → `scp` → `docker load` 로 서버에 넣는다. 압축 후 90MB 남짓(10-06 GCP 시절 실측, CHANGELOG)이고 Lightsail 월 전송량(4TB)
+docs/04_tasks/backlog.md:12:- [ ] **`postgresql` 드라이버 버전 하한을 주장하는 것이 없다** — #48 에서 수동 고정을 뺐다(#48 시점 BOM 해석값 42.7.13 이라 노출 없음 — CHANGELOG 10-06
+
+## D19 live-integration 실측표 머리
+228:「배터리」는 31문항 회귀 세트다. 반복 횟수는 측정마다 달라(한 번 · × 2 · × 4) 각 행의 회차는 CHANGELOG 의 그 이슈 항목에 있다.
+240:| #469 사용자가 다른 값을 주장해도 앞선 답이 기록과 같으면 사과하지 않는다 · 이력의 앞선 답에 인용 표기가 없는 것은 저장 때 지운 탓 | 틀린 최종원인 · 수치�
+
+## D22 backend.md 시점 측정표
+521:**메모리 상한을 셋 다 걸어 두었다(#127).** `app` 1g · `db` 512m · `cloudflared` 64m(#243)이고, 기동 직후 실측은 `app` 151MiB · `db` 27MiB 다

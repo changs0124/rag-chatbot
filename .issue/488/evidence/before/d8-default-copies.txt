@@ -1,0 +1,28 @@
+## D8 TTL 15분
+docs/01_specs/api.md:47:쿼리 문자열의 서명 토큰으로 검증한다 (TTL 기본 15분 · `FILE_ACCESS_TOKEN_TTL_MINUTES`, 조회 시점마다 재발급).
+docs/01_specs/api.md:363:| 토큰 TTL | 기본 15분(`FILE_ACCESS_TOKEN_TTL_MINUTES`) |
+docs/01_specs/features.md:138:| 서명 URL 이 만료됨 (TTL 기본 15분 · `FILE_ACCESS_TOKEN_TTL_MINUTES`) | 고치지 않는다. 백로그 「파일 URL 수명」과 **같은 원인**이라 함�
+docs/01_specs/features.md:229:  그림은 프론트가 Bearer 로 `fetch` 해 `Blob` objectURL 로 그린다 — 엔드포인트 하나로 끝나고 15분 만료 문제도 없다.
+docs/02_architecture/backend.md:113:  audience 를 나누지 않으면 짧은 수명의 파일 토큰이 인증 Bearer 로 통용된다. TTL 기본 15분(`FILE_ACCESS_TOKEN_TTL_MINUTES`), `subject=fil
+docs/02_architecture/backend.md:116:  첨부 URL 은 **최대 15분** 더 열려 있다. 대화를 한 번 조회하면 그 대화의 첨부 URL 이 전부 응답에
+docs/02_architecture/backend.md:123:  TTL 이 15분이라 창이 짧고, 정상 사용자에게 눈에 보이는 회귀를 만들지 않는 쪽을 택했다.
+docs/02_architecture/overview.md:151:- **첨부 서빙 토큰은 비밀번호 변경으로 무효화되지 않는다.** 최대 15분(TTL) 동안 이미 발급된
+docs/04_tasks/backlog.md:34:| 파일 URL 수명 | 서명 토큰 TTL 15분 | 페이지를 오래 열어둔 뒤 새로 그려지는 이미지가 깨질 수 있음 | TTL 연장 vs 만료 시 재발급<br
+
+## D8 토큰 120분 · 12시간 · 30분
+docs/01_specs/api.md:35:- 만료 : 기본 120분 (`JWT_EXPIRATION_MINUTES`)
+docs/01_specs/api.md:37:- 절대 수명 : 최초 인증(로그인 · 비밀번호 변경)부터 기본 12시간(`JWT_MAX_SESSION_HOURS`, #403)이 지나면 재발급하지 않는다.
+docs/01_specs/features.md:500:| `JWT_REFRESH_THRESHOLD_MINUTES` | int | N | 기본 30. **`0` 이면 기능을 끈다**(종전 고정 만료로 되돌리는 경로) |
+docs/01_specs/features.md:501:| `JWT_MAX_SESSION_HOURS` | int | N | 기본 12. 최초 인증(로그인 · 비밀번호 변경)부터 이만큼 지나면 재발급하지 않는다(#403) |
+docs/01_specs/features.md:518:| 요청 없이 토큰 수명이 다함 | 그대로 만료된다(수명 `JWT_EXPIRATION_MINUTES` 기본 120분. 마지막 요청 시점에 따라 최소 30분 · 최대 1
+docs/02_architecture/backend.md:127:  임계는 `JWT_REFRESH_THRESHOLD_MINUTES`(기본 30분)이고 **0 이면 기능이 꺼져** 종전 고정 만료로 돌아간다.
+docs/02_architecture/backend.md:128:  재발급본은 처음 인증 시각(`auth_time`)을 그대로 옮기고, 그로부터 `JWT_MAX_SESSION_HOURS`(기본 12)가 지나면 재발급하지 않는다(#
+
+## D8 입력 상한 (features)
+56:| message | string | N | 첨부가 없으면 필수. **4,000자까지**(#371) — 입력창이 `maxLength` 로 더 받지 않고, 넘긴 요청은 서버가 모델 호출 전에 400 으로 거절�
+57:| attachments | File[] | N | **5장까지**(#401) — 넘친 파일은 올리지 않고 「첨부는 한 번에 5장까지」를 알린다(카드를 지우거나 보내면 걷힘). 넘긴 요청은
+548:| `name` (계정 발급 폼 · 마이페이지 이름) | string | Y | **50자까지**(#413, trim 뒤 코드 포인트) — 입력창이 `maxLength` 로 더 받지 않고, 넘긴 요청은 서버�
+
+## D8 전역 동시 스트림 16
+docs/02_architecture/backend.md:267:**전역 상한은 16 이다(#278).** 스트림 하나는 대부분의 시간을 모델 응답을 기다리며 보내 CPU · 메모리를 거의 쓰지 않는다.
+docs/02_architecture/overview.md:140:  권한이 함께 잡힌다. 전역 상한(기본 16, [backend](./backend.md) 「유량 제어」) 중 한 자리가 그만큼 줄어든다.

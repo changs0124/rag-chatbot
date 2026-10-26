@@ -1,0 +1,17 @@
+## wc -l
+   189 docs/CONVENTIONS.md
+    27 docs/FEEDBACK.md
+    57 docs/INDEX.md
+   509 docs/01_specs/api.md
+   308 docs/01_specs/erd.md
+   621 docs/01_specs/features.md
+   327 docs/01_specs/live-integration.md
+   145 docs/01_specs/requirements.md
+   651 docs/02_architecture/backend.md
+   391 docs/02_architecture/design-system.md
+   278 docs/02_architecture/frontend.md
+   165 docs/02_architecture/overview.md
+    34 docs/04_tasks/backlog.md
+    32 docs/04_tasks/current-sprint.md
+  3054 docs/06_changelog/CHANGELOG.md
+  6788 total
