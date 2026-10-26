@@ -37,6 +37,7 @@
   - 테스트 : `AdminDocumentSizeCheckTest`(getBytes 호출 안 함 확인) · `ChatPartialSaveFailureLogTest`(저장 실패가 WARN 에 남음). **하한 백엔드 364 → 366**
 
 ### Docs
+- **`backend/pom.xml` Spring Boot 버전 주석을 무엇에서 무엇으로 올렸는지 읽히게 다듬었다(#466).** 「3.5 는 … 끝나 올렸다」 → 「3.5 의 … 끝나 4.1 로 올렸다」. 주석만, 빌드 결과 같음
 - **코드 주석을 정리했다(#452).** 동작 · 테스트 수는 그대로이고 주석과 문서만 바뀐다. `RAG_INSTRUCTIONS` 머리 주석(약 60줄)의
   줄별 실측 수치를 `live-integration.md` 3-2 「지시문 줄별 실측」 표로 옮기고 주석에는 줄마다 이유 · 이슈 번호만 남겼다(지시문 문자열은 그대로).
   낡은 주석(Mock 「리소스 정리 기록」 · `trackedKeys` 「운영 점검용」 · `findByConversation` 호출처 · `AdminDtos` · 409 의미 · `FileService` 검증 순서의 #418)을 바로잡고,
