@@ -1,0 +1,12 @@
+# git rev-parse HEAD
+c526bb786eda574296c35c26d1b5be5c8a39c336
+
+# grep 문서·주석의 「서버가 답을 끝까지」 · 429 문장
+docs/02_architecture/frontend.md:132:    - 저장됨으로 판정한 뒤 곧바로 다시 물으면, 서버가 끊김을 아직 알아채지 못했을 때만 429(사용자당 동시 스트림 1) — 알아채는 것은
+
+# ChatService 끊김 처리(sendQuietly · ClientGone · savePartial 빈 텍스트 생략)
+268:		} catch (ClientGoneException gone) {
+318:		if (text.isEmpty() && "complete".equals(status)) {
+354:			throw new ClientGoneException(e);
+375:	static class ClientGoneException extends RuntimeException {
+376:		ClientGoneException(Throwable cause) {

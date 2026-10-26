@@ -1,0 +1,32 @@
+모델 대역 : 1500ms 대기 → stage SEARCHING → 200ms → stage GENERATING → 토큰 40개(각 4자 'tNN|', 100ms 간격). 완주 시 답 길이 160자
+열 : 시나리오 | 끊기 | 회차 | 끊기 전 받은 것 | 질문 행 | 답 행(status/stopped/timed_out/길이) | 서버가 시도한 stage·token 전송 수 | 모델 대역 결과 | 끊은 뒤 대역 종료까지 ms | (a) 50ms 뒤 재전송 HTTP
+(a) | FIN | 1 | 보내자마자 끊음(응답 읽지 않음) | 있음 | 없음 | stage 1 · token 0 | ClientGoneException | 1549 | 429
+(a) | FIN | 2 | 보내자마자 끊음(응답 읽지 않음) | 있음 | 없음 | stage 0 · token 0 | null | -1 | 200
+(a) | FIN | 3 | 보내자마자 끊음(응답 읽지 않음) | 있음 | 없음 | stage 0 · token 0 | null | -1 | 200
+(a) | FIN | 4 | 보내자마자 끊음(응답 읽지 않음) | 있음 | 없음 | stage 0 · token 0 | null | -1 | 200
+(a) | FIN | 5 | 보내자마자 끊음(응답 읽지 않음) | 있음 | 없음 | stage 0 · token 0 | null | -1 | 200
+(a) | RST | 1 | 보내자마자 끊음(응답 읽지 않음) | 없음 | 없음 | stage 0 · token 0 | null | -1 | 200
+(a) | RST | 2 | 보내자마자 끊음(응답 읽지 않음) | 없음 | 없음 | stage 0 · token 0 | null | -1 | 200
+(a) | RST | 3 | 보내자마자 끊음(응답 읽지 않음) | 없음 | 없음 | stage 0 · token 0 | null | -1 | 200
+(a) | RST | 4 | 보내자마자 끊음(응답 읽지 않음) | 없음 | 없음 | stage 0 · token 0 | null | -1 | 200
+(a) | RST | 5 | 보내자마자 끊음(응답 읽지 않음) | 없음 | 없음 | stage 0 · token 0 | null | -1 | 200
+(b) | FIN | 1 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 1 · token 0 | ClientGoneException | 1501 | -
+(b) | FIN | 2 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 1 · token 0 | ClientGoneException | 1504 | -
+(b) | FIN | 3 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 1 · token 0 | ClientGoneException | 1514 | -
+(b) | FIN | 4 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 1 · token 0 | ClientGoneException | 1516 | -
+(b) | FIN | 5 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 1 · token 0 | ClientGoneException | 1506 | -
+(b) | RST | 1 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 0 · token 0 | null | -1 | -
+(b) | RST | 2 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 0 · token 0 | null | -1 | -
+(b) | RST | 3 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 0 · token 0 | null | -1 | -
+(b) | RST | 4 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 0 · token 0 | null | -1 | -
+(b) | RST | 5 | 200=true meta=1 stage=0 token=0 | 있음 | 없음 | stage 0 · token 0 | null | -1 | -
+(c) | FIN | 1 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/16자 | stage 2 · token 5 | ClientGoneException | 217 | -
+(c) | FIN | 2 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/16자 | stage 2 · token 5 | ClientGoneException | 218 | -
+(c) | FIN | 3 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/16자 | stage 2 · token 5 | ClientGoneException | 218 | -
+(c) | FIN | 4 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/16자 | stage 2 · token 5 | ClientGoneException | 220 | -
+(c) | FIN | 5 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/16자 | stage 2 · token 5 | ClientGoneException | 218 | -
+(c) | RST | 1 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/12자 | stage 2 · token 4 | ClientGoneException | 109 | -
+(c) | RST | 2 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/12자 | stage 2 · token 4 | ClientGoneException | 109 | -
+(c) | RST | 3 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/12자 | stage 2 · token 4 | ClientGoneException | 107 | -
+(c) | RST | 4 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/12자 | stage 2 · token 4 | ClientGoneException | 108 | -
+(c) | RST | 5 | 200=true meta=1 stage=3 token=3 | 있음 | complete/true/false/12자 | stage 2 · token 4 | ClientGoneException | 108 | -

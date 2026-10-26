@@ -156,8 +156,8 @@ public class ChatService {
 	 * 사용자가 실제로 화면에서 본 내용이라 포함함.
 	 *
 	 * <p><b>단, 타임아웃으로 끊긴 것은 제외함</b>(#84). {@code timedOut && stopped} 는 서버가 스트림을
-	 * 닫아 문장이 잘린 경우인데, 사용자는 그것을 본 적도 받아들인 적도 없음 - 화면에는 그 시점까지의
-	 * 토큰만 떠 있고 「잘렸다」는 표시조차 없음. 포함하면 모델이 자기가 쓰다 만 문장을 대화의
+	 * 닫아 문장이 잘린 경우인데, 사용자는 그것을 받아들인 적이 없음 - 스트림 중에는 종료 이벤트 없는 끊김이라
+	 * 프론트가 오류로 띄우고, 새로고침 뒤에는 표시 없이 잘린 채 보임. 포함하면 모델이 자기가 쓰다 만 문장을 대화의
 	 * 확정된 맥락으로 읽음. {@code timedOut && !stopped}(갈래 ②)는 전문이 저장됐으므로 포함하고,
 	 * 갈래 ③은 {@code error} 라 위 규칙에 이미 걸림.
 	 */
@@ -245,7 +245,7 @@ public class ChatService {
 					new ChatInput(prepared.message(), prepared.refs(), prepared.history()),
 					token -> {
 						firstTokenSeen[0] = true;
-						// 보낸 뒤에 담음 - 중단 시 저장분이 "화면에 닿은 만큼"과 같아짐(전송 실패한 토큰은 남기지 않음)
+						// 보낸 뒤에 담음 - 중단 시 저장분이 "전송에 성공한 만큼"과 같아짐(전송 실패한 토큰은 남기지 않음)
 						sendQuietly(emitter, "token", Map.of("delta", token));
 						buffer.append(token);
 					}, onStage);

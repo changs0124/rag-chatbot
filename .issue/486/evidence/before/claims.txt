@@ -1,0 +1,262 @@
+Using Node v24.19.0
+기준 : c526bb7 (main c526bb7)
+
+=== S1 문서 : 발급 계정은 일반 사용자 / 코드 : ADMIN_EMAILS 면 admin
+  [docs/01_specs/api.md:499]
+    도메인 검사가 중복 검사보다 먼저이고 발급된 계정은 일반 사용자다 — 순서 · 권한 규칙은 `features.md` FEAT-AUTH-001.
+  [backend/src/main/java/com/ragchatbot/service/AdminUserService.java:66]
+    		String role = emailDomainPolicy.isAdminEmail(email) ? "admin" : "user";
+
+=== S2 문서 : 같은 조회에서 역할도 읽어 추가 쿼리 없음 / 코드 : 필터는 password_changed_at 만, 역할은 AdminAccessGuard 가 따로 findById
+  [docs/02_architecture/backend.md:132,133]
+    - **역할(`users.role`)은 JWT 에 담지 않는다**(FEAT-ADMIN-001). 담으면 강등이 토큰 만료까지 반영되지
+      않는다. 필터가 이미 요청마다 사용자 행을 읽고 있으므로 같은 조회에서 함께 읽는다 — 추가 쿼리가 없다.
+  [docs/01_specs/features.md:258,259]
+    **역할을 JWT에 담지 않는다.** 담으면 강등이 토큰 만료까지 반영되지 않는다. 인증 필터가 이미 요청마다
+    사용자 행을 읽으므로(비밀번호 변경 시각 대조) 같은 조회에서 역할을 함께 읽는다 — 추가 쿼리가 없다.
+  [backend/src/main/java/com/ragchatbot/security/JwtAuthenticationFilter.java:84]
+    		OffsetDateTime changedAt = userRepository.findPasswordChangedAt(userId);
+  [backend/src/main/java/com/ragchatbot/service/AdminAccessGuard.java:29,31]
+    	public void requireAdmin(UUID userId) {
+    		boolean admin = userRepository.findById(userId)
+    				.map(u -> "admin".equals(u.role()))
+
+=== S3 문서 : 연결 해제 → 파일 삭제 → deleted_at / 코드 : softDelete 먼저(#98)
+  [docs/01_specs/features.md:325,329]
+    **처리 흐름 — 삭제:**
+    
+    1. 관리자 권한 확인
+    2. Vector Store 연결 해제 → OpenAI 파일 삭제
+    3. `deleted_at` 을 채운다 (soft delete)
+  [backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java:204,215]
+    		// **DB 를 먼저 지운다**(#98). 업로드와 반대로 보일 수 있으나 같은 원칙이다 -
+    		// **던질 수 있는 쪽을 앞에 둬, 실패하면 아무것도 바뀌지 않게 한다.**
+    		//
+    		// 업로드에서 던질 수 있는 것은 OpenAI 단계이므로 그쪽이 앞이고, 삭제에서 던질 수 있는 것은
+    		// DB 쪽뿐이다 - deleteDocument 는 실패를 거짓으로 돌려받을 뿐 **던지지 않는다.**
+    		// softDelete 가 던지면 아무것도 바뀌지 않아 관리자가 다시 시도할 수 있다.
+    		int deleted = documentRepository.softDelete(documentId, OffsetDateTime.now());
+    		if (deleted == 0) {
+    			// 조회와 삭제 사이에 누가 먼저 지웠음. 결과는 같으므로 오류로 올리지 않음
+    			log.warn("rag 문서 {} 가 이미 삭제돼 있었음", documentId);
+    		}
+    
+
+=== S4 · D3 문서 : 실 연동 필수에 ALLOWED_EMAIL_DOMAINS 없음 · 목업은 JWT_SECRET · DB_* 만 / 코드 : live 에서 비면 기동 실패 · ADMIN_EMAILS 가 첫 계정의 유일한 출처
+  [backend/.env.example:4,7]
+    # ── 목업으로 띄우려면 ─────────────────────────────────────────
+    #   APP_MODE=mock · JWT_SECRET · DB_* 만 있으면 됨 (OpenAI 값 불필요)
+    # ── 실 연동으로 띄우려면 ──────────────────────────────────────
+    #   위에 더해 APP_MODE=live · OPENAI_API_KEY · OPENAI_VECTOR_STORE_ID
+  [README.md:88,89]
+    **목업 모드**(OpenAI 키 불필요)는 `APP_MODE=mock` · `JWT_SECRET` · `DB_*` 만 있으면 된다.
+    **실 연동 모드**는 여기에 `APP_MODE=live` · `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` · `ALLOWED_EMAIL_DOMAINS` 를 더한다.
+  [backend/src/main/java/com/ragchatbot/config/EmailDomainPolicy.java:33,36]
+    		if ("live".equals(AppModeGuard.normalize(mode)) && this.allowedDomains.isEmpty()) {
+    			throw new IllegalStateException(
+    					"APP_MODE=live 인데 ALLOWED_EMAIL_DOMAINS 가 비어 있음. 계정 허용 도메인을 env로 주입할 것");
+    		}
+  [backend/.env.example:51,56]
+    # 스스로 가입하는 경로가 없으므로 이것이 첫 관리자가 태어나는 유일한 길임.
+    # 이미 계정이 있으면 비밀번호를 건드리지 않음 - 재기동이 계정 잠금이 되면 안 되기 때문.
+    #
+    # 비워 두면 관리자가 0명이고 기동은 정상이지만, **아무도 계정을 만들 수 없음**
+    ADMIN_EMAILS=
+    
+
+=== S7 문서 : MIME → 용량 → 매직바이트 / 코드 : MIME → 10MB → 사용자별 한도(#418) → 매직바이트
+  [docs/02_architecture/backend.md:327]
+    - 업로드 검증 순서 : MIME 허용목록 → 타입별 용량 → **매직바이트**. webp 는 RIFF 뒤 오프셋 8의 `WEBP` 마커까지 본다.
+  [backend/src/main/java/com/ragchatbot/service/FileService.java:95,103]
+    		if (file.getSize() > MAX_SIZE) {
+    			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (MAX_SIZE / MB) + "MB)");
+    		}
+    		// 사용자별 저장 한도(#418) - 디스크에 쓰기 전, 그리고 #402 와 같이 **힙에 올리기 전에** 본다. 분당 · 장수 상한은
+    		// 쌓이는 속도만 줄여, 한 사용자가 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다.
+    		// 확인과 쓰기 사이에 잠금이 없어 같은 사용자의 동시 업로드는 한도를 조금 넘길 수 있다 - 그 폭은 분당 상한 × 10MB 로 묶인다
+    		if (fileStorage.usedBytes(userId) + file.getSize() > quotaMb * MB) {
+    			throw new BadRequestException(
+    					"첨부 저장 한도 초과(사용자당 " + quotaMb + "MB) - 오래된 대화를 지우면 다시 올릴 수 있음");
+
+=== S8 문서 : /api/files/** 는 permitAll / 코드 : GET 만
+  [docs/02_architecture/backend.md:402]
+    `/api/files/**` 는 permitAll 이라 파일 토큰의 서명이 그 경로의 유일한 경계라는 점이 특히 그렇다.
+  [backend/src/main/java/com/ragchatbot/config/SecurityConfig.java:44]
+    						.requestMatchers(HttpMethod.GET, "/api/files/**").permitAll()
+
+=== S9 문서 : overview 「알려진 제약」에 로그인 상한 지렛대 없음 / 코드 Javadoc
+  [backend/src/main/java/com/ragchatbot/service/RateLimiterService.java:114,116]
+    	 * <p>키가 정규화된 이메일이라 <b>대상 계정을 보호</b>하지만, 같은 이유로 <b>남의 계정을 잠글 지렛대</b>도 됨 -
+    	 * 알려진 주소로 일부러 틀리면 그 주인이 그 분 동안 429를 받음. 출발지(IP) 기준이 아니라 여러 계정을
+    	 * 훑는 살포형 시도도 걸리지 않음. 둘 다 단일 인스턴스 전제에서 감수한 한계임.
+
+=== S10 문서 : 지시문 줄 목록에 #469 · #181 없음 · 정본 포인터 없음
+    backend.md #469 : 0건 · #181 : 0건 · live-integration 3-2 포인터 : 0건
+  [docs/02_architecture/backend.md:190]
+    - **인용 표기는 문장 끝에만 오도록 지시한다**(#372). 표기를 문서 이름 자리에 쓰면 필터가 지운 자리가 빈칸이 되어
+
+=== S11 문서 : 비우면 그림 표식이 전부 404 / 코드 : mock 이면 classpath 견본
+  [backend/.env.example:77]
+    # 비우면 답변의 그림 표식이 전부 404 라 그림 없이 텍스트만 보임(기동은 정상). compose 는 /data/doc-figures 로 덮어씀
+  [backend/src/main/java/com/ragchatbot/service/DocFigureService.java:51,62]
+    		if (root != null) {
+    			Path file = root.resolve(key + ".png");
+    			if (Files.isRegularFile(file)) {
+    				return new FileSystemResource(file);
+    			}
+    		} else if (mock) {
+    			Resource sample = new ClassPathResource(MOCK_ROOT + key + ".png");
+    			if (sample.exists()) {
+    				return sample;
+    			}
+    		}
+    		throw new NotFoundException("그림 없음");
+
+=== S12 주석 : total 은 스토어의 파일 수 · 다시 불러도 결과가 같다 / 코드 : files.size() - orphans
+  [frontend/src/lib/endpoints.ts:44]
+    /** 스토어와 동기화(#193). added 는 새로 가져온 수, total 은 스토어의 파일 수 — 다시 불러도 결과가 같다 */
+  [backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java:260]
+    		return new SyncResponse(added, files.size() - orphans);
+
+=== C1 주석 : getBytes 가 힙에 올려 200 × 26MB ≈ 5GB OOM / 코드 : getSize() 로 10MB 선검사(#402) · 사용자별 한도(#418)
+  [backend/src/main/java/com/ragchatbot/service/RateLimiterService.java:77,81]
+    	 * <p>{@code MultipartFile.getBytes()} 가 파일 전체를 힙에 올리므로, 26MB 요청을 병렬로 퍼부으면
+    	 * Tomcat 기본 200 스레드 × 26MB ≈ 5GB 로 <b>단일 인스턴스가 OOM</b> 된다. 고아 회수는 매시 정각이고
+    	 * 최소 유예 10분이라 그 사이 쌓인 파일이 {@code uploads} 볼륨을 채우는데, compose 에서
+    	 * {@code uploads} 와 {@code pgdata} 가 같은 호스트 파일시스템이라 <b>디스크가 차면 Postgres 가
+    	 * 먼저 멎는다.</b>
+  [backend/src/main/java/com/ragchatbot/service/FileService.java:93,97]
+    		// 크기는 **힙에 올리기 전에** 본다(#402) - 파트는 디스크 임시 파일이라 getSize() 는 공짜다.
+    		// getBytes() 뒤에 재면 멀티파트 한도(26MB)까지의 파일이 거절되기 전에 힙을 잡는다
+    		if (file.getSize() > MAX_SIZE) {
+    			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (MAX_SIZE / MB) + "MB)");
+    		}
+
+=== C2 yml 주석 : 26MB × 스레드 수로 OOM · uploads 가 차면 Postgres 멎음 / 코드 : 10MB · attachment-quota-mb
+  [backend/src/main/resources/application.yml:110,112]
+        # 사용자별 분당 첨부 업로드 상한(#95). 채팅보다 높은 이유는 한 메시지에 이미지를 여러 장 붙이는
+        # 것이 정상 사용이기 때문. 업로드는 파일 전체를 힙에 올리므로 병렬도를 유계로 두지 않으면
+        # 26MB × 스레드 수로 OOM 이 나고, uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎음
+  [backend/src/main/resources/application.yml:127,130]
+        access-token-ttl-minutes: ${FILE_ACCESS_TOKEN_TTL_MINUTES:15}
+        # 사용자별 첨부 저장 한도(MB, #418). 사용자 폴더의 실제 파일 크기 합으로 재고, 넘기는 업로드는 400.
+        # 분당 · 장수 상한은 쌓이는 속도만 줄여 uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎는다
+        attachment-quota-mb: ${ATTACHMENT_QUOTA_MB:500}
+
+=== C4 주석 : 「잘렸다」는 표시조차 없음 / 코드 : 종료 이벤트 없는 종료에 프론트가 오류 표시
+  [backend/src/main/java/com/ragchatbot/service/ChatService.java:158,160]
+    	 * <p><b>단, 타임아웃으로 끊긴 것은 제외함</b>(#84). {@code timedOut && stopped} 는 서버가 스트림을
+    	 * 닫아 문장이 잘린 경우인데, 사용자는 그것을 본 적도 받아들인 적도 없음 - 화면에는 그 시점까지의
+    	 * 토큰만 떠 있고 「잘렸다」는 표시조차 없음. 포함하면 모델이 자기가 쓰다 만 문장을 대화의
+  [frontend/src/lib/endpoints.ts:124,129]
+      if (!terminated) {
+        // 사용자가 중단한 경우는 여기 오지 않는다 - abort 는 reader.read() 를 거부시켜 위에서 던진다.
+        // 위쪽 !res.ok 경로와 같은 모양으로 처리한다(onError 를 부르고 던짐)
+        const message = '응답이 끝나기 전에 연결이 끊겼습니다. 다시 시도해 주세요.'
+        handlers.onError?.(message)
+        throw new Error(message)
+
+=== C5 주석 : AdminAccessGuard 가 컨트롤러 앞에서 / 코드 : 컨트롤러 본문 첫 줄
+  [backend/src/main/java/com/ragchatbot/service/AdminDocumentService.java:30]
+     * <p>권한 검사는 {@link AdminAccessGuard} 가 컨트롤러 앞에서 하므로 여기서는 다루지 않는다.
+    AdminController: 59:		guard.requireAdmin(CurrentUser.id());
+    AdminController: 67:		guard.requireAdmin(adminId);
+    AdminController: 75:		guard.requireAdmin(adminId);
+
+=== C6 주석 : 모든 접근은 requireOwned 를 통과 / 코드 : listByUser · lockByIdAndUser · requireOwnedLocked
+  [backend/src/main/java/com/ragchatbot/service/ConversationService.java:33]
+     * 대화 CRUD. 모든 접근은 requireOwned 를 통과함(P-3). 남의 것은 404로 은닉.
+    ConversationService: 75:		return conversationRepository.listByUser(userId).stream()
+    ConversationService: 152:		conversationRepository.lockByIdAndUser(conversationId, userId)
+    ConversationService: 179:	Conversation requireOwnedLocked(UUID conversationId, UUID userId) {
+
+=== C8 주석 : 서명 경로 토큰 / 코드 : 토큰은 쿼리(?token=)
+    backend/src/main/java/com/ragchatbot/config/SecurityConfig.java:43:						// 파일 서빙은 서명 경로 토큰으로 검증(Bearer 불가한 <img src> 대응)
+    backend/src/main/java/com/ragchatbot/controller/FileController.java:52:	 * 서빙(비인증 경로 - 서명 경로 토큰으로 검증).
+    backend/src/main/java/com/ragchatbot/dto/FileDtos.java:6: * 파일 응답 DTO. url은 서명 경로 토큰이 붙은 서빙 URL.
+    backend/src/main/java/com/ragchatbot/security/FileAccessTokenService.java:16: * 파일 서빙용 서명 경로 토큰.
+    backend/src/main/java/com/ragchatbot/service/FileService.java:30: * 검증 : MIME 허용목록 → 용량 상한(10MB) → 사용자별 저장 한도(#418) → 매직바이트. 서빙 : 서명 경로 토큰.
+    backend/src/main/resources/application.yml:126:    # 첨부 서빙용 서명 경로 토큰의 수명(분). <img src> 가 헤더를 못 실어 URL 에 토큰을 싣는다
+    FileController: 57:			@RequestParam(name = "token", required = false) String token) {
+
+=== D1 헤더 버전 · 수정일 (git 마지막 수정과 대조)
+    docs/01_specs/api.md : | 문서 버전 | v1.8 | | 최종 수정일 | 2026-10-23 | · git 마지막 2026-10-26
+    docs/01_specs/features.md : | 문서 버전 | v2.7 | | 최종 수정일 | 2026-10-22 | · git 마지막 2026-10-26
+    docs/01_specs/live-integration.md : | 문서 버전 | v1.9 | | 최종 수정일 | 2026-10-23 | · git 마지막 2026-10-26
+    docs/02_architecture/design-system.md : | 문서 버전 | v2.7 | | 최종 수정일 | 2026-10-21 | · git 마지막 2026-10-23
+
+=== D2 design-system :33 오렌지 = highlight / :38 · :53 · index.css highlight 는 무채색
+  [docs/02_architecture/design-system.md:33]
+    | `#F2931D` | 좌하단 블록 | 2.3:1 | 밝은 면 위 글자색 불가. **배경 칠**과 **어두운 고정 스크림 위 아이콘**에만 쓴다(`highlight`) |
+  [docs/02_architecture/design-system.md:38]
+    오렌지는 화면 토큰에 없고(`highlight` 는 무채색 — 홈페이지 칩·배지가 무채색이다) 로고 블록에만 남는다.
+  [frontend/src/index.css:37]
+      --c-highlight: #e2e7ed;
+
+=== D9 끊긴 문장 · 어긋난 위치
+  [docs/02_architecture/backend.md:193]
+      판정 · 이름 규칙은 `live-integration.md` 3-1 의 인용 표기 대응 규칙
+  [docs/02_architecture/backend.md:242,245]
+    
+    토큰 수는 문자 수 기반 근사(한국어 기준 1.5자당 1토큰)다. 정확한 토크나이저를 붙이지 않는 이유는 이 값이
+    하드 한도가 아니라 **예산 가드**이기 때문이며, 영어에서 과대평가되는 방향은 이력이 짧아지는 쪽이라 안전하다.
+    - 스트리밍 구간에서는 DB 커넥션을 잡지 않는다. 저장은 `ChatPersistenceService` 가 메시지·출처·touch 를
+  [docs/01_specs/../02_architecture/overview.md:144,146]
+      크기는 **올리기 전에** `getSize()` 로 본다(첨부 #402) — 멀티파트 한도(26MB)까지의 파일은 디스크 임시 파일에 머문 채 400 이다. 관리자 문서 업로드도 같은 원칙이다(#453, 상한 25MB — 이 절의 사용자 힙 계산과는 별개)
+      그래서 사용자 한 명의 동시 업로드가 잡는 힙은 분당 상한(#95, 30) × 10MB ≈ 300MB 로 묶인다. 상한이 사라지지는 않으며,
+      스트리밍 저장으로 바꾸는 것은 원인이 다른 별건이다.
+
+=== D12 「표 7개」 ↔ 여섯 테이블 (+ flyway_schema_history)
+  [docs/02_architecture/backend.md:623]
+    3. 확인 : `127.0.0.1:8080/api/health` 200 · 표 7개 행 수를 운영의 **스냅샷 시각 이전 생성분**(`created_at`/`installed_on` < 스냅샷 `createdAt`)과 대조
+  [docs/02_architecture/overview.md:98]
+    `backend/src/main/resources/db/migration/` (Flyway, PostgreSQL). 여섯 테이블이며 모든 PK 는 `uuid` 다.
+    마이그레이션 create table : 6개
+
+=== D14 시점 표현
+  [docs/01_specs/features.md:138]
+    | 서명 URL 이 만료됨 (TTL 기본 15분 · `FILE_ACCESS_TOKEN_TTL_MINUTES`) | 이번 범위에서 고치지 않는다. 백로그 「파일 URL 수명」과 **같은 원인**이라 함께 고치면 원인이 다른 변경이 한 커밋에 섞인다 |
+  [docs/01_specs/features.md:430]
+    **화면:** 없음. 이번 범위는 **기록까지**다. 집계 화면은 데이터가 쌓인 뒤 무엇을 볼지 정해지면 만든다.
+  [docs/01_specs/live-integration.md:39]
+    ## 0. 지금 상태를 정확히 적는다
+  [docs/01_specs/live-integration.md:144]
+    아래 가정은 2026-09-22 실연동으로 A~E 가 확인됐고 F 는 틀렸지만 무해했다(#184 · #37, 관측 원본 `.issue/184/evidence/`).
+  [docs/02_architecture/backend.md:154]
+      가입이 없어진 지금도 이 명단이 남는 이유는 **관리자가 주소를 손으로 치기 때문**이다. 오타 한 번이면
+
+=== D15 진행 단계 마지막 이름 / 코드 라벨 「답변 작성 중」
+  [README.md:17]
+    - 스트리밍 답변과 진행 단계 표시(분석 → 검색 → 참조 문서 확인 → 생성) · 정지 버튼(받은 데까지 저장)
+  [docs/01_specs/requirements.md:44]
+    | 진행 단계 | 답변 생성 중 화면에 뜨는 문구(분석 · 검색 · 참조 문서 확인 · 작성). 실제로 지난 경계에서만 올린다 |
+    backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java:44:			Stage.GENERATING, "답변 작성 중(목업)");
+    backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java:217:			Stage.GENERATING, "답변 작성 중");
+
+=== D16 FEAT-OPS-003 카테고리 「인증」 ↔ ID 접두 OPS
+  [docs/01_specs/features.md:31]
+    | FEAT-OPS-003 | 세션 슬라이딩 재발급 | 인증 | Should | REQ-AUTH-005 |
+  [docs/01_specs/features.md:37]
+    FEAT-OPS-* 3종은 서로 독립이다.
+
+=== D17 대비표 열 이름 「라이트」(다크 제거 #191)
+  [docs/02_architecture/design-system.md:66]
+    | 쌍 | 라이트 | 기준 |
+  [docs/02_architecture/design-system.md:85]
+    | 자리 | 조합 | 라이트 | 기준 |
+
+=== D20 soft delete 이유 포인터가 features 를 거쳐 erd 로 돌아감
+  [docs/02_architecture/backend.md:319]
+      **의도된 차이**이며 판단 근거는 [features.md](../01_specs/features.md) FEAT-ADMIN-002 「soft delete 를 쓰는 이유」에 있다.
+  [docs/01_specs/features.md:381]
+    **soft delete 를 쓰는 이유**는 [ERD](./erd.md) 「rag_documents (RAG 문서)」에 있다.
+
+=== D21 CHANGELOG #451 「gpt-6-sol 은 README · .env.example 에만」 ↔ live-integration 측정 기록에 남음
+  [docs/06_changelog/CHANGELOG.md:79]
+    - **같은 사실의 반복 · 갈린 정본 문장 · 낡을 수치를 정리했다(#451).** 모델명 `gpt-6-sol` 은 README 기술 스택 표와 `backend/.env.example` 에만 남기고 나머지는 `OPENAI_MODEL` 기본값을 가리킨다. 기본값 정본 문장을 「기본값 = `application.yml`, 의미 · 증상 = `.env.example`」로 통일했고, README 문서 표(INDEX 와 겹침)와 `USER_MAX_NAME_CHARS(50)` 반복, design-system 로고 표의 죽은 `#3F4444` 행 · 절 번호 7-1 결번, frontend 번들 크기 시점 표기 · CSP 이미지 출처 `data:` 누락을 고쳤다.
+    live-integration: 173:| 본문은 자료를 근거로 답했는데 출처가 비고 「자료 없음」이 �
+    live-integration: 222:| `gpt-6-sol` (2026-10-15, #277) | **5/5** | **5/5** |
+
+=== D24 정의 없는 P-2 · P-3 · TC-*
+    docs(CHANGELOG 제외) 의 P-2/P-3 정의 : 0건 · 쓰는 곳 7곳
+    TC- 식별자 설명(CONVENTIONS) : 0건
