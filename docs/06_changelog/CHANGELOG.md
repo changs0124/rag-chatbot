@@ -5,7 +5,7 @@
 ## [Unreleased]
 
 ### Fixed
-- **확장자 정규식 사본 하나로 · 스니펫 200자 절단이 이모지를 가르지 않게(#485).** `CitationMarkupFilter` 와 `SourceNameRewriter` 에 같은 값으로 두 벌 있던 확장자 정규식을 리라이터 것 하나로 모았다(동작 불변). `SnippetPicker.truncate` 는 200번째 자리가 서로게이트 쌍의 앞 절반이면 199자에서 자른다 - 전에는 반쪽 글자가 DB 에 깨져 남을 수 있었다(`SnippetPickTest` 경계 케이스 2개 추가)
+- **확장자 정규식 사본 하나로 · 스니펫 200자 절단이 이모지를 가르지 않게(#485).** `CitationMarkupFilter` 와 `SourceNameRewriter` 에 같은 값으로 두 벌 있던 확장자 정규식을 리라이터 것 하나로 모았다(동작 불변). `SnippetPicker.truncate` 는 200번째 자리가 서로게이트 쌍(BMP 밖 문자)의 앞 절반이면 199자에서 자른다. ZWJ 이모지 · 국기 같은 결합 문자열은 여전히 갈릴 수 있다 - 전에는 반쪽 글자가 DB 에 깨져 남을 수 있었다(`SnippetPickTest` 경계 케이스 2개 추가)
 
 ## [2026-10-26]
 
