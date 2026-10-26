@@ -24,13 +24,85 @@ type EarlyAbortOutcome =
   | { kind: 'unknown' }
 
 /**
+ * 「저장됨」인데 답이 없는 질문을 다시 확인하는 간격과 최대 구간(#489). 서버는 토큰을 하나도 못 보낸 턴의 질문을 걷지만,
+ * 끊김을 **다음 이벤트(단계 · 토큰)를 쓸 때** 알아채므로(#487) 첫 확인이 철회보다 먼저 처리될 수 있다
+ */
+export const RECHECK_INTERVAL_MS = 400
+export const RECHECK_WINDOW_MS = 5000
+/** 재확인 요청 하나의 시간 제한 - 매달린 요청이 판정을 붙들지 않게 한다 */
+export const RECHECK_REQUEST_TIMEOUT_MS = 3000
+
+/** 이력의 마지막이 보낸 질문인지 - 답 행이 아직 없다 */
+function endsWithQuestion(server: ChatMessage[], text: string) {
+  const last = server.at(-1)
+  return last?.role === 'user' && last.content === text.trim()
+}
+
+/** 보낸 질문 바로 뒤에 답 행(부분 답 · 서버 타임아웃의 error 행)이 붙어 끝나는지 */
+function endsWithAnswer(server: ChatMessage[], text: string) {
+  return server.at(-1)?.role === 'assistant' && endsWithQuestion(server.slice(0, -1), text)
+}
+
+/**
+ * 답 없는 질문이 걷히는지(#489) 간격마다 이력을 다시 본다. 질문 뒤에 답 행이 붙으면 저장됨(끊기기 전에 보낸 토큰이 있었다),
+ * 질문이 사라지면 서버가 걷은 것이다 - 새 대화는 조건부 삭제를 다시 한다. 구간이 끝나도 그대로면 저장됨으로 둔다.
+ *
+ * 구간은 시각 마감으로 끊는다 - 요청이 느려도 늘어나지 않는다(요청 하나는 `RECHECK_REQUEST_TIMEOUT_MS` 로 끊긴다).
+ * 그사이 대화를 옮겼으면(`stillHere`) 기존 대화는 곧바로 「모름」으로 끝낸다 - 결과를 화면에 쓰지 않는다(#440).
+ * 새 대화는 빈 대화를 치워야 하므로 이어 간다. 401 은 곧바로 끝낸다 - 같은 토큰으로 더 물어도 401 이다
+ */
+async function recheckUnanswered(
+  id: string,
+  isNew: boolean,
+  text: string,
+  saved: ChatMessage[],
+  stillHere: () => boolean,
+): Promise<EarlyAbortOutcome> {
+  const deadline = Date.now() + RECHECK_WINDOW_MS
+  while (Date.now() + RECHECK_INTERVAL_MS <= deadline) {
+    if (!isNew && !stillHere()) return { kind: 'unknown' }
+    await new Promise((resolve) => setTimeout(resolve, RECHECK_INTERVAL_MS))
+    if (!isNew && !stillHere()) return { kind: 'unknown' }
+    let server: ChatMessage[]
+    try {
+      server = await getMessages(id, AbortSignal.timeout(RECHECK_REQUEST_TIMEOUT_MS))
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) return { kind: 'unknown' }
+      // 한 번 못 받은 것은 모르는 것이다 - 다음 간격에 다시 본다
+      continue
+    }
+    if (endsWithQuestion(server, text)) {
+      saved = server
+      continue
+    }
+    if (endsWithAnswer(server, text)) return { kind: 'stored', saved: server }
+    if (!isNew) return { kind: 'unknown' }
+    try {
+      await apiDeleteIfEmpty(id)
+      return { kind: 'deleted' }
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) return { kind: 'deleted' }
+      return { kind: 'unknown' }
+    }
+  }
+  return { kind: 'stored', saved }
+}
+
+/**
  * 200 을 받기 전에 끊긴 턴의 질문이 서버에 있는지 서버에 물어 가른다(#440). 화면 상태는 건드리지 않는다.
  *
  * **200 이 없었다고 서버에 없는 것은 아니다**(#440 리뷰) - 서버는 질문 저장 · 첨부 연결을 커밋한 뒤에
  * 200 을 돌려주므로, 그 사이에 끊으면 질문은 저장돼 있고 첨부는 이미 쓰였다.
- * 계약 : 409 = 저장됨, 404 = 이미 지움, 그 밖 = 모름
+ * 계약 : 409 = 저장됨, 404 = 이미 지움, 그 밖 = 모름. 저장됨인데 답이 없으면 걷히는지 다시 본다(#489, `recheckUnanswered`).
+ * `opened` 면 질문은 저장됐던 것이 확실하다 - 기존 대화에서 질문 뒤에 답 행(서버 타임아웃의 error 행 등)이 붙어 있으면 저장됨이다
  */
-async function judgeEarlyAbort(id: string, isNew: boolean, text: string): Promise<EarlyAbortOutcome> {
+async function judgeEarlyAbort(
+  id: string,
+  isNew: boolean,
+  text: string,
+  opened: boolean,
+  stillHere: () => boolean,
+): Promise<EarlyAbortOutcome> {
   if (isNew) {
     // 새 대화는 「비었을 때만 지우기」로 묻는다(#447) - 확인과 삭제를 따로 하면 그 사이에 커밋된 질문 · 첨부까지
     // 지웠다. 서버가 한 잠금 안에서 가른다 : 지워졌으면 저장 전이었고(뒤늦은 채팅은 404), 409 면 저장된 것이다
@@ -39,7 +111,9 @@ async function judgeEarlyAbort(id: string, isNew: boolean, text: string): Promis
       return { kind: 'deleted' }
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
-        return { kind: 'stored', saved: await getMessages(id).catch(() => null) }
+        const saved = await getMessages(id).catch(() => null)
+        if (saved && endsWithQuestion(saved, text)) return recheckUnanswered(id, isNew, text, saved, stillHere)
+        return { kind: 'stored', saved }
       }
       if (e instanceof ApiError && e.status === 404) {
         // 이미 지워졌다(다른 탭 · 앞선 삭제) - 저장된 것이 없으니 지운 것과 같게 처리한다
@@ -51,8 +125,8 @@ async function judgeEarlyAbort(id: string, isNew: boolean, text: string): Promis
   }
   try {
     const server = await getMessages(id)
-    const last = server.at(-1)
-    if (last?.role === 'user' && last.content === text.trim()) return { kind: 'stored', saved: server }
+    if (endsWithQuestion(server, text)) return recheckUnanswered(id, isNew, text, server, stillHere)
+    if (opened && endsWithAnswer(server, text)) return { kind: 'stored', saved: server }
   } catch {
     // 모르면 되돌린다 - 기존 대화는 지우지 않으므로 잃는 것은 없다
   }
@@ -74,6 +148,8 @@ export function useChat() {
   const { stage, pushStage, clearStages } = useStageQueue()
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  /** 판정 중인 턴의 컨트롤러(#489 리뷰) - 대화를 옮기면 abortActiveStream 이 이 턴의 보내기 잠금을 푼다 */
+  const judgingRef = useRef<AbortController | null>(null)
   /**
    * 대화 컨텍스트 세대. **대화를 바꾸는 모든 진입점에서 올린다.**
    *
@@ -110,6 +186,14 @@ export function useChat() {
   const abortActiveStream = useCallback(() => {
     abortRef.current?.abort()
     clearStages()
+    // 판정(재확인) 중에 떠나면 옮겨 간 화면의 보내기를 막지 않게 놓아 준다(#489 리뷰). 판정은 뒤에서 이어 가고,
+    // 그 턴의 finally 는 자기 컨트롤러가 아니면 상태를 건드리지 않는다
+    // 확인 중 문구(settling, #483)도 함께 내린다 - 옮겨 간 화면에 남지 않게
+    if (judgingRef.current && judgingRef.current === abortRef.current) {
+      abortRef.current = null
+      setStreaming(false)
+      setSettling(false)
+    }
   }, [clearStages])
 
   /**
@@ -276,6 +360,9 @@ export function useChat() {
         setMessages((prev) => prev.map((m) => (m.id === assistantId ? updater(m) : m)))
       // 200 을 받았는지(#435). 서버는 질문을 저장한 뒤에 200 을 돌려주므로, 그 전에 끊긴 요청은 질문이 없을 수 있다
       let opened = false
+      // 토큰 · 완료를 받았는지(#489). 200 뒤라도 토큰 0개에서 멈추면 서버가 질문을 걷을 수 있어 200 전과 같이 판정한다
+      let gotToken = false
+      let done = false
 
       try {
         await streamChat(
@@ -286,9 +373,13 @@ export function useChat() {
             },
             onStage: ({ label }) => pushStage(label),
             // 토큰이 와도 단계를 끊지 않음 - 남은 단계가 최소 표시 시간을 마치면 답변으로 교체됨
-            onToken: (delta) => patch((m) => ({ ...m, content: m.content + delta })),
+            onToken: (delta) => {
+              gotToken = true
+              patch((m) => ({ ...m, content: m.content + delta }))
+            },
             onCitations: (items) => patch((m) => ({ ...m, citations: items })),
             onDone: () => {
+              done = true
               patch((m) => ({ ...m, status: 'complete' }))
               refreshConversations()
             },
@@ -306,6 +397,11 @@ export function useChat() {
         const aborted = controller.signal.aborted
         // 중단이 아닌 200 전 실패(#480)
         const failed = !opened && !aborted
+        // 서버에 질문이 남았는지 모르는 턴 - 200 전 중단 · 실패, 또는 200 뒤 토큰 0개에서 멈춤 · 끊김(#489, 서버가 질문을 걷을 수 있다).
+        // 끊김(네트워크 절단 · 프록시 타임아웃 · 종단 이벤트 없음)도 넣는다 - 서버 타임아웃(#359)은 error 답 행을 남겨 판정이 저장됨으로 가른다
+        const unconfirmed = !opened || (!gotToken && !done)
+        // 중단이 아닌 실패로 끝난 판정 대상 - 저장됨이면 실패한 답 말풍선으로 실패를 보인다(#480 · #489 리뷰)
+        const brokeOff = unconfirmed && !aborted
         const status = e instanceof ApiError ? e.status : null
         // 200 전 4xx 는 서버가 저장 전에 거절한 것이 확실하다(api.md 「검증은 동기」, #480) - 묻지 않고 되돌린다.
         // 5xx 는 아니다 - 질문 저장을 커밋한 뒤에도 날 수 있고(스트림 작업 넘기기 실패), 앞단 프록시의 5xx 는 앱이 저장했는지 모른다
@@ -323,7 +419,8 @@ export function useChat() {
         const emptyAnswer = (m: ChatMessage) => m.id === assistantId && !m.content && m.status !== 'complete'
         // 200 을 받기 전에 끊겼으면 질문 말풍선도 걷는다(#435) - 서버에 닿지 않았을 수 있어, 남기면 새로고침에 사라진다.
         // 닿았는지는 아래에서 서버에 물어 저장됐으면 다시 보인다(#440). 중단이 아닌 200 전 실패도 같다(#480) - 오류는 배너로 보인다
-        const unsentQuestion = (m: ChatMessage) => !opened && m.id === userMsg.id
+        // 200 뒤 토큰 0개 중단도 같다(#489) - 서버가 걷었을 수 있다
+        const unsentQuestion = (m: ChatMessage) => unconfirmed && m.id === userMsg.id
         const settled = (m: ChatMessage): ChatMessage =>
           // onDone 이 이미 확정한 메시지는 건드리지 않음 - 서버는 그 답변을 stopped=false 로 저장했으므로,
           // 여기서 stopped 를 세우면 화면(배너 없음)과 재조회(배너 있음)가 어긋남
@@ -336,12 +433,14 @@ export function useChat() {
                 stopped: aborted,
               }
         setMessages((prev) =>
-          prev.filter((m) => !(((aborted || !opened) && emptyAnswer(m)) || unsentQuestion(m))).map(settled),
+          prev.filter((m) => !(((aborted || unconfirmed) && emptyAnswer(m)) || unsentQuestion(m))).map(settled),
         )
-        if (!opened) {
-          // 200 전 중단 · 실패는 서버에 물어서 가른다(judgeEarlyAbort, #480 에서 실패까지 넓힘).
+        if (unconfirmed) {
+          // 200 전 중단 · 실패는 서버에 물어서 가른다(judgeEarlyAbort, #480 에서 실패까지, #489 에서 200 뒤 토큰 0개 중단 · 끊김까지 넓힘).
           // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다. 그 구간을 settling 으로 드러낸다(#483)
           setSettling(true)
+          // 판정 구간 전체를 판정 턴으로 표시한다 - 그사이 대화를 옮기면 abortActiveStream 이 잠금 · settling 을 푼다(#489 리뷰)
+          judgingRef.current = controller
           const id = convId
           // 4xx 거절은 저장되지 않은 것이 확실해 기존 대화는 묻지 않는다. 새 대화는 빈 대화를 지워야 하므로 조건부 삭제는 그대로 탄다.
           // 단 기존 대화의 404 는 대화가 지워졌을 수 있어(다른 탭) 이력으로 확인한다 - 「첨부 없음」도 404 라 코드만으로는 못 가른다
@@ -355,16 +454,18 @@ export function useChat() {
               if (gone) outcome = { kind: 'deleted' }
             }
           } else if (!unauthorized) {
-            outcome = await judgeEarlyAbort(id, isNew, text)
+            outcome = await judgeEarlyAbort(id, isNew, text, opened, () => generation.current === mine)
           }
           // 세대는 판정을 기다린 **뒤에** 본다 - 그사이 대화를 옮겼으면 화면 · 입력창을 건드리지 않는다
           const here = generation.current === mine
           if (outcome.kind === 'stored') {
-            // 저장된 질문은 남긴다. 답은 오지 않는다 - 서버는 끊긴 뒤의 전송이 실패할 때 생성을 멈추고,
-            // 보낸 토큰이 없으면 답 행을 남기지 않는다(#487, frontend.md 「남은 한계」). 비중단 실패는 실패한 답 말풍선을 붙여 보인다(#480)
+            // 저장된 질문은 남긴다. 답이 있으면 끊기 전에 서버가 보낸 부분 답이다. 답 없는 질문은 서버가 걷으므로(#489)
+            // 재확인 구간이 끝나도 남은 경우만 답 없이 남는다(frontend.md 「남은 한계」). 비중단 실패는 실패한 답 말풍선을 붙여 보인다(#480)
             // 이력을 못 받았으면 걷었던 질문 말풍선을 되살린다 - 안 그러면 저장된 질문이 화면 어디에도 없다(#447 리뷰)
             if (here) {
-              const failedAnswer: ChatMessage[] = failed ? [{ ...assistantMsg, status: 'error' }] : []
+              // 서버가 답 행(타임아웃의 error 행 등)을 이미 남겼으면 겹쳐 붙이지 않는다
+              const answered = outcome.saved?.at(-1)?.role === 'assistant'
+              const failedAnswer: ChatMessage[] = brokeOff && !answered ? [{ ...assistantMsg, status: 'error' }] : []
               if (outcome.saved) setMessages([...outcome.saved, ...failedAnswer])
               else setMessages((prev) => [...prev, userMsg, ...failedAnswer])
             }
@@ -386,10 +487,14 @@ export function useChat() {
           if (isNew && !unauthorized) refreshConversations()
         } else if (isNew) refreshConversations()
       } finally {
-        // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(useStageQueue)
-        setStreaming(false)
-        setSettling(false)
-        abortRef.current = null
+        // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(useStageQueue).
+        // 판정 중에 대화를 옮겨 이미 놓아 줬으면(#489 리뷰) 옮겨 간 화면의 새 스트림 · settling 상태를 덮지 않는다
+        judgingRef.current = null
+        if (abortRef.current === controller) {
+          setStreaming(false)
+          setSettling(false)
+          abortRef.current = null
+        }
       }
     },
     [activeId, refreshConversations, clearStages, pushStage],

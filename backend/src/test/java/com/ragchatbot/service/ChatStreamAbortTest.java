@@ -78,20 +78,26 @@ class ChatStreamAbortTest {
 		assertThat(persistence.saves).hasSize(1);
 		assertThat(persistence.saves.get(0).status()).isEqualTo("complete");
 		assertThat(persistence.saves.get(0).content()).isEqualTo("부분");
+		assertThat(persistence.retracted).isEmpty(); // 토큰을 보냈으면 질문은 그대로(#489)
 		// 인용은 스트림 끝에 오므로 여기서는 늘 0건임 - stopped 를 남기지 않으면 화면이
 		// "자료 없음"을 거짓으로 붙임
 		assertThat(persistence.saves.get(0).stopped()).isTrue();
 	}
 
-	/** 받은 것이 없으면 빈 답변을 남기지 않음 - 프론트도 빈 버블을 지우므로 화면과 재조회가 같아짐 */
+	/**
+	 * 받은 것이 없으면 빈 답변을 남기지 않음 - 프론트도 빈 버블을 지우므로 화면과 재조회가 같아짐.
+	 * 질문도 걷는다(#489) - 서버는 끊긴 뒤 답을 만들지 않으므로 두면 답 없는 질문이 영구히 남는다
+	 */
 	@Test
 	void client_disconnect_before_any_token_saves_nothing() {
 		var persistence = new RecordingPersistence();
 		var service = chatService(new StubOpenAi(List.of("답변"), null), persistence);
+		var prepared = prepared();
 
-		service.stream(UUID.randomUUID(), prepared(), new BrokenEmitter(1)); // meta 부터 실패
+		service.stream(UUID.randomUUID(), prepared, new BrokenEmitter(1)); // meta 부터 실패
 
 		assertThat(persistence.saves).isEmpty();
+		assertThat(persistence.retracted).containsExactly(prepared.userMessageId());
 	}
 
 	/** 구분이 핵심임 - 진짜 오류는 여전히 error 로 남아야 함 */

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ragchatbot.entity.Citation;
 import com.ragchatbot.entity.Message;
+import com.ragchatbot.repository.AttachmentRepository;
 import com.ragchatbot.repository.CitationRepository;
 import com.ragchatbot.repository.ConversationRepository;
 import com.ragchatbot.repository.MessageRepository;
@@ -24,12 +25,14 @@ public class ChatPersistenceService {
 	private final MessageRepository messageRepository;
 	private final CitationRepository citationRepository;
 	private final ConversationRepository conversationRepository;
+	private final AttachmentRepository attachmentRepository;
 
 	public ChatPersistenceService(MessageRepository messageRepository, CitationRepository citationRepository,
-			ConversationRepository conversationRepository) {
+			ConversationRepository conversationRepository, AttachmentRepository attachmentRepository) {
 		this.messageRepository = messageRepository;
 		this.citationRepository = citationRepository;
 		this.conversationRepository = conversationRepository;
+		this.attachmentRepository = attachmentRepository;
 	}
 
 	/**
@@ -49,5 +52,23 @@ public class ChatPersistenceService {
 					c.snippet(), null));
 		}
 		conversationRepository.touch(conversationId, userId);
+	}
+
+	/**
+	 * 답 없이 끊긴 턴의 질문을 걷는다(#489). 첨부는 연결만 풀어 입력창 카드로 다시 쓸 수 있게 둔다 -
+	 * 풀린 첨부는 보내기 전 첨부와 같아져, 다시 보내지 않으면 업로드 시각 기준 고아 회수가 가져간다(REQ-OPS-004).
+	 *
+	 * <p><b>메시지 행부터 잠근다</b> - 대화 삭제의 cascade 는 messages → attachments 순으로 잠그므로 같은 순서여야 교착이 나지 않는다.
+	 * 행이 없으면(대화가 이미 지워짐) 할 일이 없다.
+	 * <b>그다음 연결을 푼다</b> - {@code attachments.message_id} 가 on delete cascade 라 메시지를 먼저 지우면 첨부 행까지 사라진다.
+	 * 대화는 건드리지 않는다 - 질문 저장은 touch 하지 않았고, 비게 된 새 대화는 프론트가 조건부 삭제로 정리한다(#440 · #447)
+	 */
+	@Transactional
+	public void retractQuestion(UUID conversationId, UUID userMessageId) {
+		if (messageRepository.lockUserMessage(userMessageId, conversationId) == null) {
+			return;
+		}
+		attachmentRepository.unlinkFromMessage(userMessageId);
+		messageRepository.deleteUserMessage(userMessageId, conversationId);
 	}
 }

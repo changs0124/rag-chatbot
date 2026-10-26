@@ -20,6 +20,9 @@
   - 이 파일 : 10-26 구획의 라벨 없던 소절에 `(a89fb83)` 를 붙이고 #466 을 `### Docs (a05d994)` 로 옮겼다(배포 이미지 기준). 라벨 형식은 10-26 부터라는 한 줄을 머리에 두었다 — 그 이전 구획은 소급하지 않는다
 
 ### Fixed
+- **토큰을 하나도 못 보내고 끊긴 채팅 턴의 질문을 서버가 걷는다(#489).** 200(meta) 뒤 · 첫 토큰 전에 끊기면 서버는 답을 만들지 않아(#487) 답 없는 질문이 이력 · 다음 턴의 모델 문맥에 영구히 남았다. 이제 `ChatService` 의 끊김 처리에서 보낸 토큰이 0개이고 서버 타임아웃이 아니면 `ChatPersistenceService.retractQuestion` 이 한 트랜잭션으로 첨부 연결을 풀고(`AttachmentRepository.unlinkFromMessage`, 파일 · 행은 남김) 질문 행을 지운다(`MessageRepository.deleteUserMessage`). 대화 · `updated_at` 은 그대로(질문 저장은 touch 하지 않는다). 토큰을 보냈으면 지금처럼 stopped 부분 답, 첫 토큰 전 서버 타임아웃은 지금처럼 error 행. 프론트 판정(`judgeEarlyAbort`)은 철회 뒤 확인하면 「없음」으로 글 · 카드를 되돌린다(아래 경합 보완)
+  - 프론트 경합 보완 : 판정이 「저장됨」인데 질문 뒤 답 행이 없으면 이력을 400ms 마다 최대 5초 다시 본다(`RECHECK_INTERVAL_MS` · `RECHECK_WINDOW_MS`) — 질문이 사라지면 글 · 카드를 되돌리고 새 대화는 조건부 삭제를 다시 한다. 200 뒤 토큰 0개 중단 · 끊김도 같은 판정을 탄다(서버 타임아웃의 error 답 행은 저장됨). 재확인은 시각 마감 · 요청당 3초 제한 · 401 즉시 종료이고, 판정 중 대화를 옮기면 보내기 잠금을 풀고 기존 대화는 재확인을 멈춘다(`useChat.ts` · `getMessages` 에 signal). 철회는 메시지 행을 먼저 `for update` 로 잠가 대화 삭제 cascade 와 잠금 순서를 맞춘다(`MessageRepository.lockUserMessage`)
+  - 테스트 : `ChatEarlyDisconnectTest`(원시 소켓, TC-CHAT-001 meta 직후 끊김 → 질문 0행 · 첨부 연결 풀림 · updated_at 불변 / TC-CHAT-002 토큰 3개 뒤 끊김 → 질문 + stopped 답) · `ChatStreamAbortTest` · `ChatStreamTimeoutTest` 단언 추가(케이스 수 불변) — 백엔드 +2. `useChat.test.ts` 10건 추가(재확인 · 200 뒤 토큰 0개 중단 · 끊김 · 대화 이동 · 401), 기존 5건 조정(저장됨 4건은 재확인 구간을 넘기게, 「200 을 받은 뒤의 중단」은 토큰을 받은 뒤로 좁힘) — 프론트 +10, #483 통합 때 「판정 중 대화 이동 → settling 없음 · 보내기 받아들임」 1건 더 — 프론트 +11. 하한 백엔드 397 → 399 · 프론트 271(#483) → 282(통합 실측)
 - **프론트 LOW 여섯 건을 바로잡았다(#483).** 케이스 프론트 +14
   - F4 `AdminPage` : 첫 로드가 실패하면 「아직 문서가 없습니다」 · 「사용자 0명」을 띄우지 않고(`loaded` 는 성공에서만 선다), 배너에 「다시 시도」를 둔다
   - F5 `ChatPage` : 제목 편집의 Esc 가 언마운트 blur 로 저장되거나 Enter 가 PATCH 를 두 번 보내지 않는다(`skipBlurRef`)

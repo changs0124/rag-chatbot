@@ -71,7 +71,9 @@ public class ChatService {
 		this.maxAttachments = maxAttachments;
 	}
 
-	public record PreparedChat(UUID conversationId, String message, List<AttachmentRef> refs, List<Turn> history) {
+	/** userMessageId : 방금 저장한 질문 - 답 없이 끊기면 걷는다(#489) */
+	public record PreparedChat(UUID conversationId, UUID userMessageId, String message, List<AttachmentRef> refs,
+			List<Turn> history) {
 	}
 
 	/** 동기 준비 - 소유권/검증 + 사용자 메시지 저장 + 첨부 연결 */
@@ -131,7 +133,7 @@ public class ChatService {
 				throw new BadRequestException("첨부를 쓸 수 없음 - 이미 보냈거나 정리됨");
 			}
 		}
-		return new PreparedChat(conversation.id(), message, refs, history);
+		return new PreparedChat(conversation.id(), userMsgId, message, refs, history);
 	}
 
 	private Set<UUID> messageIdsWithAttachments(UUID conversationId) {
@@ -273,9 +275,14 @@ public class ChatService {
 			//
 			// 단, 첫 토큰 전에 서버 타임아웃으로 닫힌 것이면 error 로 남긴다(#359) - 비었다고 건너뛰면 타임아웃 사실이
 			// 어디에도 남지 않고, 화면도 완료 이벤트 없이 끊겨 오류로 보인다(갈래 ③ 과 같은 모양)
+			//
+			// 토큰을 하나도 못 보내고 끊긴 것이면 질문을 걷는다(#489) - 서버는 끊긴 뒤 답을 만들지 않으므로(#487) 두면
+			// 답 없는 질문이 이력과 다음 턴의 모델 문맥에 영구히 남는다. 첨부는 연결만 풀어 다시 보낼 수 있게 둔다
 			if (!saved) {
 				if (timedOut.get() && buffer.isEmpty()) {
 					savePartial(prepared, userId, asstMsgId, "", "error", false, true, null);
+				} else if (buffer.isEmpty()) {
+					retractQuestion(prepared);
 				} else {
 					savePartial(prepared, userId, asstMsgId, buffer.toString(), "complete", true, timedOut.get(),
 							null);
@@ -331,6 +338,15 @@ public class ChatService {
 			} else {
 				log.warn("부분 답 저장 실패 conversation={} status={}", prepared.conversationId(), status, e);
 			}
+		}
+	}
+
+	/** 질문 철회(#489). 이미 비정상 종료 경로라 던지지 않는다 - 실패하면 지금까지처럼 답 없는 질문이 남을 뿐이다 */
+	private void retractQuestion(PreparedChat prepared) {
+		try {
+			chatPersistence.retractQuestion(prepared.conversationId(), prepared.userMessageId());
+		} catch (Exception e) {
+			log.warn("답 없이 끊긴 질문을 걷지 못함 conversation={}", prepared.conversationId(), e);
 		}
 	}
 

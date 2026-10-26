@@ -23,6 +23,9 @@ public interface AttachmentRepository {
 	/** 첨부를 메시지에 연결(채팅 전송 시). 소유자 것만 */
 	int linkToMessage(@Param("id") UUID id, @Param("messageId") UUID messageId, @Param("userId") UUID userId);
 
+	/** 메시지에 붙은 첨부를 보내기 전 상태(message_id 없음)로 되돌린다(#489 질문 철회). 바꾼 행 수 */
+	int unlinkFromMessage(@Param("messageId") UUID messageId);
+
 	/** 보내기 전(message_id 없음) 첨부만 지운다(#249). 지운 행 수 */
 	int deleteDraftByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
 

@@ -213,6 +213,7 @@ class ChatStreamTimeoutTest {
 		assertThat(saved.stopped()).isFalse();
 		assertThat(saved.timedOut()).isTrue();
 		assertThat(saved.content()).isEmpty();
+		assertThat(persistence.retracted).isEmpty(); // 서버 타임아웃은 사용자가 끊은 것이 아니다 - 질문을 걷지 않는다(#489)
 	}
 
 	/**
