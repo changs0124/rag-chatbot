@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { useChat } from './useChat'
+import { useChat, RECHECK_INTERVAL_MS, RECHECK_WINDOW_MS } from './useChat'
 import type { ChatStreamHandlers } from '../lib/endpoints'
 import type { ChatMessage } from '../lib/types'
 
@@ -44,6 +44,21 @@ function openStream({ opened = true } = {}) {
     })
   })
   return control
+}
+
+/**
+ * 서버 이력을 케이스 끝까지 고정한다 - 답 없는 질문이 재확인 구간(#489) 내내 걷히지 않는 경우.
+ * `conflict` 면 조건부 삭제도 계속 409 다. 끝나면 기본 모의로 되돌려 뒤 케이스로 새지 않게 한다
+ */
+function holdStored(saved: ChatMessage[], conflict = false) {
+  vi.mocked(getMessages).mockResolvedValue(saved)
+  if (conflict) {
+    vi.mocked(deleteConversationIfEmpty).mockRejectedValue(new ApiError(409, '메시지가 있는 대화는 지우지 않음'))
+  }
+  onTestFinished(() => {
+    vi.mocked(getMessages).mockReset().mockResolvedValue([])
+    vi.mocked(deleteConversationIfEmpty).mockReset().mockResolvedValue(undefined)
+  })
 }
 
 /** 스트림이 열릴 때까지 프라미스 체인만 흘림(fake timer 환경이라 waitFor를 쓰지 않음) */
@@ -180,7 +195,7 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
   })
 
   it('받은 것이 없이 중단하면 빈 답변 버블을 남기지 않음', async () => {
-    // 남겨 두면 새로고침에 사라짐 - 서버도 부분 텍스트가 비면 저장하지 않음
+    // 남겨 두면 새로고침에 사라짐 - 서버도 부분 텍스트가 비면 저장하지 않음. 질문 쪽은 판정이 가른다(#489, 아래 토큰 0개 케이스)
     const stream = openStream()
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', []))
@@ -191,8 +206,7 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     })
     await abort(stream)
 
-    expect(result.current.messages).toHaveLength(1)
-    expect(result.current.messages[0].role).toBe('user')
+    expect(result.current.messages.some((m) => m.role === 'assistant')).toBe(false)
   })
 
   it('200 을 받기 전에 중단하면 질문 말풍선도 남기지 않음 (#435)', async () => {
@@ -271,15 +285,16 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     const giveBack = vi.fn()
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', [], giveBack))
-    vi.mocked(deleteConversationIfEmpty).mockRejectedValueOnce(new ApiError(409, '메시지가 있는 대화는 지우지 않음'))
-    vi.mocked(getMessages).mockResolvedValueOnce([
-      { id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] },
-    ])
+    // 답 없는 질문이 재확인 구간 내내 남는 경우다(#489) - 걷히지 않았으니 저장됨이다
+    holdStored([{ id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] }], true)
 
     await act(async () => {
       result.current.stop()
     })
     await abort(stream)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
 
     expect(giveBack).not.toHaveBeenCalled()
     expect(deleteConversation).not.toHaveBeenCalled()
@@ -354,7 +369,7 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     const stream = openStream({ opened: false })
     const giveBack = vi.fn()
     await startStream(() => result.current.send('둘째 질문', [], giveBack))
-    vi.mocked(getMessages).mockResolvedValueOnce([
+    holdStored([
       { id: 'm1', role: 'user', content: '첫 질문', status: 'complete', citations: [] },
       { id: 'm2', role: 'assistant', content: '답', status: 'complete', citations: [] },
       { id: 'm3', role: 'user', content: '둘째 질문', status: 'complete', citations: [] },
@@ -364,6 +379,9 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
       result.current.stop()
     })
     await abort(stream)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
 
     expect(giveBack).not.toHaveBeenCalled()
     expect(deleteConversationIfEmpty).not.toHaveBeenCalled()
@@ -401,12 +419,122 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.activeId).toBe('c1')
   })
 
-  it('200 을 받은 뒤의 중단은 되돌리지도 지우지도 않음 (#440)', async () => {
-    // 서버가 질문을 저장했으므로 말풍선이 남고, 입력창에 되돌리면 같은 글이 두 번 보인다
+  it('저장됨으로 보였어도 재확인에서 질문이 사라지면(#489 철회) 되돌리고 새 대화는 조건부 삭제를 다시 한다', async () => {
+    // 서버는 끊김을 다음 이벤트를 쓸 때 알아챈다 - 첫 확인이 철회보다 먼저 처리되면 409 · 질문만 있는 이력이다
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    vi.mocked(deleteConversationIfEmpty).mockRejectedValueOnce(new ApiError(409, '메시지가 있는 대화는 지우지 않음'))
+    vi.mocked(getMessages).mockResolvedValueOnce([
+      { id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] },
+    ])
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+    expect(giveBack).not.toHaveBeenCalled()
+    // 다음 확인에서는 질문이 없다(기본 모의 [] · 조건부 삭제 204)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_INTERVAL_MS)
+    })
+
+    expect(giveBack).toHaveBeenCalledWith(false)
+    expect(deleteConversationIfEmpty).toHaveBeenCalledTimes(2)
+    expect(result.current.activeId).toBeNull()
+    expect(result.current.conversations).toEqual([])
+    expect(result.current.streaming).toBe(false)
+  })
+
+  it('재확인에서 질문 뒤에 답 행이 생기면 저장됨으로 확정한다 (#489)', async () => {
+    // 끊기기 전에 서버가 보낸 토큰이 있었으면 stopped 부분 답이 저장된다 - 질문은 걷히지 않는다
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+    const asked: ChatMessage[] = [
+      { id: 'm1', role: 'user', content: '첫 질문', status: 'complete', citations: [] },
+      { id: 'm2', role: 'assistant', content: '답', status: 'complete', citations: [] },
+      { id: 'm3', role: 'user', content: '둘째 질문', status: 'complete', citations: [] },
+    ]
+    vi.mocked(getMessages)
+      .mockResolvedValueOnce(asked)
+      .mockResolvedValueOnce([
+        ...asked,
+        { id: 'm4', role: 'assistant', content: '부분', status: 'complete', stopped: true, citations: [] },
+      ])
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_INTERVAL_MS)
+    })
+
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(result.current.messages.map((m) => m.id)).toEqual(['m1', 'm2', 'm3', 'm4'])
+    expect(result.current.streaming).toBe(false)
+  })
+
+  it('재확인 구간 내내 질문만 있으면 지금처럼 저장됨으로 남긴다 (#489)', async () => {
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    holdStored([{ id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] }], true)
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+    // 구간 동안은 판정 중이라 다시 보내기가 막힌다
+    expect(result.current.streaming).toBe(true)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
+
+    expect(giveBack).not.toHaveBeenCalled()
+    // 첫 확인 1번 + 간격마다 1번
+    expect(getMessages).toHaveBeenCalledTimes(1 + Math.floor(RECHECK_WINDOW_MS / RECHECK_INTERVAL_MS))
+    expect(result.current.messages.map((m) => m.content)).toEqual(['환불 정책'])
+    expect(result.current.activeId).toBe('c1')
+    expect(result.current.streaming).toBe(false)
+  })
+
+  it('200 을 받은 뒤 토큰 0개에서 멈추면 200 전과 같은 판정을 탄다 (#489)', async () => {
+    // 서버는 보낸 토큰이 없으면 질문을 걷는다 - 말풍선을 남기면 새로고침에 사라지고 글은 돌아오지 않는다
     const stream = openStream()
     const giveBack = vi.fn()
     const { result } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', [], giveBack))
+    act(() => void stream.handlers?.onStage?.({ stage: 'analyzing', label: '질문 분석 중' }))
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+    expect(giveBack).toHaveBeenCalledWith(false)
+    expect(result.current.messages).toHaveLength(0)
+    expect(result.current.activeId).toBeNull()
+  })
+
+  it('토큰을 하나라도 받은 뒤의 중단은 되돌리지도 지우지도 않음 (#440 · #489)', async () => {
+    // 서버가 질문 + 부분 답을 저장했으므로 말풍선이 남고, 입력창에 되돌리면 같은 글이 두 번 보인다
+    const stream = openStream()
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    act(() => void stream.handlers?.onToken?.('부분'))
 
     await act(async () => {
       result.current.stop()
@@ -582,9 +710,12 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
       { id: 'a1', role: 'assistant', content: '답', status: 'complete', citations: [] },
       { id: 'u2', role: 'user', content: '둘째 질문', status: 'complete', citations: [] },
     ]
-    vi.mocked(getMessages).mockResolvedValueOnce(saved)
+    holdStored(saved)
 
     await reject(stream, 502, '요청 실패 (502)')
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
 
     expect(getMessages).toHaveBeenCalledWith('c1')
     expect(giveBack).not.toHaveBeenCalled()
