@@ -1,0 +1,4 @@
+     × 질문이 6초 뒤에야 걷혀도 재확인 창 안이라 되돌린다 (#501) 19ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected "vi.fn()" to be called with arguments: [ false ]
+      Tests  1 failed | 44 skipped (45)
