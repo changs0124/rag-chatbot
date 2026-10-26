@@ -1,0 +1,48 @@
+# 옮기거나 지운 사실이 정본에 남아 있는지 (after 트리, grep -F 건수>0 = OK)
+D4-1     OK   backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java :: 제조사 매뉴얼 · 담당 부서
+D4-1     OK   backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java :: 사내 절차처럼 읽혀 현장에서 그대로 따라 할 수 있다
+D4-1     OK   docs/01_specs/live-integration.md :: | #376 
+D4-2     OK   backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java :: 영어 질문은 검색이 영어
+D4-2     OK   docs/01_specs/live-integration.md :: 출력을 전부 50 mA 로 답함
+D4-3     OK   docs/01_specs/live-integration.md :: 매뉴얼에는 AL.2144 표기가 없고
+D4-3     OK   backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java :: 오타 번호 질문이 「찾지 못했다」로만 끝나서
+D4-4     OK   docs/01_specs/live-integration.md :: 25개 중 23~25개
+D4-4     OK   docs/01_specs/live-integration.md :: 1~2 → 2~11개
+D4-5     OK   backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java :: 검색 결과에 없는 번호를 만들지 않는다
+D4-5     OK   backend/src/main/java/com/ragchatbot/openai/OpenAiRealService.java :: 같은 호기의 여러 건을 가르는 값이다
+D7-1     OK   docs/CONVENTIONS.md :: 스키마의 소유자는 Flyway 마이그레이션 SQL
+D7-1     OK   docs/CONVENTIONS.md :: 기존 마이그레이션을 수정하지 않는다
+D7-4     OK   docs/02_architecture/backend.md :: `@ResponseStatus(CREATED)`(201) 가 둘(문서 업로드 · 계정 발급)
+D7-4     OK   docs/02_architecture/backend.md :: `ResponseEntity.noContent()`(204)
+D7-5     OK   docs/CONVENTIONS.md :: `${ENV:기본값}` 형태
+D7-5     OK   docs/CONVENTIONS.md :: 일부러 기본값을 비워
+D7-6     OK   docs/01_specs/api.md :: 지금은 도달하는 경로가 없다
+D8-1     OK   docs/01_specs/api.md :: | 토큰 TTL | 기본 15분(`FILE_ACCESS_TOKEN_TTL_MINUTES`) |
+D8-7     OK   docs/01_specs/features.md :: | `JWT_REFRESH_THRESHOLD_MINUTES` | int | N | 기본 30.
+D8-8     OK   docs/01_specs/api.md :: 기본 12시간(`JWT_MAX_SESSION_HOURS`
+D8-9     OK   docs/01_specs/api.md :: 만료 : 기본 120분
+D8-10    OK   docs/01_specs/api.md :: 메시지는 4,000자까지다
+D8-11    OK   docs/01_specs/api.md :: 첨부는 한 번에 5장까지다
+D8-12    OK   docs/01_specs/api.md :: 이름은 50자까지다
+D8-13    OK   docs/02_architecture/backend.md :: 전역 상한은 16 이다(#278)
+D10-2    OK   docs/04_tasks/backlog.md :: 코드베이스에서 확인된 미결 항목
+D18-1    OK   docs/06_changelog/CHANGELOG.md :: 엔트리 청크 gzip 147.38KB → 92.76KB
+D18-1    OK   docs/06_changelog/CHANGELOG.md :: gzip 53.86KB
+D18-2    OK   docs/06_changelog/CHANGELOG.md :: 때문에 `42.7.13` 을 박아
+D18-3    OK   docs/06_changelog/CHANGELOG.md :: 압축 후 90MB 남짓이고 GCP
+D22-1    OK   docs/06_changelog/CHANGELOG.md :: | 17 | 16 / 1 | 6.6 / 7.9초 | 224MiB |
+D22-1    OK   docs/06_changelog/CHANGELOG.md :: 측정 전 app 178MiB
+D22-1    OK   docs/06_changelog/CHANGELOG.md :: | 8 | 8 / 0 | 7.2 / 8.4초 | 207MiB |
+D23-1    OK   docs/CONVENTIONS.md :: ruleset 을 복원해야 하면 문서를 보지 말고 정본에서 뽑는다
+D23-2    OK   docs/CONVENTIONS.md :: gh pr close <n> && gh pr reopen <n>
+D23-3    OK   docs/CONVENTIONS.md :: ruleset 이 안 보인다
+D6-2     OK   docs/06_changelog/CHANGELOG.md :: Spring Boot 버전 주석을 무엇에서 무엇으로 올렸는지 읽히게 다듬었다(#466)
+
+# D23 문장 보존 : 옮긴 블록이 변경 전 줄과 바이트로 같은지 (차이는 「위 항목」 한 군데여야 함)
+13c13
+<   체크가 이름만 다른 것이 붙어 pending   -> 위 항목. ci.yml 의 name: 과 ruleset context 를 맞춘다
+---
+>   체크가 이름만 다른 것이 붙어 pending   -> 위 「테스트·CI 게이트」의 name: 규칙. ci.yml 의 name: 과 ruleset context 를 맞춘다
+40a41
+> 
+10-26 본문 줄 집합 동일(소절 헤딩 제외)

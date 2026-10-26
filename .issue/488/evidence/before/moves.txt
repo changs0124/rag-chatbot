@@ -1,0 +1,79 @@
+# #488 지운 · 바꾼 문장 → 정본 위치 대조표 (기준 main 001df15, 줄 번호는 변경 전)
+# 형식 : [항목] 원래 위치 | 지운 사실 | 정본 위치(같은 사실이 있는 곳) | 판정
+# 판정 : 같음 = 정본에 같은 사실 · 상위 = 정본이 더 자세함 · 남김 = 정본에 없어 지우지 않음
+
+## D4 지시문 줄별 이유 · 증상 · 실측 (backend.md 「채팅 SSE 계약」)
+[D4-1] backend.md:200-201 #376 | 출처 0건 답이 일반적으로 연결·설정 순서를 번호 목록으로 붙임 · 사내 절차처럼 읽혀 따라 할 위험 · 개념과 확인처(제조사 매뉴얼 · 담당 부서)만 | live-integration.md 3-2 표 #376 행(증상) · OpenAiRealService.java:117 머리 주석(이유 「사내 절차처럼 읽힌다」) · RAG_INSTRUCTIONS 문자열(「개념과 어디서 확인할지(제조사 매뉴얼 · 담당 부서)만 … 사내 절차처럼 읽혀 현장에서 그대로 따라 할 수 있다」) | 같음
+[D4-2] backend.md:202-203 #377 | 영어 질문은 검색이 영어 용어로만 돌아 BRAKE 접점 30 mA 를 놓침 · 모든 출력을 50 mA 로 답함 | 3-2 표 #377 행(「BRAKE 접점 30 mA … 출력을 전부 50 mA 로 답함」) · OpenAiRealService.java:118-119(「영어 질문은 검색이 영어 용어로만 돌아 청크를 놓친다」) | 같음
+[D4-3] backend.md:204-206 #378 | 매뉴얼에 알람 번호 표기 없음 · AL.2144? 가 클레임에만 걸림 · 매뉴얼 원인·조치 없이 클레임 한 문서 · 오타 번호면 없다고 밝히고 같은 이름 번호 안내 · 전엔 「찾지 못했다」로만 끝남 | 3-2 표 #378 행 · OpenAiRealService.java:120-121 · RAG_INSTRUCTIONS 알람 줄 | 같음
+[D4-4] backend.md:207-209 #427 | 그림 모두 요청 시 단계마다 하나씩 · 검색엔 25개 중 23~25개 · 요청 없으면 규칙 미적용 · 그 문장이 없으면 요청 없는 절차 질문에 그림이 몇 배 | 3-2 표 #427 행(「25개 중 23~25개 … 1~2 → 2~11개」) · OpenAiRealService.java:122-123 | 같음(표가 상위)
+[D4-5] backend.md:210-211 #432 | 같은 호기 여러 건을 가르는 값이 S/N · 묻지 않은 열이라 빠짐 · 검색 결과에 없는 번호는 만들지 않음 | 3-2 표 #432 행 · OpenAiRealService.java:124 · RAG_INSTRUCTIONS(「검색 결과에 없는 번호를 만들지 않는다」) | 같음
+[D4-6] backend.md:193 「아래 지시문 줄 설명은 고른 일부다 …」 | 포인터 문장 | 같은 자리에 새 포인터(3-2 표 · 머리 주석) | 바꿈
+[D4-남김] backend.md:194-199 #372 · #429 · #470 | 필터 구현(조각 단위 · 공백 보류 · SourceNameRewriter) | 백엔드 구현 사실이라 backend.md 가 자리 | 남김
+[D4-남김] backend.md:212-216 #438 | 제품 결정(한국어 기본 · 이어짐 · 원문 표기) | 리뷰 지시대로 설계 원칙으로 남김 | 남김
+[D4-남김] CHANGELOG #469 · #438 · #432 · #427 · #376 · #377 · #378 · #372 실측 줄 | 표보다 상위 집합(예 #432 SB8 86 → 101자 · #438 무자료 인용 0/3 · #376 답 길이 387 → 347자 · #427 F7 17~22 · #378 합친 근사 측정 54) | 3-2 표에 없음 | 남김 — 지우면 사실이 사라진다
+
+## D7 규칙 문장 사본
+[D7-1] backend.md:301-302 | 스키마 소유자 = Flyway SQL · 앱이 alter 안 함 · 새 파일 추가 · 기존 수정 금지 | CONVENTIONS.md:43-44 「스키마」 | 같음 (경로 backend/src/main/resources/db/migration/ 는 backend.md 에 남김)
+[D7-2] overview.md:99 | 스키마 소유자는 마이그레이션 SQL · 앱이 alter 안 함 | CONVENTIONS.md:43 「스키마」 | 같음
+[D7-3] erd.md:277 | 기존 마이그레이션 수정 금지 · 새 파일로 추가 | CONVENTIONS.md:44 「스키마」 | 같음
+[D7-남김] erd.md:17-18 | 「스키마 소유자는 Flyway SQL … 이 문서와 어긋나면 마이그레이션이 정본」 | 문서↔마이그레이션 우선순위 선언이라 erd 자기 몫 | 남김
+[D7-4] CONVENTIONS.md:31-32 | 삭제류 ResponseEntity<Void> + noContent()(204) · 201 둘(문서 업로드 · 계정 발급) · 그 외 200 | backend.md:42-44 「API 설계 원칙」(201 둘 · 삭제 3곳 noContent() 204 · 그 밖은 상태 미지정 = 200) · 계약은 api.md:93 HTTP 표 | 같음(타입 인자 <Void> 는 noContent() 반환형에서 따라옴)
+[D7-5] backend.md:381-382 | application.yml 에 ${ENV:기본값} · 위험한 값(app.mode · app.jwt.secret)은 기본값을 비워 기동 실패 | CONVENTIONS.md:47-49 「설정」 | 같음 (파일 경로는 backend.md 에 남김)
+[D7-6] api.md:105 HTTP 표 503 | 커밋 전 비동기 타임아웃도 같은 코드지만 지금은 도달 경로가 없다 | api.md:85 에러 표 SERVICE_UNAVAILABLE 행(「비동기 요청 타임아웃이 응답 커밋 전에 난 경우 … 지금은 도달하는 경로가 없다」) | 같음
+
+## D8 기본값 수치 사본
+[D8-1] api.md:47 | TTL 기본 15분 · FILE_ACCESS_TOKEN_TTL_MINUTES | api.md:363 API-GET-006 표 「토큰 TTL 기본 15분」 | 같음
+[D8-2] features.md:138 | TTL 기본 15분 | api.md API-GET-006 | 같음
+[D8-3] features.md:229 | 「15분 만료 문제」 | api.md API-GET-006 | 같음
+[D8-4] backend.md:113 · 116 · 123 | TTL 기본 15분 · 최대 15분 · TTL 이 15분 | api.md API-GET-006 | 같음
+[D8-5] overview.md:151 | 최대 15분(TTL) | api.md API-GET-006 | 같음
+[D8-6] backlog.md:34 | 서명 토큰 TTL 15분 | api.md API-GET-006 | 같음
+[D8-7] backend.md:127 | JWT_REFRESH_THRESHOLD_MINUTES 기본 30분 | features.md:500 FEAT-OPS-003 입력값 「기본 30」 (api.md 에는 없음) | 같음
+[D8-8] backend.md:128 · features.md:501 | JWT_MAX_SESSION_HOURS 기본 12 | api.md:37 「인증」 기본 12시간 | 같음
+[D8-9] features.md:518 | 수명 기본 120분 · 최소 30분 · 최대 120분 | api.md:35 「인증」 기본 120분 + features.md:500 임계 30 | 같음(최소 = 임계 · 최대 = 수명으로 표기)
+[D8-남김] features.md:516 · 521 | 「90분에 한 번씩」 · 「약 90분(수명 120분 − 임계 30분)」 | 기본값으로 계산한 설계 근거 예시 | 남김
+[D8-10] features.md:56 | 메시지 4,000자 | api.md:286 API-POST-005 「메시지는 4,000자까지다」 · :322 CHAT_MAX_MESSAGE_CHARS | 같음
+[D8-11] features.md:57 | 첨부 5장(굵은 규칙) | api.md:290 API-POST-005 「첨부는 한 번에 5장까지다」 · backend.md 유량 제어 CHAT_MAX_ATTACHMENTS | 같음 (UI 안내 문구 「첨부는 한 번에 5장까지」는 화면 문자열이라 남김)
+[D8-12] features.md:548 | 이름 50자 | api.md:194 · 202 · 495 USER_MAX_NAME_CHARS | 같음
+[D8-13] overview.md:140 | 전역 상한 기본 16 | backend.md:267 「유량 제어」「전역 상한은 16 이다(#278)」 · api.md 429 행이 이미 그곳을 가리킴 | 같음
+
+## D10 INDEX
+[D10-1] INDEX.md:29 · 30 · 33 「지금 비어 있음」 | 폴더 상태 사본 | 폴더 자체(.gitkeep) · INDEX:39 비어 있는 자리 목록에 03_references/ · 05_issues/ 를 명시 | 같음
+[D10-2] INDEX.md:32 Backlog 「전체 태스크」 → backlog.md:3 머리말 「코드베이스에서 확인된 미결 항목」 | 설명 정정 | backlog.md:3 | 같음
+[D10-3] INDEX.md:36 정본 위치에 「이슈(#NNN) 정본 = GitHub Issues」 한 줄 추가 | 새 포인터 | — | 추가
+[D10-4] INDEX.md:57 「위 규칙보다」 → 「이 가이드의 1~4번보다」 | 지시 대상 명확화 | — | 바꿈
+
+## D13 같은 파일 안 「아래 …」 참조 (backend.md)
+[D13-1] backend.md:442 「인바운드」 → 「서비스 트래픽에는 인바운드 포트를 열지 않는다」(:449 굵은 문단 첫머리) | 참조 문구 | — | 바꿈
+[D13-2] backend.md:447 「메모리 상한」 → 「메모리 상한을 셋 다 걸어 두었다」(:541 굵은 문단 첫머리) | 참조 문구 | — | 바꿈
+[D13-남김] 「Lightsail 처음 준비」 · 「터널 토큰은 파일로 넘긴다」 · 「업로드 부하에서 스왑을 금지하기로 정했다」 · 「백업」 · 「유량 제어」 | 이미 굵은 문단 첫머리 · 헤딩과 같음 | — | 남김 (헤딩을 바꾸지 않아 다른 문서 · 코드 주석 영향 없음)
+
+## D18 · D19 · D22 시점 수치
+[D18-1] frontend.md:172 | 청크 gzip 약 54KB · 첫 JS gzip 147.38KB → 92.76KB | CHANGELOG 10-22 #417(「gzip 53.86KB … 엔트리 청크 gzip 147.38KB → 92.76KB」) | 같음(CHANGELOG 가 상위)
+[D18-2] backlog.md:12 「현재 BOM 해석값 42.7.13」 → 「#48 시점 … — CHANGELOG 10-06 #48」 | 시점 병기 | CHANGELOG 10-06 #48 「postgresql.version 수동 고정을 뺐다 … 42.7.13」 | 같음
+[D18-3] backend.md:515 「압축 후 90MB 남짓」 에 「(10-06 GCP 시절 실측, CHANGELOG)」 병기 | 시점 병기 | CHANGELOG 10-06 「압축 후 90MB 남짓이고 GCP 인바운드 전송은 무료다」 | 같음
+[D19-1] live-integration.md:227 「한 글자라도 바꾸면 아래 수치는 무효」 → 「행마다 그 이슈 당시 지시문 기준 · 현행 보증 아님 · 바꾸면 다시 재서 행을 더한다」 | 자기 모순 문장 정정 | — | 바꿈
+[D19-2] live-integration.md:228 「31문항 × 2」 → 「31문항, 반복은 측정마다(한 번 · × 2 · × 4) · 회차는 CHANGELOG 그 이슈 항목」 | 정의 정정(표의 #438 28/28 · #469 31 × 4 와 맞춤) | CHANGELOG 각 항목 | 바꿈
+[D22-1] backend.md:269-276 · 279 | 10-15 15:15 KST 운영 부하 실측표(8/12/16/17명 · p50/p95 · 메모리 207~224MiB) · 측정 전 178MiB | CHANGELOG 10-15 #278 항목에 표째 옮김 | 같음(옮김)
+[D22-남김] backend.md 결론(상한 16 · 오류 0 · Hikari 5 충분 · 메모리 비병목 50MiB 남짓) · :541 기동 직후 151MiB(2026-10-12, 날짜 있음) | 설계 결론 | — | 남김
+
+## D23 CONVENTIONS CI 장애 런북
+[D23-1] CONVENTIONS.md:127-135 ruleset 복원 명령 · ci.yml name: 대체 | 새 절 「CI 장애 대응」 첫 불릿 | 같음(옮김, 문장 그대로)
+[D23-2] CONVENTIONS.md:137-158 #170 「어긋난 것 / 아예 없는 것」 · run 확인 · close/reopen · gh workflow run 불가 | 「CI 장애 대응」 둘째 불릿 | 같음(옮김, 코드블록 안 「위 항목」만 「위 「테스트·CI 게이트」의 name: 규칙」으로)
+[D23-3] CONVENTIONS.md:160-168 필수 확인 명령 · enforcement_level 함정 | 「CI 장애 대응」 셋째 불릿 | 같음(옮김)
+[D23-남김] 「ci.yml 의 name: 을 고치면 ruleset context 도 같이 고친다」 | 코드를 고치는 사람의 규칙이라 「테스트·CI 게이트」에 남기고 그 뒤에 새 절 포인터 한 줄 | 남김
+[D23-4] INDEX.md:9 에 「CI 장애 대응」 포인터 추가(7잡 · 스케줄 정본 위치는 그대로 「테스트·CI 게이트」) | — | 추가
+
+## D6 CHANGELOG
+[D6-1] 10-26 구획 라벨 없는 ### Refactored · Removed · Fixed · Docs → (a89fb83) | 라벨만 | git: #449 #450 #451 #452 #453 #454 #455 #456 #470 커밋이 20f26b3..a89fb83 안 | 바꿈
+[D6-2] #466 항목(옛 ### Docs 첫 줄) → ### Docs (a05d994) 로 이동, 본문 그대로 | git: 0e3ec15 · 64893c1 은 a05d994 의 조상, a89fb83 의 조상 아님 | 옮김
+[D6-3] CHANGELOG 머리에 「라벨 형식은 [2026-10-26] 부터 · 이전 구획 소급 안 함」 한 줄 | — | 추가
+[D6-순서] 10-26 소절 순서는 이미 최신 배포 먼저(ef68f53 → VS 교체 #467 → 62b3c3f → a05d994 → a89fb83)라 바꾸지 않음
+
+## 리뷰 반영(2차 커밋)
+[R-1] features.md:516 「실효 최대 = 12시간 + 토큰 수명」 → 「절대 수명 + 토큰 수명」 | 12시간 = api.md 「인증」 JWT_MAX_SESSION_HOURS 기본값 | 같음
+[R-남김] features.md:516 「90분에 한 번씩」 · features.md:521 「약 90분(수명 120분 − 임계 30분)」 | 기본값으로 계산한 설계 근거 예시라 남김 | 남김
+[R-2] CONVENTIONS 에서 지운 「ResponseEntity<Void>」 → backend.md:42-43 「API 설계 원칙」에 반환형 보존 | 같음
+[R-3] CHANGELOG 10-15 #278 「표는 backend.md 「유량 제어」」(로컬 표는 #278 이후 이미 삭제) → 「아래 표」(#488 이 옮긴 운영 표) | 포인터 정정
+[R-4] D19 · D10 은 위치 이동이 아니라 사실 · 범위 정정 — CHANGELOG #488 항목에 근거 명시

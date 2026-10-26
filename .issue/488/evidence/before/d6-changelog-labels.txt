@@ -1,0 +1,35 @@
+## D6 CHANGELOG 머리 · 10-26 소절 순서
+11: ### Changed (ef68f53 · 테스트)
+19: ### Fixed (ef68f53)
+41: ### Docs (ef68f53)
+49: ### Fixed (Vector Store 교체)
+58: ### Fixed (62b3c3f)
+71: ### Fixed (a05d994)
+77: ### Refactored
+89: ### Removed
+98: ### Fixed
+109: ### Docs
+
+## 10-26 각 항목의 이슈 번호와 소절
+### Changed (ef68f53 · 테스트) <- #482
+### Fixed (ef68f53) <- #485
+### Fixed (ef68f53) <- #479
+### Fixed (ef68f53) <- #481
+### Fixed (ef68f53) <- #484
+### Fixed (ef68f53) <- #480
+### Docs (ef68f53) <- #487
+### Docs (ef68f53) <- #486
+### Fixed (Vector Store 교체) <- #467
+### Fixed (62b3c3f) <- #468
+### Fixed (62b3c3f) <- #476
+### Fixed (a05d994) <- #469
+### Refactored <- #456
+### Refactored <- #455
+### Removed <- #454
+### Fixed <- #470
+### Fixed <- #453
+### Docs <- #466
+### Docs <- #452
+### Docs <- #451
+### Docs <- #449
+### Docs <- #450
