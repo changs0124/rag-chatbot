@@ -130,7 +130,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   `CorsConfig` 의 **노출 헤더 등록이 빠지면 브라우저가 값을 숨겨 조용히 아무 일도 일어나지 않으므로**
   그 등록 자체를 케이스로 잠가 두었다.
 - **역할(`users.role`)은 JWT 에 담지 않는다**(FEAT-ADMIN-001). 담으면 강등이 토큰 만료까지 반영되지
-  않는다. 필터가 이미 요청마다 사용자 행을 읽고 있으므로 같은 조회에서 함께 읽는다 — 추가 쿼리가 없다.
+  않는다. 역할은 관리자 경로에서만 `AdminAccessGuard` 가 사용자 행을 한 번 더 읽는다 — 일반 경로에는 비용이 없다.
 - 승격·강등은 환경변수 `ADMIN_EMAILS` 명단으로만 일어난다. **앱에 권한 상승 API 가 없다.**
   기동 시 명단에 없는 관리자를 내리고 명단에 있는 사용자를 올린다 — 강등이 없으면 명단이 통제 수단이
   되지 못한다. 규칙은 셋이다.
@@ -151,7 +151,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   사용자가 받는 문자열의 성질이 갈리는데 아무도 눈치채지 못한다.
 - **계정은 허용 도메인으로만 만든다**(`ALLOWED_EMAIL_DOMAINS`, FEAT-AUTH-001). `live` 에서 명단이
   비면 기동을 막는다 — "비면 전원 허용"으로 두면 배포에서 변수를 빠뜨렸을 때 조용히 경계가 사라진다.
-  가입이 없어진 지금도 이 명단이 남는 이유는 **관리자가 주소를 손으로 치기 때문**이다. 오타 한 번이면
+  스스로 가입하는 경로가 없는데도 이 명단이 남는 이유는 **관리자가 주소를 손으로 치기 때문**이다. 오타 한 번이면
   사외 주소에 계정이 열린다.
   **도메인 검사는 중복 검사보다 먼저** 한다. 순서가 뒤집히면 거절할 주소에 "이미 있는 이메일"을
   돌려주게 되어 계정 존재 여부가 샌다. 서브도메인은 포함하지 않으며(정확히 일치),
@@ -175,6 +175,8 @@ exception/    ApiExceptions + GlobalExceptionHandler
   저장 조합은 `docs/01_specs/erd.md` 「messages」 가 정본이다. 자원 반납은 읽기 타임아웃이 맡는다(아래 「유량 제어」).
 - **저장 텍스트는 전송에 성공한 토큰까지다.** 토큰을 보낸 **뒤에** 버퍼에 담아, 전송 실패한 토큰은 남기지 않는다.
   끊김은 끊긴 뒤의 전송이 실패할 때 드러나고 생성도 그때 멈춘다 — 화면에 보이는 것과의 관계는 `frontend.md` 「스트리밍 UI 규칙」(#487).
+- 스트리밍 구간에서는 DB 커넥션을 잡지 않는다. 저장은 `ChatPersistenceService` 가 메시지·출처·touch 를
+  **한 트랜잭션**으로 처리한다.
 - **진행 단계 라벨 문자열은 LLM 구현이 소유한다.** `ChatService` 는 실행 모드를 알지 못한다. 목업은 목업임이
   드러나는 전용 문구를 쓴다.
 - **조회 단계 라벨은 실제로 참조한 자료명을 밝힌다.** 그 이름은 화면 하단 출처 목록과 **같은 값**
@@ -188,10 +190,11 @@ exception/    ApiExceptions + GlobalExceptionHandler
   첨부 유무는 `ChatService` 가 `stageLabel` 에 넘기고 문구는 구현이 정한다.
 - **출처 파일은 annotation 이 정한다.** `file_citation` annotation 이 0건이면, 본문 인용 표기(`turnNfileM`)로
   복원한다(#281). 대응 규칙은 `live-integration.md` 3-1 에 있다.
+- 아래 지시문 줄 설명은 고른 일부다 — **줄 전체와 줄별 실측의 정본은 `live-integration.md` 3-2** 다.
 - **인용 표기는 문장 끝에만 오도록 지시한다**(#372). 표기를 문서 이름 자리에 쓰면 필터가 지운 자리가 빈칸이 되어
   「결과는 에 기록돼 있습니다」처럼 문장이 깨진다. 필터는 스트림 조각 단위라 앞 조각의 공백을 되돌리지 못한다.
   지시로도 남는 경우는 **필터가 그 자리에 문서 이름을 넣는다**(#429) — 표기 뒤 공백을 첫 글자가 올 때까지 보류해 명사 자리인지 가린다.
-  판정 · 이름 규칙은 `live-integration.md` 3-1 의 인용 표기 대응 규칙
+  판정 · 이름 규칙은 `live-integration.md` 3-1 의 인용 표기 대응 규칙에 있다.
 - **본문에 옮겨 적힌 파일 이름은 필터가 짧은 이름으로 바꾼다**(#470, `SourceNameRewriter`). 「TM매뉴얼_VSVDTMNOPK10_v3.md」 →
   「TM매뉴얼」. 지시문으로 막으면 인용을 빠뜨리는 답이 늘어 뺐다 — 규칙 · 실측은 `live-integration.md` 3-1
 - **무자료 일반 설명에서 장비 절차를 단계로 쓰지 않게 지시한다**(#376). 출처 0건인 답이 「일반적으로」 연결 · 설정 순서를
@@ -243,8 +246,6 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 
 토큰 수는 문자 수 기반 근사(한국어 기준 1.5자당 1토큰)다. 정확한 토크나이저를 붙이지 않는 이유는 이 값이
 하드 한도가 아니라 **예산 가드**이기 때문이며, 영어에서 과대평가되는 방향은 이력이 짧아지는 쪽이라 안전하다.
-- 스트리밍 구간에서는 DB 커넥션을 잡지 않는다. 저장은 `ChatPersistenceService` 가 메시지·출처·touch 를
-  **한 트랜잭션**으로 처리한다.
 
 ## 유량 제어
 
@@ -317,7 +318,7 @@ SSE 타임아웃까지 기다리게 된다. 그 결합을 지키는 것이 「�
 - 토큰 사용량 컬럼이 **nullable 인 이유**(0 을 기본값으로 두면 "모르는 것"과 "정말 0"이 합계에서 섞인다)와
   집계 질의는 [erd.md](../01_specs/erd.md) 에 있다. 여기서 알아야 할 것은 **조회할 때 반드시 걸러야 한다**는 것뿐이다.
 - `rag_documents` 만 **소프트 삭제 + `on delete restrict`** 이고 나머지는 hard delete + cascade 다.
-  **의도된 차이**이며 판단 근거는 [features.md](../01_specs/features.md) FEAT-ADMIN-002 「soft delete 를 쓰는 이유」에 있다.
+  **의도된 차이**이며 판단 근거는 [erd.md](../01_specs/erd.md) 「rag_documents (RAG 문서)」에 있다.
 - **대화의 조건부 삭제와 채팅 준비는 대화 행 잠금으로 순서를 정한다**(#447). `deleteIfEmpty` 는 `FOR UPDATE` 로 잠근 뒤 메시지가
   있는지 보고(있으면 409), `ChatService.prepare` 의 소유 확인은 `FOR KEY SHARE` 다. 준비가 먼저면 삭제가 그 커밋을 기다렸다가 새 문장으로
   막 들어간 질문을 보고, 삭제가 먼저면 준비가 기다렸다가 대화가 없어 404 다. `KEY SHARE` 라 이름 변경 · `touch` 와는 막히지 않는다.
@@ -325,7 +326,7 @@ SSE 타임아웃까지 기다리게 된다. 그 결합을 지키는 것이 「�
 
 ## 파일
 
-- 업로드 검증 순서 : MIME 허용목록 → 타입별 용량 → **매직바이트**. webp 는 RIFF 뒤 오프셋 8의 `WEBP` 마커까지 본다.
+- 업로드 검증 순서 : MIME 허용목록 → 용량 상한(10MB) → 사용자별 저장 한도(#418) → **매직바이트**. webp 는 RIFF 뒤 오프셋 8의 `WEBP` 마커까지 본다.
 - **이미지만 받는다.** 문서(PDF)는 업로드·표시는 되는데 모델에 전달되지 않아 "그 PDF 를 근거로 답했다"는 오해를
   만들었다. 실제 근거로 쓰려면 실 키 검증이 필요하므로 지금은 **받지 않는 것**을 계약으로 한다.
 - 저장 경로는 서버가 소유한다(`{userId}/{uuid}.{ext}`). 경로 탈출은 정규화 후 루트 하위인지로 막는다.
@@ -402,7 +403,7 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 기동을 막는다. 하한을 한 곳에 둔 이유는 이 키를 `JwtService`(aud=auth)와
 `FileAccessTokenService`(aud=file) 둘이 공유하기 때문이다. 각자 들고 있으면 한쪽만 올렸을 때
 조용히 갈리는데, **두 토큰이 같은 키로 서명되므로 약한 쪽이 곧 전체의 실효 강도**다.
-`/api/files/**` 는 permitAll 이라 파일 토큰의 서명이 그 경로의 유일한 경계라는 점이 특히 그렇다.
+`GET /api/files/**` 는 permitAll 이라 파일 토큰의 서명이 그 경로의 유일한 경계라는 점이 특히 그렇다.
 
 ## 배포
 
@@ -623,7 +624,7 @@ GB-월 과금)을 켜고, 종전 GCS 백업 스크립트는 삭제했다.
 1. `create-instances-from-snapshot --use-latest-restorable-auto-snapshot` 에 **launch script**(user-data)로 `secrets/tunnel_token` 이름 바꾸기 ·
    `docker update --restart=no deploy-cloudflared-1` · `docker stop deploy-cloudflared-1` 을 넘긴다. 스크립트는 **ASCII 만** — 한글 주석이 있으면 Windows AWS CLI 가 파일을 못 읽는다
 2. **launch script 는 docker 보다 늦게 돈다** — cloudflared 가 몇 초 운영 터널에 같이 붙으므로 **사용자가 없는 시간에** 하고, 접속 즉시 `sudo docker ps` 로 cloudflared 가 꺼졌는지 본다
-3. 확인 : `127.0.0.1:8080/api/health` 200 · 표 7개 행 수를 운영의 **스냅샷 시각 이전 생성분**(`created_at`/`installed_on` < 스냅샷 `createdAt`)과 대조
+3. 확인 : `127.0.0.1:8080/api/health` 200 · 표 7개(앱 테이블 6개 + `flyway_schema_history`) 행 수를 운영의 **스냅샷 시각 이전 생성분**(`created_at`/`installed_on` < 스냅샷 `createdAt`)과 대조
 4. 끝나면 인스턴스를 지우고 `get-instances` · `get-static-ips` · `get-disks` 로 남은 것이 없는지 본다. 고정 IP 는 붙이지 않는다(분리된 고정 IP 는 과금)
 
 ### 데모 - 로컬 + 터널

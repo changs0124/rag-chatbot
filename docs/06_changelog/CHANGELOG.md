@@ -27,6 +27,7 @@
   - 운영(Cloudflare → cloudflared → Tomcat, 실 OpenAI, 시나리오별 5회) : 보내자마자 끊기 질문도 없음 5/5(Cloudflare 가 앱에 넘기지 않음) · 200(meta) 직후 끊기 질문만, 45초 뒤에도 답 없음 5/5 · 토큰 3~4개 받고 끊기 `complete` + `stopped` 21~31자 5/5. 결과 `.issue/487/evidence/prod/probe-prod.jsonl`
   - 「곧바로 다시 물으면 서버가 답을 만드는 중이라 429」도 고쳤다 — 429 는 서버가 끊김을 알아채기 전에만 난다. 로컬에서 본 429 는 1건(즉시 끊김, 다음 전송이 1.5초 뒤였던 회차)
   - 고친 곳 : `frontend.md` 「스트리밍 UI 규칙」 · 「남은 한계」, `backend.md` 「저장 텍스트」, `useChat.ts` · `ChatService.java` 주석. 코드는 그대로 — 저장됨 판정 턴이 답 없는 질문으로 남는 것은 서버에서 고칠 예정(#489)
+- **코드와 어긋난 문서 · 주석 문장을 코드에 맞췄다(#486).** 동작 변경 없음 — 문서 · 주석 · yml 주석 · `.env.example` 주석만 고쳤다. 발급 계정 역할(`ADMIN_EMAILS` 면 admin) · 역할 조회는 관리자 경로의 `AdminAccessGuard` 가 따로 한다 · RAG 문서 삭제는 soft delete 먼저(#98) · 실 연동 필수에 `ALLOWED_EMAIL_DOMAINS`, 목업 로그인에 `ADMIN_EMAILS` · 첨부 검증 순서에 사용자별 한도(#418) · permitAll 은 `GET /api/files/**` 만 · `DOC_FIGURES_DIR` 를 비웠을 때 mock 은 견본 · 동기화 `total` 의 뜻 · 업로드 상한 주석의 26MB OOM 계산을 10MB(#402) · #418 로 · 「서명 경로 토큰」→「서명 쿼리 토큰」 · overview 「알려진 제약」에 로그인 상한의 계정 잠금 지렛대를 되살렸다. 문서끼리의 끊긴 문장 · 용어 · 포인터와 api · features · live-integration · design-system 헤더 버전 · 수정일도 함께 고쳤다. `V5__user_role.sql` 의 없는 문서 참조는 Flyway 체크섬 때문에 그대로 둔다. #451 항목의 「모델명 `gpt-6-sol` 은 README · `.env.example` 에만」은 `live-integration.md` 의 측정 · 관측 기록(당시 모델명)을 뺀 말이다
 
 ## [2026-10-26]
 
