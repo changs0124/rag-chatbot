@@ -370,6 +370,37 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.messages.map((m) => m.content)).toEqual(['첫 질문', '답', '둘째 질문'])
   })
 
+  it('서버가 질문을 걷었으면(#489) 이력에 보낸 질문이 없어 글과 첨부 카드를 함께 되돌린다', async () => {
+    // 서버는 토큰을 하나도 못 보내고 끊긴 턴의 질문을 지우고 첨부 연결만 푼다 - 카드는 다시 보낼 수 있다
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const card = { id: 'a1', fileType: 'image' as const, url: '/api/files/a1' }
+    await startStream(() => result.current.send('둘째 질문', [card], giveBack))
+    vi.mocked(getMessages).mockResolvedValueOnce([
+      { id: 'm1', role: 'user', content: '첫 질문', status: 'complete', citations: [] },
+      { id: 'm2', role: 'assistant', content: '답', status: 'complete', citations: [] },
+    ])
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    // false = 글만이 아니라 카드까지 되돌린다
+    expect(giveBack).toHaveBeenCalledWith(false)
+    expect(deleteConversationIfEmpty).not.toHaveBeenCalled()
+    // 걷힌 질문 말풍선은 다시 붙지 않는다 - 입력창으로 돌아갔다
+    expect(result.current.messages.map((m) => m.content)).not.toContain('둘째 질문')
+    expect(result.current.activeId).toBe('c1')
+  })
+
   it('200 을 받은 뒤의 중단은 되돌리지도 지우지도 않음 (#440)', async () => {
     // 서버가 질문을 저장했으므로 말풍선이 남고, 입력창에 되돌리면 같은 글이 두 번 보인다
     const stream = openStream()

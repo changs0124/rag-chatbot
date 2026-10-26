@@ -62,11 +62,13 @@ final class ChatStreamTestSupport {
 	/** 저장 호출을 기록만 하는 대역 */
 	static final class RecordingPersistence extends ChatPersistenceService {
 		final List<Saved> saves = new ArrayList<>();
+		/** 걷은 질문 id(#489) */
+		final List<UUID> retracted = new ArrayList<>();
 		/** 첫 저장을 던지게 함 - 스트림 완주 뒤 저장 실패 경로를 만드는 데 씀(#97) */
 		private int failFirst;
 
 		RecordingPersistence() {
-			super(null, null, null);
+			super(null, null, null, null);
 		}
 
 		RecordingPersistence failingFirstSave() {
@@ -84,10 +86,15 @@ final class ChatStreamTestSupport {
 			}
 			saves.add(new Saved(content, status, stopped, timedOut, citations, inputTokens, outputTokens));
 		}
+
+		@Override
+		public void retractQuestion(UUID conversationId, UUID userMessageId) {
+			retracted.add(userMessageId);
+		}
 	}
 
 	static PreparedChat prepared() {
-		return new PreparedChat(UUID.randomUUID(), "질문", List.of(), List.of());
+		return new PreparedChat(UUID.randomUUID(), UUID.randomUUID(), "질문", List.of(), List.of());
 	}
 
 	static ChatService chatService(OpenAiService openAi, ChatPersistenceService persistence) {

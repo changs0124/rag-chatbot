@@ -175,6 +175,9 @@ exception/    ApiExceptions + GlobalExceptionHandler
   저장 조합은 `docs/01_specs/erd.md` 「messages」 가 정본이다. 자원 반납은 읽기 타임아웃이 맡는다(아래 「유량 제어」).
 - **저장 텍스트는 전송에 성공한 토큰까지다.** 토큰을 보낸 **뒤에** 버퍼에 담아, 전송 실패한 토큰은 남기지 않는다.
   끊김은 끊긴 뒤의 전송이 실패할 때 드러나고 생성도 그때 멈춘다 — 화면에 보이는 것과의 관계는 `frontend.md` 「스트리밍 UI 규칙」(#487).
+- **보낸 토큰이 0개인 채 끊기면 질문을 걷는다**(#489, `ChatPersistenceService.retractQuestion`) — 답이 만들어지지 않으므로 두면 답 없는 질문이
+  이력과 다음 턴의 모델 문맥에 영구히 남는다. 첨부 연결을 **먼저** 푼 뒤 질문 행을 지운다(`attachments.message_id` 가 on delete cascade 라
+  거꾸로 하면 첨부 행까지 사라진다). 질문 저장은 대화를 touch 하지 않으므로 되돌릴 `updated_at` 은 없다. 서버 타임아웃(#359)은 걷지 않는다.
 - 스트리밍 구간에서는 DB 커넥션을 잡지 않는다. 저장은 `ChatPersistenceService` 가 메시지·출처·touch 를
   **한 트랜잭션**으로 처리한다.
 - **진행 단계 라벨 문자열은 LLM 구현이 소유한다.** `ChatService` 는 실행 모드를 알지 못한다. 목업은 목업임이

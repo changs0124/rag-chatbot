@@ -30,6 +30,11 @@
 		where id = #{id} and user_id = #{userId} and message_id is null
 	</update>
 
+	<!-- 질문 철회 전에 연결을 푼다(#489) - message_id 외래 키가 on delete cascade 라 그대로 지우면 첨부 행까지 사라진다 -->
+	<update id="unlinkFromMessage">
+		update attachments set message_id = null where message_id = #{messageId}
+	</update>
+
 	<delete id="deleteDraftByIdAndUser">
 		delete from attachments where id = #{id} and user_id = #{userId} and message_id is null
 	</delete>

@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Fixed
+- **토큰을 하나도 못 보내고 끊긴 채팅 턴의 질문을 서버가 걷는다(#489).** 200(meta) 뒤 · 첫 토큰 전에 끊기면 서버는 답을 만들지 않아(#487) 답 없는 질문이 이력 · 다음 턴의 모델 문맥에 영구히 남았다. 이제 `ChatService` 의 끊김 처리에서 보낸 토큰이 0개이고 서버 타임아웃이 아니면 `ChatPersistenceService.retractQuestion` 이 한 트랜잭션으로 첨부 연결을 풀고(`AttachmentRepository.unlinkFromMessage`, 파일 · 행은 남김) 질문 행을 지운다(`MessageRepository.deleteUserMessage`). 대화 · `updated_at` 은 그대로(질문 저장은 touch 하지 않는다). 토큰을 보냈으면 지금처럼 stopped 부분 답, 첫 토큰 전 서버 타임아웃은 지금처럼 error 행. 프론트 판정(`judgeEarlyAbort`)은 바꾸지 않았다 — 철회 뒤 확인하면 「없음」으로 글 · 카드를 되돌린다. 확인이 철회보다 먼저면 여전히 「저장됨」(frontend.md 「남은 한계」)
+  - 테스트 : `ChatEarlyDisconnectTest`(원시 소켓, TC-CHAT-001 meta 직후 끊김 → 질문 0행 · 첨부 연결 풀림 · updated_at 불변 / TC-CHAT-002 토큰 3개 뒤 끊김 → 질문 + stopped 답) · `ChatStreamAbortTest` · `ChatStreamTimeoutTest` 단언 추가 · `useChat.test.ts` 1건. 하한 백엔드 397 → 399 · 프론트 257 → 258
+
 ## [2026-10-26]
 
 운영 배포 4회 — 백엔드 `a89fb83`(#452 주석 · #453 · #454 · #470, 롤백 `prev-20f26b3`, 지시문 문자열은 `20f26b3` 과 같음) · `a05d994`(#469 지시문 한 줄, 롤백 `prev-a89fb83`) · `62b3c3f`(#476, 롤백 `prev-a05d994`) · `ef68f53`(전체 리뷰 후속 #479 · #485, #486 · #487 은 주석, 롤백 `prev-62b3c3f`). #468 · #467 은 백엔드 배포 없이 운영 Vector Store 문서 교체로 반영했다(#467 이 나중, 운영 백엔드는 `62b3c3f` 그대로). 프론트 변경(#456 등)은 merge 때 Vercel 이 자동 배포했다. 10-26 전체 리뷰 후속 8건(#479 · #480 · #481 · #482 · #484 · #485 · #486 · #487) merge. 케이스 수 하한(main 통합 실측) : 백엔드 386 → **397** · 프론트 222 → **257**.

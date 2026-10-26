@@ -28,6 +28,11 @@
 		        #{inputTokens}, #{outputTokens})
 	</insert>
 
+	<!-- 답 없이 끊긴 턴의 질문 철회(#489). 대화 · 역할까지 걸어 다른 행을 지우지 않게 한다 -->
+	<delete id="deleteUserMessage">
+		delete from messages where id = #{id} and conversation_id = #{conversationId} and role = 'user'
+	</delete>
+
 	<select id="existsByConversation" resultType="boolean">
 		select exists(select 1 from messages where conversation_id = #{conversationId})
 	</select>

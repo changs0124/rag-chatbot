@@ -16,6 +16,9 @@ public interface MessageRepository {
 
 	void insert(Message message);
 
+	/** 사용자 메시지 한 행을 지운다(#489 질문 철회). 지운 행 수 */
+	int deleteUserMessage(@Param("id") UUID id, @Param("conversationId") UUID conversationId);
+
 	boolean existsByConversation(@Param("conversationId") UUID conversationId);
 
 	List<Message> listByConversation(@Param("conversationId") UUID conversationId);
