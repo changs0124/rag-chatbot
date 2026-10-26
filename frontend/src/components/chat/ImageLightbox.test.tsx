@@ -157,3 +157,12 @@ describe('ImageLightbox', () => {
     })
   })
 })
+
+// #484 F10
+describe('ImageLightbox 대화상자 이름 (#484)', () => {
+  it('role=dialog 에 이름이 있다', () => {
+    render(<ImageLightbox items={items} startIndex={0} onClose={vi.fn()} />)
+
+    expect(screen.getByRole('dialog', { name: '이미지 보기' })).toBeInTheDocument()
+  })
+})

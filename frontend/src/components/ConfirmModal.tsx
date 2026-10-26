@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useId } from 'react'
 
 export default function ConfirmModal({
   title,
@@ -13,6 +13,7 @@ export default function ConfirmModal({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const titleId = useId()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -22,22 +23,23 @@ export default function ConfirmModal({
   }, [onCancel])
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className="absolute inset-0" onClick={onCancel} aria-hidden="true" />
       {/* 이중 테두리 - 바깥 트레이 안에 본체가 앉은 모양 */}
       <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
         <div className="rounded-[1.375rem] bg-raised p-6">
-          <h2 className="text-base font-semibold text-ink">{title}</h2>
+          <h2 id={titleId} className="text-base font-semibold text-ink">{title}</h2>
           {message && <p className="mt-2 text-sm leading-relaxed text-ink-muted">{message}</p>}
           <div className="mt-6 flex justify-end gap-2">
+            {/* 첫 포커스는 취소 - 열리자마자 Enter 한 번이 삭제가 되지 않게 한다(#484) */}
             <button
+              autoFocus
               onClick={onCancel}
               className="rounded-full px-4 py-2.5 text-sm text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink active:scale-[0.98]"
             >
               취소
             </button>
             <button
-              autoFocus
               onClick={onConfirm}
               className="rounded-full bg-danger px-5 py-2.5 text-sm font-medium text-danger-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.02] active:scale-[0.98]"
             >
