@@ -1,0 +1,11 @@
+13:15:45.129 [main] ERROR com.ragchatbot.exception.GlobalExceptionHandler -- 처리되지 않은 예외 [a22ac7f1] POST /probe-upload
+PROBE A 업로드 POST /files 503 -> HTTP 500 {"code":"INTERNAL_ERROR","message":"처리 중 오류가 발생했습니다 (오류 번호: a22ac7f1)"}
+13:15:45.237 [main] ERROR com.ragchatbot.exception.GlobalExceptionHandler -- 처리되지 않은 예외 [be0e0d36] POST /probe-upload
+PROBE B 업로드 연결 거절 -> HTTP 500 {"code":"INTERNAL_ERROR","message":"처리 중 오류가 발생했습니다 (오류 번호: be0e0d36)"}
+13:15:45.252 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 실패 file-1: 503 Service Unavailable: [no body]
+PROBE C 파일 삭제 503 계속 -> 요청 2건 [DELETE /vector_stores/shared-store/files/file-1, DELETE /files/file-1]
+13:15:45.255 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 실패 file-1: 503 Service Unavailable: [no body]
+PROBE D 파일 삭제 503 두 번 뒤 성공 -> 요청 2건 [DELETE /vector_stores/shared-store/files/file-1, DELETE /files/file-1]
+13:15:45.258 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 실패 file-1: 503 Service Unavailable: [no body]
+13:15:45.258 [main] WARN com.ragchatbot.openai.OpenAiRealService -- 스토어 연결 해제 실패로 file file-1 은 지우지 않음 - 동기화하면 목록에 다시 보여 다시 지울 수 있�
+PROBE E 연결 해제 503 한 번 뒤 성공 -> 요청 1건 [DELETE /vector_stores/shared-store/files/file-1]
