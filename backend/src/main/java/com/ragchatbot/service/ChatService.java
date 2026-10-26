@@ -245,7 +245,7 @@ public class ChatService {
 					new ChatInput(prepared.message(), prepared.refs(), prepared.history()),
 					token -> {
 						firstTokenSeen[0] = true;
-						// 보낸 뒤에 담음 - 중단 시 저장분이 "화면에 닿은 만큼"과 같아짐(전송 실패한 토큰은 남기지 않음)
+						// 보낸 뒤에 담음 - 중단 시 저장분이 "전송에 성공한 만큼"과 같아짐(전송 실패한 토큰은 남기지 않음)
 						sendQuietly(emitter, "token", Map.of("delta", token));
 						buffer.append(token);
 					}, onStage);
