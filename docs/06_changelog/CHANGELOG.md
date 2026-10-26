@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Changed (테스트)
+- **콜드 실행 간헐 실패 · 거짓 통과 단언 · 빠진 경계를 테스트로 메웠다(#482).** 제품 코드는 그대로다. 케이스 수 하한 백엔드 386 → 389 · 프론트 222 → 226
+  - `MessageListLazy.test.tsx` · `MessageListRender.test.tsx` : 콜드 실행에서 findBy · waitFor 기본 1초에 걸리던 것을 청크 import 대기 + 10초 타임아웃으로 바꿨다
+  - `stream.test.ts` : 프레임 중간 · 줄바꿈 사이 · 한글(3바이트) · 이모지(4바이트) 바이트 중간 · 한 바이트씩 자른 청크 4건. `stream: true` 를 빼거나 버퍼를 이어 붙이지 않으면 실패한다
+  - `AdminDocumentFlowTest` · `AdminDocumentSyncFlowTest` : `isNotNull()` → `DataIntegrityViolationException`(`rag_documents_uploaded_by_fkey`) · `DuplicateKeyException`(`uq_rag_documents_alive_file`). 제약 이름을 바꾸면 실패한다
+  - `SourceNameRewriterTest` : 짧은 이름이 겹치는 문서 중 하나가 `_` 없는 경우 · 겹치는 이름이 나중 검색에서 처음 오는 경우 2건
+  - `OpenAiRealStageMappingTest` : 마지막 delta 가 파일 이름으로 끝나 completed flush 로만 나오는 꼬리(내보낸 토큰 합 == 저장 본문 == 짧은 이름) 1건
+
 ## [2026-10-26]
 
 운영 배포 3회 — 백엔드 `a89fb83`(#452 주석 · #453 · #454 · #470, 롤백 `prev-20f26b3`, 지시문 문자열은 `20f26b3` 과 같음) · `a05d994`(#469 지시문 한 줄, 롤백 `prev-a89fb83`) · `62b3c3f`(#476, 롤백 `prev-a05d994`). #468 · #467 은 백엔드 배포 없이 운영 Vector Store 문서 교체로 반영했다(#467 이 나중, 운영 백엔드는 `62b3c3f` 그대로). 프론트 변경(#456 등)은 merge 때 Vercel 이 자동 배포했다.
