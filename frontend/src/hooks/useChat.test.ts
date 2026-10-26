@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useChat } from './useChat'
 import type { ChatStreamHandlers } from '../lib/endpoints'
+import type { ChatMessage } from '../lib/types'
 
 vi.mock('../lib/endpoints', () => ({
   listConversations: vi.fn().mockResolvedValue([]),
@@ -459,6 +460,100 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.messages[0].content).toBe('환불 정책') // 화면이 비지 않음
     expect(result.current.messages[1].status).toBe('error')
     expect(result.current.error).toBe('응답 생성 중 오류')
+  })
+
+  /** streamChat 의 200 전 거절과 같은 모양 - onError 를 부르고 ApiError 를 던진다 */
+  async function reject(stream: ReturnType<typeof openStream>, status: number, message: string) {
+    await act(async () => {
+      stream.handlers?.onError?.(message)
+      stream.fail?.(new ApiError(status, message))
+    })
+  }
+
+  it('200 전 429 거절은 판정 없이 보낸 것을 되돌리고, 말풍선 · 빈 대화를 남기지 않고, 오류를 보인다 (#480)', async () => {
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    expect(result.current.activeId).toBe('c1')
+
+    await reject(stream, 429, '동시 스트림 상한 초과')
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    expect(result.current.messages).toHaveLength(0)
+    // 새 대화는 비었을 때만 지우기로 정리한다(#447) - 이력으로 묻지 않는다
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+    expect(getMessages).not.toHaveBeenCalled()
+    expect(result.current.conversations).toEqual([])
+    expect(result.current.activeId).toBeNull()
+    expect(result.current.error).toBe('동시 스트림 상한 초과')
+  })
+
+  it('기존 대화의 200 전 4xx 거절은 서버에 묻지 않고 되돌리며 대화는 지우지 않음 (#480)', async () => {
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+
+    await reject(stream, 400, '메시지는 4000자까지 보낼 수 있음')
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    expect(getMessages).not.toHaveBeenCalled()
+    expect(deleteConversationIfEmpty).not.toHaveBeenCalled()
+    expect(result.current.messages.map((m) => m.content)).toEqual(['첫 질문', ''])
+    expect(result.current.activeId).toBe('c1')
+    expect(result.current.error).toBe('메시지는 4000자까지 보낼 수 있음')
+  })
+
+  it('200 전 fetch reject(네트워크)는 서버에 물어 되돌리고, 빈 대화를 지우고, 오류 배너를 보인다 (#480)', async () => {
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+
+    // fetch 자체가 실패하면 streamChat 은 onError 없이 던진다
+    await act(async () => {
+      stream.fail?.(new TypeError('Failed to fetch'))
+    })
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    expect(result.current.messages).toHaveLength(0)
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+    expect(result.current.conversations).toEqual([])
+    expect(result.current.activeId).toBeNull()
+    expect(result.current.error).toBeTruthy()
+  })
+
+  it('200 전 5xx 는 닿았을 수 있어 서버에 묻는다 - 질문이 저장됐으면 남기고 되돌리지 않음 (#480)', async () => {
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+    const saved: ChatMessage[] = [
+      { id: 'u1', role: 'user', content: '첫 질문', status: 'complete', citations: [] },
+      { id: 'a1', role: 'assistant', content: '답', status: 'complete', citations: [] },
+      { id: 'u2', role: 'user', content: '둘째 질문', status: 'complete', citations: [] },
+    ]
+    vi.mocked(getMessages).mockResolvedValueOnce(saved)
+
+    await reject(stream, 502, '요청 실패 (502)')
+
+    expect(getMessages).toHaveBeenCalledWith('c1')
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(result.current.messages.map((m) => m.id)).toEqual(['u1', 'a1', 'u2'])
+    expect(result.current.error).toBe('요청 실패 (502)')
   })
 })
 

@@ -13,7 +13,7 @@ import type { Attachment, ChatMessage, Conversation } from '../lib/types'
 import { useStageQueue } from './useStageQueue'
 
 /**
- * 200 전 중단의 판정 결과(#440 · #447). 훅은 이것을 화면에 적용만 한다.
+ * 200 전 중단 · 실패의 판정 결과(#440 · #447 · #480). 훅은 이것을 화면에 적용만 한다.
  * - `stored` : 질문이 저장된 것이 확실하다 - 이력(`saved`)을 못 받았어도 되돌리지 않는다
  * - `deleted` : 새 대화가 비어 있어 지웠다(또는 이미 없다) - 저장된 것이 없다
  * - `unknown` : 저장을 확인하지 못했다 - 글만 되돌리고 대화는 둔다
@@ -297,16 +297,21 @@ export function useChat() {
           },
           controller.signal,
         )
-      } catch {
+      } catch (e) {
         // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지). 중단·절단 모두 단계는 즉시 비움
         clearStages()
         const aborted = controller.signal.aborted
+        // 200 전 4xx 는 서버가 저장 전에 거절한 것이 확실하다(api.md 「검증은 동기」, #480) - 묻지 않고 되돌린다.
+        // 5xx 는 아니다 - 질문 저장을 커밋한 뒤에도 날 수 있고(스트림 작업 넘기기 실패), 앞단 프록시의 5xx 는 앱이 저장했는지 모른다
+        const rejected = !opened && !aborted && e instanceof ApiError && e.status < 500
+        // fetch 자체의 실패(네트워크)는 onError 를 거치지 않아 여기서 배너를 띄운다(#480). ApiError 는 streamChat 이 이미 띄웠다
+        if (!opened && !aborted && !(e instanceof ApiError)) setError('서버에 연결하지 못했습니다. 다시 시도해 주세요.')
         // 중단이면 받은 것이 없는 빈 버블을 남기지 않음 - 서버도 부분 텍스트가 비면 저장하지 않으므로,
         // 남겨 두면 새로고침에 사라져 화면과 재조회가 어긋남
         // 단 onDone 이 이미 확정한 메시지는 서버가 정상 경로로 저장했으므로 지우지 않음
         const emptyAnswer = (m: ChatMessage) => m.id === assistantId && !m.content && m.status !== 'complete'
         // 200 을 받기 전에 끊겼으면 질문 말풍선도 걷는다(#435) - 서버에 닿지 않았을 수 있어, 남기면 새로고침에 사라진다.
-        // 닿았는지는 아래에서 서버에 물어 저장됐으면 다시 보인다(#440)
+        // 닿았는지는 아래에서 서버에 물어 저장됐으면 다시 보인다(#440). 중단이 아닌 200 전 실패도 같다(#480) - 오류는 배너로 보인다
         const unsentQuestion = (m: ChatMessage) => !opened && m.id === userMsg.id
         const settled = (m: ChatMessage): ChatMessage =>
           // onDone 이 이미 확정한 메시지는 건드리지 않음 - 서버는 그 답변을 stopped=false 로 저장했으므로,
@@ -319,12 +324,16 @@ export function useChat() {
                 // 서버 저장분과 같은 표시 - 중단은 출처 판정 전에 끝나므로 무자료 배너를 붙이면 안 됨
                 stopped: aborted,
               }
-        setMessages((prev) => prev.filter((m) => !(aborted && (emptyAnswer(m) || unsentQuestion(m)))).map(settled))
-        if (aborted && !opened) {
-          // 200 전 중단은 서버에 물어서 가른다(judgeEarlyAbort).
+        setMessages((prev) =>
+          prev.filter((m) => !(((aborted || !opened) && emptyAnswer(m)) || unsentQuestion(m))).map(settled),
+        )
+        if (!opened) {
+          // 200 전 중단 · 실패는 서버에 물어서 가른다(judgeEarlyAbort, #480 에서 실패까지 넓힘).
           // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다
           const id = convId
-          const outcome = await judgeEarlyAbort(id, isNew, text)
+          // 4xx 거절은 저장되지 않은 것이 확실해 기존 대화는 묻지 않는다. 새 대화는 빈 대화를 지워야 하므로 조건부 삭제는 그대로 탄다
+          const outcome: EarlyAbortOutcome =
+            rejected && !isNew ? { kind: 'unknown' } : await judgeEarlyAbort(id, isNew, text)
           // 세대는 판정을 기다린 **뒤에** 본다 - 그사이 대화를 옮겼으면 화면 · 입력창을 건드리지 않는다
           const here = generation.current === mine
           if (outcome.kind === 'stored') {
@@ -361,7 +370,7 @@ export function useChat() {
    * 조용히 버리면 입력이 사라지고 이미 올린 첨부는 회수 크론을 기다리는 고아가 된다.
    *
    * 기존 대화는 곧바로, 새 대화는 **생성 왕복이 끝난 뒤에** 정해진다(#349) - 생성이 실패하면 보낸 것이 없다.
-   * 받아들인 뒤 200 전에 중단됐고 서버에 질문이 없으면 `giveBack` 으로 알린다(#440) - 입력창은 이미 비웠으므로 되돌릴 몫이 거기 있다.
+   * 받아들인 뒤 200 전에 중단 · 실패했고 서버에 질문이 없으면 `giveBack` 으로 알린다(#440 · #480) - 입력창은 이미 비웠으므로 되돌릴 몫이 거기 있다.
    * 거절 판정과 생성 중 표시는 같은 틱에 끝나므로 같은 틱의 두 번째 전송도 막힌다.
    *
    * 이력 로딩 중에도 거절한다. 받아 들이면 말풍선이 직전 대화의 목록에 붙고, 곧 도착한 이력이 목록을
