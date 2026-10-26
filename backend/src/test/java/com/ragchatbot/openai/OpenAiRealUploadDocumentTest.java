@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,11 +18,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.UpstreamUnavailableException;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * 관리 화면 문서 업로드의 OpenAI 일시 장애 (#476 · TC-ADMIN-066~069).
+ * 관리 화면 문서 업로드의 OpenAI 일시 장애 (#476 · TC-ADMIN-066~069, 429 · DNS · 내용 거절 #479 · TC-ADMIN-070~073).
  *
  * <p>10-26 운영에서 {@code POST /files} 가 503 을 돌려줬을 때 폴백이 「처리되지 않은 예외」 ERROR 와 500 을 냈다.
  * 관리자에게는 다시 시도하면 되는 실패라는 것이 보여야 하므로 503 으로 알릴 예외로 바꾼다.
@@ -44,7 +46,9 @@ class OpenAiRealUploadDocumentTest {
 			byte[] body = new byte[0];
 			if (line.equals("POST /files")) {
 				status = filesStatus;
-				body = "{\"id\":\"file-1\"}".getBytes(StandardCharsets.UTF_8);
+				// 실패 응답에는 업스트림 원문을 싣는다 - 그 원문이 관리자 응답으로 새지 않는지 본다(#479)
+				body = (status == 200 ? "{\"id\":\"file-1\"}" : "{\"error\":{\"message\":\"upstream-detail\"}}")
+						.getBytes(StandardCharsets.UTF_8);
 			} else if (line.startsWith("POST /vector_stores/")) {
 				status = attachStatus;
 			}
@@ -102,7 +106,10 @@ class OpenAiRealUploadDocumentTest {
 		}
 	}
 
-	/** TC-ADMIN-068 : 스토어 연결이 503 이면 올린 File 을 지운 뒤 같은 예외로 알린다 - 고아 File 을 남기지 않는다 */
+	/**
+	 * TC-ADMIN-068 : 스토어 연결이 503 이면 연결 해제 → File 삭제 순으로 정리한 뒤 같은 예외로 알린다(#479).
+	 * 503 이어도 OpenAI 가 연결을 만들었을 수 있다 - File 만 지우면 스토어에 File 없는 연결이 남는다
+	 */
 	@Test
 	void attach_5xx_cleans_up_file_then_reports_unavailable() {
 		attachStatus = 503;
@@ -112,6 +119,44 @@ class OpenAiRealUploadDocumentTest {
 		assertThat(received).containsExactly(
 				"POST /files",
 				"POST /vector_stores/shared-store/files",
+				"DELETE /vector_stores/shared-store/files/file-1",
 				"DELETE /files/file-1");
+	}
+
+	/** TC-ADMIN-070 : Files 업로드가 429(속도 제한)면 일시 장애로 알린다(#479) - 다시 보내지 않는다 */
+	@Test
+	void files_429_is_upstream_unavailable_without_retry() {
+		filesStatus = 429;
+
+		assertThatThrownBy(() -> service.uploadDocument("a.md", "x".getBytes()))
+				.isInstanceOf(UpstreamUnavailableException.class);
+		assertThat(received).containsExactly("POST /files");
+	}
+
+	/** TC-ADMIN-071 : OpenAI 호스트 이름을 풀지 못해도(DNS 실패) 닿지 못한 것이다 - 일시 장애로 알린다(#479) */
+	@Test
+	void unknown_host_is_upstream_unavailable() {
+		// .invalid 는 어디서도 풀리지 않도록 예약된 최상위 도메인(RFC 6761)
+		OpenAiRealService unresolvable = OpenAiRealTestSupport.against("http://api.openai.invalid", "shared-store");
+
+		assertThatThrownBy(() -> unresolvable.uploadDocument("a.md", "x".getBytes()))
+				.isInstanceOf(UpstreamUnavailableException.class)
+				.rootCause().isInstanceOf(UnknownHostException.class);
+	}
+
+	/**
+	 * TC-ADMIN-072 : Files 업로드가 내용 때문에 거절되면(400 · 413 · 415, 손상 docx 등) 고정 문구 400 으로 알린다(#479).
+	 * 다시 시도해도 같으므로 503 이 아니고, 업스트림 원문은 응답에 싣지 않는다(WARN 로그에만)
+	 */
+	@Test
+	void files_content_rejection_is_bad_request() {
+		for (int status : new int[] {400, 413, 415}) {
+			filesStatus = status;
+
+			assertThatThrownBy(() -> service.uploadDocument("a.md", "x".getBytes()))
+					.as("POST /files %d", status)
+					.isInstanceOf(BadRequestException.class)
+					.hasMessageNotContaining("upstream-detail");
+		}
 	}
 }

@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -34,6 +36,7 @@ import org.springframework.web.client.RestClient;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.UpstreamUnavailableException;
 import com.ragchatbot.storage.FileStorage;
 
@@ -74,6 +77,8 @@ public class OpenAiRealService implements OpenAiService {
 
 	/** 업로드가 OpenAI 일시 장애로 실패했을 때 관리자에게 보이는 문구(#476) */
 	private static final String UPSTREAM_RETRY_MESSAGE = "OpenAI 가 일시적으로 응답하지 않음 - 잠시 뒤 다시 시도해 주세요";
+	/** Files 업로드가 내용 때문에 거절됐을 때의 고정 문구(#479) - 업스트림 원문은 사용자에게 보이지 않는다 */
+	private static final String UPSTREAM_REJECTED_MESSAGE = "OpenAI 가 파일을 받지 않음 - 손상되었거나 지원하지 않는 내용인지 확인해 주세요";
 
 	/**
 	 * DELETE 의 시도 횟수와 간격(#476). 10-26 운영에서 OpenAI 503 이 한 번씩 나 파일이 남았다. DELETE 는 몇 번 보내도
@@ -495,7 +500,7 @@ public class OpenAiRealService implements OpenAiService {
 
 	/**
 	 * Files 업로드 → 공용 Vector Store 연결. 두 단계이며 <b>뒤 단계가 실패하면 고아 파일이 남으므로</b>
-	 * 즉시 삭제를 시도하고, 그것도 실패하면 ERROR 로그에 file_id 를 남김(#476). OpenAI 일시 장애(5xx · 연결 실패)는 503 으로 알릴 예외로 바꿈.
+	 * 연결 해제 → 파일 삭제로 정리함(#479). OpenAI 일시 장애(5xx · 429 · 연결 실패)는 503 으로 알릴 예외로 바꿈.
 	 *
 	 * <p>어느 경우에도 예외를 던짐 - 호출자가 DB 행을 만들지 않아야 함. 스토어에는 없는데 목록에만
 	 * 뜨는 상태가 가장 나쁨(화면에 보이는데 검색에는 안 잡히고 지울 수도 없음).
@@ -521,6 +526,12 @@ public class OpenAiRealService implements OpenAiService {
 			if (isTransient(e)) {
 				throw new UpstreamUnavailableException(UPSTREAM_RETRY_MESSAGE, e);
 			}
+			// 파일 내용 때문에 거절됐다(손상 docx 등, #479) - 다시 시도해도 같다. 업스트림 원문은 로그에만 남긴다
+			if (e instanceof HttpClientErrorException http && isContentRejection(http.getStatusCode().value())) {
+				log.warn("OpenAI 가 파일 {} 을 거절함 {}: {}", filename, http.getStatusCode().value(),
+						http.getResponseBodyAsString());
+				throw new BadRequestException(UPSTREAM_REJECTED_MESSAGE);
+			}
 			throw e;
 		}
 
@@ -540,8 +551,9 @@ public class OpenAiRealService implements OpenAiService {
 					.retrieve()
 					.toBodilessEntity();
 		} catch (Exception e) {
-			// 연결에 실패하면 파일만 덩그러니 남음. 여기서 지우지 않으면 아무도 그 존재를 모름
-			deleteFileOrReport(fileId);
+			// 연결에 실패하면 파일만 덩그러니 남음. 여기서 지우지 않으면 아무도 그 존재를 모름.
+			// 실패 응답이어도 연결이 만들어졌을 수 있다 - File 만 지우면 스토어에 File 없는 연결이 남으므로 해제부터 한다(#479)
+			deleteDocument(sharedVectorStoreId, fileId);
 			if (isTransient(e)) {
 				throw new UpstreamUnavailableException(UPSTREAM_RETRY_MESSAGE, e);
 			}
@@ -683,7 +695,7 @@ public class OpenAiRealService implements OpenAiService {
 	/**
 	 * 지워졌거나 이미 없으면(404) 참. 그 밖의 실패는 경고만 남기고 거짓 - 정리 실패는 삭제 흐름을 막지 않음.
 	 *
-	 * <p>일시 장애(5xx · 연결 거절)만 {@link #DELETE_ATTEMPTS} 번까지 다시 보낸다(#476). <b>읽기 타임아웃은 다시 보내지
+	 * <p>일시 장애(5xx · 429 · 연결 실패)만 {@link #DELETE_ATTEMPTS} 번까지 다시 보낸다(#476). <b>읽기 타임아웃은 다시 보내지
 	 * 않는다</b> - 한 번에 요청 타임아웃만큼 걸려, 되풀이하면 관리자 요청이 그 몇 배로 묶인다
 	 */
 	private boolean deleteQuietly(String path, String kind, String id) {
@@ -721,11 +733,20 @@ public class OpenAiRealService implements OpenAiService {
 	}
 
 	/**
-	 * 요청이 OpenAI 에서 처리되지 않았다고 볼 수 있는 일시 장애 - 5xx 또는 연결 자체가 안 됨(#476).
-	 * <b>읽기 타임아웃은 넣지 않는다</b> - 요청은 닿았고 처리됐는지 모른다
+	 * 요청이 OpenAI 에서 처리되지 않았다고 볼 수 있는 일시 장애 - 5xx · 429 또는 연결 자체가 안 됨(#476 · #479).
+	 * 연결 실패는 거절 · DNS 실패 · 경로 없음이다. <b>읽기 타임아웃은 넣지 않는다</b> - 요청은 닿았고 처리됐는지 모른다.
+	 * 연결 타임아웃도 넣지 않는다 - 읽기 타임아웃과 같은 예외 타입이라 메시지로만 갈린다
 	 */
 	private static boolean isTransient(Exception e) {
 		return e instanceof HttpServerErrorException
-				|| (e instanceof ResourceAccessException && e.getCause() instanceof ConnectException);
+				|| e instanceof HttpClientErrorException.TooManyRequests
+				|| (e instanceof ResourceAccessException && (e.getCause() instanceof ConnectException
+						|| e.getCause() instanceof UnknownHostException
+						|| e.getCause() instanceof NoRouteToHostException));
+	}
+
+	/** Files 업로드가 파일 내용 때문에 거절된 응답 - 잘못된 요청 · 너무 큼 · 지원하지 않는 형식(#479) */
+	private static boolean isContentRejection(int status) {
+		return status == 400 || status == 413 || status == 415;
 	}
 }

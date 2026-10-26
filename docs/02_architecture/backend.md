@@ -56,13 +56,13 @@ exception/    ApiExceptions + GlobalExceptionHandler
 | 예외 | 상태 | code |
 |------|------|------|
 | `MethodArgumentNotValidException` | 400 | `BAD_REQUEST` |
-| `BadRequestException` | 400 | `BAD_REQUEST` |
+| `BadRequestException`(관리자 업로드를 OpenAI 가 내용 때문에 거절한 400 · 413 · 415 도 고정 문구로, #479) | 400 | `BAD_REQUEST` |
 | `UnauthorizedException` | 401 | `UNAUTHORIZED` |
 | `NotFoundException` | 404 | `NOT_FOUND` |
 | `ConflictException` | 409 | `CONFLICT` |
 | `MaxUploadSizeExceededException` | 413 | `PAYLOAD_TOO_LARGE` |
 | `RateLimitException` | 429 | `RATE_LIMIT` |
-| `UpstreamUnavailableException`(관리자 업로드 중 OpenAI 5xx · 연결 실패, #476) | 503 · **WARN 한 줄** | `SERVICE_UNAVAILABLE` |
+| `UpstreamUnavailableException`(관리자 업로드 중 OpenAI 5xx · 429 · 연결 실패, #476 · #479) | 503 · **WARN 한 줄** | `SERVICE_UNAVAILABLE` |
 | `HttpMessageNotReadableException` | 400 | `BAD_REQUEST` |
 | `MethodArgumentTypeMismatchException` | 400 | `BAD_REQUEST` |
 | `NoResourceFoundException` | 404 | `NOT_FOUND` |
@@ -390,10 +390,11 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 손잡이가 없다**. 해제 DELETE 에는 `Content-Type: application/json` 을 명시한다. File 이 남아 있으면 「스토어와 동기화」가
 행을 되살려 관리자가 다시 지울 수 있고, 고아 연결(File 404)은 동기화가 `missing` 으로 받아 연결을 끊는다.
 
-**일시 장애는 `deleteQuietly` 가 다시 보낸다(#476).** 5xx · 연결 거절만 최대 3번(300 · 600ms 간격)이고, 읽기 타임아웃은
+**일시 장애는 `deleteQuietly` 가 다시 보낸다(#476).** 5xx · 429 · 연결 실패(거절 · DNS 실패 · 경로 없음, #479)만 최대 3번(300 · 600ms 간격)이고, 읽기 타임아웃은
 한 번에 요청 타임아웃만큼 걸려 되풀이하지 않는다. 해제 뒤 File 삭제가 끝내 실패하면 그 File 은 스토어 밖이라 동기화로도
 찾을 수 없어 **ERROR 로그의 `file_id` 가 유일한 단서**다. 업로드 쪽 `POST` 는 다시 보내지 않는다 — 처리된 요청을 되풀이하면
-같은 파일이 둘 생긴다. 그 실패는 `UpstreamUnavailableException` 으로 503 이 된다.
+같은 파일이 둘 생긴다. 그 실패는 `UpstreamUnavailableException` 으로 503 이 된다. 스토어 연결이 실패하면
+`deleteDocument` 로 해제 → File 삭제 순으로 정리한다(#479) — 실패 응답이어도 연결이 생겼을 수 있다.
 
 `app.jwt.secret` 은 비어 있는지만이 아니라 **길이도 본다** — 32바이트 미만이면 `JwtSecretPolicy` 가
 기동을 막는다. 하한을 한 곳에 둔 이유는 이 키를 `JwtService`(aud=auth)와
