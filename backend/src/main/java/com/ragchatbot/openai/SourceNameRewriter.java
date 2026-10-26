@@ -2,9 +2,13 @@ package com.ragchatbot.openai;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +20,7 @@ import java.util.regex.Pattern;
  * 그래서 모델은 그대로 두고 화면 · 저장본으로 나가기 전에 바꿈.
  *
  * <p>짧은 이름 = 확장자를 빼고 첫 {@code _} 앞까지(「TM매뉴얼_VSVDTMNOPK10_v3.md」 → 「TM매뉴얼」). {@code _} 가 없으면
- * 확장자만 뺌(「필드클레임현황.md」 → 「필드클레임현황」). 바꾸는 대상은 {@link #addNames} 로 받은 검색 결과 이름뿐이라
+ * 확장자만 뺌(「필드클레임현황.md」 → 「필드클레임현황」). 짧은 이름이 겹치는 문서끼리는 확장자만 뺌({@link #rebuild}). 바꾸는 대상은 {@link #addNames} 로 받은 검색 결과 이름뿐이라
  * 사용자가 쓴 다른 글자는 건드리지 않음. 출처 목록(sourceName)은 파일 이름 그대로 둠.
  *
  * <p>이름이 delta 사이에서 잘려 올 수 있어, 버퍼 끝이 어떤 이름의 앞부분이면 다음 delta 까지 붙잡아 둠.
@@ -28,6 +32,7 @@ final class SourceNameRewriter {
 	private static final Pattern EXTENSION = Pattern.compile("\\.(md|txt|pdf|docx?|xlsx?|csv|json|html?)$",
 			Pattern.CASE_INSENSITIVE);
 
+	private final Set<String> files = new LinkedHashSet<>();
 	private final Map<String, String> shortByName = new LinkedHashMap<>();
 	private Pattern names; // 긴 이름부터 - 「…_v3.md」 가 「…_v3」 보다 먼저 맞아야 확장자가 남지 않음
 	private final StringBuilder held = new StringBuilder();
@@ -36,27 +41,50 @@ final class SourceNameRewriter {
 	void addNames(List<String> filenames) {
 		boolean added = false;
 		for (String file : filenames) {
-			if (file == null || file.isBlank() || shortByName.containsKey(file)) {
-				continue;
-			}
-			String stem = EXTENSION.matcher(file).replaceFirst("");
-			int bar = stem.indexOf('_');
-			String shortName = bar > 0 ? stem.substring(0, bar) : stem;
-			if (shortName.isBlank()) {
-				continue;
-			}
-			for (String variant : List.of(file, stem)) {
-				if (!variant.equals(shortName) && !shortByName.containsKey(variant)) {
-					shortByName.put(variant, shortName);
-					added = true;
-				}
+			if (file != null && !file.isBlank()) {
+				added |= files.add(file);
 			}
 		}
 		if (added) {
-			List<String> keys = new ArrayList<>(shortByName.keySet());
-			keys.sort(Comparator.comparingInt(String::length).reversed());
-			names = Pattern.compile(String.join("|", keys.stream().map(Pattern::quote).toList()));
+			rebuild();
 		}
+	}
+
+	/**
+	 * 받은 이름 전부로 바꿀 표를 다시 만듦. 첫 {@code _} 앞이 같은 문서가 둘 이상이면(「TM매뉴얼_A.md」 · 「TM매뉴얼_B.md」)
+	 * 짧은 이름으로 합치면 어느 문서인지 가릴 수 없어 그 문서들은 확장자만 뺌. 이미 내보낸 글자는 되돌리지 못함 -
+	 * 겹치는 이름이 나중 검색에서 처음 오면 그 전 본문은 짧은 이름 그대로임.
+	 */
+	private void rebuild() {
+		Map<String, String> stemOf = new LinkedHashMap<>();
+		Map<String, Set<String>> stemsByShort = new HashMap<>();
+		for (String file : files) {
+			String stem = EXTENSION.matcher(file).replaceFirst("");
+			stemOf.put(file, stem);
+			stemsByShort.computeIfAbsent(shortOf(stem), k -> new HashSet<>()).add(stem);
+		}
+		shortByName.clear();
+		stemOf.forEach((file, stem) -> {
+			String shortName = shortOf(stem);
+			String target = shortName.isBlank() || stemsByShort.get(shortName).size() > 1 ? stem : shortName;
+			for (String variant : List.of(file, stem)) {
+				if (!variant.equals(target) && !target.isBlank()) {
+					shortByName.putIfAbsent(variant, target);
+				}
+			}
+		});
+		if (shortByName.isEmpty()) {
+			names = null;
+			return;
+		}
+		List<String> keys = new ArrayList<>(shortByName.keySet());
+		keys.sort(Comparator.comparingInt(String::length).reversed());
+		names = Pattern.compile(String.join("|", keys.stream().map(Pattern::quote).toList()));
+	}
+
+	private static String shortOf(String stem) {
+		int bar = stem.indexOf('_');
+		return bar > 0 ? stem.substring(0, bar) : stem;
 	}
 
 	/** 바꾼 글자를 돌려줌. 이름의 앞부분일 수 있는 꼬리는 붙잡아 둠 */

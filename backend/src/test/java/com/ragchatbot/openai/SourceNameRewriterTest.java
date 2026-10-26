@@ -84,6 +84,15 @@ class SourceNameRewriterTest {
 	}
 
 	@Test
+	void documents_sharing_a_short_name_keep_their_stems() {
+		// 첫 _ 앞이 같은 두 문서를 하나로 줄이면 어느 문서인지 가릴 수 없음 - 확장자만 뺌
+		SourceNameRewriter r = new SourceNameRewriter();
+		r.addNames(List.of("TM매뉴얼_A_v1.md", "TM매뉴얼_B_v2.md", CLAIMS));
+		assertThat(r.accept("TM매뉴얼_A_v1.md 와 TM매뉴얼_B_v2.md, " + CLAIMS + " 를 보면 ") + r.flush())
+				.isEqualTo("TM매뉴얼_A_v1 와 TM매뉴얼_B_v2, 필드클레임현황 를 보면 ");
+	}
+
+	@Test
 	void markup_filter_inserted_name_follows_the_same_rule() {
 		// #429 : 표기가 명사 자리에 오면 필터가 문서 이름을 넣는다 - 그 이름도 짧은 이름으로 나감
 		CitationMarkupFilter f = new CitationMarkupFilter();
