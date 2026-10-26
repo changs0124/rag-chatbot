@@ -21,4 +21,20 @@ describe('저장소가 막힌 브라우저', () => {
     expect(getToken()).toBeNull()
     vi.restoreAllMocks()
   })
+
+  // 쓰기만 던지면(용량 초과 등) 옛 계정 토큰이 남아 새로고침 때 그 계정으로 들어간다 - 지워 본다
+  it('setItem 만 던지면 남은 옛 토큰을 지운다', async () => {
+    localStorage.setItem('rag_chatbot_token', 'old-account')
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError')
+    })
+    vi.resetModules()
+
+    const { getToken, setToken } = await import('./api')
+    setToken('new-account')
+
+    expect(getToken()).toBe('new-account')
+    expect(localStorage.getItem('rag_chatbot_token')).toBeNull()
+    vi.restoreAllMocks()
+  })
 })

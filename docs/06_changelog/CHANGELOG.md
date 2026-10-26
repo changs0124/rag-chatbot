@@ -5,13 +5,13 @@
 ## [Unreleased]
 
 ### Fixed
-- **프론트 LOW 여섯 건을 바로잡았다(#483).** 케이스 프론트 +9
-  - F4 `AdminPage` : 첫 로드가 실패하면 「아직 문서가 없습니다」를 띄우지 않는다(`loaded` 는 성공에서만 선다)
+- **프론트 LOW 여섯 건을 바로잡았다(#483).** 케이스 프론트 +14
+  - F4 `AdminPage` : 첫 로드가 실패하면 「아직 문서가 없습니다」 · 「사용자 0명」을 띄우지 않고(`loaded` 는 성공에서만 선다), 배너에 「다시 시도」를 둔다
   - F5 `ChatPage` : 제목 편집의 Esc 가 언마운트 blur 로 저장되거나 Enter 가 PATCH 를 두 번 보내지 않는다(`skipBlurRef`)
-  - F12 `api.ts` · `ResizableSidebar` : `localStorage` 접근이 던지면 메모리 토큰 · 기본 폭으로 물러선다(모듈 평가 백지 방지)
+  - F12 `api.ts` · `ResizableSidebar` : `localStorage` 접근이 던지면 메모리 토큰(새로고침 전까지) · 기본 폭으로 물러선다(모듈 평가 백지 방지). 쓰기만 던지면 옛 토큰을 지운다
   - F13 `AdminPage` : 폴링 · refresh 에 요청 세대를 두어 삭제 뒤 늦게 온 폴링 응답이 지운 문서를 되살리지 않는다
   - F14 `lib/limits.ts` : 첨부 5 · 본문 4000 · 제목 100 상한을 `MAX_ATTACHMENTS` · `MAX_MESSAGE_CHARS` · `MAX_TITLE_CHARS` 로 모았다
-  - F17 `useChat` · `Composer` : 200 전 판정 중(`settling`)에는 반응 없는 정지 버튼 대신 이유를 단 비활성 보내기를 보인다
+  - F17 `useChat` · `Composer` : 200 전 판정 중(`settling`)에는 반응 없는 정지 버튼 대신 비활성 보내기와 입력줄 아래 `role="status"` 이유 문구를 보인다
 
 ## [2026-10-26]
 

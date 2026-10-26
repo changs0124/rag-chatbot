@@ -30,7 +30,6 @@ interface Draft {
 
 let draftSeq = 0
 
-
 // 입력줄의 둥근 버튼(첨부 · 중단 · 보내기). 크기 · 모양만 공유하고 색 · 움직임은 호출부가 덧붙인다(#390)
 const roundBtn = 'grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10'
 
@@ -394,6 +393,10 @@ export default function Composer({
             </button>
           )}
         </div>
+        {/* 판정 이유는 title 툴팁만으로는 터치 기기 · 낭독기에 닿지 않는다(#483). status 는 늘 있는 그릇에 글만 넣는다(#484) */}
+        <p role="status" className={'px-1 text-[13px] text-ink-muted' + (settling ? ' mt-2' : '')}>
+          {settling && '보낸 글이 저장됐는지 확인하는 중입니다. 잠시만 기다려 주세요'}
+        </p>
       </form>
 
       {/* 스크림은 검정이 아니라 canvas/85 - 글자 12.70 · 점선 4.95. 85~95 는 사실상 같은 값이라

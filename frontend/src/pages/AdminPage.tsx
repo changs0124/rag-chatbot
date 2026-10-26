@@ -139,13 +139,19 @@ export default function AdminPage() {
           m && (
             <p key={i} role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
               {m}
+              {/* 첫 로드 실패는 폴링도 돌지 않아 스스로 회복하지 않는다 - 새로고침 대신 다시 부를 길을 둔다(#483) */}
+              {i === 0 && !loaded && (
+                <button type="button" onClick={() => void refresh()} className="ml-2 font-medium underline">
+                  다시 시도
+                </button>
+              )}
             </p>
           ),
       )}
 
       <DocumentsSection documents={documents} loaded={loaded} refresh={refresh} setError={setError} />
 
-      <UsersSection users={users} currentUserId={user?.id} refresh={refresh} setError={setError} />
+      <UsersSection users={users} loaded={loaded} currentUserId={user?.id} refresh={refresh} setError={setError} />
     </PageShell>
   )
 }
@@ -307,11 +313,13 @@ function DocumentsSection({
 
 function UsersSection({
   users,
+  loaded,
   currentUserId,
   refresh,
   setError,
 }: {
   users: AdminUser[]
+  loaded: boolean
   currentUserId: string | undefined
   refresh: () => Promise<void>
   setError: (message: string | null) => void
@@ -379,7 +387,8 @@ function UsersSection({
   return (
     <>
       <section className="mt-10">
-        <h2 className="text-sm font-medium text-ink-muted">사용자 {users.length}명</h2>
+        {/* 못 불러온 것을 「0명」으로 보이지 않는다(#483) */}
+        <h2 className="text-sm font-medium text-ink-muted">사용자{loaded && ` ${users.length}명`}</h2>
         {/* 스스로 가입하는 경로가 없으므로 계정은 여기서만 태어난다 */}
         <form onSubmit={onCreate} className="mt-3 rounded-2xl bg-surface px-4 py-3 md:flex md:items-end md:gap-3">
           <label className="block flex-1">

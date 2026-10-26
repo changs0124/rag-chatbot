@@ -215,6 +215,23 @@ describe('ChatPage 제목 수정 (#371)', () => {
     expect(screen.queryByDisplayValue('취소할 제목')).not.toBeInTheDocument()
   })
 
+  // 닫을 때 세운 표시가 남으면 다음 편집의 blur 저장까지 막힌다 - 편집을 열 때 내린다
+  it('Enter 로 닫은 뒤 다시 열면 blur 로 저장된다', () => {
+    chatState.conversations = [{ id: 'c1', title: '대화' }]
+    chatState.activeId = 'c1'
+    renderChatPage()
+
+    fireEvent.click(screen.getByTitle('제목 변경'))
+    fireEvent.keyDown(screen.getByDisplayValue('대화'), { key: 'Enter' })
+    fireEvent.click(screen.getByTitle('제목 변경'))
+    const input = screen.getByDisplayValue('대화')
+    fireEvent.change(input, { target: { value: '다시 연 제목' } })
+    fireEvent.blur(input)
+
+    expect(chatState.renameConversation).toHaveBeenCalledTimes(1)
+    expect(chatState.renameConversation).toHaveBeenCalledWith('c1', '다시 연 제목')
+  })
+
   it('Enter 뒤 blur 가 와도 제목을 한 번만 저장한다', () => {
     chatState.conversations = [{ id: 'c1', title: '대화' }]
     chatState.activeId = 'c1'

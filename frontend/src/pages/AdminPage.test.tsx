@@ -105,6 +105,30 @@ describe('관리자 화면', () => {
     expect(screen.queryByText('아직 문서가 없습니다')).not.toBeInTheDocument()
   })
 
+  // #483 : 첫 로드 실패는 폴링도 돌지 않는다 - 배너의 「다시 시도」로 다시 부르고, 성공하면 배너가 걷힌다
+  it('첫 로드 실패 배너의 다시 시도가 목록을 다시 읽는다', async () => {
+    vi.mocked(listDocuments).mockRejectedValueOnce(new Error('503'))
+    renderPage()
+    await screen.findByText('목록을 불러오지 못했습니다')
+    vi.mocked(listDocuments).mockResolvedValue([doc()])
+
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+
+    expect(await screen.findByText('취업규칙.pdf')).toBeInTheDocument()
+    expect(screen.queryByText('목록을 불러오지 못했습니다')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+  })
+
+  // #483 : 못 불러온 사용자 목록을 「사용자 0명」으로 보이지 않는다
+  it('첫 로드가 실패하면 사용자 수를 적지 않는다', async () => {
+    vi.mocked(listAdminUsers).mockRejectedValueOnce(new Error('503'))
+    renderPage()
+    await screen.findByText('목록을 불러오지 못했습니다')
+
+    expect(screen.getByRole('heading', { name: '사용자' })).toBeInTheDocument()
+    expect(screen.queryByText(/사용자 0명/)).not.toBeInTheDocument()
+  })
+
   /** TC-ADMIN-043 : 상태별 표시가 구분된다 */
   it('완료·처리중·실패가 각각 다른 문구로 보인다', async () => {
     vi.mocked(listDocuments).mockResolvedValue([
