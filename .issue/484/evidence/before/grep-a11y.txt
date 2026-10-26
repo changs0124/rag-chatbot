@@ -1,0 +1,9 @@
+pages/AdminPage.tsx:438:        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true">
+pages/AdminPage.tsx:457:                  autoFocus
+pages/ChatPage.tsx:146:                  autoFocus
+pages/ChatPage.tsx:195:              <div role="status" aria-label="대화 불러오는 중" className="grid h-full place-items-center">
+components/ConfirmModal.tsx:25:    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true">
+components/ConfirmModal.tsx:40:              autoFocus
+components/chat/Sidebar.tsx:92:                    aria-label="대화 삭제"
+components/chat/ImageLightbox.tsx:127:    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true">
+components/chat/ImageLightbox.tsx:141:          autoFocus

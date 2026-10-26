@@ -4,11 +4,35 @@
 
 ## [Unreleased]
 
+### Changed (테스트)
+- **콜드 실행 간헐 실패 · 거짓 통과 단언 · 빠진 경계를 테스트로 메웠다(#482).** 제품 코드는 그대로다. 케이스 수 하한 백엔드 386 → 389 · 프론트 222 → 226
+  - `MessageListLazy.test.tsx` · `MessageListRender.test.tsx` : 콜드 실행에서 findBy · waitFor 기본 1초에 걸리던 것을 청크 import 대기 + 10초 타임아웃으로 바꿨다
+  - `stream.test.ts` : 프레임 중간 · 줄바꿈 사이 · 한글(3바이트) · 이모지(4바이트) 바이트 중간 · 한 바이트씩 자른 청크 4건. `stream: true` 를 빼거나 버퍼를 이어 붙이지 않으면 실패한다
+  - `AdminDocumentFlowTest` · `AdminDocumentSyncFlowTest` : `isNotNull()` → `DataIntegrityViolationException`(`rag_documents_uploaded_by_fkey`) · `DuplicateKeyException`(`uq_rag_documents_alive_file`). 제약 이름을 바꾸면 실패한다
+  - `SourceNameRewriterTest` : 짧은 이름이 겹치는 문서 중 하나가 `_` 없는 경우 · 겹치는 이름이 나중 검색에서 처음 오는 경우 2건
+  - `OpenAiRealStageMappingTest` : 마지막 delta 가 파일 이름으로 끝나 completed flush 로만 나오는 꼬리(내보낸 토큰 합 == 저장 본문 == 짧은 이름) 1건
+
 ### Fixed
+- **확장자 정규식 사본 하나로 · 스니펫 200자 절단이 이모지를 가르지 않게(#485).** `CitationMarkupFilter` 와 `SourceNameRewriter` 에 같은 값으로 두 벌 있던 확장자 정규식을 리라이터 것 하나로 모았다(동작 불변). `SnippetPicker.truncate` 는 200번째 자리가 서로게이트 쌍(BMP 밖 문자)의 앞 절반이면 199자에서 자른다. ZWJ 이모지 · 국기 같은 결합 문자열은 여전히 갈릴 수 있다 - 전에는 반쪽 글자가 DB 에 깨져 남을 수 있었다(`SnippetPickTest` 경계 케이스 2개 추가)
+- **관리자 문서 업로드 · 삭제가 OpenAI 429 · DNS 실패 · 내용 거절을 「처리되지 않은 예외」 500 으로 내고, 스토어 연결 실패 뒤 연결을 남길 수 있던 것을 고쳤다(#479).** #476 분류에서 빠진 응답들(10-26 리뷰 B1 · B2 · B4 · B7 · B3)
+  - 일시 장애에 429 와 연결 실패의 DNS 실패(`UnknownHostException`) · 경로 없음(`NoRouteToHostException`)을 더했다 — 업로드는 `503`, 삭제는 재시도. 429 중 `insufficient_quota` 는 다시 시도해도 같아 뺐다(폴백 ERROR). 연결 타임아웃은 읽기 타임아웃과 메시지로만 갈려 넣지 않았다. 429 재시도는 `Retry-After` 를 따르지 않는다(한계)
+  - 스토어 연결 실패 시 File 만 지우지 않고 연결 해제 → File 삭제 순으로 정리한다(해제 404 는 성공). 해제가 끝내 실패해도 File 은 지운다 — 남은 연결은 동기화가 `missing` 으로 끊는다
+  - `POST /files` 의 413 · 415 는 고정 문구 `400 BAD_REQUEST`. 400 은 우리 요청 결함과 갈리지 않아 예전처럼 폴백 500. 업스트림 원문은 WARN 로그에만 `error.code` · `error.message`(아니면 앞 300자, 줄바꿈은 공백)로
+  - 업로드 504 · 502 를 「다시 시도」로 안내하면 중복 파일이 생길 수 있는 틈은 features.md FEAT-ADMIN-002 실패 표 3단계에 적었다(코드 변경 없음)
+  - 테스트 : TC-ADMIN-070~075 신설 · TC-ADMIN-068 기대 순서(해제 DELETE 가 File DELETE 앞) 갱신 · 백엔드 하한 386 → 392
+- **확대 화면 「내려받기」가 `blob:` · `data:` 그림에서 아무 반응이 없던 것을 손봤다(#481).** `ImageLightbox.download()` 가 `src` 를 무조건 fetch 해, 운영 CSP `connect-src` 가 허용하지 않는 전송 전 카드 · 답변 속 문서 그림에서 조용히 실패했다. 이제 `blob:` · `data:` 면 fetch 하지 않고 그 주소로 바로 저장한다(회수하지 않음). CSP 는 넓히지 않았고 서명 URL(https)은 그대로 fetch 한다
 - **200 전에 중단이 아닌 실패로 끝난 턴도 보낸 글 · 첨부를 입력창에 되돌린다(#480).** 지금까지는 200 전 **중단**(#440)만 되돌려, 429(동시 스트림 · 분당 상한) · 400 거절과 오프라인 fetch 실패는 입력 · 첨부가 이미 비워진 채 질문 말풍선과 「응답 중 오류」가 남고(새로고침하면 사라짐) 새 대화면 빈 대화가 사이드바에 남았다. fetch 실패는 배너도 없었다
   - `useChat` : 200 전 실패를 중단과 같은 정리 경로로 보낸다. 4xx 는 저장 전 거절이 확실해(api.md 「검증은 동기」) 기존 대화는 묻지 않고 되돌린다 · fetch 실패와 5xx 는 `judgeEarlyAbort` 로 묻는다(5xx 는 질문 저장 커밋 뒤에도 날 수 있다). fetch 실패는 상단 배너를 띄운다
   - 리뷰 반영 : 429 밖의 4xx 는 글만 되돌리고 첨부 카드는 버린다(카드가 거절 원인이면 같은 거절이 되풀이된다) · 기존 대화의 404 는 대화가 지워졌는지 이력으로 확인해 지워졌으면 목록에서 뺀다 · 401 은 판정 · 빈 대화 삭제를 건너뛴다 · 비중단 실패가 「저장됨」이면 이력 뒤에 실패한 답 말풍선을 붙인다(200 전에 끊긴 턴은 서버가 답을 만들지 않는다, #487 실측 · 중단 쪽은 #489)
   - 테스트 10건(useChat 9 · Composer 1), `FRONTEND_MIN` 222 → 232
+
+### Docs
+- **200 전에 끊긴 턴은 「서버가 답을 끝까지 만들어 저장한다」고 적던 문서 · 주석을 실측대로 고쳤다(#487).** 로컬 목업과 운영 실측 모두에서 서버는 끊긴 뒤의 전송이 실패할 때 생성을 멈췄고, 답을 끝까지 만든 회차는 없었다
+  - 로컬(Windows 루프백 → Tomcat 직결, 목업 대역 1.5초 뒤 단계 · 토큰 100ms 간격, 끊기 FIN · RST × 시나리오별 5회) : 200 전 FIN 은 질문만 5/5 · RST 는 질문도 없음 5/5 · 200 뒤 첫 토큰 전 질문만 10/10 · 스트리밍 중 `complete` + `stopped` 10/10(이 간격에서 FIN 은 받은 것보다 1토큰 더 5/5). 결과 `.issue/487/evidence/after/probe-table.txt`
+  - 운영(Cloudflare → cloudflared → Tomcat, 실 OpenAI, 시나리오별 5회) : 보내자마자 끊기 질문도 없음 5/5(Cloudflare 가 앱에 넘기지 않음) · 200(meta) 직후 끊기 질문만, 45초 뒤에도 답 없음 5/5 · 토큰 3~4개 받고 끊기 `complete` + `stopped` 21~31자 5/5. 결과 `.issue/487/evidence/prod/probe-prod.jsonl`
+  - 「곧바로 다시 물으면 서버가 답을 만드는 중이라 429」도 고쳤다 — 429 는 서버가 끊김을 알아채기 전에만 난다. 로컬에서 본 429 는 1건(즉시 끊김, 다음 전송이 1.5초 뒤였던 회차)
+  - 고친 곳 : `frontend.md` 「스트리밍 UI 규칙」 · 「남은 한계」, `backend.md` 「저장 텍스트」, `useChat.ts` · `ChatService.java` 주석. 코드는 그대로 — 저장됨 판정 턴이 답 없는 질문으로 남는 것은 서버에서 고칠 예정(#489)
+- **코드와 어긋난 문서 · 주석 문장을 코드에 맞췄다(#486).** 동작 변경 없음 — 문서 · 주석 · yml 주석 · `.env.example` 주석만 고쳤다. 발급 계정 역할(`ADMIN_EMAILS` 면 admin) · 역할 조회는 관리자 경로의 `AdminAccessGuard` 가 따로 한다 · RAG 문서 삭제는 soft delete 먼저(#98) · 실 연동 필수에 `ALLOWED_EMAIL_DOMAINS`, 목업 로그인에 `ADMIN_EMAILS` · 첨부 검증 순서에 사용자별 한도(#418) · permitAll 은 `GET /api/files/**` 만 · `DOC_FIGURES_DIR` 를 비웠을 때 mock 은 견본 · 동기화 `total` 의 뜻 · 업로드 상한 주석의 26MB OOM 계산을 10MB(#402) · #418 로 · 「서명 경로 토큰」→「서명 쿼리 토큰」 · overview 「알려진 제약」에 로그인 상한의 계정 잠금 지렛대를 되살렸다. 문서끼리의 끊긴 문장 · 용어 · 포인터와 api · features · live-integration · design-system 헤더 버전 · 수정일도 함께 고쳤다. `V5__user_role.sql` 의 없는 문서 참조는 Flyway 체크섬 때문에 그대로 둔다. #451 항목의 「모델명 `gpt-6-sol` 은 README · `.env.example` 에만」은 `live-integration.md` 의 측정 · 관측 기록(당시 모델명)을 뺀 말이다
 
 ## [2026-10-26]
 

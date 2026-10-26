@@ -1,0 +1,9 @@
+backend/src/main/java/com/ragchatbot/openai/CitationMarkupFilter.java:48:	private static final Pattern EXTENSION = Pattern.compile("\\.(md|txt|pdf|docx?|xlsx?|csv|json|html?)$",
+backend/src/main/java/com/ragchatbot/openai/CitationMarkupFilter.java-49-			Pattern.CASE_INSENSITIVE);
+--
+backend/src/main/java/com/ragchatbot/openai/SourceNameRewriter.java:32:	private static final Pattern EXTENSION = Pattern.compile("\\.(md|txt|pdf|docx?|xlsx?|csv|json|html?)$",
+backend/src/main/java/com/ragchatbot/openai/SourceNameRewriter.java-33-			Pattern.CASE_INSENSITIVE);
+backend/src/main/java/com/ragchatbot/openai/CitationMarkupFilter.java:48:	private static final Pattern EXTENSION = Pattern.compile("\\.(md|txt|pdf|docx?|xlsx?|csv|json|html?)$",
+backend/src/main/java/com/ragchatbot/openai/CitationMarkupFilter.java:179:		String name = EXTENSION.matcher(file).replaceFirst("");
+backend/src/main/java/com/ragchatbot/openai/SourceNameRewriter.java:32:	private static final Pattern EXTENSION = Pattern.compile("\\.(md|txt|pdf|docx?|xlsx?|csv|json|html?)$",
+backend/src/main/java/com/ragchatbot/openai/SourceNameRewriter.java:62:			String stem = EXTENSION.matcher(file).replaceFirst("");

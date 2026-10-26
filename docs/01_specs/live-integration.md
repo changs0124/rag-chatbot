@@ -3,8 +3,8 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 | rag-chatbot |
-| 문서 버전 | v1.9 |
-| 최종 수정일 | 2026-10-23 |
+| 문서 버전 | v2.0 |
+| 최종 수정일 | 2026-10-26 |
 | 작성자 | changs0124 |
 | 상태 | `반영됨` (2026-10-06 런칭) |
 
@@ -36,7 +36,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 관리자 업로드 기능 명세는 [`docs/01_specs/features.md`](./features.md) FEAT-ADMIN-002,
 환경변수 전량과 빠뜨렸을 때의 증상은 `backend/.env.example` 에 있다.
 
-## 0. 지금 상태를 정확히 적는다
+## 0. 현재 상태
 
 실 응답 검증(2026-09-22, #184)과 운영 투입(2026-10-06)은 끝났다 — 경위는 [CHANGELOG](../06_changelog/CHANGELOG.md).
 지금 운영 모델은 `OPENAI_MODEL` 기본값(#277)이고, 키 · 스토어 ID 는 운영 서버 `backend/.env` 에만 있다.
@@ -141,7 +141,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 
 ## 3. 실 응답과 대조해야 하는 가정
 
-아래 가정은 2026-09-22 실연동으로 A~E 가 확인됐고 F 는 틀렸지만 무해했다(#184 · #37, 관측 원본 `.issue/184/evidence/`).
+아래 가정은 2026-09-22 실연동으로 A~E 가 확인됐고 F 는 틀렸지만 무해했다(#184 · #37, 관측 원본 `.issue/184/evidence/`). G 는 2026-10-19 에 따로 확인했다(#375, 표 안).
 모델·API 가 바뀌어 다시 어긋날 때를 위한 진단표다 — 2-4에서 기대와 다른 결과가 나오면 여기부터 본다.
 
 | ID | 가정 | 어긋나면 나타나는 증상 |
