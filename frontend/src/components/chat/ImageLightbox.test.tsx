@@ -108,5 +108,33 @@ describe('ImageLightbox', () => {
       await waitFor(() => expect(click).toHaveBeenCalled())
       expect(saved).toEqual(['image.png'])
     })
+
+    /**
+     * #481 : 전송 전 카드 · 답변 속 문서 그림은 blob:/data: 이다. 운영 CSP connect-src 가
+     * 둘을 허용하지 않으므로 fetch 하면 조용히 실패한다 - 부르지 않고 그 주소로 바로 저장한다.
+     */
+    it.each(['blob:abc', 'data:image/png;base64,AAAA'])('%s 면 fetch 없이 그 주소로 저장함', async (src) => {
+      setup({ ok: true, status: 200 })
+      render(<ImageLightbox items={[{ src, name: 'p.png' }]} startIndex={0} onClose={vi.fn()} />)
+
+      fireEvent.click(screen.getByLabelText('내려받기'))
+
+      await waitFor(() => expect(click).toHaveBeenCalled())
+      expect(fetch).not.toHaveBeenCalled()
+      expect(saved).toEqual(['p.png'])
+      // 주소의 소유자가 따로 있으므로 회수하지 않는다
+      expect(URL.revokeObjectURL).not.toHaveBeenCalled()
+    })
+
+    /** #481 : 서명 URL(https)은 지금처럼 fetch 로 받아 저장한다 */
+    it('https 면 기존대로 fetch 로 받아 저장함', async () => {
+      setup({ ok: true, status: 200, type: 'image/png' })
+      render(<ImageLightbox items={[{ src: 'https://api/x', name: 'p.png' }]} startIndex={0} onClose={vi.fn()} />)
+
+      fireEvent.click(screen.getByLabelText('내려받기'))
+
+      await waitFor(() => expect(click).toHaveBeenCalled())
+      expect(fetch).toHaveBeenCalledWith('https://api/x')
+    })
   })
 })

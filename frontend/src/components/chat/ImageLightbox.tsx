@@ -103,8 +103,17 @@ export default function ImageLightbox({
   /**
    * 백엔드가 다른 오리진이라 `<a download>` 만으로는 저장되지 않음(브라우저가 속성을 무시하고 새 탭으로 엶).
    * blob 으로 받아 저장하고 만든 URL 은 바로 회수함.
+   * blob:/data: 는 운영 CSP connect-src 가 막아 fetch 가 조용히 실패함(#481) - 부르지 않고 그 주소로 바로 저장함.
+   * 그 주소는 소유자가 따로 있으므로 회수하지 않음.
    */
   async function download() {
+    if (/^(blob|data):/.test(current.src)) {
+      const a = document.createElement('a')
+      a.href = current.src
+      a.download = current.name ?? 'image'
+      a.click()
+      return
+    }
     try {
       const res = await fetch(current.src)
       // 서명 URL 이 만료되면 404 JSON 이 온다. 상태를 안 보면 그 JSON 이 그림 파일로 저장됨(#324)
