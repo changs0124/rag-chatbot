@@ -514,10 +514,14 @@ public class OpenAiRealService implements OpenAiService {
 					.body(form)
 					.retrieve()
 					.body(JsonNode.class);
-		} catch (HttpServerErrorException | ResourceAccessException e) {
+		} catch (RuntimeException e) {
 			// 관리자가 다시 시도하면 되는 일시 장애다(#476). **POST 는 여기서 다시 보내지 않는다** - OpenAI 가 실제로는
-			// 받아 처리했다면 같은 파일이 둘 생기고, 그중 하나는 아무도 모르는 고아가 된다
-			throw new UpstreamUnavailableException(UPSTREAM_RETRY_MESSAGE, e);
+			// 받아 처리했다면 같은 파일이 둘 생기고, 그중 하나는 아무도 모르는 고아가 된다.
+			// 읽기 타임아웃은 일시 장애로 치지 않는다 - 파일이 만들어졌는지 모르는데 「다시 시도」를 권하면 중복을 부른다
+			if (isTransient(e)) {
+				throw new UpstreamUnavailableException(UPSTREAM_RETRY_MESSAGE, e);
+			}
+			throw e;
 		}
 
 		// 기본값 null 이 이 가드의 전제다 - `"id": null` 이 문자열 "null" 로 읽히면 가드를 지나
@@ -538,7 +542,7 @@ public class OpenAiRealService implements OpenAiService {
 		} catch (Exception e) {
 			// 연결에 실패하면 파일만 덩그러니 남음. 여기서 지우지 않으면 아무도 그 존재를 모름
 			deleteFileOrReport(fileId);
-			if (e instanceof HttpServerErrorException || e instanceof ResourceAccessException) {
+			if (isTransient(e)) {
 				throw new UpstreamUnavailableException(UPSTREAM_RETRY_MESSAGE, e);
 			}
 			throw new IllegalStateException("Vector Store 연결 실패 - 업로드한 파일을 정리함", e);
@@ -700,9 +704,7 @@ public class OpenAiRealService implements OpenAiService {
 				// 이미 없음 - 지우려던 상태와 같다
 				return true;
 			} catch (Exception e) {
-				boolean transientFailure = e instanceof HttpServerErrorException
-						|| (e instanceof ResourceAccessException && e.getCause() instanceof ConnectException);
-				if (!transientFailure || attempt >= DELETE_ATTEMPTS) {
+				if (!isTransient(e) || attempt >= DELETE_ATTEMPTS) {
 					log.warn("openai {} 삭제 실패 {} ({}회 시도): {}", kind, id, attempt, e.getMessage());
 					return false;
 				}
@@ -711,9 +713,19 @@ public class OpenAiRealService implements OpenAiService {
 					Thread.sleep(DELETE_RETRY_BACKOFF_MS * attempt);
 				} catch (InterruptedException ie) {
 					Thread.currentThread().interrupt();
+					log.warn("openai {} 삭제 재시도가 인터럽트로 중단됨 {}", kind, id);
 					return false;
 				}
 			}
 		}
+	}
+
+	/**
+	 * 요청이 OpenAI 에서 처리되지 않았다고 볼 수 있는 일시 장애 - 5xx 또는 연결 자체가 안 됨(#476).
+	 * <b>읽기 타임아웃은 넣지 않는다</b> - 요청은 닿았고 처리됐는지 모른다
+	 */
+	private static boolean isTransient(Exception e) {
+		return e instanceof HttpServerErrorException
+				|| (e instanceof ResourceAccessException && e.getCause() instanceof ConnectException);
 	}
 }

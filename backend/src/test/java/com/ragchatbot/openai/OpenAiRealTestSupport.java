@@ -25,15 +25,21 @@ final class OpenAiRealTestSupport {
 
 	/** 가짜 서버 등 {@code baseUrl} 로 실제 요청을 보내는 테스트용 */
 	static OpenAiRealService against(String baseUrl, String storeId) {
-		return create(baseUrl, storeId, STREAM_READ_MS, SSE_MS);
+		return create(baseUrl, storeId, STREAM_READ_MS, REQUEST_MS, SSE_MS);
+	}
+
+	/** 읽기 타임아웃 경로를 보는 테스트용 - 기본 30초를 기다리지 않게 짧게 줄인다(#476) */
+	static OpenAiRealService againstWithRequestTimeout(String baseUrl, String storeId, long requestMs) {
+		return create(baseUrl, storeId, STREAM_READ_MS, requestMs, SSE_MS);
 	}
 
 	/** 타임아웃 순서 검사를 보는 테스트용 - 나머지는 {@link #parserOnly()} 와 같다 */
 	static OpenAiRealService withTimeouts(long streamReadMs, long sseMs) {
-		return create(UNREACHABLE, "", streamReadMs, sseMs);
+		return create(UNREACHABLE, "", streamReadMs, REQUEST_MS, sseMs);
 	}
 
-	private static OpenAiRealService create(String baseUrl, String storeId, long streamReadMs, long sseMs) {
-		return new OpenAiRealService("test-key", "gpt-6-sol", storeId, baseUrl, streamReadMs, REQUEST_MS, sseMs, null);
+	private static OpenAiRealService create(String baseUrl, String storeId, long streamReadMs, long requestMs,
+			long sseMs) {
+		return new OpenAiRealService("test-key", "gpt-6-sol", storeId, baseUrl, streamReadMs, requestMs, sseMs, null);
 	}
 }

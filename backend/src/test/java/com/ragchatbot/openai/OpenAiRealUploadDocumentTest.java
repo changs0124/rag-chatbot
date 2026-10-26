@@ -4,7 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,7 +21,7 @@ import com.ragchatbot.exception.ApiExceptions.UpstreamUnavailableException;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * 관리 화면 문서 업로드의 OpenAI 일시 장애 (#476 · TC-ADMIN-066~068).
+ * 관리 화면 문서 업로드의 OpenAI 일시 장애 (#476 · TC-ADMIN-066~069).
  *
  * <p>10-26 운영에서 {@code POST /files} 가 503 을 돌려줬을 때 폴백이 「처리되지 않은 예외」 ERROR 와 500 을 냈다.
  * 관리자에게는 다시 시도하면 되는 실패라는 것이 보여야 하므로 503 으로 알릴 예외로 바꾼다.
@@ -76,7 +80,26 @@ class OpenAiRealUploadDocumentTest {
 		OpenAiRealService unreachable = OpenAiRealTestSupport.against("http://127.0.0.1:1", "shared-store");
 
 		assertThatThrownBy(() -> unreachable.uploadDocument("a.md", "x".getBytes()))
-				.isInstanceOf(UpstreamUnavailableException.class);
+				.isInstanceOf(UpstreamUnavailableException.class)
+				.rootCause().isInstanceOf(ConnectException.class);
+	}
+
+	/**
+	 * TC-ADMIN-069 : 읽기 타임아웃은 일시 장애(503 「다시 시도」)로 바꾸지 않는다. 요청은 닿았고 OpenAI 가 파일을 만들었는지
+	 * 모른다 - 다시 시도를 권하면 관리자가 중복 파일을 만든다. 폴백(500 · ERROR)이 받아 상관 ID 로 추적한다
+	 */
+	@Test
+	void read_timeout_is_not_reported_as_retryable() throws IOException {
+		// 연결은 받되 응답을 끝내 보내지 않는 서버. 지금 요청 팩토리는 이것을 응답 읽기 실패(RestClientException)로 올리지만,
+		// 클라이언트를 바꾸면 ResourceAccessException 으로 올 수 있다 - 어느 쪽이든 「다시 시도」 503 이면 안 된다
+		try (ServerSocket silent = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+			OpenAiRealService impatient = OpenAiRealTestSupport.againstWithRequestTimeout(
+					"http://127.0.0.1:" + silent.getLocalPort(), "shared-store", 300);
+
+			assertThatThrownBy(() -> impatient.uploadDocument("a.md", "x".getBytes()))
+					.isNotInstanceOf(UpstreamUnavailableException.class)
+					.hasRootCauseInstanceOf(SocketTimeoutException.class);
+		}
 	}
 
 	/** TC-ADMIN-068 : 스토어 연결이 503 이면 올린 File 을 지운 뒤 같은 예외로 알린다 - 고아 File 을 남기지 않는다 */
