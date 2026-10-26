@@ -19,9 +19,9 @@
 
 **관찰(이슈 아님)** : 이력 예산(6000토큰) 밖으로 밀린 앞 턴은 모델이 「대화에서 확인되지 않는다」고 답한다 — 지어내지는 않지만 사용자는 말한 것을 잊었다고 느낄 수 있다(10-23 30턴 세션 1회). Cloudflare 502(cloudflared `malformed MIME header line ":"`)가 battery 1회 나왔다 — 7일 로그 중 1건, 재현 0/10(10-23). 다시 보이면 횟수를 더한다.
 
-**운영 주의** : 지금 운영 백엔드는 `ef68f53`(10-26 배포)이고 롤백 이미지는 `prev-62b3c3f` 다. [#447](https://github.com/changs0124/rag-chatbot/issues/447) 때문에 되돌릴 때는 **프론트를 먼저** 되돌린다(정본은 `backend.md` 「배포」).
+**운영 주의** : 지금 운영 백엔드는 `73bb76a`(10-26 배포)이고 롤백 이미지는 `prev-ef68f53` 다. [#447](https://github.com/changs0124/rag-chatbot/issues/447) 때문에 되돌릴 때는 **프론트를 먼저** 되돌린다(정본은 `backend.md` 「배포」).
 
-다음 할 일 : [#489](https://github.com/changs0124/rag-chatbot/issues/489)(200 직후 끊긴 턴의 질문을 서버가 걷는다 · 백엔드 배포) · [#483](https://github.com/changs0124/rag-chatbot/issues/483)(프론트 LOW 묶음) · [#488](https://github.com/changs0124/rag-chatbot/issues/488)(문서 구조 정리) 착수 전. [#480](https://github.com/changs0124/rag-chatbot/issues/480) · [#481](https://github.com/changs0124/rag-chatbot/issues/481) 은 merge · 배포 끝, 운영 화면 확인(429 화면 · 내려받기) 뒤 닫는다. 그 밖 후보 — 기존 대화의 200 전 중단 한계(같은 글 오판 · 되돌린 첨부 재사용 400)를 막는 전송 식별자(이슈 미등록, `frontend.md` 남은 한계). 그 밖에는 [backlog.md](./backlog.md) 에서 고른다.
+다음 할 일 : 없음(10-26 전체 리뷰 후속 #479~#489 끝). 후보 — 채팅 끊김 감지가 3~6초라 프론트 재확인 창 5초를 넘는 경우(#489 운영 실측 10회 중 2회 · 5.4 · 5.9초)를 줄이는 것(재확인 창 확대 또는 첫 토큰 전 heartbeat, 이슈 미등록). 그 밖 후보 — 기존 대화의 200 전 중단 한계(같은 글 오판 · 되돌린 첨부 재사용 400)를 막는 전송 식별자(이슈 미등록, `frontend.md` 남은 한계). 그 밖에는 [backlog.md](./backlog.md) 에서 고른다.
 
 ## 블로커
 
