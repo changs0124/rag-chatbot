@@ -1,0 +1,14 @@
+13:23:32.699 [main] WARN com.ragchatbot.exception.GlobalExceptionHandler -- 업스트림 일시 장애 POST /probe-upload : 503 Service Unavailable: [no body]
+PROBE A 업로드 POST /files 503 -> HTTP 503 {"code":"SERVICE_UNAVAILABLE","message":"OpenAI 가 일시적으로 응답하지 않음 - 잠시 뒤 다시 시도해 주세요"}
+13:23:32.781 [main] WARN com.ragchatbot.exception.GlobalExceptionHandler -- 업스트림 일시 장애 POST /probe-upload : I/O error on POST request for "http://127.0.0.1:1/files": Connection refused: getsockopt
+PROBE B 업로드 연결 거절 -> HTTP 503 {"code":"SERVICE_UNAVAILABLE","message":"OpenAI 가 일시적으로 응답하지 않음 - 잠시 뒤 다시 시도해 주세요"}
+13:23:32.788 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+13:23:33.095 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+13:23:33.699 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 실패 file-1 (3회 시도): 503 Service Unavailable: [no body]
+13:23:33.700 [main] ERROR com.ragchatbot.openai.OpenAiRealService -- OpenAI 파일 file-1 을 지우지 못해 스토어 밖 고아로 남음 - 동기화로도 보이지 않으니 OpenAI 에서 직접 지울 것 (DELETE /v1/files/
+PROBE C 파일 삭제 503 계속 -> 요청 4건 [DELETE /vector_stores/shared-store/files/file-1, DELETE /files/file-1, DELETE /files/file-1, DELETE /files/file-1]
+13:23:33.704 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+13:23:34.007 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+PROBE D 파일 삭제 503 두 번 뒤 성공 -> 요청 4건 [DELETE /vector_stores/shared-store/files/file-1, DELETE /files/file-1, DELETE /files/file-1, DELETE /files/file-1]
+13:23:34.611 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+PROBE E 연결 해제 503 한 번 뒤 성공 -> 요청 3건 [DELETE /vector_stores/shared-store/files/file-1, DELETE /vector_stores/shared-store/files/file-1, DELETE /files/file-1]
