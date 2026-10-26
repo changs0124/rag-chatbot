@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useChat } from './useChat'
 import type { ChatStreamHandlers } from '../lib/endpoints'
+import type { ChatMessage } from '../lib/types'
 
 vi.mock('../lib/endpoints', () => ({
   listConversations: vi.fn().mockResolvedValue([]),
@@ -459,6 +460,208 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.messages[0].content).toBe('환불 정책') // 화면이 비지 않음
     expect(result.current.messages[1].status).toBe('error')
     expect(result.current.error).toBe('응답 생성 중 오류')
+  })
+
+  /** streamChat 의 200 전 거절과 같은 모양 - onError 를 부르고 ApiError 를 던진다 */
+  async function reject(stream: ReturnType<typeof openStream>, status: number, message: string) {
+    await act(async () => {
+      stream.handlers?.onError?.(message)
+      stream.fail?.(new ApiError(status, message))
+    })
+  }
+
+  it('200 전 429 거절은 판정 없이 보낸 것을 되돌리고, 말풍선 · 빈 대화를 남기지 않고, 오류를 보인다 (#480)', async () => {
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    expect(result.current.activeId).toBe('c1')
+
+    await reject(stream, 429, '동시 스트림 상한 초과')
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    // 429 는 때의 문제라 첨부 카드도 되돌린다
+    expect(giveBack).toHaveBeenCalledWith(false)
+    expect(result.current.messages).toHaveLength(0)
+    // 새 대화는 비었을 때만 지우기로 정리한다(#447) - 이력으로 묻지 않는다
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+    expect(getMessages).not.toHaveBeenCalled()
+    expect(result.current.conversations).toEqual([])
+    expect(result.current.activeId).toBeNull()
+    expect(result.current.error).toBe('동시 스트림 상한 초과')
+  })
+
+  it('기존 대화의 200 전 4xx 거절은 서버에 묻지 않고 되돌리며 대화는 지우지 않음 (#480)', async () => {
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+
+    await reject(stream, 400, '메시지는 4000자까지 보낼 수 있음')
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    // 그 밖의 4xx 는 카드가 거절 원인일 수 있어 글만 되돌린다 - 카드까지 돌리면 다시 보내도 같은 거절이다
+    expect(giveBack).toHaveBeenCalledWith(true)
+    expect(getMessages).not.toHaveBeenCalled()
+    expect(deleteConversationIfEmpty).not.toHaveBeenCalled()
+    expect(result.current.messages.map((m) => m.content)).toEqual(['첫 질문', ''])
+    expect(result.current.activeId).toBe('c1')
+    expect(result.current.error).toBe('메시지는 4000자까지 보낼 수 있음')
+  })
+
+  it('200 전 fetch reject(네트워크)는 서버에 물어 되돌리고, 빈 대화를 지우고, 오류 배너를 보인다 (#480)', async () => {
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+
+    // fetch 자체가 실패하면 streamChat 은 onError 없이 던진다
+    await act(async () => {
+      stream.fail?.(new TypeError('Failed to fetch'))
+    })
+
+    expect(giveBack).toHaveBeenCalledTimes(1)
+    expect(giveBack).toHaveBeenCalledWith(false)
+    expect(result.current.messages).toHaveLength(0)
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+    expect(result.current.conversations).toEqual([])
+    expect(result.current.activeId).toBeNull()
+    expect(result.current.error).toBeTruthy()
+  })
+
+  it('200 전 5xx 는 닿았을 수 있어 서버에 묻는다 - 질문이 저장됐으면 남기고 실패한 답 말풍선을 붙인다 (#480)', async () => {
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+    const saved: ChatMessage[] = [
+      { id: 'u1', role: 'user', content: '첫 질문', status: 'complete', citations: [] },
+      { id: 'a1', role: 'assistant', content: '답', status: 'complete', citations: [] },
+      { id: 'u2', role: 'user', content: '둘째 질문', status: 'complete', citations: [] },
+    ]
+    vi.mocked(getMessages).mockResolvedValueOnce(saved)
+
+    await reject(stream, 502, '요청 실패 (502)')
+
+    expect(getMessages).toHaveBeenCalledWith('c1')
+    expect(giveBack).not.toHaveBeenCalled()
+    // 200 전에 끊긴 턴은 서버가 답을 만들지 않는다(#487 실측) - 저장 이력 뒤에 실패한 답을 붙여 실패를 보인다
+    expect(result.current.messages.map((m) => m.id).slice(0, 3)).toEqual(['u1', 'a1', 'u2'])
+    expect(result.current.messages).toHaveLength(4)
+    expect(result.current.messages[3]).toMatchObject({ role: 'assistant', status: 'error', content: '' })
+    expect(result.current.error).toBe('요청 실패 (502)')
+  })
+
+  it('기존 대화의 200 전 404 는 대화가 지워졌는지 물어, 지워졌으면 목록에서 빼고 새 대화 상태로 돌아간다 (#480)', async () => {
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+    // 다른 탭에서 지운 대화
+    vi.mocked(getMessages).mockRejectedValueOnce(new ApiError(404, '대화 없음'))
+
+    await reject(stream, 404, '대화 없음')
+
+    expect(getMessages).toHaveBeenCalledWith('c1')
+    expect(giveBack).toHaveBeenCalledWith(true)
+    expect(result.current.conversations).toEqual([])
+    expect(result.current.activeId).toBeNull()
+    expect(result.current.messages).toEqual([])
+    expect(result.current.error).toBe('대화 없음')
+  })
+
+  it('기존 대화의 200 전 404 「첨부 없음」은 대화가 있으면 대화를 그대로 둔다 (#480)', async () => {
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+
+    await reject(stream, 404, '첨부 없음')
+
+    expect(getMessages).toHaveBeenCalledWith('c1')
+    expect(giveBack).toHaveBeenCalledWith(true)
+    expect(result.current.activeId).toBe('c1')
+    expect(result.current.messages.map((m) => m.content)).toEqual(['첫 질문', ''])
+  })
+
+  it('200 전 401 은 판정 · 빈 대화 삭제를 건너뛴다 (#480)', async () => {
+    // 토큰이 만료돼 로그아웃으로 가는 길 - 같은 토큰으로 더 물어도 401 이다
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+
+    await reject(stream, 401, '인증 필요')
+
+    expect(deleteConversationIfEmpty).not.toHaveBeenCalled()
+    expect(getMessages).not.toHaveBeenCalled()
+    expect(result.current.messages).toHaveLength(0)
+  })
+
+  it('새 대화의 200 전 4xx 뒤 빈 대화 삭제가 실패하면 글은 되돌리고 대화는 남는다 (#480)', async () => {
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    vi.mocked(deleteConversationIfEmpty).mockRejectedValueOnce(new ApiError(500, '서버 오류'))
+    // 첫 로드와 실패 뒤 다시 받는 목록 - 지우지 못한 대화가 서버에 남아 있다
+    const kept = { id: 'c1', title: '새 대화', updatedAt: '' }
+    vi.mocked(listConversations).mockResolvedValueOnce([]).mockResolvedValueOnce([kept])
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+
+    await reject(stream, 429, '동시 스트림 상한 초과')
+
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+    expect(giveBack).toHaveBeenCalledWith(false)
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['c1'])
+    expect(result.current.activeId).toBe('c1')
+    expect(result.current.messages).toHaveLength(0)
+  })
+
+  it('비중단 실패 뒤 판정 중에 대화를 옮기면 되돌리지 않고 빈 대화는 지운다 (#480)', async () => {
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    let finishDelete: () => void = () => {}
+    vi.mocked(deleteConversationIfEmpty).mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishDelete = resolve)),
+    )
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+
+    await act(async () => {
+      stream.fail?.(new TypeError('Failed to fetch'))
+    })
+    await act(async () => {
+      await result.current.selectConversation('c9')
+    })
+    await act(async () => finishDelete())
+
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(result.current.conversations).toEqual([])
+    expect(result.current.activeId).toBe('c9')
   })
 })
 

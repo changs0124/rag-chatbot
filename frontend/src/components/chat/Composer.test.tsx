@@ -197,6 +197,30 @@ describe('Composer', () => {
     expect(onSend).toHaveBeenLastCalledWith('이 사진 설명해줘\n추가로', [attachment('a1')], expect.any(Function))
   })
 
+  it('글만 되돌리라고 하면 카드는 버리고 글만 돌아온다 (#480)', async () => {
+    // 400 · 404 처럼 카드가 거절 원인일 수 있는 실패 - 카드까지 돌리면 다시 보내도 같은 거절이다
+    vi.mocked(uploadFile).mockResolvedValueOnce(attachment('a1'))
+    let giveBack: (textOnly?: boolean) => void = () => {}
+    const onSend = vi.fn(async (_t: string, _a: Attachment[], back: (textOnly?: boolean) => void) => {
+      giveBack = back
+      return true
+    })
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+    const box = screen.getByPlaceholderText('메시지를 입력하세요') as HTMLTextAreaElement
+
+    pick(image('photo_0001.png'))
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    fireEvent.change(box, { target: { value: '이 사진 설명해줘' } })
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('보내기'))
+    })
+
+    act(() => giveBack(true))
+
+    expect(box.value).toBe('이 사진 설명해줘')
+    expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
+  })
+
   /**
    * #323 F2 - 받지 않은 전송은 입력을 지우지 않는다.
    *
