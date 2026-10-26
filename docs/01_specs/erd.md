@@ -169,7 +169,7 @@ erDiagram
 | message_id | uuid | N | - | FK → `messages.id` **on delete cascade** |
 | seq | integer | N | - | 각주 번호(1-base). 인용 순서 |
 | source_name | text | N | - | 자료명. 화면 각주에 뜨는 값 |
-| snippet | text | Y | NULL | 발췌. 200자로 자른다 |
+| snippet | text | Y | NULL | 발췌. 200자(UTF-16 코드 단위)로 자르되 서로게이트 쌍은 가르지 않는다(이모지가 걸리면 199자) |
 | created_at | timestamptz | N | `now()` | |
 
 **출처를 영속화하는 이유** : 대화를 다시 열어도 각주가 남아야 한다(REQ-RAG-002).

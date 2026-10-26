@@ -44,9 +44,6 @@ final class CitationMarkupFilter {
 	// 흔해서 넣지 않음 - 넣으면 「점검 결과 <표기> 이상 없음」 같은 정상 문장에 이름이 끼어듦
 	private static final String PARTICLE_BEFORE = "은는을를";
 	private static final String PARTICLE_AFTER = ",에의와과을를";
-	// 확장자로 볼 꼬리 - 마지막 점을 다 자르면 「매뉴얼 v1.2」 가 「매뉴얼 v1」 이 됨
-	private static final Pattern EXTENSION = Pattern.compile("\\.(md|txt|pdf|docx?|xlsx?|csv|json|html?)$",
-			Pattern.CASE_INSENSITIVE);
 
 	private boolean inside;
 	private final StringBuilder body = new StringBuilder();
@@ -176,7 +173,7 @@ final class CitationMarkupFilter {
 			return null;
 		}
 		String file = searches.get(ref.turn()).get(ref.file());
-		String name = EXTENSION.matcher(file).replaceFirst("");
+		String name = SourceNameRewriter.EXTENSION.matcher(file).replaceFirst("");
 		return name.isBlank() ? null : name;
 	}
 }

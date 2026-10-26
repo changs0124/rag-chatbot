@@ -28,8 +28,9 @@ import java.util.regex.Pattern;
  */
 final class SourceNameRewriter {
 
-	// CitationMarkupFilter 와 같은 꼬리 규칙 - 마지막 점을 다 자르면 「매뉴얼 v1.2」 가 「매뉴얼 v1」 이 됨
-	private static final Pattern EXTENSION = Pattern.compile("\\.(md|txt|pdf|docx?|xlsx?|csv|json|html?)$",
+	// 확장자로 볼 꼬리 - 마지막 점을 다 자르면 「매뉴얼 v1.2」 가 「매뉴얼 v1」 이 됨.
+	// CitationMarkupFilter 도 이것을 씀(#485) - 한쪽만 바뀌면 끼워 넣은 이름이 리라이터 키와 어긋남
+	static final Pattern EXTENSION = Pattern.compile("\\.(md|txt|pdf|docx?|xlsx?|csv|json|html?)$",
 			Pattern.CASE_INSENSITIVE);
 
 	private final Set<String> files = new LinkedHashSet<>();
