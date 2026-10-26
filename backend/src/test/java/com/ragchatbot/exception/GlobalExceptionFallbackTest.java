@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * 예외 최종 폴백 (FEAT-OPS-002 · TC-OPS-010~019 · 028~031).
+ * 예외 최종 폴백 (FEAT-OPS-002 · TC-OPS-010~019 · 028~031 · 035).
  *
  * <p>실 서비스에서 예상 못 한 예외를 일부러 나게 만들 수 없으므로, 테스트 전용 컨트롤러를 하나
  * 띄워 던지게 함. 검증 대상은 던지는 쪽이 아니라 <b>받는 쪽(GlobalExceptionHandler)</b> 임.
@@ -45,6 +45,12 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 		@GetMapping("/api/test-boom")
 		String boom() {
 			throw new IllegalStateException(LEAKY_MESSAGE);
+		}
+
+		@GetMapping("/api/test-upstream")
+		String upstream() {
+			throw new ApiExceptions.UpstreamUnavailableException("잠시 뒤 다시 시도",
+					new IllegalStateException(LEAKY_MESSAGE));
 		}
 	}
 
@@ -108,6 +114,22 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(res.getBody().get("code")).isEqualTo("NOT_FOUND");
+	}
+
+	/**
+	 * TC-OPS-035 : OpenAI 일시 장애는 폴백의 500 이 아니라 503 이다(#476). 관리자가 「다시 시도하면 된다」를 알 수 있어야
+	 * 하고, 업스트림 원문(원인 예외)은 응답에 싣지 않는다
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void upstream_unavailable_maps_to_503() {
+		String token = createUser("boom-upstream@b.com");
+		var res = get(token, "/api/test-upstream");
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+		assertThat(res.getBody().get("code")).isEqualTo("SERVICE_UNAVAILABLE");
+		assertThat(res.getBody().get("message")).isEqualTo("잠시 뒤 다시 시도");
+		assertThat(res.getBody().toString()).doesNotContain(LEAKY_MESSAGE).doesNotContain("오류 번호");
 	}
 
 	/** 본문을 문자열 그대로 보냄 - 깨진 JSON 은 객체로는 만들 수 없으므로 직렬화를 거치지 않음 */

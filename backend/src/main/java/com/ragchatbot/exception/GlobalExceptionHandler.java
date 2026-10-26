@@ -31,6 +31,7 @@ import com.ragchatbot.exception.ApiExceptions.ConflictException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
 import com.ragchatbot.exception.ApiExceptions.RateLimitException;
 import com.ragchatbot.exception.ApiExceptions.UnauthorizedException;
+import com.ragchatbot.exception.ApiExceptions.UpstreamUnavailableException;
 
 /**
  * 예외 → 일관된 ApiError(JSON) 변환.
@@ -98,6 +99,21 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(RateLimitException.class)
 	public ResponseEntity<ApiError> handleRateLimit(RateLimitException ex) {
 		return json(HttpStatus.TOO_MANY_REQUESTS).body(new ApiError("RATE_LIMIT", ex.getMessage()));
+	}
+
+	/**
+	 * OpenAI 일시 장애(5xx · 연결 실패) - 관리자 문서 업로드에서 난다(#476).
+	 *
+	 * <p><b>우리 코드의 결함이 아니라 WARN 이다.</b> 이 핸들러가 없던 동안에는 {@link #handleUnexpected} 가 받아
+	 * ERROR + 스택 트레이스와 「오류 번호」 500 을 냈다 - 관리자는 다시 시도하면 되는지 알 수 없었다.
+	 * 메시지는 던지는 쪽이 정한 고정 문구라 그대로 싣고, 업스트림 원문은 로그에만 남긴다.
+	 */
+	@ExceptionHandler(UpstreamUnavailableException.class)
+	public ResponseEntity<ApiError> handleUpstreamUnavailable(UpstreamUnavailableException ex,
+			HttpServletRequest request) {
+		log.warn("업스트림 일시 장애 {} {} : {}", request.getMethod(), request.getRequestURI(),
+				ex.getCause() == null ? ex.getMessage() : ex.getCause().getMessage());
+		return json(HttpStatus.SERVICE_UNAVAILABLE).body(new ApiError("SERVICE_UNAVAILABLE", ex.getMessage()));
 	}
 
 	/**

@@ -43,4 +43,11 @@ public final class ApiExceptions {
 			super(message);
 		}
 	}
+
+	/** 503 - 업스트림(OpenAI) 일시 장애. 보낸 쪽이 잠시 뒤 그대로 다시 시도하면 되는 실패(#476) */
+	public static class UpstreamUnavailableException extends RuntimeException {
+		public UpstreamUnavailableException(String message, Throwable cause) {
+			super(message, cause);
+		}
+	}
 }
