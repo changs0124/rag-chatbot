@@ -15,7 +15,7 @@
 | D 파일 삭제 503 두 번 뒤 성공 | 1회 시도 후 포기 → **고아 남음** | 3회째 성공 → **고아 없음** |
 | E 연결 해제 503 한 번 뒤 성공 | 해제 1회 후 포기 → 파일 남김(동기화로 복구 필요) | 해제 2회째 성공 → 파일까지 삭제 |
 
-원본 로그 : `.issue/476/evidence/before/summary.txt` · `after/summary.txt`(전체 출력은 같은 폴더 `probe.txt`), 탐침 소스 `.issue/476/Issue476ProbeTest.java.txt`(구현 커밋에는 넣지 않음)
+원본 로그 : `.issue/476/evidence/before/summary.txt` · `after/summary.txt`(전체 출력은 같은 폴더 `probe.txt`), 탐침 소스 `.issue/476/evidence/Issue476ProbeTest.java.txt`(구현 커밋에는 넣지 않음 — `backend/src/test/java/com/ragchatbot/openai/` 에 `.java` 로 두고 `./mvnw test -Dtest=Issue476ProbeTest`)
 
 ### 검증
 - `./mvnw verify` : **385건 통과 · 실패 0 · 건너뜀 0**(하한 377 → 385)
