@@ -10,7 +10,8 @@
   - 입력 이름 : 마이페이지 이름 · 현재 비밀번호 · 새 비밀번호에 `aria-label`(placeholder 는 이름이 아니다)
   - 삭제 버튼 : 데스크톱 사이드바 삭제 버튼에 `md:focus-visible:opacity-100` · `md:group-focus-within:opacity-100`, 이름은 「'제목' 대화 삭제」
   - 대화상자 : 확인 모달 · 관리자 발급 창 · 라이트박스에 `aria-labelledby`(`useId`). **확인 모달 첫 포커스를 「삭제」에서 「취소」로 옮겼다** — 열리자마자 Enter 한 번이 삭제가 되지 않게(사용자 결정 10-26)
-  - 케이스 12건이 늘어 `FRONTEND_MIN` 을 222 → **234** 로 올렸다. 새 파일을 하나 더하면 전체 실행에서 `MessageListLazy.test.tsx` 의 `findByText` 기본 1초 제한이 부하로 넘는 일이 있어(첫 청크 로딩), 확인 모달 케이스는 `Sidebar.test.tsx` 안에 뒀다
+  - 케이스 12건이 늘어 `FRONTEND_MIN` 을 222 → **234** 로 올렸다.
+  - 말풍선 안 「응답 중 오류가 발생했습니다」 줄에 `aria-hidden` — 200 뒤 스트림 오류를 ChatPage 배너 `alert` 한 번만 읽게 한다. `status` 는 늘 렌더하는 그릇에 글만 바꿔 넣는다
 
 ## [2026-10-26]
 

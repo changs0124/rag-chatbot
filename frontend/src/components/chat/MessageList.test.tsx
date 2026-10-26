@@ -185,7 +185,8 @@ describe('MessageList', () => {
     ]
     render(<MessageList messages={ended} stage={null} />)
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
-    expect(screen.getByText(/응답 중 오류가 발생했습니다/)).toBeInTheDocument()
+    // 같은 오류를 ChatPage 배너(role=alert)가 읽으므로 말풍선 줄은 낭독에서 뺀다(#484)
+    expect(screen.getByText(/응답 중 오류가 발생했습니다/)).toHaveAttribute('aria-hidden', 'true')
   })
 
   describe('문서 그림 표식 (FEAT-CHAT-004)', () => {

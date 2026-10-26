@@ -66,9 +66,12 @@ export default function MyPage() {
       <h1 className="mt-4 mb-1 text-2xl font-semibold text-ink">설정</h1>
       <p className="mb-6 text-sm text-ink-muted">{user?.email}</p>
 
-      {notice && (
-        <p role="status" className="mb-4 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-accent">{notice}</p>
-      )}
+      {/* status 는 늘 있는 그릇에 글만 바꿔 넣어야 낭독된다(#484) */}
+      <div role="status">
+        {notice && (
+          <p className="mb-4 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-accent">{notice}</p>
+        )}
+      </div>
       {error && (
         <p role="alert" className="mb-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</p>
       )}

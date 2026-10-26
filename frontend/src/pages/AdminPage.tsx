@@ -230,7 +230,9 @@ function DocumentsSection({
             {syncing ? '맞추는 중…' : '스토어와 동기화'}
           </button>
         </div>
-        {syncNotice && <p role="status" className="mt-2 text-xs text-ink-muted">{syncNotice}</p>}
+        <div role="status">
+          {syncNotice && <p className="mt-2 text-xs text-ink-muted">{syncNotice}</p>}
+        </div>
 
         {loaded && documents.length === 0 ? (
           <div className="mt-3 rounded-2xl bg-surface px-6 py-10 text-center">

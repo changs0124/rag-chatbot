@@ -211,8 +211,9 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: ChatMe
             <DocFigure key={`f${i}-${s.key}`} figureKey={s.key} onLoad={onFigureLoad} onOpen={setOpenFigure} />
           ),
         )}
+        {/* 같은 오류를 ChatPage 배너(role=alert)가 이미 읽는다 - 이중 낭독을 막는다(#484) */}
         {message.status === 'error' && (
-          <p className="mt-1 text-[13px] text-danger">응답 중 오류가 발생했습니다</p>
+          <p aria-hidden="true" className="mt-1 text-[13px] text-danger">응답 중 오류가 발생했습니다</p>
         )}
         {!isUser && <Citations citations={message.citations} />}
       </div>
