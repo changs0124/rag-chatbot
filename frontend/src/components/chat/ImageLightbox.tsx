@@ -110,8 +110,13 @@ export default function ImageLightbox({
     if (/^(blob|data):/.test(current.src)) {
       const a = document.createElement('a')
       a.href = current.src
-      a.download = current.name ?? 'image'
+      // 이름이 없으면 data: 의 MIME 에서 확장자를 얻고, 알 수 없으면 png (blob: 은 형식을 알 수 없음)
+      const mime = /^data:image\/(png|jpeg|webp|gif)[;,]/.exec(current.src)?.[1]
+      a.download = current.name ?? `image.${mime === 'jpeg' ? 'jpg' : (mime ?? 'png')}`
+      // 일부 브라우저(Firefox)는 문서에 붙지 않은 a 의 click 을 무시함
+      document.body.appendChild(a)
       a.click()
+      a.remove()
       return
     }
     try {

@@ -126,6 +126,25 @@ describe('ImageLightbox', () => {
       expect(URL.revokeObjectURL).not.toHaveBeenCalled()
     })
 
+    /** #481 : 이름 없는 data: 는 MIME 에서 확장자를, 그 밖은 png 를 붙인다. 앵커는 문서에 붙었다 떼어진다 */
+    it.each([
+      ['data:image/jpeg;base64,AAAA', 'image.jpg'],
+      ['data:image/webp;base64,AAAA', 'image.webp'],
+      ['data:image/gif;base64,AAAA', 'image.gif'],
+      ['data:image/png;base64,AAAA', 'image.png'],
+      ['data:image/bmp;base64,AAAA', 'image.png'],
+      ['blob:abc', 'image.png'],
+    ])('이름 없는 %s 는 %s 로 저장함', async (src, expected) => {
+      setup({ ok: true, status: 200 })
+      render(<ImageLightbox items={[{ src }]} startIndex={0} onClose={vi.fn()} />)
+
+      fireEvent.click(screen.getByLabelText('내려받기'))
+
+      await waitFor(() => expect(click).toHaveBeenCalled())
+      expect(saved).toEqual([expected])
+      expect(document.querySelector('a[download]')).toBeNull()
+    })
+
     /** #481 : 서명 URL(https)은 지금처럼 fetch 로 받아 저장한다 */
     it('https 면 기존대로 fetch 로 받아 저장함', async () => {
       setup({ ok: true, status: 200, type: 'image/png' })
