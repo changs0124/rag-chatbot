@@ -2,7 +2,22 @@
 
 모든 주요 변경사항을 기록한다.
 
+배포 구획의 소절에 배포 라벨(커밋 또는 반영 방식, 예 : `### Fixed (62b3c3f)` · `### Fixed (Vector Store 교체)`)을 붙이는 형식은 `[2026-10-26]` 부터다. 그 이전 구획은 구획 머리 줄의 배포 → 이슈 매핑만 있고 소급하지 않는다.
+
 ## [Unreleased]
+
+### Docs
+- **같은 사실의 사본을 정본 한 곳 + 포인터로 줄이고 CI 장애 런북을 따로 뗐다(#488).** 위치 · 포인터 중심 — 10-26 문서 리뷰 D4 · D6 · D7 · D8 · D10 · D13 · D18 · D19 · D22 · D23. 단 D19 · D10 은 사실 · 범위 정정이다
+  - 정정 근거 : 3-2 표의 행은 각기 그 이슈 당시 지시문으로 쟀다(#376 · #377 · #372 는 배터리 31문항 × 2, #438 · #427 은 한 번 28/28, #469 는 31 × 4 = 124 의 120/124 — 아래 각 항목). INDEX 「위 규칙」은 가리키는 대상이 둘(AI 사용 가이드 1~4번 · 정본 원칙)로 읽혔고, Backlog 「전체 태스크」는 `backlog.md` 머리말 「확인된 미결 항목」과 달랐다
+  - 지시문 줄별 증상 · 실측 : `backend.md` 「채팅 SSE 계약」의 #376 · #377 · #378 · #427 · #432 불릿을 지우고 `live-integration.md` 3-2 표(실측) · `OpenAiRealService` 머리 주석(이유) · 지시문 문자열(규칙)을 가리킨다. #372(필터) · #438(제품 결정)은 남겼다
+  - 규칙 문장 : 스키마 소유 · 마이그레이션 규칙은 `CONVENTIONS.md` 「스키마」, 설정값 형태 · 기본값 비우기는 「설정」, 성공 상태(201 · 204 · 200)는 `backend.md` 「API 설계 원칙」, 비동기 타임아웃 503 의 도달 경로는 `api.md` 에러 표 한 행으로
+  - 기본값 수치 : 파일 서명 토큰 TTL 은 `api.md` API-GET-006, 토큰 만료 · 절대 수명은 `api.md` 「인증」, 갱신 임계는 `features.md` FEAT-OPS-003 입력값, 입력 상한은 env 이름 + API 명세, 전역 동시 스트림은 `backend.md` 「유량 제어」. 나머지 문서는 env 이름과 포인터만
+  - 시점 수치 : `backend.md` 「유량 제어」의 10-15 부하 실측표를 아래 10-15 #278 항목으로 옮겼다(결론은 남김). 번들 gzip(#417) · 이미지 압축 크기 · BOM 해석값(#48)에는 시점과 CHANGELOG 위치를 붙였다. `live-integration.md` 3-2 표 머리를 「행마다 당시 지시문 기준」 · 배터리 반복 횟수가 측정마다 다름으로 고쳤다
+  - INDEX : 폴더 상태 사본 「지금 비어 있음」을 지우고 이슈 정본(GitHub Issues) 한 줄 · Backlog 설명을 `backlog.md` 머리말대로 · 「위 규칙보다」를 「이 가이드의 1~4번보다」로
+  - `backend.md` 같은 파일 안 참조 「인바운드」 · 「메모리 상한」을 실제 굵은 문단 첫머리와 같은 문구로
+  - `CONVENTIONS.md` 「테스트·CI 게이트」 안의 ruleset 복원 · 체크 없음(#170) · 필수 목록 확인 절차를 새 절 「CI 장애 대응」으로 옮겼다(INDEX 도 가리킴)
+  - 10-15 #278 항목에 부하 실측표를 덧붙인 것은 「본문 불변」의 예외다(옮긴 표의 목적지). 같은 항목의 낡은 포인터 「표는 `backend.md` 「유량 제어」」는 「아래 표」로 고쳤다
+  - 이 파일 : 10-26 구획의 라벨 없던 소절에 `(a89fb83)` 를 붙이고 #466 을 `### Docs (a05d994)` 로 옮겼다(배포 이미지 기준). 라벨 형식은 10-26 부터라는 한 줄을 머리에 두었다 — 그 이전 구획은 소급하지 않는다
 
 ## [2026-10-26]
 
@@ -74,7 +89,10 @@
   - 실측(OpenAI 직접 호출) : 압박 턴 사과 12 → 0/58 · 참값 유지 58/58 · 배터리 기대 출처 122 → 120/124(우연 범위). 표는 `live-integration.md` 3-2
   - 배포 뒤 운영 앱 확인 : 압박 16턴 사과 0 · 참값 16/16 · 배터리 31/31 · 근거 문항 「자료 없음」 0
 
-### Refactored
+### Docs (a05d994)
+- **`backend/pom.xml` Spring Boot 버전 주석을 무엇에서 무엇으로 올렸는지 읽히게 다듬었다(#466).** 「3.5 는 … 끝나 올렸다」 → 「3.5 의 … 끝나 4.1 로 올렸다」. 주석만, 빌드 결과 같음
+
+### Refactored (a89fb83)
 - **`useChat.run` 의 200 전 중단 판정 · 단계 큐 · `Composer` 카드 폐기 · 이름 입력 상한을 묶었다(#456, 동작 불변).** 10-23 전체 리뷰 지적
   - `useChat` : 200 전 중단 판정(`deleteConversationIfEmpty` · `getMessages` → `stored | deleted | unknown`)을 모듈 함수 `judgeEarlyAbort` 로 빼고
     훅은 결과만 적용한다(세대 확인은 판정을 기다린 뒤 · 판정 동안 `streaming` 유지 그대로). 같은 `catch` 의 `setMessages` 셋을 하나로
@@ -86,7 +104,7 @@
 - **테스트 복붙을 정리했다(#455).** 케이스 수 · 이름 · 단언은 그대로(백엔드 364 · 프론트 222).
   - 백엔드 : 멀티파트 업로드 조립 · PNG 매직바이트 · 이메일로 사용자 ID 읽기를 `AbstractPgIntegrationTest` 의 `multipart(...)` · `PNG_MAGIC` · `userId(email)` 로 모았다(6개 파일 + `AdminUserFlowTest`). `rawChat` · `stageLabel` 스텁은 `support/SseTestSupport` 로
   - 프론트 : `deferred` · `msg` · `conv` 를 `src/test/fixtures.ts` 로. `MessageListLazyFail.test` 는 자체 `Boundary` 대신 실제 `ErrorBoundary` 를 쓰고 100ms 고정 대기를 실패하는 import 대기로 바꿨다. `useChatLoading` · `useChatRace` 목에 빠진 `deleteConversationIfEmpty` 를 더했다
-### Removed
+### Removed (a89fb83)
 - **쓰이지 않던 테스트 의존성 · 설정 줄 · 코드를 지웠다(#454).** 전체 리뷰(10-23)에서 grep 0건으로 확인된 것만 — #105 의 대화별 Vector Store 경로는 그대로 둔다
   - `backend/pom.xml` 테스트 의존성 4개 : `spring-security-test` · `spring-boot-testcontainers` · `testcontainers-junit-jupiter` · `mybatis-spring-boot-starter-test`
     (`backend/src` 에서 import 0건. 컨테이너는 `AbstractPgIntegrationTest` 가 `testcontainers-postgresql` 로 직접 띄운다)
@@ -95,7 +113,7 @@
   - `ChatInput` 의 null 방어(`OpenAiMockService` · `OpenAiRealService`) — 유일한 생성자 `ChatService` 가 늘 non-null 을 넘긴다
   - `AuthContext.tsx` 의 `eslint-disable` 는 oxlint 규칙 이름(`oxlint-disable-next-line react/only-export-components`)으로 바꿨다. 테스트 수 불변
 
-### Fixed
+### Fixed (a89fb83)
 - **답 본문에 옮겨 적힌 검색 결과 파일 이름을 짧은 문서 이름으로 바꾼다(#470).** 10-26 운영 QA 에서 「TM매뉴얼_VSVDTMNOPK10_v3.md의 …」처럼 파일 이름이 확장자 · 문서 코드째 나왔다(892턴 중 코드 17 · 확장자 3, 필터 없는 직접 호출에서도 219개 중 19개 — 모델이 쓴 글자)
   - `SourceNameRewriter`(새 파일) : 검색 결과 이름과 같은 글자만 확장자를 빼고 첫 `_` 앞까지로 바꾼다(「TM매뉴얼」 · 「필드클레임현황」). 이름이 조각 사이에서 잘려 오면 다음 조각까지 붙잡는다. `CitationMarkupFilter` 가 내보내는 글자가 마지막에 이를 거친다 — #429 가 넣는 이름도 같은 규칙. 첫 `_` 앞이 같은 문서가 둘 이상이면 가릴 수 없어 확장자만 뺀다(리뷰 지적). 출처 목록(`sourceName`)은 그대로
   - 지시문은 바꾸지 않았다 : 「짧은 이름으로 부른다」 줄은 노출을 0 으로 만들지만 인용을 하나도 달지 않는 답이 배터리 124회 중 1 → 5 로 늘었다(「인용은 빼지 않는다」를 덧붙여도 같음). 실측은 `live-integration.md` 3-1
@@ -106,8 +124,7 @@
   - `scripts/check-runtime-versions.sh` : `java` · `node` 가 PATH 에 없으면 `command -v` 로 먼저 보고 「수집 실패 : java 없음」을 출력하고 exit 1 (변경 전에는 `set -e` 아래 exit 127 로 말없이 죽음)
   - 테스트 : `AdminDocumentSizeCheckTest`(getBytes 호출 안 함 확인) · `ChatPartialSaveFailureLogTest`(저장 실패가 WARN 에 남음). **하한 백엔드 364 → 366**
 
-### Docs
-- **`backend/pom.xml` Spring Boot 버전 주석을 무엇에서 무엇으로 올렸는지 읽히게 다듬었다(#466).** 「3.5 는 … 끝나 올렸다」 → 「3.5 의 … 끝나 4.1 로 올렸다」. 주석만, 빌드 결과 같음
+### Docs (a89fb83)
 - **코드 주석을 정리했다(#452).** 동작 · 테스트 수는 그대로이고 주석과 문서만 바뀐다. `RAG_INSTRUCTIONS` 머리 주석(약 60줄)의
   줄별 실측 수치를 `live-integration.md` 3-2 「지시문 줄별 실측」 표로 옮기고 주석에는 줄마다 이유 · 이슈 번호만 남겼다(지시문 문자열은 그대로).
   낡은 주석(Mock 「리소스 정리 기록」 · `trackedKeys` 「운영 점검용」 · `findByConversation` 호출처 · `AdminDtos` · 409 의미 · `FileService` 검증 순서의 #418)을 바로잡고,
@@ -789,8 +806,17 @@
   - `.gitignore` : 이 저장소 도구가 만들지 않는 `.eslintcache` · `*.war` · `build/` · `.gradle/` · `dist-ssr/` · `!.vscode/extensions.json` 제거
 - **동시 채팅 상한을 8 → 16 으로 올렸다(#278).** 서로 다른 사용자 9명째부터 「동시 요청이 많음」 429 였다. 사용자 결정이다.
   - `app.chat.max-concurrent-streams` 기본값(yml · `ChatExecutorConfig` · `ChatConcurrencyLimiter` 의 `@Value` 기본값) 16. 풀 크기는 같은 프로퍼티라 함께 16. 사용자당 1 · 분당 20 은 그대로
-  - 로컬 실측(live) : 16명 동시 전원 200 · 17명째 429 · 섞임 0 · app 메모리 최고 233MiB / 1GiB. 표는 `backend.md` 「유량 제어」
+  - 로컬 실측(live) : 16명 동시 전원 200 · 17명째 429 · 섞임 0 · app 메모리 최고 233MiB / 1GiB. 아래 표(운영 실측)
   - 운영 실측(배포 직후) : 16명 동시 전원 200 · 17명째 429 · 섞임 0 · app 메모리 최고 224MiB / 1GiB
+  - 운영 부하 실측표(2026-10-15 15:15 KST, Lightsail 2 vCPU · 4GB · app 1GiB · Hikari 5, 공개 API 경유, 상한 16. 측정 전 app 178MiB) — #488 에서 `backend.md` 「유량 제어」로부터 옮겼다
+
+    | 동시 사용자 | 200 / 429 | 완료 p50 / p95 | app 메모리 최고 |
+    |---|---|---|---|
+    | 8 | 8 / 0 | 7.2 / 8.4초 | 207MiB |
+    | 12 | 12 / 0 | 6.5 / 8.7초 | 212MiB |
+    | 16 | 16 / 0 | 5.6 / 9.7초 | 223MiB |
+    | 17 | 16 / 1 | 6.6 / 7.9초 | 224MiB |
+
 - **대화를 눌러 이력을 불러오는 동안 본문에 로딩 표시를 보인다(#291).** 사용자 요청이다(모바일 · 데스크탑).
   지금까지는 응답이 올 때까지 직전 대화 내용이 그대로 남거나 빈 화면 안내가 떠서, 느린 망에서 반응이 없는 것처럼 보였다.
   - `useChat.loadingMessages` : 고른 순간 켜고, 이력이 도착하면(세대가 같을 때만) 끈다. 실패하거나 새 대화를 누르면 바로 끈다
