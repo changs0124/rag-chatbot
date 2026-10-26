@@ -91,6 +91,11 @@ final class SnippetPicker {
 			return "";
 		}
 		String flat = s.replaceAll("\\s+", " ").trim();
-		return flat.length() <= 200 ? flat : flat.substring(0, 200) + "…";
+		if (flat.length() <= 200) {
+			return flat;
+		}
+		// 200번째 자리에서 서로게이트 쌍이 갈리면 한 칸 줄인다(#485) - 반쪽 글자가 DB 에 깨져 남음
+		int end = Character.isHighSurrogate(flat.charAt(199)) ? 199 : 200;
+		return flat.substring(0, end) + "…";
 	}
 }
