@@ -1,0 +1,39 @@
+     × 첫 포커스는 취소 버튼이다 184ms
+     × 대화상자 이름이 제목이다 84ms
+     × role=dialog 에 이름이 있다 148ms
+     × 로그인 실패 문구가 라이브 영역에 뜬다 95ms
+     × 이름에 대화 제목이 들어 있다 297ms
+     × 키보드 포커스 때 투명하지 않도록 클래스가 걸려 있다 82ms
+     × 삭제 확인 모달의 첫 포커스는 취소이고 이름이 붙는다 74ms
+     × 채팅 오류는 role=alert 로 나온다 179ms
+     × 이름 · 비밀번호 입력에 접근 가능한 이름이 있다 16ms
+     × 성공 알림은 status, 오류는 alert 로 낭독된다 1034ms
+     × 삭제 실패는 alert, 동기화 결과는 status 로 낭독된다 1088ms
+     × 확인 창과 발급 창은 이름이 있는 대화상자다 163ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/components/ConfirmModal.test.tsx > ConfirmModal > 첫 포커스는 취소 버튼이다
+Error: [2mexpect([22m[31melement[39m[2m).toHaveFocus()[22m
+ FAIL  src/components/ConfirmModal.test.tsx > ConfirmModal > 대화상자 이름이 제목이다
+TestingLibraryElementError: Unable to find an accessible element with the role "dialog" and name "대화를 삭제할까요?"
+ FAIL  src/pages/AdminPage.test.tsx > 관리자 화면 > 삭제 실패는 alert, 동기화 결과는 status 로 낭독된다
+TestingLibraryElementError: Unable to find role="alert"
+ FAIL  src/pages/AdminPage.test.tsx > 관리자 화면 > 확인 창과 발급 창은 이름이 있는 대화상자다
+TestingLibraryElementError: Unable to find an accessible element with the role "dialog" and name `/박사원 님의 비밀번호를 초기화할까요/`
+ FAIL  src/pages/ChatPage.test.tsx > ChatPage 오류 배너 (#484) > 채팅 오류는 role=alert 로 나온다
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+ FAIL  src/pages/LoginPage.test.tsx > LoginPage > 로그인 실패 문구가 라이브 영역에 뜬다
+Error: [2mexpect([22m[31melement[39m[2m).toHaveAttribute([22m[32m[32m"aria-live"[32m[39m[2m, [22m[32m[32m"assertive"[32m[39m[2m) // element.getAttribute("aria-live") === "assertive"[22m
+ FAIL  src/pages/MyPage.test.tsx > MyPage 이름 (#413) > 이름 · 비밀번호 입력에 접근 가능한 이름이 있다
+TestingLibraryElementError: Unable to find a label with the text of: 이름
+ FAIL  src/pages/MyPage.test.tsx > MyPage 이름 (#413) > 성공 알림은 status, 오류는 alert 로 낭독된다
+TestingLibraryElementError: Unable to find role="alert"
+ FAIL  src/components/chat/ImageLightbox.test.tsx > ImageLightbox 대화상자 이름 (#484) > role=dialog 에 이름이 있다
+TestingLibraryElementError: Unable to find an accessible element with the role "dialog" and name "이미지 보기"
+ FAIL  src/components/chat/Sidebar.test.tsx > Sidebar 삭제 버튼 (#484) > 이름에 대화 제목이 들어 있다
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "'c1' 대화 삭제"
+ FAIL  src/components/chat/Sidebar.test.tsx > Sidebar 삭제 버튼 (#484) > 키보드 포커스 때 투명하지 않도록 클래스가 걸려 있다
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "'c1' 대화 삭제"
+ FAIL  src/components/chat/Sidebar.test.tsx > Sidebar 삭제 버튼 (#484) > 삭제 확인 모달의 첫 포커스는 취소이고 이름이 붙는다
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "'c1' 대화 삭제"
+ Test Files  7 failed | 9 passed (16)
+      Tests  12 failed | 130 passed (142)

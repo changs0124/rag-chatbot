@@ -1,0 +1,11 @@
+       × 프레임을 가르는 빈 줄 사이에서 잘려도 한 번만 전달함 7ms
+       × 한글 UTF-8 바이트 중간에서 잘려도 글자가 깨지지 않음 1ms
+       × 한 바이트씩 흘려도 같은 결과 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/lib/stream.test.ts > chat SSE 수신 계약 > 청크 경계 > 프레임을 가르는 빈 줄 사이에서 잘려도 한 번만 전달함
+AssertionError: expected [ 'token:안\ufffd\ufffd', …(2) ] to deeply equal [ 'token:안내', 'token:입니다 🙂', 'done' ]
+ FAIL  src/lib/stream.test.ts > chat SSE 수신 계약 > 청크 경계 > 한글 UTF-8 바이트 중간에서 잘려도 글자가 깨지지 않음
+AssertionError: expected [ 'token:\ufffd\ufffd\ufffd내', …(2) ] to deeply equal [ 'token:안내', 'token:입니다 🙂', 'done' ]
+ FAIL  src/lib/stream.test.ts > chat SSE 수신 계약 > 청크 경계 > 한 바이트씩 흘려도 같은 결과
+AssertionError: expected [ …(3) ] to deeply equal [ 'token:안내', 'token:입니다 🙂', 'done' ]
+      Tests  3 failed | 7 passed (10)

@@ -1,0 +1,89 @@
+"""#487 운영 실측 : cloudflared 경유로 채팅 SSE 를 (a) 보내자마자 (b) meta 받고 (c) 토큰 3개 받고 끊은 뒤
+서버가 무엇을 저장하는지 본다. 사용 : python probe487prod.py <jwt_secret_file> <admin_id> <out.jsonl> <runs>
+관리자 계정으로 대화를 새로 만들고, 끝나면 그 대화를 지운다(질문에 PROBE487 표식)."""
+import base64, hashlib, hmac, json, socket, ssl, sys, time, urllib.request
+
+secret_file, admin_id, out, runs = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+HOST = "api.chseong.fyi"
+UA = "Mozilla/5.0 (probe487)"
+
+
+def b64(b):
+    return base64.urlsafe_b64encode(b).rstrip(b"=").decode()
+
+
+def token():
+    secret = open(secret_file, encoding="utf-8").read().strip()
+    now = int(time.time()) - 5
+    h = b64(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
+    p = b64(json.dumps({"aud": "auth", "sub": admin_id, "email": "admin@local.test", "iat": now,
+                        "auth_time": now, "exp": now + 900}).encode())
+    s = b64(hmac.new(secret.encode(), f"{h}.{p}".encode(), hashlib.sha256).digest())
+    return f"{h}.{p}.{s}"
+
+
+def api(method, path, body=None):
+    req = urllib.request.Request(f"https://{HOST}{path}", method=method,
+                                 data=json.dumps(body).encode() if body is not None else None,
+                                 headers={"Authorization": f"Bearer {token()}", "User-Agent": UA,
+                                          "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            raw = r.read()
+            return r.status, (json.loads(raw) if raw else None)
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", "replace")[:200]
+
+
+def chat_and_cut(conv_id, text, mode):
+    body = json.dumps({"conversationId": conv_id, "message": text}).encode()
+    head = (f"POST /api/chat HTTP/1.1\r\nHost: {HOST}\r\nAuthorization: Bearer {token()}\r\n"
+            f"User-Agent: {UA}\r\nAccept: text/event-stream\r\nContent-Type: application/json\r\n"
+            f"Content-Length: {len(body)}\r\n\r\n").encode()
+    ctx = ssl.create_default_context()
+    raw = socket.create_connection((HOST, 443), timeout=60)
+    s = ctx.wrap_socket(raw, server_hostname=HOST)
+    s.sendall(head + body)
+    t0 = time.time()
+    got, status, tokens = b"", None, 0
+    if mode != "a":
+        while True:
+            chunk = s.recv(4096)
+            if not chunk:
+                break
+            got += chunk
+            if status is None and b"\r\n" in got:
+                status = got.split(b"\r\n", 1)[0].decode()
+            tokens = got.count(b"event:token")
+            if mode == "b" and b"event:meta" in got:
+                break
+            if mode == "c" and tokens >= 3:
+                break
+            if b"event:done" in got or b"event:error" in got:
+                break
+    s.close()
+    return {"status_line": status, "tokens_seen": tokens, "cut_after_s": round(time.time() - t0, 2)}
+
+
+with open(out, "a", encoding="utf-8") as f:
+    for mode in ("a", "b", "c"):
+        for i in range(runs):
+            st, conv = api("POST", "/api/conversations", {})
+            if st not in (200, 201):
+                f.write(json.dumps({"mode": mode, "run": i, "error": f"create {st} {conv}"}) + "\n"); f.flush()
+                continue
+            cid = conv["id"]
+            text = f"PROBE487-{mode}-{i} AL.2144 알람 원인 알려줘"
+            r = chat_and_cut(cid, text, mode)
+            time.sleep(45)  # 서버가 끝까지 만든다면 이 안에 저장된다
+            st2, msgs = api("GET", f"/api/conversations/{cid}/messages")
+            rows = []
+            if st2 == 200:
+                items = msgs if isinstance(msgs, list) else msgs.get("items", msgs.get("messages", []))
+                for m in items:
+                    rows.append({"role": m.get("role"), "status": m.get("status"), "stopped": m.get("stopped"),
+                                 "len": len(m.get("content") or "")})
+            st3, _ = api("DELETE", f"/api/conversations/{cid}")
+            rec = {"mode": mode, "run": i, **r, "messages": rows, "get": st2, "delete": st3}
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n"); f.flush()
+            print(mode, i, r["status_line"], r["tokens_seen"], rows, st3, flush=True)

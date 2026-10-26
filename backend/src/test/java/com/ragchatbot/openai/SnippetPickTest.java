@@ -61,6 +61,26 @@ class SnippetPickTest {
 	}
 
 	@Test
+	void truncate_does_not_split_a_surrogate_pair_at_the_cut() {
+		// #485 : 200번째 자리에 이모지(서로게이트 쌍)가 걸리면 반쪽만 남아 DB 에 깨진 글자로 저장됐다
+		String emoji = new String(Character.toChars(0x1F600));
+		String s = "가".repeat(199) + emoji + "나";
+
+		String out = SnippetPicker.truncate(s);
+
+		assertThat(out).isEqualTo("가".repeat(199) + "…");
+		assertThat(out.codePoints().noneMatch(cp -> cp >= 0xD800 && cp <= 0xDFFF)).isTrue();
+	}
+
+	@Test
+	void truncate_keeps_a_pair_that_ends_exactly_at_200() {
+		String emoji = new String(Character.toChars(0x1F600));
+		String s = "가".repeat(198) + emoji + "나";
+
+		assertThat(SnippetPicker.truncate(s)).isEqualTo("가".repeat(198) + emoji + "…");
+	}
+
+	@Test
 	void stream_uses_the_picked_chunk_as_snippet() {
 		String sse = """
 				data:{"type":"response.output_text.delta","delta":"엔코더 커넥터와 파워 커넥터, 플랜지가 있습니다."}

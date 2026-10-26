@@ -14,6 +14,23 @@ function stubFetch(sse: string) {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status: 200 })))
 }
 
+/** 바이트 덩어리를 주어진 경계에서 잘라 따로 흘려주는 fetch 스텁 - 네트워크가 SSE 프레임 경계를 지켜 주지 않는 경우 */
+function stubFetchChunks(chunks: Uint8Array[]) {
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const c of chunks) controller.enqueue(c)
+      controller.close()
+    },
+  })
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status: 200 })))
+}
+
+/** bytes 를 cuts(바이트 오프셋) 에서 자른 조각들 */
+function splitAt(bytes: Uint8Array, cuts: number[]): Uint8Array[] {
+  const edges = [0, ...cuts, bytes.length]
+  return edges.slice(0, -1).map((from, i) => bytes.slice(from, edges[i + 1]))
+}
+
 const REQUEST = { conversationId: 'c1', message: '환불 정책', attachmentIds: [] }
 
 describe('chat SSE 수신 계약', () => {
@@ -122,5 +139,53 @@ describe('chat SSE 수신 계약', () => {
       streamChat(REQUEST, { onError: (m) => seen.push(m) }),
     ).resolves.toBeUndefined()
     expect(seen).toEqual(['응답 생성 중 오류'])
+  })
+
+  /**
+   * #482 - 네트워크는 SSE 프레임 경계를 지켜 주지 않는다(endpoints.ts streamChat 의 buffer · TextDecoder stream:true).
+   * 같은 본문을 어디서 자르든 한 덩어리로 받은 것과 같은 이벤트가 같은 순서로 나와야 한다.
+   */
+  describe('청크 경계', () => {
+    const SSE =
+      'event:token\ndata:{"delta":"안내"}\n\n' +
+      'event:token\ndata:{"delta":"입니다 🙂"}\n\n' +
+      'event:done\ndata:{"finishReason":"stop","noSource":false}\n\n'
+    const BYTES = new TextEncoder().encode(SSE)
+    const EXPECTED = ['token:안내', 'token:입니다 🙂', 'done']
+
+    async function receive(chunks: Uint8Array[]) {
+      stubFetchChunks(chunks)
+      const seen: string[] = []
+      await streamChat(REQUEST, {
+        onToken: (d) => seen.push(`token:${d}`),
+        onDone: () => seen.push('done'),
+        onError: (m) => seen.push(`error:${m}`),
+      })
+      return seen
+    }
+
+    it('프레임 중간에서 잘려도 이어 붙여 한 이벤트로 전달함', async () => {
+      const cut = SSE.indexOf('"delta"') + 3 // data 의 JSON 한가운데(앞이 ASCII 뿐이라 문자 위치 = 바이트 위치)
+      expect(await receive(splitAt(BYTES, [cut]))).toEqual(EXPECTED)
+    })
+
+    it('프레임을 가르는 빈 줄 사이에서 잘려도 한 번만 전달함', async () => {
+      const cut = SSE.indexOf('\n\n') + 1 // 첫 프레임의 두 줄바꿈 사이
+      expect(await receive(splitAt(BYTES, [cut]))).toEqual(EXPECTED)
+    })
+
+    it('한글 UTF-8 바이트 중간에서 잘려도 글자가 깨지지 않음', async () => {
+      // 「안」 은 3바이트, 이모지는 4바이트 - 글자 안쪽 경계마다 자른다
+      const ahn = BYTES.indexOf(0xec) // 「안」 의 첫 바이트
+      const emoji = BYTES.indexOf(0xf0)
+      for (const cuts of [[ahn + 1], [ahn + 2], [emoji + 1], [emoji + 2], [emoji + 3], [ahn + 1, ahn + 2, emoji + 2]]) {
+        expect(await receive(splitAt(BYTES, cuts))).toEqual(EXPECTED)
+      }
+    })
+
+    it('한 바이트씩 흘려도 같은 결과', async () => {
+      const every = Array.from({ length: BYTES.length - 1 }, (_, i) => i + 1)
+      expect(await receive(splitAt(BYTES, every))).toEqual(EXPECTED)
+    })
   })
 })

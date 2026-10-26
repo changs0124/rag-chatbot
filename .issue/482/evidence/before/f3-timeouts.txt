@@ -1,0 +1,2 @@
+components/chat/MessageListLazy.test.tsx:22:    expect((await screen.findByText('CN3')).tagName).toBe('STRONG')
+components/chat/MessageListRender.test.tsx:30:    await waitFor(() => expect(parsed).toEqual(expect.arrayContaining(['첫 답변', '둘'])))

@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -174,7 +175,9 @@ class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 				"completed", adminId, null);
 
 		assertThat(documentRepository.insertIfAbsent(again)).isZero();
-		assertThat(catchThrowable(() -> documentRepository.insert(again))).isNotNull();
+		assertThat(catchThrowable(() -> documentRepository.insert(again)))
+				.isInstanceOf(DuplicateKeyException.class)
+				.hasMessageContaining("uq_rag_documents_alive_file");
 
 		jdbc.update("update rag_documents set deleted_at = now() where openai_file_id = ?", fileId);
 		assertThat(documentRepository.insertIfAbsent(again)).isEqualTo(1);
