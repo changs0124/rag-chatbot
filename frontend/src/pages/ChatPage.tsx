@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { useChat } from '../hooks/useChat'
 import Sidebar from '../components/chat/Sidebar'
@@ -6,6 +6,7 @@ import ResizableSidebar from '../components/chat/ResizableSidebar'
 import MessageList from '../components/chat/MessageList'
 import Composer from '../components/chat/Composer'
 import { IconEdit, IconMenu } from '../components/icons'
+import { MAX_TITLE_CHARS } from '../lib/limits'
 
 // 헤더 양끝의 모바일 전용 아이콘 버튼(목록 열기 · 새 채팅)(#390)
 const headerIconBtn =
@@ -17,6 +18,9 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState('')
+  // Enter · Esc 로 닫으면 세운다(#483 F5) - Chromium 은 포커스된 입력을 언마운트할 때 blur 를 내는데, 그 onBlur 는
+  // 마지막 렌더의 초안을 들고 있어 Esc 가 저장으로, Enter 가 두 번째 PATCH 로 바뀐다. 편집을 열 때 내린다
+  const skipBlurRef = useRef(false)
 
   const activeTitle = chat.conversations.find((c) => c.id === chat.activeId)?.title
 
@@ -145,17 +149,20 @@ export default function ChatPage() {
                 <input
                   autoFocus
                   value={titleDraft}
-                  // 서버 상한(CHAT_MAX_TITLE_CHARS 기본값)과 같은 값. 정본은 서버라 넘긴 요청은 400 이다(#371)
-                  maxLength={100}
+                  maxLength={MAX_TITLE_CHARS}
                   onChange={(e) => setTitleDraft(e.target.value)}
-                  onBlur={commitTitle}
+                  onBlur={() => {
+                    if (!skipBlurRef.current) commitTitle()
+                  }}
                   onKeyDown={(e) => {
                     // 한글 조합을 끝내려고 누른 Enter 로 편집을 닫지 않는다(#385)
                     if (e.nativeEvent.isComposing) return
                     if (e.key === 'Enter') {
                       e.preventDefault()
+                      skipBlurRef.current = true
                       commitTitle()
                     } else if (e.key === 'Escape') {
+                      skipBlurRef.current = true
                       setEditingTitle(false)
                     }
                   }}
@@ -165,6 +172,7 @@ export default function ChatPage() {
                 <button
                   onClick={() => {
                     setTitleDraft(activeTitle ?? '')
+                    skipBlurRef.current = false
                     setEditingTitle(true)
                   }}
                   title="제목 변경"
@@ -212,6 +220,7 @@ export default function ChatPage() {
         <Composer
           onSend={chat.send}
           streaming={chat.streaming}
+          settling={chat.settling}
           busy={chat.loadingMessages || chat.creating}
           onStop={chat.stop}
         />

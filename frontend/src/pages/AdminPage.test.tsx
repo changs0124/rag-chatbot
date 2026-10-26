@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
 import { setToken } from '../lib/api'
 import AdminPage from './AdminPage'
 import { primaryButtonClass } from '../components/primaryButton'
 import type { RagDocument } from '../lib/types'
+import { deferred } from '../test/fixtures'
 
 vi.mock('../lib/endpoints', () => ({
   listDocuments: vi.fn(),
@@ -93,6 +94,39 @@ describe('관리자 화면', () => {
     expect(await screen.findByText('아직 문서가 없습니다')).toBeInTheDocument()
     // 0건은 "검색했는데 없다"가 아니다. 그 차이를 문구가 말해야 한다
     expect(screen.getByText(/자료 없음/)).toBeInTheDocument()
+  })
+
+  // #483 F4 : 못 불러온 것을 「없다」로 읽히게 하면 안 된다 - 관리자는 문서가 다 지워졌다고 읽는다
+  it('첫 로드가 실패하면 빈 상태 문구 없이 오류만 보인다', async () => {
+    vi.mocked(listDocuments).mockRejectedValueOnce(new Error('503'))
+    renderPage()
+
+    expect(await screen.findByText('목록을 불러오지 못했습니다')).toBeInTheDocument()
+    expect(screen.queryByText('아직 문서가 없습니다')).not.toBeInTheDocument()
+  })
+
+  // #483 : 첫 로드 실패는 폴링도 돌지 않는다 - 배너의 「다시 시도」로 다시 부르고, 성공하면 배너가 걷힌다
+  it('첫 로드 실패 배너의 다시 시도가 목록을 다시 읽는다', async () => {
+    vi.mocked(listDocuments).mockRejectedValueOnce(new Error('503'))
+    renderPage()
+    await screen.findByText('목록을 불러오지 못했습니다')
+    vi.mocked(listDocuments).mockResolvedValue([doc()])
+
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+
+    expect(await screen.findByText('취업규칙.pdf')).toBeInTheDocument()
+    expect(screen.queryByText('목록을 불러오지 못했습니다')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
+  })
+
+  // #483 : 못 불러온 사용자 목록을 「사용자 0명」으로 보이지 않는다
+  it('첫 로드가 실패하면 사용자 수를 적지 않는다', async () => {
+    vi.mocked(listAdminUsers).mockRejectedValueOnce(new Error('503'))
+    renderPage()
+    await screen.findByText('목록을 불러오지 못했습니다')
+
+    expect(screen.getByRole('heading', { name: '사용자' })).toBeInTheDocument()
+    expect(screen.queryByText(/사용자 0명/)).not.toBeInTheDocument()
   })
 
   /** TC-ADMIN-043 : 상태별 표시가 구분된다 */
@@ -235,6 +269,27 @@ describe('관리자 화면', () => {
     // 행과 모달에 같은 이름의 버튼이 둘 있다 - 모달 안에서 찾는다
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
     await waitFor(() => expect(deleteDocument).toHaveBeenCalledWith('d1'))
+  })
+
+  // #483 F13 : 삭제 직전에 떠난 폴링 응답이 삭제 뒤 refresh 보다 늦게 오면 지운 문서가 되살아나 보이면 안 된다
+  it('삭제 뒤 refresh 보다 늦게 온 폴링 응답은 목록을 덮지 않는다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.mocked(listDocuments).mockResolvedValue([doc({ status: 'in_progress' })])
+    renderPage()
+    await screen.findByText('처리중')
+
+    const late = deferred<RagDocument[]>()
+    vi.mocked(listDocuments).mockReturnValueOnce(late.promise).mockResolvedValue([])
+    await vi.advanceTimersByTimeAsync(5000)
+
+    fireEvent.click(screen.getByRole('button', { name: '삭제' }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+    expect(await screen.findByText('아직 문서가 없습니다')).toBeInTheDocument()
+
+    await act(async () => late.resolve([doc({ status: 'completed' })]))
+
+    expect(screen.queryByText('취업규칙.pdf')).not.toBeInTheDocument()
+    expect(screen.getByText('아직 문서가 없습니다')).toBeInTheDocument()
   })
 
   /** 임시 비밀번호는 "다시 못 본다"와 "대상이 로그아웃된다"를 함께 알려야 한다 */

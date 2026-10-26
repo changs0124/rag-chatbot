@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
@@ -68,20 +68,29 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null)
   // 목록 오류는 따로 둔다 - 폴링 성공이 걷어야 하는데, 공유 error 를 지우면 업로드 · 삭제 오류까지 사라진다(#324)
   const [listError, setListError] = useState<string | null>(null)
+  // 첫 로드가 **성공**했는지(#483 F4) - 실패를 「아직 문서가 없습니다」로 보이면 관리자는 다 지워졌다고 읽는다
   const [loaded, setLoaded] = useState(false)
+  /**
+   * 목록 요청 세대(#483 F13, useChat 의 generation 과 같은 패턴). refresh 가 올리고 폴링은 떠날 때 값을 적어 둔다.
+   * 응답이 왔을 때 그사이 refresh 가 새로 나갔으면 버린다 - 삭제 직전에 떠난 폴링이 삭제 뒤 refresh 보다 늦게 오면
+   * 지운 문서가 되살아나 보인다(완료 상태면 폴링도 멈춰 다음 변경까지 남는다)
+   */
+  const listGen = useRef(0)
 
   const isAdmin = user?.role === 'admin'
 
   const refresh = useCallback(async () => {
+    const mine = ++listGen.current
     try {
       const [docs, people] = await Promise.all([listDocuments(), listAdminUsers()])
+      if (listGen.current !== mine) return
       setDocuments(docs)
       setUsers(people)
       setListError(null)
-    } catch (e) {
-      setListError(errorMessage(e, '목록을 불러오지 못했습니다'))
-    } finally {
       setLoaded(true)
+    } catch (e) {
+      if (listGen.current !== mine) return
+      setListError(errorMessage(e, '목록을 불러오지 못했습니다'))
     }
   }, [])
 
@@ -92,10 +101,14 @@ export default function AdminPage() {
   // 폴링이 지켜보는 것은 인덱싱 상태뿐이다 - 사용자 목록은 첫 로드와 변경 뒤에만 다시 읽는다(#330).
   // 그래서 사용자 목록 로드가 실패한 뒤 문서 폴링이 성공하면 배너는 지워지고 사용자 목록은 옛 값으로 남는다 - 받아들인 대가
   const pollDocuments = useCallback(async () => {
+    const mine = listGen.current
     try {
-      setDocuments(await listDocuments())
+      const docs = await listDocuments()
+      if (listGen.current !== mine) return
+      setDocuments(docs)
       setListError(null)
     } catch (e) {
+      if (listGen.current !== mine) return
       setListError(errorMessage(e, '목록을 불러오지 못했습니다'))
     }
   }, [])
@@ -126,13 +139,19 @@ export default function AdminPage() {
           m && (
             <p key={i} role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
               {m}
+              {/* 첫 로드 실패는 폴링도 돌지 않아 스스로 회복하지 않는다 - 새로고침 대신 다시 부를 길을 둔다(#483) */}
+              {i === 0 && !loaded && (
+                <button type="button" onClick={() => void refresh()} className="ml-2 font-medium underline">
+                  다시 시도
+                </button>
+              )}
             </p>
           ),
       )}
 
       <DocumentsSection documents={documents} loaded={loaded} refresh={refresh} setError={setError} />
 
-      <UsersSection users={users} currentUserId={user?.id} refresh={refresh} setError={setError} />
+      <UsersSection users={users} loaded={loaded} currentUserId={user?.id} refresh={refresh} setError={setError} />
     </PageShell>
   )
 }
@@ -294,11 +313,13 @@ function DocumentsSection({
 
 function UsersSection({
   users,
+  loaded,
   currentUserId,
   refresh,
   setError,
 }: {
   users: AdminUser[]
+  loaded: boolean
   currentUserId: string | undefined
   refresh: () => Promise<void>
   setError: (message: string | null) => void
@@ -366,7 +387,8 @@ function UsersSection({
   return (
     <>
       <section className="mt-10">
-        <h2 className="text-sm font-medium text-ink-muted">사용자 {users.length}명</h2>
+        {/* 못 불러온 것을 「0명」으로 보이지 않는다(#483) */}
+        <h2 className="text-sm font-medium text-ink-muted">사용자{loaded && ` ${users.length}명`}</h2>
         {/* 스스로 가입하는 경로가 없으므로 계정은 여기서만 태어난다 */}
         <form onSubmit={onCreate} className="mt-3 rounded-2xl bg-surface px-4 py-3 md:flex md:items-end md:gap-3">
           <label className="block flex-1">
