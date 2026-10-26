@@ -1,0 +1,15 @@
+$ grep -rn "#449 merge 뒤" docs/
+docs/04_tasks/current-sprint.md:18:**운영 주의** : 지금 운영의 롤백 이미지는 `prev-056ba4c` 다. [#447](https://github.com/changs0124/rag-chatbot/issues/447) 때문에 되돌릴 때는 **프론트를 먼저** 되돌린다(정본은 `backend.md` 「배포」 — #449 merge 뒤).
+
+$ grep -n "롤백 이미지" docs/04_tasks/current-sprint.md
+18:**운영 주의** : 지금 운영의 롤백 이미지는 `prev-056ba4c` 다. [#447](https://github.com/changs0124/rag-chatbot/issues/447) 때문에 되돌릴 때는 **프론트를 먼저** 되돌린다(정본은 `backend.md` 「배포」 — #449 merge 뒤).
+
+$ grep -n "^## \[" docs/06_changelog/CHANGELOG.md | head -3
+5:## [Unreleased]
+53:## [2026-10-23]
+138:## [2026-10-22]
+
+운영 서버 태그 (ssh, docker images)
+latest 6a4cefee4275
+prev-20f26b3 de167886ed03
+prev-056ba4c 78067b20b202

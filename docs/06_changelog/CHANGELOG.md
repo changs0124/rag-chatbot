@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+## [2026-10-26]
+
+운영 배포 1회 — 백엔드 `a89fb83`(#452 주석 · #453 · #454 · #470, 롤백 `prev-20f26b3`). 지시문 문자열은 `20f26b3` 과 같다. 프론트 변경(#456 등)은 merge 때 Vercel 이 자동 배포했다.
+
 ### Refactored
 - **`useChat.run` 의 200 전 중단 판정 · 단계 큐 · `Composer` 카드 폐기 · 이름 입력 상한을 묶었다(#456, 동작 불변).** 10-23 전체 리뷰 지적
   - `useChat` : 200 전 중단 판정(`deleteConversationIfEmpty` · `getMessages` → `stored | deleted | unknown`)을 모듈 함수 `judgeEarlyAbort` 로 빼고
