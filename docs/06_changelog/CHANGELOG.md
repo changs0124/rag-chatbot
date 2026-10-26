@@ -806,7 +806,7 @@
   - `.gitignore` : 이 저장소 도구가 만들지 않는 `.eslintcache` · `*.war` · `build/` · `.gradle/` · `dist-ssr/` · `!.vscode/extensions.json` 제거
 - **동시 채팅 상한을 8 → 16 으로 올렸다(#278).** 서로 다른 사용자 9명째부터 「동시 요청이 많음」 429 였다. 사용자 결정이다.
   - `app.chat.max-concurrent-streams` 기본값(yml · `ChatExecutorConfig` · `ChatConcurrencyLimiter` 의 `@Value` 기본값) 16. 풀 크기는 같은 프로퍼티라 함께 16. 사용자당 1 · 분당 20 은 그대로
-  - 로컬 실측(live) : 16명 동시 전원 200 · 17명째 429 · 섞임 0 · app 메모리 최고 233MiB / 1GiB. 아래 표
+  - 로컬 실측(live) : 16명 동시 전원 200 · 17명째 429 · 섞임 0 · app 메모리 최고 233MiB / 1GiB. 아래 표(운영 실측)
   - 운영 실측(배포 직후) : 16명 동시 전원 200 · 17명째 429 · 섞임 0 · app 메모리 최고 224MiB / 1GiB
   - 운영 부하 실측표(2026-10-15 15:15 KST, Lightsail 2 vCPU · 4GB · app 1GiB · Hikari 5, 공개 API 경유, 상한 16. 측정 전 app 178MiB) — #488 에서 `backend.md` 「유량 제어」로부터 옮겼다
 
