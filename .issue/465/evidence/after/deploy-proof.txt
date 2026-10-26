@@ -1,0 +1,17 @@
+#465 배포 증거 — 운영 서버(ssh chseong-seoul-01), 2026-10-26
+
+$ docker images (태그 · ID · 만든 시각)
+latest 6a4cefee4275 2026-10-26 10:37:48 +0900 KST
+prev-20f26b3 de167886ed03 2026-10-23 19:00:46 +0900 KST
+prev-056ba4c 78067b20b202 2026-10-23 18:26:41 +0900 KST
+
+$ 실행 중인 app 컨테이너의 이미지 · 시작 시각
+sha256:6a4cefee4275d293d30852c8eee24c9cf7e0732adab956c2fba506fd1d340dc5 started 2026-10-26T01:38:00.681230872Z
+
+배포 로그(로컬 deploy.sh, main a89fb83 에서 실행) 끝부분 :
+▶ 헬스체크 (최대 90초)
+OK (10초 경과)
+Untagged: rag-chatbot-backend:previous
+▶ 배포 완료
+
+메모 : prev-20f26b3(de167886, 10-23 19:00 생성)은 deploy.sh 전에 손으로 붙인 롤백 태그 — 10-23 #447 배포 이미지(20f26b3 코드)다. before 기록은 배포 뒤에 찍어 서버 태그가 이미 바뀐 상태였다.
