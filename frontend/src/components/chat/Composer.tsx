@@ -3,6 +3,7 @@ import type { ClipboardEvent, FormEvent } from 'react'
 import ImageLightbox from './ImageLightbox'
 import { errorMessage } from '../../lib/api'
 import { deleteAttachment, uploadFile } from '../../lib/endpoints'
+import { MAX_ATTACHMENTS, MAX_MESSAGE_CHARS } from '../../lib/limits'
 import type { Attachment } from '../../lib/types'
 import {
   IconAlert,
@@ -29,8 +30,6 @@ interface Draft {
 
 let draftSeq = 0
 
-// 메시지 1건당 첨부 개수. 서버 상한(CHAT_MAX_ATTACHMENTS 기본값)과 같은 값. 정본은 서버라 넘긴 요청은 400 이다(#401)
-const MAX_ATTACHMENTS = 5
 
 // 입력줄의 둥근 버튼(첨부 · 중단 · 보내기). 크기 · 모양만 공유하고 색 · 움직임은 호출부가 덧붙인다(#390)
 const roundBtn = 'grid h-11 w-11 place-items-center rounded-full md:h-10 md:w-10'
@@ -42,6 +41,7 @@ const STOP_GUARD_MS = 500
 export default function Composer({
   onSend,
   streaming,
+  settling = false,
   busy = false,
   onStop,
 }: {
@@ -51,6 +51,11 @@ export default function Composer({
    */
   onSend: (text: string, attachments: Attachment[], giveBack: (textOnly?: boolean) => void) => Promise<boolean>
   streaming: boolean
+  /**
+   * 200 전에 끊긴 턴이 서버에 닿았는지 확인하는 중(#483 F17). 이때 `streaming` 은 아직 참이지만 정지는 아무 일도 하지 않으므로
+   * 정지 버튼 대신 이유를 단 비활성 보내기를 보인다
+   */
+  settling?: boolean
   /** 이력 로딩 · 대화 생성 중 - 이때 보낸 것은 어차피 거절되므로 비우기 전에 막는다(#323) */
   busy?: boolean
   onStop: () => void
@@ -346,15 +351,14 @@ export default function Composer({
             }}
             rows={1}
             placeholder="메시지를 입력하세요"
-            // 서버 상한(CHAT_MAX_MESSAGE_CHARS 기본값)과 같은 값. 정본은 서버라 넘긴 요청은 400 이다(#371)
-            maxLength={4000}
+            maxLength={MAX_MESSAGE_CHARS}
             // 한 줄 높이를 버튼과 정확히 맞춤 : 24 + 20 = 44(모바일 h-11), 24 + 16 = 40(md h-10).
             // leading-relaxed(24.375)면 md 에서 버튼이 2.2px 아래로 처진다(#218).
             // 모바일 글자는 16px - iOS 는 16px 미만 입력에 포커스하면 화면을 확대해 버린다(#221)
             className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2.5 text-base leading-6 text-ink md:py-2 md:text-[15px] outline-none placeholder:text-ink-muted"
           />
 
-          {streaming ? (
+          {streaming && !settling ? (
             <button
               type="button"
               onClick={() => {
@@ -372,16 +376,18 @@ export default function Composer({
               aria-label="보내기"
               className={roundBtn + ' bg-accent text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97] disabled:scale-100 disabled:opacity-35'}
               // 올라가지 않은(또는 실패한) 첨부를 둔 채 보내면 그 이미지가 빠진 줄 모르고 보내게 됨
-              disabled={busy || pending || (!text.trim() && drafts.length === 0)}
+              disabled={settling || busy || pending || (!text.trim() && drafts.length === 0)}
               // 비활성 버튼은 이유를 말하지 않으면 고장으로 읽힌다(#101)
               title={
-                failed.length > 0
-                  ? '실패한 첨부를 재시도하거나 지워야 보낼 수 있습니다'
-                  : pending
-                    ? '업로드가 끝나면 보낼 수 있습니다'
-                    : busy
-                      ? '대화를 준비하는 중에는 보낼 수 없습니다'
-                      : undefined
+                settling
+                  ? '보낸 글이 저장됐는지 확인하는 중입니다'
+                  : failed.length > 0
+                    ? '실패한 첨부를 재시도하거나 지워야 보낼 수 있습니다'
+                    : pending
+                      ? '업로드가 끝나면 보낼 수 있습니다'
+                      : busy
+                        ? '대화를 준비하는 중에는 보낼 수 없습니다'
+                        : undefined
               }
             >
               <IconArrowUp />

@@ -10,7 +10,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | `frontend/src/pages/` | 라우트 단위 화면 — `LoginPage` · `ChatPage` · `MyPage` · `AdminPage` |
 | `frontend/src/components/` | 재사용 컴포넌트. 기능이 커지면 `components/chat/` 처럼 하위 폴더 |
 | `frontend/src/hooks/` | 도메인 훅 — `useChat.ts` 와, 그것이 쓰는 진행 단계 표시 큐 `useStageQueue.ts` |
-| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `limits.ts`(서버 상한과 맞춘 입력 상한) · `docFigures.ts`(그림 표식 파서) |
+| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `limits.ts`(서버 상한과 맞춘 입력 상한 — 이름 · 첨부 수 · 본문 · 제목, 사본은 여기 한 곳, #483) · `docFigures.ts`(그림 표식 파서) |
 | `frontend/src/auth/` | Context Provider |
 | `frontend/src/test/` | Vitest 셋업 |
 
@@ -40,7 +40,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 |------|--------|------|
 | 로그인 사용자 | `frontend/src/auth/AuthContext.tsx` | 기동 시 `/api/auth/me` 로 토큰 유효성 확인. **401 일 때만 토큰 폐기** — 네트워크 · 5xx 면 토큰을 두고 3초 간격으로 최대 10회 다시 묻는다(#250, 배포 · 재기동 중 새로고침) |
 | 대화·메시지·스트리밍 | `frontend/src/hooks/useChat.ts` | 대화 목록, 활성 대화, 메시지 배열, 스트리밍 여부, 진행 단계, 오류를 한 훅이 보유(진행 단계 큐는 `useStageQueue` 에 위임) |
-| 인증 토큰 | `frontend/src/lib/api.ts` 모듈 변수 + `localStorage` | React 상태가 아님 — 렌더링과 무관하게 요청 시점에 읽혀야 함 |
+| 인증 토큰 | `frontend/src/lib/api.ts` 모듈 변수 + `localStorage` | React 상태가 아님 — 렌더링과 무관하게 요청 시점에 읽혀야 함. 저장소 접근이 던지는 브라우저(사이트 데이터 차단)에서는 모듈 변수만 쓴다 — 세션은 그 탭 수명이고, 모듈 평가에서 터져 백지가 되지 않게 한다(#483) |
 
 테마 상태는 없다 — 화면은 라이트 하나다([design-system.md](./design-system.md) §1).
 
@@ -117,7 +117,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   fetch 실패(네트워크)와 5xx 는 닿았는지 모르므로 아래처럼 묻는다 — 5xx 는 질문 저장을 커밋한 뒤에도 난다(스트림 작업 넘기기 실패 · 앞단 프록시).
   오류는 상단 배너로 보인다 — fetch 실패는 `onError` 를 거치지 않아 훅이 직접 띄운다.
   **200 이 없었다고 서버에 없는 것은 아니다** — 서버는 질문 저장 · 첨부 연결을 커밋한 뒤 200 을 돌려주므로 그 사이에 끊으면 저장돼 있다.
-  그래서 끊은 뒤 서버에 물어 가른다(#440, 확인이 끝날 때까지 다시 보내기는 거절). 그 턴이 만든 **새 대화는 「비었을 때만 지우기」**
+  그래서 끊은 뒤 서버에 물어 가른다(#440, 확인이 끝날 때까지 다시 보내기는 거절 — 그 구간은 `settling` 이라 입력창이 정지 버튼 대신 이유를 단 비활성 보내기를 보인다, #483). 그 턴이 만든 **새 대화는 「비었을 때만 지우기」**
   (`DELETE …?ifEmpty=true`, #447)로 묻는다 — 204 면 저장 전이었고 대화도 지워졌다, 409 면 저장된 것이다. 서버가 한 잠금 안에서
   가르므로 확인과 삭제 사이에 저장이 끼지 않는다. **기존 대화는 이력을 물어** 마지막 메시지가 보낸 질문인지 본다 :
   - 저장됨(409 · 마지막 메시지가 보낸 질문) → 이력을 그대로 보인다. 되돌리지도 지우지도 않는다. 답은 오지 않는다(아래 「남은 한계」).

@@ -22,6 +22,8 @@ const chatState = vi.hoisted(() => ({
   conversations: [] as { id: string; title: string }[],
   activeId: null as string | null,
   error: null as string | null,
+  // 제목 저장 호출을 세려고 렌더마다 같은 함수를 쓴다(#483 F5)
+  renameConversation: vi.fn(),
 }))
 
 vi.mock('../hooks/useChat', () => ({
@@ -38,7 +40,7 @@ vi.mock('../hooks/useChat', () => ({
     selectConversation: vi.fn(),
     newConversation: vi.fn(),
     deleteConversation: vi.fn(),
-    renameConversation: vi.fn(),
+    renameConversation: chatState.renameConversation,
   }),
 }))
 
@@ -165,6 +167,7 @@ describe('ChatPage 제목 수정 (#371)', () => {
   afterEach(() => {
     chatState.conversations = []
     chatState.activeId = null
+    chatState.renameConversation.mockClear()
   })
 
   // 서버 상한(app.chat.max-title-chars 기본값)과 같은 값 - 넘기면 서버가 400 으로 거절한다
@@ -191,6 +194,42 @@ describe('ChatPage 제목 수정 (#371)', () => {
 
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(screen.queryByDisplayValue('대화')).not.toBeInTheDocument()
+  })
+
+  // #483 F5 : Chromium 은 포커스된 입력을 언마운트할 때 blur 를 낸다. jsdom 은 내지 않으므로 키와 같은 배치에서 직접 쏜다 -
+  // 그 blur 의 onBlur 는 마지막 렌더의 초안을 들고 있어 Esc 가 저장으로, Enter 가 두 번 저장으로 바뀌면 안 된다
+  it('Esc 뒤 blur 가 와도 제목을 저장하지 않는다', () => {
+    chatState.conversations = [{ id: 'c1', title: '대화' }]
+    chatState.activeId = 'c1'
+    renderChatPage()
+
+    fireEvent.click(screen.getByTitle('제목 변경'))
+    const input = screen.getByDisplayValue('대화')
+    fireEvent.change(input, { target: { value: '취소할 제목' } })
+    act(() => {
+      fireEvent.keyDown(input, { key: 'Escape' })
+      fireEvent.blur(input)
+    })
+
+    expect(chatState.renameConversation).not.toHaveBeenCalled()
+    expect(screen.queryByDisplayValue('취소할 제목')).not.toBeInTheDocument()
+  })
+
+  it('Enter 뒤 blur 가 와도 제목을 한 번만 저장한다', () => {
+    chatState.conversations = [{ id: 'c1', title: '대화' }]
+    chatState.activeId = 'c1'
+    renderChatPage()
+
+    fireEvent.click(screen.getByTitle('제목 변경'))
+    const input = screen.getByDisplayValue('대화')
+    fireEvent.change(input, { target: { value: '새 제목' } })
+    act(() => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+      fireEvent.blur(input)
+    })
+
+    expect(chatState.renameConversation).toHaveBeenCalledTimes(1)
+    expect(chatState.renameConversation).toHaveBeenCalledWith('c1', '새 제목')
   })
 })
 

@@ -350,6 +350,16 @@ describe('Composer', () => {
     expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
   })
 
+  // #483 F17 : 200 전 판정 중에는 정지가 아무 일도 하지 않는다 - 정지 버튼 대신 이유를 단 비활성 보내기를 보인다
+  it('settling 이면 정지 버튼 대신 이유를 단 비활성 보내기가 보인다', () => {
+    const onSend = vi.fn(async () => true)
+    render(<Composer onSend={onSend} streaming settling onStop={noop} />)
+
+    expect(screen.queryByLabelText('중단')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('보내기')).toBeDisabled()
+    expect(screen.getByLabelText('보내기')).toHaveAttribute('title', '보낸 글이 저장됐는지 확인하는 중입니다')
+  })
+
   /** #323 F1 - 이력 로딩 · 대화 생성 중(busy)에는 Enter 도 버튼도 보내지 않고 입력을 지우지 않는다 */
   it('busy 이면 Enter · 버튼 모두 보내지 않고 입력이 남음', () => {
     const onSend = vi.fn(async () => true)

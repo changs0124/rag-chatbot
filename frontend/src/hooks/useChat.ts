@@ -68,6 +68,8 @@ export function useChat() {
   // send 의 거절 판정용 사본(#323) - 고른 직후 같은 틱의 전송도 막으려고 상태와 함께 바로 쓴다
   const loadingRef = useRef(false)
   const [streaming, setStreaming] = useState(false)
+  // 200 전에 끊긴 턴을 서버에 물어 가르는 중(#483 F17). streaming 도 참인 구간이다 - 입력창이 정지 버튼 대신 비활성 보내기를 보이게 한다
+  const [settling, setSettling] = useState(false)
   // 진행 단계(REQ-CHAT-005) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
   const { stage, pushStage, clearStages } = useStageQueue()
   const [error, setError] = useState<string | null>(null)
@@ -338,7 +340,8 @@ export function useChat() {
         )
         if (!opened) {
           // 200 전 중단 · 실패는 서버에 물어서 가른다(judgeEarlyAbort, #480 에서 실패까지 넓힘).
-          // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다
+          // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다. 그 구간을 settling 으로 드러낸다(#483)
+          setSettling(true)
           const id = convId
           // 4xx 거절은 저장되지 않은 것이 확실해 기존 대화는 묻지 않는다. 새 대화는 빈 대화를 지워야 하므로 조건부 삭제는 그대로 탄다.
           // 단 기존 대화의 404 는 대화가 지워졌을 수 있어(다른 탭) 이력으로 확인한다 - 「첨부 없음」도 404 라 코드만으로는 못 가른다
@@ -385,6 +388,7 @@ export function useChat() {
       } finally {
         // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(useStageQueue)
         setStreaming(false)
+        setSettling(false)
         abortRef.current = null
       }
     },
@@ -419,6 +423,7 @@ export function useChat() {
     loadingMessages,
     creating,
     streaming,
+    settling,
     stage,
     error,
     send,

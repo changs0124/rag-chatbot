@@ -641,6 +641,28 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.messages).toHaveLength(0)
   })
 
+  // #483 F17 : 판정 중에는 다시 보내기가 거절된다. 그 사실을 settling 으로 드러내 입력창이 정지 버튼 대신 비활성 보내기를 보이게 한다
+  it('200 전 판정이 도는 동안 settling 이 참이고 끝나면 거짓이다 (#483)', async () => {
+    const stream = openStream({ opened: false })
+    let finishDelete: () => void = () => {}
+    vi.mocked(deleteConversationIfEmpty).mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishDelete = resolve)),
+    )
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], vi.fn()))
+    expect(result.current.settling).toBe(false)
+
+    await act(async () => {
+      stream.fail?.(new TypeError('Failed to fetch'))
+    })
+    expect(result.current.settling).toBe(true)
+    expect(result.current.streaming).toBe(true)
+
+    await act(async () => finishDelete())
+    expect(result.current.settling).toBe(false)
+    expect(result.current.streaming).toBe(false)
+  })
+
   it('비중단 실패 뒤 판정 중에 대화를 옮기면 되돌리지 않고 빈 대화는 지운다 (#480)', async () => {
     const stream = openStream({ opened: false })
     const giveBack = vi.fn()
