@@ -1,0 +1,88 @@
+package com.ragchatbot.openai;
+
+import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ragchatbot.exception.GlobalExceptionHandler;
+import com.sun.net.httpserver.HttpServer;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
+/** #476 증거용 탐침 - 커밋하지 않는다 */
+class Issue476ProbeTest {
+
+	@RestController
+	static class UploadController {
+		final OpenAiRealService service;
+
+		UploadController(OpenAiRealService service) {
+			this.service = service;
+		}
+
+		@PostMapping("/probe-upload")
+		String upload() {
+			service.uploadDocument("a.md", "x".getBytes());
+			return "ok";
+		}
+	}
+
+	private static void uploadCase(String label, String baseUrl) throws Exception {
+		OpenAiRealService service = OpenAiRealTestSupport.against(baseUrl, "shared-store");
+		MockMvc mvc = MockMvcBuilders.standaloneSetup(new UploadController(service))
+				.setControllerAdvice(new GlobalExceptionHandler()).build();
+		var res = mvc.perform(post("/probe-upload")).andReturn().getResponse();
+		System.out.println("PROBE " + label + " -> HTTP " + res.getStatus() + " " + res.getContentAsString());
+	}
+
+	@Test
+	void probe() throws Exception {
+		List<String> received = new CopyOnWriteArrayList<>();
+		AtomicInteger fileDeleteFailures = new AtomicInteger();
+		AtomicInteger detachFailures = new AtomicInteger();
+		HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		server.createContext("/", ex -> {
+			String line = ex.getRequestMethod() + " " + ex.getRequestURI().getPath();
+			received.add(line);
+			int status = 200;
+			if (line.equals("POST /files")) {
+				status = 503;
+			} else if (line.startsWith("DELETE /files/") && fileDeleteFailures.getAndDecrement() > 0) {
+				status = 503;
+			} else if (line.startsWith("DELETE /vector_stores/") && detachFailures.getAndDecrement() > 0) {
+				status = 503;
+			}
+			ex.sendResponseHeaders(status, -1);
+			ex.close();
+		});
+		server.start();
+		String base = "http://127.0.0.1:" + server.getAddress().getPort();
+		try {
+			uploadCase("A 업로드 POST /files 503", base);
+			// 닫힌 포트 - 연결 거절
+			uploadCase("B 업로드 연결 거절", "http://127.0.0.1:1");
+
+			OpenAiRealService service = OpenAiRealTestSupport.against(base, "shared-store");
+			String[][] cases = {
+					{ "C 파일 삭제 503 계속", "0", "100" },
+					{ "D 파일 삭제 503 두 번 뒤 성공", "0", "2" },
+					{ "E 연결 해제 503 한 번 뒤 성공", "1", "0" } };
+			for (String[] c : cases) {
+				received.clear();
+				detachFailures.set(Integer.parseInt(c[1]));
+				fileDeleteFailures.set(Integer.parseInt(c[2]));
+				service.deleteDocument("shared-store", "file-1");
+				System.out.println("PROBE " + c[0] + " -> 요청 " + received.size() + "건 " + received);
+			}
+		} finally {
+			server.stop(0);
+		}
+	}
+}
