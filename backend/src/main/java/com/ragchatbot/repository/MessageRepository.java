@@ -16,6 +16,9 @@ public interface MessageRepository {
 
 	void insert(Message message);
 
+	/** 질문 철회 전에 사용자 메시지 행을 잠근다(#489). 없으면 null */
+	UUID lockUserMessage(@Param("id") UUID id, @Param("conversationId") UUID conversationId);
+
 	/** 사용자 메시지 한 행을 지운다(#489 질문 철회). 지운 행 수 */
 	int deleteUserMessage(@Param("id") UUID id, @Param("conversationId") UUID conversationId);
 

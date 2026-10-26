@@ -26,7 +26,9 @@ export const deleteConversation = (id: string) => api.del<void>(`/api/conversati
 // 메시지가 있으면 409 로 남긴다(#447) - 200 전에 끊긴 새 대화를 치울 때
 export const deleteConversationIfEmpty = (id: string) =>
   api.del<void>(`/api/conversations/${id}?ifEmpty=true`)
-export const getMessages = (id: string) => api.get<ChatMessage[]>(`/api/conversations/${id}/messages`)
+// signal 은 판정 재확인(#489)이 매달린 요청을 끊는 데 쓴다
+export const getMessages = (id: string, signal?: AbortSignal) =>
+  api.get<ChatMessage[]>(`/api/conversations/${id}/messages`, signal)
 
 // 파일 업로드 - 고르는 즉시 올림(전송 시점이 아님). signal 은 카드를 지웠을 때 끊기 위한 것
 export function uploadFile(file: File, signal?: AbortSignal): Promise<Attachment> {

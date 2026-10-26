@@ -509,6 +509,141 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.streaming).toBe(false)
   })
 
+  /** 첫 턴을 정상 완료해 「기존 대화」 상태를 만든다 */
+  async function existingConversation() {
+    const first = openStream()
+    const hook = renderHook(() => useChat())
+    await startStream(() => hook.result.current.send('첫 질문', []))
+    await act(async () => {
+      first.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+      first.finish?.()
+    })
+    return hook
+  }
+
+  const askedTwice: ChatMessage[] = [
+    { id: 'm1', role: 'user', content: '첫 질문', status: 'complete', citations: [] },
+    { id: 'm2', role: 'assistant', content: '답', status: 'complete', citations: [] },
+    { id: 'm3', role: 'user', content: '둘째 질문', status: 'complete', citations: [] },
+  ]
+
+  it('200 뒤 토큰 0개에서 중단이 아닌 끊김(종단 이벤트 없음)도 판정해, 서버가 걷었으면 되돌린다 (#489 리뷰)', async () => {
+    const stream = openStream()
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+
+    await act(async () => {
+      stream.handlers?.onError?.('응답이 중간에 끊겼습니다')
+      stream.fail?.(new Error('응답이 중간에 끊겼습니다'))
+    })
+
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+    expect(giveBack).toHaveBeenCalledWith(false)
+    expect(result.current.messages).toHaveLength(0)
+  })
+
+  it('200 뒤 토큰 0개 끊김에 서버가 error 답 행을 남겼으면(타임아웃 #359) 저장됨 - 실패 말풍선을 겹쳐 붙이지 않는다 (#489 리뷰)', async () => {
+    const { result } = await existingConversation()
+    const stream = openStream()
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+    vi.mocked(getMessages).mockResolvedValueOnce([
+      ...askedTwice,
+      { id: 'm4', role: 'assistant', content: '', status: 'error', citations: [] },
+    ])
+
+    await act(async () => {
+      stream.handlers?.onError?.('응답이 중간에 끊겼습니다')
+      stream.fail?.(new Error('응답이 중간에 끊겼습니다'))
+    })
+
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(result.current.messages.map((m) => m.id)).toEqual(['m1', 'm2', 'm3', 'm4'])
+  })
+
+  it('새 대화의 재확인 중에 대화를 옮기면 옮긴 화면에서 곧바로 보낼 수 있고, 빈 대화 정리는 계속한다 (#489 리뷰)', async () => {
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    holdStored([{ id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] }], true)
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+    expect(result.current.streaming).toBe(true)
+
+    await act(async () => {
+      await result.current.selectConversation('c9')
+    })
+    expect(result.current.streaming).toBe(false)
+    openStream()
+    let accepted = false
+    await act(async () => {
+      accepted = await result.current.send('다른 질문', [])
+    })
+    expect(accepted).toBe(true)
+    const before = vi.mocked(getMessages).mock.calls.filter((c) => c[0] === 'c1').length
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_INTERVAL_MS)
+    })
+    // 새 대화는 빈 대화를 치워야 하므로 판정을 이어 간다
+    expect(vi.mocked(getMessages).mock.calls.filter((c) => c[0] === 'c1').length).toBeGreaterThan(before)
+    // 옮긴 대화의 스트림 상태를 앞 턴의 정리가 덮지 않는다
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
+    expect(result.current.streaming).toBe(true)
+    expect(giveBack).not.toHaveBeenCalled()
+  })
+
+  it('기존 대화의 재확인 중에 대화를 옮기면 재확인을 곧바로 멈춘다 (#489 리뷰)', async () => {
+    const { result } = await existingConversation()
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+    holdStored(askedTwice)
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+
+    await act(async () => {
+      await result.current.selectConversation('c9')
+    })
+    const before = vi.mocked(getMessages).mock.calls.filter((c) => c[0] === 'c1').length
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
+
+    expect(vi.mocked(getMessages).mock.calls.filter((c) => c[0] === 'c1').length).toBe(before)
+    expect(giveBack).not.toHaveBeenCalled()
+    expect(result.current.streaming).toBe(false)
+  })
+
+  it('재확인 중 401 이면 곧바로 끝낸다 - 확인 요청에는 시간 제한 신호가 붙는다 (#489 리뷰)', async () => {
+    const { result } = await existingConversation()
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+    vi.mocked(getMessages).mockResolvedValueOnce(askedTwice).mockRejectedValue(new ApiError(401, '인증 필요'))
+    onTestFinished(() => void vi.mocked(getMessages).mockReset().mockResolvedValue([]))
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
+
+    const calls = vi.mocked(getMessages).mock.calls.filter((c) => c[0] === 'c1')
+    expect(calls).toHaveLength(2)
+    expect(calls[1][1]).toBeInstanceOf(AbortSignal)
+    expect(result.current.streaming).toBe(false)
+  })
+
   it('200 을 받은 뒤 토큰 0개에서 멈추면 200 전과 같은 판정을 탄다 (#489)', async () => {
     // 서버는 보낸 토큰이 없으면 질문을 걷는다 - 말풍선을 남기면 새로고침에 사라지고 글은 돌아오지 않는다
     const stream = openStream()

@@ -28,6 +28,11 @@
 		        #{inputTokens}, #{outputTokens})
 	</insert>
 
+	<!-- 질문 철회의 첫 잠금(#489 리뷰) - 대화 삭제의 cascade(messages → attachments)와 잠금 순서를 맞춘다 -->
+	<select id="lockUserMessage" resultType="java.util.UUID">
+		select id from messages where id = #{id} and conversation_id = #{conversationId} and role = 'user' for update
+	</select>
+
 	<!-- 답 없이 끊긴 턴의 질문 철회(#489). 대화 · 역할까지 걸어 다른 행을 지우지 않게 한다 -->
 	<delete id="deleteUserMessage">
 		delete from messages where id = #{id} and conversation_id = #{conversationId} and role = 'user'

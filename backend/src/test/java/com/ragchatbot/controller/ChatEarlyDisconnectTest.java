@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -45,6 +46,8 @@ class ChatEarlyDisconnectTest extends AbstractPgIntegrationTest {
 	OpenAiService openAi;
 
 	private final CountDownLatch clientClosed = new CountDownLatch(1);
+	/** 대역 안에서 끊김을 기다리다 시간이 다 됐는지 - 대역 안의 단언은 서버가 삼키므로 표시로 남기고 본문에서 단언한다 */
+	private final AtomicBoolean closeWaitTimedOut = new AtomicBoolean();
 
 	@BeforeEach
 	void stageLabel() {
@@ -63,7 +66,9 @@ class ChatEarlyDisconnectTest extends AbstractPgIntegrationTest {
 			for (int i = 0; i < tokensBeforeClose; i++) {
 				onToken.accept("t" + i + "|");
 			}
-			assertThat(clientClosed.await(10, TimeUnit.SECONDS)).isTrue();
+			if (!clientClosed.await(10, TimeUnit.SECONDS)) {
+				closeWaitTimedOut.set(true);
+			}
 			for (int i = 0; i < 50; i++) {
 				if (tokensBeforeClose == 0) {
 					onStage.accept(Stage.SEARCHING, List.of());
@@ -122,6 +127,7 @@ class ChatEarlyDisconnectTest extends AbstractPgIntegrationTest {
 		while (!settled.getAsBoolean() && System.currentTimeMillis() < deadline) {
 			Thread.sleep(50);
 		}
+		assertThat(closeWaitTimedOut).isFalse();
 	}
 
 	private int count(String sql, Object... args) {
