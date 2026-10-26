@@ -1,0 +1,10 @@
+Using Node v24.19.0
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/480-early-failure-giveback/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  4 passed | 23 skipped (27)
+   Start at  17:06:13
+   Duration  1.24s (transform 158ms, setup 230ms, import 205ms, tests 47ms, environment 555ms)
+
