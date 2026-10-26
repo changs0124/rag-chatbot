@@ -447,6 +447,32 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.streaming).toBe(false)
   })
 
+  it('질문이 6초 뒤에야 걷혀도 재확인 창 안이라 되돌린다 (#501)', async () => {
+    // 운영 실측(#489) : 서버가 끊김을 알아채 질문을 걷기까지 3.2~5.9초 - 5초 창이면 2/10 이 「저장됨」으로 끝났다
+    const stream = openStream({ opened: false })
+    const giveBack = vi.fn()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], giveBack))
+    vi.mocked(deleteConversationIfEmpty).mockRejectedValueOnce(new ApiError(409, '메시지가 있는 대화는 지우지 않음'))
+    const question = [{ id: 'm1', role: 'user' as const, content: '환불 정책', status: 'complete' as const, citations: [] }]
+    // 첫 확인 + 6초 동안의 재확인은 질문만 있는 이력, 그 뒤로는 걷힌 이력
+    const stillThere = 1 + Math.ceil(6000 / RECHECK_INTERVAL_MS)
+    let calls = 0
+    vi.mocked(getMessages).mockImplementation(async () => (++calls <= stillThere ? question : []))
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
+
+    expect(giveBack).toHaveBeenCalledWith(false)
+    expect(result.current.activeId).toBeNull()
+    expect(result.current.streaming).toBe(false)
+  })
+
   it('재확인에서 질문 뒤에 답 행이 생기면 저장됨으로 확정한다 (#489)', async () => {
     // 끊기기 전에 서버가 보낸 토큰이 있었으면 stopped 부분 답이 저장된다 - 질문은 걷히지 않는다
     const first = openStream()

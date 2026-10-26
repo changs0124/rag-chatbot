@@ -25,10 +25,11 @@ type EarlyAbortOutcome =
 
 /**
  * 「저장됨」인데 답이 없는 질문을 다시 확인하는 간격과 최대 구간(#489). 서버는 토큰을 하나도 못 보낸 턴의 질문을 걷지만,
- * 끊김을 **다음 이벤트(단계 · 토큰)를 쓸 때** 알아채므로(#487) 첫 확인이 철회보다 먼저 처리될 수 있다
+ * 끊김을 **다음 이벤트(단계 · 토큰)를 쓸 때** 알아채므로(#487) 첫 확인이 철회보다 먼저 처리될 수 있다.
+ * 창은 8초다(#501) - 운영 실측에서 철회까지 3.2~5.9초가 걸려 5초 창은 10회 중 2회를 놓쳤다
  */
 export const RECHECK_INTERVAL_MS = 400
-export const RECHECK_WINDOW_MS = 5000
+export const RECHECK_WINDOW_MS = 8000
 /** 재확인 요청 하나의 시간 제한 - 매달린 요청이 판정을 붙들지 않게 한다 */
 export const RECHECK_REQUEST_TIMEOUT_MS = 3000
 
