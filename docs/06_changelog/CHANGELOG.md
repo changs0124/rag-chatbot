@@ -26,6 +26,10 @@
   - `AuthContext.tsx` 의 `eslint-disable` 는 oxlint 규칙 이름(`oxlint-disable-next-line react/only-export-components`)으로 바꿨다. 테스트 수 불변
 
 ### Fixed
+- **답 본문에 옮겨 적힌 검색 결과 파일 이름을 짧은 문서 이름으로 바꾼다(#470).** 10-26 운영 QA 에서 「TM매뉴얼_VSVDTMNOPK10_v3.md의 …」처럼 파일 이름이 확장자 · 문서 코드째 나왔다(892턴 중 코드 17 · 확장자 3, 필터 없는 직접 호출에서도 219개 중 19개 — 모델이 쓴 글자)
+  - `SourceNameRewriter`(새 파일) : 검색 결과 이름과 같은 글자만 확장자를 빼고 첫 `_` 앞까지로 바꾼다(「TM매뉴얼」 · 「필드클레임현황」). 이름이 조각 사이에서 잘려 오면 다음 조각까지 붙잡는다. `CitationMarkupFilter` 가 내보내는 글자가 마지막에 이를 거친다 — #429 가 넣는 이름도 같은 규칙. 출처 목록(`sourceName`)은 그대로
+  - 지시문은 바꾸지 않았다 : 「짧은 이름으로 부른다」 줄은 노출을 0 으로 만들지만 인용을 하나도 달지 않는 답이 배터리 124회 중 1 → 5 로 늘었다(「인용은 빼지 않는다」를 덧붙여도 같음). 실측은 `live-integration.md` 3-1
+  - 검증 : 실제 답 1,260개를 무작위 조각으로 5번씩 흘려 기대와 다른 출력 0 · 남은 파일 이름 0. 테스트 `SourceNameRewriterTest` 10개. **하한 백엔드 366 → 376**
 - **관리자 업로드 크기 선검사 · 부분 저장 실패 로그 · 런타임 버전 검사 안내(#453).** 2026-10-23 전체 리뷰에서 나온 동작 보정 셋
   - `AdminDocumentService.upload` : `getSize()` 로 25MB 를 먼저 본다. 변경 전에는 `getBytes()` 로 다 읽은 뒤 비교해, 멀티파트 한도 안의 거절 대상 파일이 힙에 먼저 올랐다(`FileService` 의 #402 와 같은 원칙)
   - `ChatService.savePartial` : `catch (Exception ignored)` 를 로그로 바꿨다. 대화가 삭제된 탓이면(#437 과 같은 `conversationGone` 판정) INFO, 아니면 예외와 함께 WARN

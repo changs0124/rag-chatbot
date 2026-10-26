@@ -23,6 +23,9 @@ import java.util.regex.Pattern;
  * 규칙으로 찾음 - 검색 결과가 본문보다 먼저 도착하므로 스트림 도중에 풀림. 그 밖의 표기는 지금처럼 지우기만 함.
  * 스트림이 끝나면 {@link #flush()} 로 보류한 공백을 받아 감.
  *
+ * <p>내보내는 글자는 마지막에 {@link SourceNameRewriter} 를 거쳐, 본문에 옮겨 적힌 파일 이름이 짧은 문서 이름으로
+ * 바뀜(#470) - 위에서 넣은 문서 이름도 같은 규칙을 따름.
+ *
  * <p>스트림 하나에 인스턴스 하나. 스레드 안전하지 않음.
  */
 final class CitationMarkupFilter {
@@ -49,6 +52,7 @@ final class CitationMarkupFilter {
 	private final StringBuilder body = new StringBuilder();
 	private final List<FileRef> refs = new ArrayList<>();
 	private final List<List<String>> searches = new ArrayList<>();
+	private final SourceNameRewriter names = new SourceNameRewriter();
 	// 표기를 닫은 뒤 첫 글자를 기다리는 중 - 그동안의 공백은 held 에 모아 둠
 	private boolean pending;
 	private String pendingName;
@@ -60,6 +64,7 @@ final class CitationMarkupFilter {
 	/** file_search 호출 하나의 결과 파일명, 결과 순서대로(이름이 비어도 자리를 지킴 - turnNfileM 의 M 이 이 순서) */
 	void addSearch(List<String> filenames) {
 		searches.add(List.copyOf(filenames));
+		names.addNames(filenames);
 	}
 
 	/** delta 에서 표기 밖 글자만 돌려줌. 전부 표기면 빈 문자열 */
@@ -68,7 +73,7 @@ final class CitationMarkupFilter {
 			for (int i = 0; i < delta.length(); i++) {
 				remember(delta.charAt(i));
 			}
-			return delta; // 표기가 없는 흔한 경우엔 원문을 그대로 돌려줌
+			return names.accept(delta); // 표기가 없는 흔한 경우엔 원문을 그대로 돌려줌(바꿀 파일 이름이 없으면 같은 객체)
 		}
 		StringBuilder out = new StringBuilder(delta.length());
 		for (int i = 0; i < delta.length(); i++) {
@@ -101,15 +106,15 @@ final class CitationMarkupFilter {
 				emit(out, c);
 			}
 		}
-		return out.toString();
+		return names.accept(out.toString());
 	}
 
-	/** 스트림 끝에 보류 중이던 공백. 없으면 빈 문자열 */
+	/** 스트림 끝에 보류 중이던 공백과 파일 이름 확인용으로 붙잡아 둔 꼬리. 없으면 빈 문자열 */
 	String flush() {
 		pending = false;
 		String rest = held.toString();
 		held.setLength(0);
-		return rest;
+		return names.accept(rest) + names.flush();
 	}
 
 	/** 닫힌 filecite 표기에서 모은 파일 참조, 나온 순서대로 */
