@@ -30,7 +30,7 @@
 | [References](./03_references/) | 외부 레퍼런스(디자인 · API · 라이브러리) |
 | [Current Tasks](./04_tasks/current-sprint.md) | 현재 진행 중 작업 |
 | [Backlog](./04_tasks/backlog.md) | 코드베이스에서 확인된 미결 항목 |
-| [Open Issues](./05_issues/open/) | 처리 중인 이슈(해결분은 `05_issues/resolved/`) |
+| [Open Issues](./05_issues/open/) | 골격(`.gitkeep`, 해결분 자리는 `05_issues/resolved/`) — 이슈는 GitHub Issues |
 | [Changelog](./06_changelog/CHANGELOG.md) | 변경 이력 |
 
 **정본 위치** — `REQ-` 는 요구사항정의서, `FEAT-` 는 기능명세서, `API-` 는 API 명세서,

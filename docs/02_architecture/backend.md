@@ -40,7 +40,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   `authenticationEntryPoint` 가 `sendError`, Spring 기본 오류 본문에 `message` 없음) · CORS 403(Spring
   `CorsFilter` 가 평문). 어느 쪽도 `ApiError` 가 아니다.
 - **성공 상태는 컨트롤러가 정한다** — `@ResponseStatus(CREATED)`(201) 가 둘(문서 업로드 · 계정 발급), 삭제 3곳이
-  `ResponseEntity.noContent()`(204), 파일 · 문서 그림 서빙이 `ResponseEntity.ok()`(200 + Content-Type).
+  `ResponseEntity<Void>` 의 `ResponseEntity.noContent()`(204), 파일 · 문서 그림 서빙이 `ResponseEntity.ok()`(200 + Content-Type).
   그 밖의 핸들러는 반환값을 그대로 돌려주고 상태를 지정하지 않는다. 채팅만 `SseEmitter`(text/event-stream) 다.
 - **소유권 위반은 403 이 아니라 404 로 은닉한다.** 남의 리소스는 "없는 것"으로 보인다.
   검증은 조회 단계에서 `findByIdAndUser(...)` 형태로 막는다 — DB RLS 가 없으므로 애플리케이션 코드가 유일한 관문이다.
