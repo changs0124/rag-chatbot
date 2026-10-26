@@ -19,7 +19,9 @@ describe('MessageList 마크다운 지연 로딩 (#417)', () => {
     render(<MessageList messages={[message]} />)
     expect(screen.getByText('핀은 **CN3** 이다')).toBeInTheDocument()
 
-    expect((await screen.findByText('CN3')).tagName).toBe('STRONG')
+    // 청크 import 를 명시적으로 기다린 뒤 본다(#482) - 콜드 실행에서는 첫 변환이 findBy 기본 1초를 넘긴다
+    await import('./Markdown')
+    expect((await screen.findByText('CN3', {}, { timeout: 10_000 })).tagName).toBe('STRONG')
     expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument()
-  })
+  }, 20_000)
 })

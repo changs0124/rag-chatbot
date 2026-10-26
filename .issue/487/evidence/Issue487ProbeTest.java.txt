@@ -1,0 +1,218 @@
+package com.ragchatbot.controller;
+
+import static com.ragchatbot.support.SseTestSupport.stubStageLabel;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import com.ragchatbot.openai.OpenAiService;
+import com.ragchatbot.openai.OpenAiService.ChatCompletion;
+import com.ragchatbot.openai.OpenAiService.ChatInput;
+import com.ragchatbot.openai.OpenAiService.Stage;
+import com.ragchatbot.support.AbstractPgIntegrationTest;
+
+/**
+ * #487 증거용 탐침 - 커밋하지 않는다.
+ *
+ * <p>원시 소켓으로 POST /api/chat 을 열고 (a) 200 전 (b) 200 뒤 첫 토큰 전 (c) 스트리밍 중에 끊은 뒤
+ * messages 테이블에 무엇이 남는지 잰다. 끊는 방식은 FIN(socket.close) 과 RST(SO_LINGER 0) 두 가지.
+ * 모델 대역 : 1500ms(검색) → SEARCHING → 200ms → GENERATING → 토큰 40개(100ms 간격). OpenAI 비용 없음
+ */
+@TestPropertySource(properties = { "app.ratelimit.chat-per-minute=1000", "app.ratelimit.login-per-minute=1000" })
+class Issue487ProbeTest extends AbstractPgIntegrationTest {
+
+	static final int TOKENS = 40;
+	static final long PRE_MS = 1500;
+	static final long TOKEN_MS = 100;
+	static final int RUNS = 5;
+
+	@MockitoBean
+	OpenAiService openAi;
+
+
+	final AtomicInteger stageAttempts = new AtomicInteger();
+	final AtomicInteger tokenAttempts = new AtomicInteger();
+	final AtomicReference<String> stubOutcome = new AtomicReference<>();
+	final AtomicLong stubEndedAt = new AtomicLong();
+
+	@SuppressWarnings("unchecked")
+	void stubModel() {
+		stubStageLabel(openAi);
+		when(openAi.streamChat(any(), any(), any())).thenAnswer(inv -> {
+			ChatInput in = inv.getArgument(0);
+			Consumer<String> onToken = inv.getArgument(1);
+			BiConsumer<Stage, List<String>> onStage = inv.getArgument(2);
+			if (in.userMessage().startsWith("RESEND")) {
+				onToken.accept("ok");
+				return new ChatCompletion("ok", List.of(), true, null, null);
+			}
+			try {
+				Thread.sleep(PRE_MS);
+				stageAttempts.incrementAndGet();
+				onStage.accept(Stage.SEARCHING, List.of());
+				Thread.sleep(200);
+				stageAttempts.incrementAndGet();
+				onStage.accept(Stage.GENERATING, List.of());
+				StringBuilder full = new StringBuilder();
+				for (int i = 0; i < TOKENS; i++) {
+					String t = String.format("t%02d|", i);
+					tokenAttempts.incrementAndGet();
+					onToken.accept(t);
+					full.append(t);
+					Thread.sleep(TOKEN_MS);
+				}
+				stubOutcome.set("완주");
+				return new ChatCompletion(full.toString(), List.of(), true, null, null);
+			} catch (RuntimeException e) {
+				stubOutcome.set(e.getClass().getSimpleName());
+				throw e;
+			} finally {
+				stubEndedAt.set(System.currentTimeMillis());
+			}
+		});
+	}
+
+	record Row(String role, String status, boolean stopped, boolean timedOut, int len, String content) {
+	}
+
+	@Test
+	void probe() throws Exception {
+		stubModel();
+		List<String> out = new ArrayList<>();
+		out.add("모델 대역 : " + PRE_MS + "ms 대기 → stage SEARCHING → 200ms → stage GENERATING → 토큰 " + TOKENS
+				+ "개(각 4자 'tNN|', " + TOKEN_MS + "ms 간격). 완주 시 답 길이 " + (TOKENS * 4) + "자");
+		out.add("열 : 시나리오 | 끊기 | 회차 | 끊기 전 받은 것 | 질문 행 | 답 행(status/stopped/timed_out/길이) | 서버가 시도한 stage·token 전송 수 | 모델 대역 결과 | 끊은 뒤 대역 종료까지 ms | (a) 50ms 뒤 재전송 HTTP");
+		int seq = 0;
+		for (String scenario : List.of("a", "b", "c")) {
+			for (String mode : List.of("FIN", "RST")) {
+				for (int run = 1; run <= RUNS; run++) {
+					out.add(runOnce(scenario, mode, run, ++seq));
+				}
+			}
+		}
+		Path file = Path.of("target", "issue487-probe.txt");
+		Files.write(file, out, StandardCharsets.UTF_8);
+		out.forEach(System.out::println);
+	}
+
+	private String runOnce(String scenario, String mode, int run, int seq) throws Exception {
+		int port = URI.create(rest.getRootUri()).getPort();
+		String email = "probe487-" + seq + "-" + UUID.randomUUID().toString().substring(0, 6) + "@b.com";
+		String token = createUser(email);
+		String convId = createConversation(token);
+		stageAttempts.set(0);
+		tokenAttempts.set(0);
+		stubOutcome.set(null);
+		stubEndedAt.set(0);
+
+		String body = "{\"conversationId\":\"" + convId + "\",\"message\":\"probe " + scenario + run + "\"}";
+		byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+		String head = "POST /api/chat HTTP/1.1\r\nHost: localhost:" + port + "\r\nAuthorization: Bearer " + token
+				+ "\r\nContent-Type: application/json\r\nAccept: text/event-stream\r\nContent-Length: "
+				+ bodyBytes.length + "\r\n\r\n";
+
+		Socket s = new Socket("127.0.0.1", port);
+		s.setSoTimeout(15000);
+		OutputStream os = s.getOutputStream();
+		os.write(head.getBytes(StandardCharsets.ISO_8859_1));
+		os.write(bodyBytes);
+		os.flush();
+		StringBuilder got = new StringBuilder();
+		if (!scenario.equals("a")) {
+			InputStream is = s.getInputStream();
+			byte[] buf = new byte[4096];
+			while (true) {
+				if (scenario.equals("b") && got.indexOf("event:meta") >= 0) {
+					break;
+				}
+				if (scenario.equals("c") && count(got, "event:token") >= 3) {
+					break;
+				}
+				int n = is.read(buf);
+				if (n < 0) {
+					break;
+				}
+				got.append(new String(buf, 0, n, StandardCharsets.ISO_8859_1));
+			}
+		}
+		if (mode.equals("RST")) {
+			s.setSoLinger(true, 0);
+		}
+		s.close();
+		long closedAt = System.currentTimeMillis();
+
+		String resend = "-";
+		if (scenario.equals("a")) {
+			Thread.sleep(50);
+			resend = String.valueOf(resend(token, createConversation(token)));
+		}
+
+		// 대역이 끝나고(완주 · 예외) 저장까지 기다린다. 대역이 안 불렸으면(질문 저장 전 거절 등) 3초 뒤 본다
+		long deadline = System.currentTimeMillis() + PRE_MS + 200 + TOKENS * TOKEN_MS + 5000;
+		while (stubEndedAt.get() == 0 && System.currentTimeMillis() < deadline) {
+			Thread.sleep(50);
+		}
+		Thread.sleep(1000);
+		long held = stubEndedAt.get() == 0 ? -1 : stubEndedAt.get() - closedAt;
+
+		List<Row> rows = jdbc.query(
+				"select role, status, stopped, timed_out, coalesce(length(content),0) len, content from messages "
+						+ "where conversation_id = ? order by created_at",
+				(rs, i) -> new Row(rs.getString("role"), rs.getString("status"), rs.getBoolean("stopped"),
+						rs.getBoolean("timed_out"), rs.getInt("len"), rs.getString("content")),
+				UUID.fromString(convId));
+		String q = rows.stream().anyMatch(r -> r.role().equals("user")) ? "있음" : "없음";
+		String a = rows.stream().filter(r -> r.role().equals("assistant")).findFirst()
+				.map(r -> r.status() + "/" + r.stopped() + "/" + r.timedOut() + "/" + r.len() + "자")
+				.orElse("없음");
+		String before = scenario.equals("a") ? "보내자마자 끊음(응답 읽지 않음)"
+				: "200=" + got.toString().startsWith("HTTP/1.1 200") + " meta=" + count(got, "event:meta")
+						+ " stage=" + count(got, "event:stage") + " token=" + count(got, "event:token");
+		return String.join(" | ", "(" + scenario + ")", mode, String.valueOf(run), before, q, a,
+				"stage " + stageAttempts.get() + " · token " + tokenAttempts.get(), String.valueOf(stubOutcome.get()),
+				String.valueOf(held), resend);
+	}
+
+	private int resend(String token, String convId) throws Exception {
+		var req = HttpRequest.newBuilder(URI.create(rest.getRootUri() + "/api/chat"))
+				.timeout(Duration.ofSeconds(15))
+				.header("Authorization", "Bearer " + token)
+				.header("Content-Type", "application/json")
+				.header("Accept", "text/event-stream")
+				.POST(HttpRequest.BodyPublishers.ofString(
+						"{\"conversationId\":\"" + convId + "\",\"message\":\"RESEND\"}"))
+				.build();
+		return HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString()).statusCode();
+	}
+
+	private static int count(CharSequence s, String needle) {
+		int c = 0;
+		for (int i = s.toString().indexOf(needle); i >= 0; i = s.toString().indexOf(needle, i + 1)) {
+			c++;
+		}
+		return c;
+	}
+}

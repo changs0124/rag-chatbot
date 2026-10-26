@@ -328,7 +328,8 @@ export function useChat() {
           // 세대는 판정을 기다린 **뒤에** 본다 - 그사이 대화를 옮겼으면 화면 · 입력창을 건드리지 않는다
           const here = generation.current === mine
           if (outcome.kind === 'stored') {
-            // 저장된 질문은 남기고, 서버는 답을 끝까지 만들어 저장한다(#76) - 다시 열면 보인다.
+            // 저장된 질문은 남긴다. 답은 오지 않는다 - 서버는 끊긴 뒤의 전송이 실패할 때 생성을 멈추고,
+            // 보낸 토큰이 없으면 답 행을 남기지 않는다(#487, frontend.md 「남은 한계」).
             // 이력을 못 받았으면 걷었던 질문 말풍선을 되살린다 - 안 그러면 저장된 질문이 화면 어디에도 없다(#447 리뷰)
             if (here) {
               if (outcome.saved) setMessages(outcome.saved)

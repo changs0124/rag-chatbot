@@ -93,6 +93,28 @@ class SourceNameRewriterTest {
 	}
 
 	@Test
+	void two_documents_sharing_a_short_name_only_lose_extension_even_when_one_has_no_underscore() {
+		// #482 : 짧은 이름이 같은 문서가 둘이면(하나는 _ 가 없음) 어느 쪽도 짧은 이름으로 합치지 않음 -
+		// 합치면 「TM매뉴얼」 하나가 두 문서를 가리킴. 확장자만 뺀 이름이 서로 달라 가려짐
+		SourceNameRewriter r = new SourceNameRewriter();
+		r.addNames(List.of("TM매뉴얼.md", "TM매뉴얼_B_v2.pdf"));
+		assertThat(r.accept("TM매뉴얼.md 와 TM매뉴얼_B_v2.pdf 를 비교 ") + r.flush())
+				.isEqualTo("TM매뉴얼 와 TM매뉴얼_B_v2 를 비교 ");
+	}
+
+	@Test
+	void a_later_search_with_the_same_short_name_downgrades_to_stems_for_the_rest_of_the_text() {
+		// 이미 내보낸 글자는 되돌리지 못함 - 겹치는 이름이 두 번째 검색에서 처음 오면 그 뒤부터 확장자만 뺌
+		SourceNameRewriter r = new SourceNameRewriter();
+		r.addNames(List.of("TM매뉴얼_A_v1.md"));
+		String before = r.accept("TM매뉴얼_A_v1.md 먼저, ");
+		r.addNames(List.of("TM매뉴얼_B_v2.md"));
+		String after = r.accept("TM매뉴얼_A_v1.md 그리고 TM매뉴얼_B_v2.md ") + r.flush();
+		assertThat(before).isEqualTo("TM매뉴얼 먼저, ");
+		assertThat(after).isEqualTo("TM매뉴얼_A_v1 그리고 TM매뉴얼_B_v2 ");
+	}
+
+	@Test
 	void markup_filter_inserted_name_follows_the_same_rule() {
 		// #429 : 표기가 명사 자리에 오면 필터가 문서 이름을 넣는다 - 그 이름도 짧은 이름으로 나감
 		CitationMarkupFilter f = new CitationMarkupFilter();

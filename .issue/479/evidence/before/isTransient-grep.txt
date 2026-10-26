@@ -1,0 +1,7 @@
+6:import java.net.ConnectException;
+521:			if (isTransient(e)) {
+544:			deleteFileOrReport(fileId);
+545:			if (isTransient(e)) {
+707:				if (!isTransient(e) || attempt >= DELETE_ATTEMPTS) {
+727:	private static boolean isTransient(Exception e) {
+729:				|| (e instanceof ResourceAccessException && e.getCause() instanceof ConnectException);

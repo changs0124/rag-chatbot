@@ -1,0 +1,117 @@
+17:38:48.902 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 실패 file-1 (1회 시도): 400 Bad Request: [no body]
+17:38:48.905 [main] ERROR com.ragchatbot.openai.OpenAiRealService -- OpenAI 파일 file-1 을 지우지 못해 스토어 밖 고아로 남음 - 동기화로도 보이지 않으니 OpenAI 에서 직접 지울 것 (DELETE /v1/files/file-1)
+17:38:49.004 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:38:49.309 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:38:49.923 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:38:50.249 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 일시 실패 file-1 - 다시 시도함: 500 Internal Server Error: [no body]
+17:38:50.560 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 일시 실패 file-1 - 다시 시도함: 500 Internal Server Error: [no body]
+17:38:51.174 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 실패 file-1 (3회 시도): 500 Internal Server Error: [no body]
+17:38:51.174 [main] WARN com.ragchatbot.openai.OpenAiRealService -- 스토어 연결 해제 실패로 file file-1 은 지우지 않음 - 동기화하면 목록에 다시 보여 다시 지울 수 있음
+17:38:51.190 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:38:51.496 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:38:52.112 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 실패 file-1 (3회 시도): 503 Service Unavailable: [no body]
+17:38:52.112 [main] ERROR com.ragchatbot.openai.OpenAiRealService -- OpenAI 파일 file-1 을 지우지 못해 스토어 밖 고아로 남음 - 동기화로도 보이지 않으니 OpenAI 에서 직접 지울 것 (DELETE /v1/files/file-1)
+17:38:52.125 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 429 : [no body]
+17:38:52.532 [main] WARN com.ragchatbot.openai.OpenAiRealService -- OpenAI 가 파일 a.md 을 거절함 413: {"error":{"message":"upstream-detail"}}
+17:38:52.541 [main] WARN com.ragchatbot.openai.OpenAiRealService -- OpenAI 가 파일 a.md 을 거절함 415: {"error":{"message":"upstream-detail"}}
+17:38:52.548 [main] WARN com.ragchatbot.openai.OpenAiRealService -- OpenAI 가 파일 a.md 을 거절함 400: {"error":{"message":"upstream-detail"}}
+17:38:53.060 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:38:53.367 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:38:53.973 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 실패 file-1 (3회 시도): 503 Service Unavailable: [no body]
+17:38:53.973 [main] WARN com.ragchatbot.openai.OpenAiRealService -- 스토어 연결 해제 실패로 file file-1 은 지우지 않음 - 동기화하면 목록에 다시 보여 다시 지울 수 있음
+[ERROR] Tests run: 9, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 1.607 s <<< FAILURE! -- in com.ragchatbot.openai.OpenAiRealUploadDocumentTest
+[ERROR] com.ragchatbot.openai.OpenAiRealUploadDocumentTest.files_content_rejection_is_bad_request -- Time elapsed: 0.043 s <<< FAILURE!
+java.lang.AssertionError: 
+[POST /files 400] 
+Expecting actual throwable to be an instance of:
+  org.springframework.web.client.HttpClientErrorException.BadRequest
+but was:
+  com.ragchatbot.exception.ApiExceptions$BadRequestException: OpenAI 가 파일을 받지 않음 - 손상되었거나 지원하지 않는 내용인지 확인해 주세요
+	at com.ragchatbot.openai.OpenAiRealService.uploadDocument(OpenAiRealService.java:533)
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.lambda$files_content_rejection_is_bad_request$8(OpenAiRealUploadDocumentTest.java:171)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:66)
+	...(89 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.files_content_rejection_is_bad_request(OpenAiRealUploadDocumentTest.java:173)
+
+[ERROR] com.ragchatbot.openai.OpenAiRealUploadDocumentTest.attach_failure_deletes_file_even_if_detach_fails -- Time elapsed: 0.947 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+Expecting actual:
+  ["POST /files",
+    "POST /vector_stores/shared-store/files",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /vector_stores/shared-store/files/file-1"]
+to contain exactly (and in same order):
+  ["POST /files",
+    "POST /vector_stores/shared-store/files",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /files/file-1"]
+but could not find the following elements:
+  ["DELETE /files/file-1"]
+
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.attach_failure_deletes_file_even_if_detach_fails(OpenAiRealUploadDocumentTest.java:187)
+
+[ERROR] com.ragchatbot.openai.OpenAiRealUploadDocumentTest.insufficient_quota_is_not_reported_as_retryable -- Time elapsed: 0.013 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual throwable to be an instance of:
+  org.springframework.web.client.HttpClientErrorException.TooManyRequests
+but was:
+  com.ragchatbot.exception.ApiExceptions$UpstreamUnavailableException: OpenAI 가 일시적으로 응답하지 않음 - 잠시 뒤 다시 시도해 주세요
+	at com.ragchatbot.openai.OpenAiRealService.uploadDocument(OpenAiRealService.java:527)
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.lambda$insufficient_quota_is_not_reported_as_retryable$10(OpenAiRealUploadDocumentTest.java:202)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:66)
+	...(89 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.insufficient_quota_is_not_reported_as_retryable(OpenAiRealUploadDocumentTest.java:203)
+
+[ERROR] Failures: 
+[ERROR]   OpenAiRealUploadDocumentTest.attach_failure_deletes_file_even_if_detach_fails:187 
+Expecting actual:
+  ["POST /files",
+    "POST /vector_stores/shared-store/files",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /vector_stores/shared-store/files/file-1"]
+to contain exactly (and in same order):
+  ["POST /files",
+    "POST /vector_stores/shared-store/files",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /files/file-1"]
+but could not find the following elements:
+  ["DELETE /files/file-1"]
+
+[ERROR]   OpenAiRealUploadDocumentTest.files_content_rejection_is_bad_request:173 [POST /files 400] 
+Expecting actual throwable to be an instance of:
+  org.springframework.web.client.HttpClientErrorException.BadRequest
+but was:
+  com.ragchatbot.exception.ApiExceptions$BadRequestException: OpenAI 가 파일을 받지 않음 - 손상되었거나 지원하지 않는 내용인지 확인해 주세요
+	at com.ragchatbot.openai.OpenAiRealService.uploadDocument(OpenAiRealService.java:533)
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.lambda$files_content_rejection_is_bad_request$8(OpenAiRealUploadDocumentTest.java:171)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:66)
+	...(89 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+[ERROR]   OpenAiRealUploadDocumentTest.insufficient_quota_is_not_reported_as_retryable:203 
+Expecting actual throwable to be an instance of:
+  org.springframework.web.client.HttpClientErrorException.TooManyRequests
+but was:
+  com.ragchatbot.exception.ApiExceptions$UpstreamUnavailableException: OpenAI 가 일시적으로 응답하지 않음 - 잠시 뒤 다시 시도해 주세요
+	at com.ragchatbot.openai.OpenAiRealService.uploadDocument(OpenAiRealService.java:527)
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.lambda$insufficient_quota_is_not_reported_as_retryable$10(OpenAiRealUploadDocumentTest.java:202)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:66)
+	...(89 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+[ERROR] Tests run: 17, Failures: 3, Errors: 0, Skipped: 0
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project backend: There are test failures.
+[ERROR] 
+[ERROR] See D:\dev\rag-chatbot\.issue\worktrees\479-upstream-error-classes\backend\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

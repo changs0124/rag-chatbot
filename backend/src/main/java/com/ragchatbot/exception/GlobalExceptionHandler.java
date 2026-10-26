@@ -102,7 +102,7 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
-	 * OpenAI 일시 장애(5xx · 연결 실패) - 관리자 문서 업로드에서 난다(#476).
+	 * OpenAI 일시 장애(5xx · 429 · 연결 거절 · DNS 실패 · 경로 없음) - 관리자 문서 업로드에서 난다(#476 · #479).
 	 *
 	 * <p><b>우리 코드의 결함이 아니라 WARN 이다.</b> 이 핸들러가 없던 동안에는 {@link #handleUnexpected} 가 받아
 	 * ERROR + 스택 트레이스와 「오류 번호」 500 을 냈다 - 관리자는 다시 시도하면 되는지 알 수 없었다.

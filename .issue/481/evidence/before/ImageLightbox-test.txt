@@ -1,0 +1,64 @@
+Using Node v24.19.0
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/481-lightbox-blob-download/frontend
+
+ ❯ src/components/chat/ImageLightbox.test.tsx (9 tests | 2 failed) 461ms
+       × blob:abc 면 fetch 없이 그 주소로 저장함 83ms
+       × data:image/png;base64,AAAA 면 fetch 없이 그 주소로 저장함 70ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 내려받기 > blob:abc 면 fetch 없이 그 주소로 저장함
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "blob:abc",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/chat/ImageLightbox.test.tsx:123:25
+    121|
+    122|       await waitFor(() => expect(click).toHaveBeenCalled())
+    123|       expect(fetch).not.toHaveBeenCalled()
+       |                         ^
+    124|       expect(saved).toEqual(['p.png'])
+    125|       // 주소의 소유자가 따로 있으므로 회수하지 않는다
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/components/chat/ImageLightbox.test.tsx > ImageLightbox > 내려받기 > data:image/png;base64,AAAA 면 fetch 없이 그 주소로 저장함
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "data:image/png;base64,AAAA",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/chat/ImageLightbox.test.tsx:123:25
+    121|
+    122|       await waitFor(() => expect(click).toHaveBeenCalled())
+    123|       expect(fetch).not.toHaveBeenCalled()
+       |                         ^
+    124|       expect(saved).toEqual(['p.png'])
+    125|       // 주소의 소유자가 따로 있으므로 회수하지 않는다
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 7 passed (9)
+   Start at  17:03:01
+   Duration  1.53s (transform 94ms, setup 226ms, import 98ms, tests 461ms, environment 448ms)
+

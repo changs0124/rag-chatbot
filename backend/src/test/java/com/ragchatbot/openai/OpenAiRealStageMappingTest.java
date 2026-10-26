@@ -110,6 +110,26 @@ class OpenAiRealStageMappingTest {
 				.satisfies(c -> assertThat(c.sourceName()).isEqualTo("정책.pdf"));
 	}
 
+	/**
+	 * #482 : 마지막 delta 가 파일 이름(확장자 앞)으로 끝나면 리라이터가 「.md」 가 올지 몰라 꼬리를 붙잡고,
+	 * 그 꼬리는 response.completed 의 flush 로만 나감 - 내보낸 토큰 합 == 저장 본문 == 짧은 이름이어야 함
+	 */
+	@Test
+	void file_name_held_at_the_last_delta_comes_out_at_the_completed_flush() {
+		String sse = """
+				data:{"type":"response.output_item.done","item":{"type":"file_search_call","results":[{"filename":"TM매뉴얼_VSVDTMNOPK10_v3.md","text":"발췌"}]}}
+				data:{"type":"response.output_text.delta","delta":"근거는 TM매뉴얼_VSVDTMNOPK10_v3"}
+				data:{"type":"response.completed","response":{"output":[{"type":"file_search_call","results":[{"filename":"TM매뉴얼_VSVDTMNOPK10_v3.md","text":"발췌"}]}]}}
+				""";
+		List<String> tokens = new ArrayList<>();
+		ChatCompletion[] result = new ChatCompletion[1];
+
+		stagesOf(sse, tokens, result);
+
+		assertThat(tokens).containsExactly("근거는 ", "TM매뉴얼");
+		assertThat(result[0].fullText()).isEqualTo("근거는 TM매뉴얼").isEqualTo(String.join("", tokens));
+	}
+
 	/** 단계와 그 단계가 실은 자료명을 함께 기록 */
 	private List<String> stagesWithSources(String sse) {
 		List<String> seen = new ArrayList<>();

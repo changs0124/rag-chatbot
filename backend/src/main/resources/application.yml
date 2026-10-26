@@ -108,8 +108,8 @@ app:
     # 계정별 분당 로그인 시도 상한(대입 지연). 키는 정규화된 이메일 - IP 기준이 아님
     login-per-minute: ${RATELIMIT_LOGIN_PER_MINUTE:10}
     # 사용자별 분당 첨부 업로드 상한(#95). 채팅보다 높은 이유는 한 메시지에 이미지를 여러 장 붙이는
-    # 것이 정상 사용이기 때문. 업로드는 파일 전체를 힙에 올리므로 병렬도를 유계로 두지 않으면
-    # 26MB × 스레드 수로 OOM 이 나고, uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎음
+    # 것이 정상 사용이기 때문. 업로드는 크기 검사(10MB, #402)를 통과한 파일을 힙에 올리므로 이 상한이
+    # 병렬도를 묶음. 디스크는 아래 attachment-quota-mb(#418)가 묶음
     upload-per-minute: ${RATELIMIT_UPLOAD_PER_MINUTE:30}
     # 사용자별 분당 비밀번호 변경 상한(#95). 매 호출이 BCrypt 를 두 번 돌아 CPU 를 먹음.
     # 정상 사용은 가끔 한 번이라 낮아도 막히지 않음
@@ -123,7 +123,7 @@ app:
     # 고아(미연결) 첨부 회수 - 유예 시간과 주기. 유예보다 최근 것은 어떤 cutoff 로도 지우지 않음
     orphan-ttl-minutes: ${ORPHAN_TTL_MINUTES:60}
     orphan-cleanup-cron: ${ORPHAN_CLEANUP_CRON:0 0 * * * *}
-    # 첨부 서빙용 서명 경로 토큰의 수명(분). <img src> 가 헤더를 못 실어 URL 에 토큰을 싣는다
+    # 첨부 서빙용 서명 쿼리 토큰의 수명(분). <img src> 가 헤더를 못 실어 URL 에 토큰을 싣는다
     access-token-ttl-minutes: ${FILE_ACCESS_TOKEN_TTL_MINUTES:15}
     # 사용자별 첨부 저장 한도(MB, #418). 사용자 폴더의 실제 파일 크기 합으로 재고, 넘기는 업로드는 400.
     # 분당 · 장수 상한은 쌓이는 속도만 줄여 uploads 볼륨이 차면 같은 디스크의 Postgres 가 먼저 멎는다

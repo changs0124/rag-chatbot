@@ -1,0 +1,6 @@
+name="com.ragchatbot.controller.AdminDocumentFlowTest" time="18.889" tests="21" errors="0" skipped="0" failures="0"
+name="com.ragchatbot.controller.AdminDocumentSyncFlowTest" time="2.413" tests="7" errors="0" skipped="0" failures="0"
+name="com.ragchatbot.openai.CitationFromMarkupTest" time="0.044" tests="7" errors="0" skipped="0" failures="0"
+name="com.ragchatbot.openai.CitationMarkupFilterTest" time="0.02" tests="16" errors="0" skipped="0" failures="0"
+name="com.ragchatbot.openai.OpenAiRealStageMappingTest" time="0.024" tests="9" errors="0" skipped="0" failures="0"
+name="com.ragchatbot.openai.SourceNameRewriterTest" time="0.015" tests="13" errors="0" skipped="0" failures="0"
