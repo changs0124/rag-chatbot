@@ -1,0 +1,152 @@
+▶ 셸 구문 검사
+셸 구문 검사 통과
+  ✓ 셸 구문 검사
+▶ 셸 정적 분석
+  - 건너뜀: shellcheck 없음 - CI 러너에는 기본 설치돼 있다
+▶ 병합 충돌 표시
+충돌 표시 검사 통과 (파일 1172개)
+  ✓ 병합 충돌 표시
+▶ 문서 참조 실재
+문서 참조 검사 통과
+  ✓ 문서 참조 실재
+▶ 문서 섹션 이름 대조
+섹션 참조 검사 통과
+  ✓ 문서 섹션 이름 대조
+▶ 응답 계약 대조
+✓ 응답 계약 4곳 일치 (6필드)
+  ✓ 응답 계약 대조
+▶ 런타임 버전 대조(java)
+  ✓ 런타임 버전 대조(java)
+▶ 런타임 버전 대조(node)
+  ✓ 런타임 버전 대조(node)
+▶ 백엔드 clean verify
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.74 s -- in com.ragchatbot.config.AdminRoleSyncFlowTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.054 s -- in com.ragchatbot.config.AppModeGuardTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.ragchatbot.config.ChatExecutorPoolBindingTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.ragchatbot.config.EmailDomainPolicyBindingTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.ragchatbot.config.EmailDomainPolicyTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.178 s -- in com.ragchatbot.controller.AdminDocumentFlowTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.423 s -- in com.ragchatbot.controller.AdminDocumentSyncFlowTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.575 s -- in com.ragchatbot.controller.AdminUserFlowTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.017 s -- in com.ragchatbot.controller.AttachmentQuotaTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.759 s -- in com.ragchatbot.controller.AuthDomainAllowlistTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.084 s -- in com.ragchatbot.controller.AuthFlowTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.126 s -- in com.ragchatbot.controller.ChatBackPressureTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.957 s -- in com.ragchatbot.controller.ChatConversationDeletedTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.107 s -- in com.ragchatbot.controller.ChatFlowTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.881 s -- in com.ragchatbot.controller.ChatPartialSaveFailureLogTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.707 s -- in com.ragchatbot.controller.ChatRejectionCounterTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.670 s -- in com.ragchatbot.controller.ChatSseAcceptErrorTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.347 s -- in com.ragchatbot.controller.ChatSseAcceptRateLimitTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.037 s -- in com.ragchatbot.controller.ChatStageHonestyTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.350 s -- in com.ragchatbot.controller.ChatStreamContractTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.080 s -- in com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.778 s -- in com.ragchatbot.controller.ConversationCrossAccessTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.866 s -- in com.ragchatbot.controller.ConversationDeleteIfEmptyTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.031 s -- in com.ragchatbot.controller.ConversationTitleLimitTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.930 s -- in com.ragchatbot.controller.DocFigureFlowTest
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.024 s -- in com.ragchatbot.controller.FileFlowTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in com.ragchatbot.controller.HealthControllerTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.838 s -- in com.ragchatbot.controller.ProfileFlowTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.321 s -- in com.ragchatbot.controller.TextInputCharsTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.680 s -- in com.ragchatbot.controller.UploadRateLimitTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.904 s -- in com.ragchatbot.exception.ClientGoneLoggingTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.136 s -- in com.ragchatbot.exception.GlobalExceptionFallbackTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in com.ragchatbot.openai.CitationFromMarkupTest
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.ragchatbot.openai.CitationMarkupFilterTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in com.ragchatbot.openai.OpenAiMockFigureTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.087 s -- in com.ragchatbot.openai.OpenAiRealBetaHeaderTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.ragchatbot.openai.OpenAiRealDeleteDocumentTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s -- in com.ragchatbot.openai.OpenAiRealInstructionsTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.016 s -- in com.ragchatbot.openai.OpenAiRealStageMappingTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.031 s -- in com.ragchatbot.openai.OpenAiRealStoreFilesTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.ragchatbot.openai.OpenAiRealStreamingSpikeTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.079 s -- in com.ragchatbot.openai.OpenAiRealTimeoutBoundaryTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.ragchatbot.openai.OpenAiRealUsageTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in com.ragchatbot.openai.OpenAiServiceBoundaryTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.ragchatbot.openai.OpenAiServiceModeSelectionTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.ragchatbot.openai.SnippetPickTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.ragchatbot.openai.SourceNameRewriterTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.ragchatbot.repository.UserRepositoryDuplicateKeyTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.027 s -- in com.ragchatbot.repository.UserRepositoryUuidTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.337 s -- in com.ragchatbot.security.JwtAbsoluteLifetimeTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.708 s -- in com.ragchatbot.security.JwtRefreshDisabledTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.671 s -- in com.ragchatbot.security.JwtRefreshFarFromExpiryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.ragchatbot.security.JwtSecretLengthContextTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.ragchatbot.security.JwtSecretPolicyTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.020 s -- in com.ragchatbot.security.JwtSlidingRefreshTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.139 s -- in com.ragchatbot.service.AdminDocumentSizeCheckTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.ragchatbot.service.AdminDocumentStatusRefreshTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.ragchatbot.service.AdminDocumentUploadCompensationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.127 s -- in com.ragchatbot.service.AdminUserCreateRaceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.204 s -- in com.ragchatbot.service.AttachmentLinkRaceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.ragchatbot.service.ChatConcurrencyLimiterTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.ragchatbot.service.ChatHistoryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.ragchatbot.service.ChatStreamAbortTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.ragchatbot.service.ChatStreamTimeoutTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in com.ragchatbot.service.DocFigureServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.ragchatbot.service.FileServiceSizeCheckTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.080 s -- in com.ragchatbot.service.OrphanCleanupSchedulerTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.ragchatbot.service.RateLimiterKeyCapTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.ragchatbot.storage.LocalFileStorageUsedBytesTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.033 s -- in com.ragchatbot.support.RuntimeRolePrivilegeTest
+[INFO] Tests run: 376, Failures: 0, Errors: 0, Skipped: 0
+  ✓ 백엔드 clean verify
+▶ 백엔드 케이스 수 하한
+케이스 수(backend) : 실측 376 / 하한 366
+  ✓ 백엔드 케이스 수 하한
+▶ 문서 버전 주장 대조
+문서 버전 대조 통과
+  ✓ 문서 버전 주장 대조
+▶ 프론트 의존성 설치
+  ✓ 프론트 의존성 설치
+▶ 프론트 lint
+  ✓ 프론트 lint
+▶ 프론트 test
+ ✓ src/components/chat/scroll.test.ts (10 tests) 10ms
+ ✓ src/lib/stream.test.ts (6 tests) 23ms
+ ✓ src/lib/api.test.ts (10 tests) 25ms
+ ✓ src/lib/refresh.test.ts (8 tests) 26ms
+ ✓ src/lib/docFigures.test.ts (15 tests) 26ms
+ ✓ src/hooks/useChatLoading.test.ts (8 tests) 87ms
+ ✓ src/hooks/useChatRace.test.ts (13 tests) 138ms
+ ✓ src/components/chat/ResizableSidebar.test.tsx (8 tests) 288ms
+ ✓ src/hooks/useChat.test.ts (23 tests) 258ms
+ ✓ src/components/chat/ImageLightbox.test.tsx (6 tests) 410ms
+ ✓ src/pages/MyPage.test.tsx (7 tests) 625ms
+ ✓ src/pages/ChatPage.test.tsx (9 tests) 719ms
+ ✓ src/components/chat/Composer.test.tsx (38 tests) 1705ms
+ ✓ src/components/chat/MessageList.test.tsx (24 tests) 1600ms
+ ✓ src/auth/AuthContext.test.tsx (3 tests) 88ms
+ ✓ src/pages/ChatPageRender.test.tsx (1 test) 153ms
+ ✓ src/scrollbar.test.ts (2 tests) 8ms
+ ✓ src/pages/AdminPage.test.tsx (20 tests) 2058ms
+ ✓ src/components/chat/MessageListRender.test.tsx (1 test) 213ms
+ ✓ src/components/chat/Sidebar.test.tsx (1 test) 101ms
+ ✓ src/components/chat/MessageListLazyFail.test.tsx (1 test) 144ms
+ ✓ src/pages/LoginPage.test.tsx (2 tests) 166ms
+ ✓ src/components/chat/MessageListLazy.test.tsx (1 test) 450ms
+     ✓ 청크가 오기 전에는 같은 글이 평문으로 보이고, 오면 서식으로 바뀐다  447ms
+ ✓ src/components/ErrorBoundary.test.tsx (1 test) 89ms
+ ✓ src/smoke.test.tsx (1 test) 24ms
+ ✓ src/no-emoji.test.ts (1 test) 5ms
+ ✓ src/theme-tokens.test.ts (2 tests) 6ms
+  ✓ 프론트 test
+▶ 프론트 build
+[2Ktransforming...✓ 376 modules transformed.
+✓ built in 345ms
+  ✓ 프론트 build
+▶ 프론트 케이스 수 하한
+케이스 수(frontend) : 실측 222 / 하한 222
+  ✓ 프론트 케이스 수 하한
+▶ 백엔드 이미지 빌드
+  ✓ 백엔드 이미지 빌드
+▶ 시크릿 스캔
+  - 건너뜀: gitleaks 없음 - 커밋 전 최소 한 번은 돌릴 것
+▶ 프론트 의존성 audit
+  ✓ 프론트 의존성 audit
+▶ 백엔드 의존성 스캔
+  - 건너뜀: trivy 없음
+돌린 검사는 전부 통과
+건너뜀 3건 - 이 검사들은 돌지 않았다:
+도구를 설치하고 다시 돌리기 전까지 이 항목은 "통과"가 아니라 "모름"이다.
