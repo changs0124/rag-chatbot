@@ -6,7 +6,7 @@
 
 ## 스택 · 실행 · 배포
 
-- **스택 · 버전** : [README](../README.md) 「기술 스택」. CI 7잡과 주 1회 스케줄은 [CONVENTIONS](./CONVENTIONS.md) 「테스트·CI 게이트」
+- **스택 · 버전** : [README](../README.md) 「기술 스택」. CI 7잡과 주 1회 스케줄은 [CONVENTIONS](./CONVENTIONS.md) 「테스트·CI 게이트」, 체크 장애 대응은 [CONVENTIONS](./CONVENTIONS.md) 「CI 장애 대응」
 - **로컬 실행** : [README](../README.md) 「로컬 실행」. 환경변수 정본은 `.env.example` 셋, `APP_MODE` 가드는 [backend](./02_architecture/backend.md) 「실행 모드」
 - **배포** : 2026-10-06 운영 시작. 절차는 [backend](./02_architecture/backend.md) 「배포」 · [frontend](./02_architecture/frontend.md) 「배포 (Vercel)」
 
@@ -26,17 +26,17 @@
 | [Backend](./02_architecture/backend.md) | 레이어 · 인증 · SSE 계약 · 유량 제어 · 배포 |
 | [디자인 시스템](./02_architecture/design-system.md) | 색 토큰 · 타이포 · 모션 · 컴포넌트 규칙 |
 | [Conventions](./CONVENTIONS.md) | 코드 스타일 & 패턴 규칙 |
-| [Feedback](./FEEDBACK.md) | 다건 수정 요청을 모아 한 번에 전달 · **지금 비어 있음** |
-| [References](./03_references/) | 외부 레퍼런스(디자인 · API · 라이브러리) · **지금 비어 있음** |
+| [Feedback](./FEEDBACK.md) | 다건 수정 요청을 모아 한 번에 전달 |
+| [References](./03_references/) | 외부 레퍼런스(디자인 · API · 라이브러리) |
 | [Current Tasks](./04_tasks/current-sprint.md) | 현재 진행 중 작업 |
-| [Backlog](./04_tasks/backlog.md) | 전체 태스크 |
-| [Open Issues](./05_issues/open/) | 처리 중인 이슈(해결분은 `05_issues/resolved/`) · **지금 비어 있음** |
+| [Backlog](./04_tasks/backlog.md) | 코드베이스에서 확인된 미결 항목 |
+| [Open Issues](./05_issues/open/) | 처리 중인 이슈(해결분은 `05_issues/resolved/`) |
 | [Changelog](./06_changelog/CHANGELOG.md) | 변경 이력 |
 
 **정본 위치** — `REQ-` 는 요구사항정의서, `FEAT-` 는 기능명세서, `API-` 는 API 명세서,
-테이블·컬럼은 ERD 가 정본이다. 기능이 늘면 새 파일을 만들지 않고 해당 문서에 병합한다.
+테이블·컬럼은 ERD 가 정본이다. 이슈(`#NNN`)의 정본은 GitHub Issues 다. 기능이 늘면 새 파일을 만들지 않고 해당 문서에 병합한다.
 
-**비어 있는 자리** : `지금 비어 있음` 표시 · `99_inbox/` · `02_architecture/diagrams/` · `04_tasks/completed/` 는 `project-docs` 골격용 `.gitkeep` 뿐이다.
+**비어 있는 자리** : `03_references/` · `05_issues/` · `99_inbox/` · `02_architecture/diagrams/` · `04_tasks/completed/` 는 `project-docs` 골격용 `.gitkeep` 뿐이다.
 쓸 것이 생기면 새 자리를 만들지 말고 여기에 넣는다. `99_inbox/` 는 `/project-docs-gen` 산출물 임시 보관함이라 검토해 `01_specs/` 로 옮기고 비운다.
 
 **두지 않는 것** : 정보구조도 · 플로우차트 · 와이어프레임 · 시나리오 케이스 · 역할 매트릭스 ·
@@ -54,4 +54,4 @@
 
 문서에 없는 파일 경로를 적으면 CI의 `scripts/check-doc-refs.sh`가 실패한다. 푸시 전에 `bash scripts/check-all.sh docs` 로 미리 확인할 수 있다.
 
-루트 `CLAUDE.md`의 행동 지침(가정 금지 · 단순함 우선 · 외과적 변경 · 목표 기반 실행)이 위 규칙보다 우선한다.
+루트 `CLAUDE.md`의 행동 지침(가정 금지 · 단순함 우선 · 외과적 변경 · 목표 기반 실행)이 이 가이드의 1~4번보다 우선한다.

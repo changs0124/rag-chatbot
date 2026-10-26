@@ -28,8 +28,7 @@
 ### DI·컨트롤러 패턴
 - **생성자 주입만** 쓴다. `@Autowired` 필드 주입 금지. 필드는 `private final`.
 - 컨트롤러는 얇게: 검증 애너테이션(`@Valid`) → 서비스 호출 → DTO 반환이 기본. 사용자 식별은 `CurrentUser.id()`.
-- 성공 상태는 컨트롤러가 정한다 — 삭제류는 `ResponseEntity<Void>` + `noContent()`(204),
-  `@ResponseStatus(CREATED)`(201) 는 둘(문서 업로드 · 계정 발급), 그 외는 200. 성공 상태·본문 형태의 자세한 규칙은
+- 성공 상태는 컨트롤러가 정한다 — 어느 핸들러가 어떤 성공 상태를 내는지와 본문 형태의 규칙은
   [backend.md](./02_architecture/backend.md) 「API 설계 원칙」이 정본이다.
 - 소유권 검증은 **애플리케이션 코드가** 한다(DB RLS 없음). `findByIdAndUser(...)` 형태로 조회 단계에서 막는다.
 
@@ -124,7 +123,23 @@
   `static` · `secrets` · `deps (백엔드)` · `deps (프론트)`. **이 목록은 축약이다**(#172) — 실제 context 는 `ci.yml` 잡 `name:` 전체 문자열이고,
   여기에 옮겨 적지 않는다. 무엇을 넣고 뺐는지의 이유는 CHANGELOG #166 이다(`secrets` · `deps` 가 필수인 근거는 위 #135).
 
-  **ruleset 을 복원해야 하면 문서를 보지 말고 정본에서 뽑는다.**
+  **`ci.yml` 의 `name:` 을 고치면 ruleset context 도 같이 고친다** — 하나만 바꾸면 체크가 영영 pending 이 되어 merge 가 막힌다.
+  merge 가 체크에 막혔을 때(체크 pending · 체크 없음 · ruleset 복원 · 필수 목록 확인)의 절차는 아래 「CI 장애 대응」.
+- **관리자 우회(`bypass_actors` = Repository admin / always)는 유지하고 strict(최신 `main` 위)는 끈다**(#166) — 이유는 CHANGELOG #166.
+- **게이트는 API 응답이 아니라 일부러 깨뜨린 PR 의 merge 거부로 검증한다**(관리자 우회가 없는 임시 ruleset 에서. 방법은 CHANGELOG #166).
+- **`.issue/**` 만 바뀐 푸시는 CI 를 건너뛴다**(`paths-ignore`). 증거 미러 커밋은 코드가 한 줄도
+  바뀌지 않는다. `pull_request` 에는 넣지 않았다 — 건너뛴 워크플로는 required checks 에서
+  pending 으로 남아 merge 를 막는다.
+- **푸시 전 예행은 `bash scripts/check-all.sh`** 다. CI 와 같은 스크립트를 로컬에서 돌린다.
+  `docs`(문서만) · `quick`(무거운 빌드 제외) · 전체 세 모드가 있고 종료 코드가 실패한 검사 수다.
+  gitleaks·Trivy 가 없으면 건너뛰되 **그 사실을 크게 찍는다** — 조용히 넘어가면 「통과」와
+  「검사 안 함」이 구분되지 않는다.
+
+## CI 장애 대응
+
+위 「테스트·CI 게이트」의 필수 체크가 merge 를 막을 때의 절차다. 규칙 자체는 그 절에 있다.
+
+- **ruleset 을 복원해야 하면 문서를 보지 말고 정본에서 뽑는다.**
 
   ```bash
   gh api repos/changs0124/rag-chatbot/rules/branches/main \
@@ -132,12 +147,11 @@
   ```
 
   규칙이 사라져 그것조차 못 읽는 상황이면 `ci.yml` 의 잡 `name:` 값을 그대로 쓴다.
-  **`ci.yml` 의 `name:` 을 고치면 ruleset context 도 같이 고친다** — 하나만 바꾸면 체크가 영영 pending 이 되어 merge 가 막힌다.
 - **체크가 「어긋난 것」과 「아예 없는 것」은 증상이 같고 고치는 법이 다르다**(#170).
   둘 다 merge 가 영구 차단된 모습으로 보이므로 먼저 어느 쪽인지 가린다.
 
   ```text
-  체크가 이름만 다른 것이 붙어 pending   -> 위 항목. ci.yml 의 name: 과 ruleset context 를 맞춘다
+  체크가 이름만 다른 것이 붙어 pending   -> 위 「테스트·CI 게이트」의 name: 규칙. ci.yml 의 name: 과 ruleset context 를 맞춘다
   체크가 아예 붙지 않음                   -> run 자체가 안 생긴 것이다. 아래 절차
   ```
 
@@ -156,7 +170,6 @@
   ```
 
   **`gh workflow run` 으로는 풀리지 않는다** — PR 의 required checks 는 `workflow_dispatch` 로 생긴 체크를 세지 않는다.
-- **관리자 우회(`bypass_actors` = Repository admin / always)는 유지하고 strict(최신 `main` 위)는 끈다**(#166) — 이유는 CHANGELOG #166.
 - **무엇이 필수인지 확인하는 명령은 하나다.**
 
   ```bash
@@ -166,14 +179,6 @@
   레거시 branch protection 과 ruleset 을 **둘 다** 모아 보여준다. `branches/main` 의
   `.protection.required_status_checks.enforcement_level` 로는 **ruleset 이 안 보인다**(`off` 로 나온다) —
   그 명령으로 판단하면 걸려 있는데 없다고 읽는다.
-- **게이트는 API 응답이 아니라 일부러 깨뜨린 PR 의 merge 거부로 검증한다**(관리자 우회가 없는 임시 ruleset 에서. 방법은 CHANGELOG #166).
-- **`.issue/**` 만 바뀐 푸시는 CI 를 건너뛴다**(`paths-ignore`). 증거 미러 커밋은 코드가 한 줄도
-  바뀌지 않는다. `pull_request` 에는 넣지 않았다 — 건너뛴 워크플로는 required checks 에서
-  pending 으로 남아 merge 를 막는다.
-- **푸시 전 예행은 `bash scripts/check-all.sh`** 다. CI 와 같은 스크립트를 로컬에서 돌린다.
-  `docs`(문서만) · `quick`(무거운 빌드 제외) · 전체 세 모드가 있고 종료 코드가 실패한 검사 수다.
-  gitleaks·Trivy 가 없으면 건너뛰되 **그 사실을 크게 찍는다** — 조용히 넘어가면 「통과」와
-  「검사 안 함」이 구분되지 않는다.
 
 ## Git 커밋 메시지
 

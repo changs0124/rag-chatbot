@@ -274,7 +274,7 @@ erDiagram
 | V9 | `rag_documents` 살아 있는 행의 `openai_file_id` 부분 유니크 — 스토어 동기화(#193) |
 | V10 | `conversations.vector_store_id` · `attachments.openai_file_id` · `citations.uri` 삭제, `attachments.file_type` check 를 `image` 하나로 — 한 번도 값이 들어간 적 없는 대화별 OpenAI 정리 잔재(#391, #124) |
 
-**기존 마이그레이션을 수정하지 않는다.** 새 변경은 항상 새 파일로 추가한다.
+마이그레이션을 고치지 않고 새 파일로 더하는 규칙은 [CONVENTIONS](../CONVENTIONS.md) 「스키마」가 정본이다.
 
 **소급 보정(backfill)을 하지 않는 것도 결정이다.** V3 이전의 중단 답변, V4 이전의 토큰 값, V7 이전의 타임아웃 여부는
 식별할 방법이 없어 비운 채 둔다. 개발 단계 데이터라 감수한다.
