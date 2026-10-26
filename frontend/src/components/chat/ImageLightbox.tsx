@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type React from 'react'
 import { IconChevronLeft, IconChevronRight, IconClose, IconDownload } from '../icons'
 
@@ -29,6 +29,7 @@ export default function ImageLightbox({
   startIndex: number
   onClose: () => void
 }) {
+  const titleId = useId()
   const [index, setIndex] = useState(startIndex)
   const current = items[index]
 
@@ -124,8 +125,9 @@ export default function ImageLightbox({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
+      <h2 id={titleId} className="sr-only">이미지 보기</h2>
 
       <div className="absolute top-3 right-3 z-10 flex gap-1">
         <button

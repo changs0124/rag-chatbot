@@ -67,16 +67,17 @@ export default function MyPage() {
       <p className="mb-6 text-sm text-ink-muted">{user?.email}</p>
 
       {notice && (
-        <p className="mb-4 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-accent">{notice}</p>
+        <p role="status" className="mb-4 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-accent">{notice}</p>
       )}
       {error && (
-        <p className="mb-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</p>
+        <p role="alert" className="mb-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm text-danger">{error}</p>
       )}
 
       <div className="space-y-4">
         <Card title="이름">
           <div className="flex gap-2">
             <TextInput
+              aria-label="이름"
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={MAX_NAME_CHARS}
@@ -91,6 +92,7 @@ export default function MyPage() {
           <div className="space-y-2.5">
             <TextInput
               type="password"
+              aria-label="현재 비밀번호"
               placeholder="현재 비밀번호"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
@@ -98,6 +100,7 @@ export default function MyPage() {
             />
             <TextInput
               type="password"
+              aria-label="새 비밀번호 (8자 이상)"
               placeholder="새 비밀번호 (8자 이상)"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}

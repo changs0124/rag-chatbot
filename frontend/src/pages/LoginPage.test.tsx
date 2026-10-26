@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
+import { api } from '../lib/api'
 import LoginPage from './LoginPage'
 
 function renderLogin() {
@@ -31,5 +32,18 @@ describe('LoginPage', () => {
     renderLogin()
     expect(screen.queryByText(/회원가입/)).not.toBeInTheDocument()
     expect(screen.getByText(/계정은 관리자가 발급합니다/)).toBeInTheDocument()
+  })
+
+  // #484 F6 : 오류 자리를 늘 비워 두는 방식이라 role=alert 대신 라이브 영역으로 낭독시킨다
+  it('로그인 실패 문구가 라이브 영역에 뜬다', async () => {
+    vi.spyOn(api, 'post').mockRejectedValue(new Error('boom'))
+    renderLogin()
+    fireEvent.change(screen.getByLabelText('이메일'), { target: { value: 'a@b.com' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+
+    const text = await screen.findByText(/오류가 발생했습니다/)
+    expect(text).toHaveAttribute('aria-live', 'assertive')
+    await waitFor(() => expect(api.post).toHaveBeenCalled())
   })
 })
