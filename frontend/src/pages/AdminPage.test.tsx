@@ -399,4 +399,32 @@ describe('관리자 화면', () => {
     // 되돌려졌으므로 목록 조회 자체가 일어나지 않는다
     expect(listDocuments).not.toHaveBeenCalled()
   })
+
+  // #484 F6 : 오류는 alert, 성공·진행 알림은 status
+  it('삭제 실패는 alert, 동기화 결과는 status 로 낭독된다', async () => {
+    vi.mocked(listDocuments).mockResolvedValue([doc()])
+    vi.mocked(deleteDocument).mockRejectedValueOnce(new Error('boom'))
+    vi.mocked(syncDocuments).mockResolvedValueOnce({ added: 0, total: 2 })
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: '삭제' }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '스토어와 동기화' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('이미 스토어와 맞습니다')
+  })
+
+  // #484 F10
+  it('확인 창과 발급 창은 이름이 있는 대화상자다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([
+      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
+    ])
+    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+    expect(screen.getByRole('dialog', { name: /박사원 님의 비밀번호를 초기화할까요/ })).toBeInTheDocument()
+
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '초기화' }))
+    expect(await screen.findByRole('dialog', { name: '임시 비밀번호가 발급되었습니다' })).toBeInTheDocument()
+  })
 })

@@ -21,6 +21,7 @@ const chatState = vi.hoisted(() => ({
   // 제목 수정 입력은 활성 대화가 있어야 뜬다(#371)
   conversations: [] as { id: string; title: string }[],
   activeId: null as string | null,
+  error: null as string | null,
 }))
 
 vi.mock('../hooks/useChat', () => ({
@@ -31,7 +32,7 @@ vi.mock('../hooks/useChat', () => ({
     loadingMessages: chatState.loadingMessages,
     streaming: false,
     stage: null,
-    error: null,
+    error: chatState.error,
     send: vi.fn(),
     stop: vi.fn(),
     selectConversation: vi.fn(),
@@ -190,5 +191,19 @@ describe('ChatPage 제목 수정 (#371)', () => {
 
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(screen.queryByDisplayValue('대화')).not.toBeInTheDocument()
+  })
+})
+
+// #484 F6 : 스트림 오류 배너는 화면에 뜨는 즉시 낭독돼야 한다
+describe('ChatPage 오류 배너 (#484)', () => {
+  afterEach(() => {
+    chatState.error = null
+  })
+
+  it('채팅 오류는 role=alert 로 나온다', () => {
+    chatState.error = '답변을 받지 못했습니다'
+    renderChatPage()
+
+    expect(screen.getByRole('alert')).toHaveTextContent('답변을 받지 못했습니다')
   })
 })

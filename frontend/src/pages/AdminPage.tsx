@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
@@ -124,7 +124,7 @@ export default function AdminPage() {
       {[listError, error].map(
         (m, i) =>
           m && (
-            <p key={i} className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
+            <p key={i} role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
               {m}
             </p>
           ),
@@ -230,7 +230,9 @@ function DocumentsSection({
             {syncing ? '맞추는 중…' : '스토어와 동기화'}
           </button>
         </div>
-        {syncNotice && <p className="mt-2 text-xs text-ink-muted">{syncNotice}</p>}
+        <div role="status">
+          {syncNotice && <p className="mt-2 text-xs text-ink-muted">{syncNotice}</p>}
+        </div>
 
         {loaded && documents.length === 0 ? (
           <div className="mt-3 rounded-2xl bg-surface px-6 py-10 text-center">
@@ -307,6 +309,7 @@ function UsersSection({
   // 이미 무효가 된 비밀번호나 다른 사람의 값만 남는다
   const [resettingId, setResettingId] = useState<string | null>(null)
   // kind 로 갈리는 것은 안내 문구뿐이다 — 발급은 "새 계정"이고 초기화는 "기존 세션이 끊긴다"
+  const issuedTitleId = useId()
   const [issued, setIssued] = useState<{
     kind: 'created' | 'reset'
     name: string
@@ -435,10 +438,10 @@ function UsersSection({
       )}
 
       {issued && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={issuedTitleId}>
           <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
             <div className="rounded-[1.375rem] bg-raised p-6">
-              <h2 className="text-base font-semibold text-ink">
+              <h2 id={issuedTitleId} className="text-base font-semibold text-ink">
                 {issued.kind === 'created' ? '계정이 발급되었습니다' : '임시 비밀번호가 발급되었습니다'}
               </h2>
               <p className="mt-4 rounded-xl bg-surface px-4 py-3 text-center font-mono text-base text-ink">

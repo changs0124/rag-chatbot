@@ -152,4 +152,28 @@ describe('MyPage 이름 (#413)', () => {
     // 비밀번호 칸은 password 타입이라 textbox 는 이름 칸 하나다
     expect(screen.getByRole('textbox')).toHaveAttribute('maxLength', '50')
   })
+
+  // #484 F7 : placeholder 는 이름이 아니다 - 입력하면 사라지고 낭독기는 「편집 가능 텍스트」로만 읽는다
+  it('이름 · 비밀번호 입력에 접근 가능한 이름이 있다', () => {
+    renderMyPage()
+
+    expect(screen.getByLabelText('이름')).toHaveAttribute('maxLength', '50')
+    expect(screen.getByLabelText('현재 비밀번호')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^새 비밀번호/)).toBeInTheDocument()
+  })
+
+  // #484 F6 : 성공은 status, 오류는 alert
+  it('성공 알림은 status, 오류는 alert 로 낭독된다', async () => {
+    vi.mocked(updatePassword).mockRejectedValueOnce(new Error('boom'))
+    renderMyPage()
+    submitPasswordChange()
+    expect(await screen.findByRole('alert')).toHaveTextContent(/오류가 발생했습니다/)
+
+    vi.mocked(updatePassword).mockResolvedValueOnce({
+      token: 'new-token',
+      user: { id: 'u1', email: 'a@b.com', name: '사용자', role: 'user' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '비밀번호 변경' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('비밀번호를 변경했습니다')
+  })
 })

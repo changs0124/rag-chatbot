@@ -206,7 +206,7 @@ export default function ChatPage() {
         </div>
 
         {chat.error && (
-          <div className="px-4 pb-1 text-center text-[13px] text-danger">{chat.error}</div>
+          <div role="alert" className="px-4 pb-1 text-center text-[13px] text-danger">{chat.error}</div>
         )}
 
         <Composer

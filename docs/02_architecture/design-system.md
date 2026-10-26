@@ -210,6 +210,8 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
   무채색 화면에서 혼자 튄다. 필요한 모양은 같은 규약(24 격자 · 1.8 stroke · `currentColor`)으로 `icons.tsx` 에 더한다.
   아이콘은 뜻을 혼자 전하지 않는다 — 옆 글자를 남기고 아이콘은 `aria-hidden`(Svg 기본값).
   `src/no-emoji.test.ts` 가 화면 코드(주석 제외)를 훑어 막는다.
+- **접근성 규칙(#484)** : 오류 문구는 `role="alert"`(조건부로 삽입해도 낭독된다), 성공 알림은 `role="status"` 를 **늘 렌더하는 그릇**에 글만 바꿔 넣는다(조건부로 삽입하면 낭독되지 않는다. 자리를 늘 비워 두는 문구는 `aria-live`). 입력은 placeholder 만으로 두지 않고 `<label>` 이나 `aria-label` 을 단다.
+  `role="dialog"` 는 `aria-labelledby`(`useId`)로 제목에 잇고, **확인 모달의 첫 포커스는 파괴 버튼이 아니라 「취소」** 다. 호버로만 드러나는 버튼은 `focus-visible` · `group-focus-within` 에서도 드러낸다.
 
 ## 6. supanova 스킬에서 **버린** 규칙과 사유
 

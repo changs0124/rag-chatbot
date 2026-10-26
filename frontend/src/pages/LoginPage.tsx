@@ -72,7 +72,7 @@ export default function LoginPage() {
               </Field>
 
               {/* 자리를 미리 비워 둠 - 오류가 뜰 때 폼 전체가 밀려 내려가면 눌린 버튼 위치가 어긋남 */}
-              <p className="min-h-5 text-[13px] leading-5 text-danger">{error}</p>
+              <p aria-live="assertive" className="min-h-5 text-[13px] leading-5 text-danger">{error}</p>
 
               <button
                 type="submit"

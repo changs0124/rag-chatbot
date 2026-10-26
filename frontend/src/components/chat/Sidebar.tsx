@@ -89,8 +89,8 @@ export default memo(function Sidebar({
                   </button>
                   <button
                     onClick={() => setPendingDelete(c)}
-                    aria-label="대화 삭제"
-                    className="shrink-0 rounded-md p-3.5 text-ink-muted opacity-100 md:p-1 transition duration-150 ease-[var(--ease-out-quint)] hover:text-danger md:opacity-0 md:group-hover:opacity-100"
+                    aria-label={`'${c.title}' 대화 삭제`}
+                    className="shrink-0 rounded-md p-3.5 text-ink-muted opacity-100 md:p-1 transition duration-150 ease-[var(--ease-out-quint)] hover:text-danger md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100"
                   >
                     <IconClose className="h-4 w-4" />
                   </button>
