@@ -1,0 +1,25 @@
+## vercel.json connect-src
+16:connect-src 'self' https://api.chseong.fyi;
+
+## ImageLightbox.tsx download()
+  async function download() {
+    try {
+      const res = await fetch(current.src)
+      // 서명 URL 이 만료되면 404 JSON 이 온다. 상태를 안 보면 그 JSON 이 그림 파일로 저장됨(#324)
+      if (!res.ok) return
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      // 첨부는 원래 파일명을 모른다. 확장자가 없으면 OS 가 열 프로그램을 못 고르므로 받은 형식에서 붙임
+      const ext = blob.type.startsWith('image/') ? '.' + blob.type.slice(6).split('+')[0] : ''
+      a.download = current.name ?? `image${ext}`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      // 만료·네트워크 실패. 저장만 못 한 것이므로 모달은 그대로 둠
+    }
+  }
+
+## 근거
+CSP3 : fetch() 는 connect-src 지시어의 대상(fetch directive). blob:/data: 는 출처 목록에 없으면 매치되지 않으므로 fetch(blob:) 는 네트워크 오류(TypeError)로 reject 되고 download() 의 catch 가 삼킨다. img-src 에는 blob: data: 가 있어 미리보기는 보이지만 connect-src 에는 없다.

@@ -1,0 +1,15 @@
+{"mode": "a", "run": 0, "status_line": null, "tokens_seen": 0, "cut_after_s": 0.0, "messages": [], "get": 200, "delete": 204}
+{"mode": "b", "run": 0, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 0, "cut_after_s": 0.33, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}], "get": 200, "delete": 204}
+{"mode": "c", "run": 0, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 6, "cut_after_s": 7.5, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}, {"role": "assistant", "status": "complete", "stopped": true, "len": 30}], "get": 200, "delete": 204}
+{"mode": "a", "run": 0, "status_line": null, "tokens_seen": 0, "cut_after_s": 0.0, "messages": [], "get": 200, "delete": 204}
+{"mode": "a", "run": 1, "status_line": null, "tokens_seen": 0, "cut_after_s": 0.0, "messages": [], "get": 200, "delete": 204}
+{"mode": "a", "run": 2, "status_line": null, "tokens_seen": 0, "cut_after_s": 0.0, "messages": [], "get": 200, "delete": 204}
+{"mode": "a", "run": 3, "status_line": null, "tokens_seen": 0, "cut_after_s": 0.0, "messages": [], "get": 200, "delete": 204}
+{"mode": "b", "run": 0, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 0, "cut_after_s": 0.34, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}], "get": 200, "delete": 204}
+{"mode": "b", "run": 1, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 0, "cut_after_s": 0.23, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}], "get": 200, "delete": 204}
+{"mode": "b", "run": 2, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 0, "cut_after_s": 0.19, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}], "get": 200, "delete": 204}
+{"mode": "b", "run": 3, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 0, "cut_after_s": 0.19, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}], "get": 200, "delete": 204}
+{"mode": "c", "run": 0, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 3, "cut_after_s": 7.14, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}, {"role": "assistant", "status": "complete", "stopped": true, "len": 21}], "get": 200, "delete": 204}
+{"mode": "c", "run": 1, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 4, "cut_after_s": 9.99, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}, {"role": "assistant", "status": "complete", "stopped": true, "len": 21}], "get": 200, "delete": 204}
+{"mode": "c", "run": 2, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 4, "cut_after_s": 7.94, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}, {"role": "assistant", "status": "complete", "stopped": true, "len": 31}], "get": 200, "delete": 204}
+{"mode": "c", "run": 3, "status_line": "HTTP/1.1 200 OK", "tokens_seen": 3, "cut_after_s": 7.12, "messages": [{"role": "user", "status": "complete", "stopped": false, "len": 30}, {"role": "assistant", "status": "complete", "stopped": true, "len": 21}], "get": 200, "delete": 204}

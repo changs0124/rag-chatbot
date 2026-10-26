@@ -1,0 +1,10 @@
+Using Node v24.19.0
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/481-lightbox-blob-download/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  17:04:02
+   Duration  1.07s (transform 54ms, setup 199ms, import 79ms, tests 331ms, environment 338ms)
+

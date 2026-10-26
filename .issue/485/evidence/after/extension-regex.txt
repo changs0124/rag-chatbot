@@ -1,0 +1,3 @@
+src/main/java/com/ragchatbot/openai/CitationMarkupFilter.java:176:		String name = SourceNameRewriter.EXTENSION.matcher(file).replaceFirst("");
+src/main/java/com/ragchatbot/openai/SourceNameRewriter.java:33:	static final Pattern EXTENSION = Pattern.compile("\\.(md|txt|pdf|docx?|xlsx?|csv|json|html?)$",
+src/main/java/com/ragchatbot/openai/SourceNameRewriter.java:63:			String stem = EXTENSION.matcher(file).replaceFirst("");

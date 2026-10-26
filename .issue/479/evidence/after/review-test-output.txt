@@ -1,0 +1,28 @@
+17:40:25.402 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file ªË¡¶ Ω«∆– file-1 (1»∏ Ω√µµ): 400 Bad Request: [no body]
+17:40:25.404 [main] ERROR com.ragchatbot.openai.OpenAiRealService -- OpenAI ∆ƒ¿œ file-1 ¿ª ¡ˆøÏ¡ˆ ∏¯«ÿ Ω∫≈‰æÓ π€ ∞Ìæ∆∑Œ ≥≤¿Ω - µø±‚»≠∑Œµµ ∫∏¿Ã¡ˆ æ ¿∏¥œ OpenAI ø°º≠ ¡˜¡¢ ¡ˆøÔ ∞Õ (DELETE /v1/files/file-1)
+17:40:25.471 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 503 Service Unavailable: [no body]
+17:40:25.774 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 503 Service Unavailable: [no body]
+17:40:26.384 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 503 Service Unavailable: [no body]
+17:40:26.697 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 500 Internal Server Error: [no body]
+17:40:26.998 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 500 Internal Server Error: [no body]
+17:40:27.601 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file ªË¡¶ Ω«∆– file-1 (3»∏ Ω√µµ): 500 Internal Server Error: [no body]
+17:40:27.602 [main] WARN com.ragchatbot.openai.OpenAiRealService -- Ω∫≈‰æÓ ø¨∞· «ÿ¡¶ Ω«∆–∑Œ file file-1 ¿∫ ¡ˆøÏ¡ˆ æ ¿Ω - µø±‚»≠«œ∏È ∏Ò∑œø° ¥ŸΩ√ ∫∏ø© ¥ŸΩ√ ¡ˆøÔ ºˆ ¿÷¿Ω
+17:40:27.614 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 503 Service Unavailable: [no body]
+17:40:27.928 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 503 Service Unavailable: [no body]
+17:40:28.538 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file ªË¡¶ Ω«∆– file-1 (3»∏ Ω√µµ): 503 Service Unavailable: [no body]
+17:40:28.538 [main] ERROR com.ragchatbot.openai.OpenAiRealService -- OpenAI ∆ƒ¿œ file-1 ¿ª ¡ˆøÏ¡ˆ ∏¯«ÿ Ω∫≈‰æÓ π€ ∞Ìæ∆∑Œ ≥≤¿Ω - µø±‚»≠∑Œµµ ∫∏¿Ã¡ˆ æ ¿∏¥œ OpenAI ø°º≠ ¡˜¡¢ ¡ˆøÔ ∞Õ (DELETE /v1/files/file-1)
+17:40:28.556 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 429 : [no body]
+17:40:28.937 [main] WARN com.ragchatbot.openai.OpenAiRealService -- OpenAI ∞° ∆ƒ¿œ a.md ¿ª ∞≈¿˝«‘ 413: code= message=upstream-detail
+17:40:28.957 [main] WARN com.ragchatbot.openai.OpenAiRealService -- OpenAI ∞° ∆ƒ¿œ a.md ¿ª ∞≈¿˝«‘ 415: code= message=upstream-detail
+17:40:29.380 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 503 Service Unavailable: [no body]
+17:40:29.688 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file ªË¡¶ ¿œΩ√ Ω«∆– file-1 - ¥ŸΩ√ Ω√µµ«‘: 503 Service Unavailable: [no body]
+17:40:30.295 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file ªË¡¶ Ω«∆– file-1 (3»∏ Ω√µµ): 503 Service Unavailable: [no body]
+# exit 0 (-q). surefire Î≥¥Í≥†ÏÑú :
+-------------------------------------------------------------------------------
+Test set: com.ragchatbot.openai.OpenAiRealUploadDocumentTest
+-------------------------------------------------------------------------------
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.513 s -- in com.ragchatbot.openai.OpenAiRealUploadDocumentTest
+-------------------------------------------------------------------------------
+Test set: com.ragchatbot.openai.OpenAiRealDeleteDocumentTest
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.179 s -- in com.ragchatbot.openai.OpenAiRealDeleteDocumentTest

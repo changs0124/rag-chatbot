@@ -56,13 +56,13 @@ exception/    ApiExceptions + GlobalExceptionHandler
 | 예외 | 상태 | code |
 |------|------|------|
 | `MethodArgumentNotValidException` | 400 | `BAD_REQUEST` |
-| `BadRequestException` | 400 | `BAD_REQUEST` |
+| `BadRequestException`(관리자 업로드를 OpenAI 가 내용 때문에 거절한 413 · 415 도 고정 문구로, #479) | 400 | `BAD_REQUEST` |
 | `UnauthorizedException` | 401 | `UNAUTHORIZED` |
 | `NotFoundException` | 404 | `NOT_FOUND` |
 | `ConflictException` | 409 | `CONFLICT` |
 | `MaxUploadSizeExceededException` | 413 | `PAYLOAD_TOO_LARGE` |
 | `RateLimitException` | 429 | `RATE_LIMIT` |
-| `UpstreamUnavailableException`(관리자 업로드 중 OpenAI 5xx · 연결 실패, #476) | 503 · **WARN 한 줄** | `SERVICE_UNAVAILABLE` |
+| `UpstreamUnavailableException`(관리자 업로드 중 OpenAI 5xx · 429 · 연결 실패, #476 · #479) | 503 · **WARN 한 줄** | `SERVICE_UNAVAILABLE` |
 | `HttpMessageNotReadableException` | 400 | `BAD_REQUEST` |
 | `MethodArgumentTypeMismatchException` | 400 | `BAD_REQUEST` |
 | `NoResourceFoundException` | 404 | `NOT_FOUND` |
@@ -173,7 +173,8 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - **중단(사용자 정지 · 연결 끊김)은 실패가 아니다** — 받은 데까지 `status=complete` + `stopped=true`, 서버 타임아웃은 `timed_out` 으로 따로 남긴다(#84). 인용은 스트림 끝에 오므로 중단 시점에는 늘 0건이라
   `stopped` 가 없으면 무자료 배너가 거짓으로 붙고, `timed_out` 이 없으면 타임아웃이 마지막 토큰 타이밍에 따라 중단 · 완료 · 오류를 사칭한다.
   저장 조합은 `docs/01_specs/erd.md` 「messages」 가 정본이다. 자원 반납은 읽기 타임아웃이 맡는다(아래 「유량 제어」).
-- **저장 텍스트는 화면에 닿은 것과 같다.** 토큰을 보낸 **뒤에** 버퍼에 담아, 전송 실패한 토큰은 남기지 않는다.
+- **저장 텍스트는 전송에 성공한 토큰까지다.** 토큰을 보낸 **뒤에** 버퍼에 담아, 전송 실패한 토큰은 남기지 않는다.
+  끊김은 끊긴 뒤의 전송이 실패할 때 드러나고 생성도 그때 멈춘다 — 화면에 보이는 것과의 관계는 `frontend.md` 「스트리밍 UI 규칙」(#487).
 - 스트리밍 구간에서는 DB 커넥션을 잡지 않는다. 저장은 `ChatPersistenceService` 가 메시지·출처·touch 를
   **한 트랜잭션**으로 처리한다.
 - **진행 단계 라벨 문자열은 LLM 구현이 소유한다.** `ChatService` 는 실행 모드를 알지 못한다. 목업은 목업임이
@@ -391,10 +392,12 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 손잡이가 없다**. 해제 DELETE 에는 `Content-Type: application/json` 을 명시한다. File 이 남아 있으면 「스토어와 동기화」가
 행을 되살려 관리자가 다시 지울 수 있고, 고아 연결(File 404)은 동기화가 `missing` 으로 받아 연결을 끊는다.
 
-**일시 장애는 `deleteQuietly` 가 다시 보낸다(#476).** 5xx · 연결 거절만 최대 3번(300 · 600ms 간격)이고, 읽기 타임아웃은
+**일시 장애는 `deleteQuietly` 가 다시 보낸다(#476).** 5xx · 429 · 연결 실패(거절 · DNS 실패 · 경로 없음, #479)만 최대 3번(300 · 600ms 간격)이고, 읽기 타임아웃은
 한 번에 요청 타임아웃만큼 걸려 되풀이하지 않는다. 해제 뒤 File 삭제가 끝내 실패하면 그 File 은 스토어 밖이라 동기화로도
 찾을 수 없어 **ERROR 로그의 `file_id` 가 유일한 단서**다. 업로드 쪽 `POST` 는 다시 보내지 않는다 — 처리된 요청을 되풀이하면
-같은 파일이 둘 생긴다. 그 실패는 `UpstreamUnavailableException` 으로 503 이 된다.
+같은 파일이 둘 생긴다. 그 실패는 `UpstreamUnavailableException` 으로 503 이 된다. 스토어 연결이 실패하면
+해제 → File 삭제 순으로 정리한다(#479) — 실패 응답이어도 연결이 생겼을 수 있다. `deleteDocument` 와 달리 **해제가 끝내
+실패해도 File 은 지운다** — 남은 연결은 동기화가 File 404 를 `missing` 으로 잡아 끊는다.
 
 `app.jwt.secret` 은 비어 있는지만이 아니라 **길이도 본다** — 32바이트 미만이면 `JwtSecretPolicy` 가
 기동을 막는다. 하한을 한 곳에 둔 이유는 이 키를 `JwtService`(aud=auth)와
