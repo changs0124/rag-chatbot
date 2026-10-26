@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+### Changed (테스트)
+- **콜드 실행 간헐 실패 · 거짓 통과 단언 · 빠진 경계를 테스트로 메웠다(#482).** 제품 코드는 그대로다. 케이스 수 하한 백엔드 386 → 389 · 프론트 222 → 226
+  - `MessageListLazy.test.tsx` · `MessageListRender.test.tsx` : 콜드 실행에서 findBy · waitFor 기본 1초에 걸리던 것을 청크 import 대기 + 10초 타임아웃으로 바꿨다
+  - `stream.test.ts` : 프레임 중간 · 줄바꿈 사이 · 한글(3바이트) · 이모지(4바이트) 바이트 중간 · 한 바이트씩 자른 청크 4건. `stream: true` 를 빼거나 버퍼를 이어 붙이지 않으면 실패한다
+  - `AdminDocumentFlowTest` · `AdminDocumentSyncFlowTest` : `isNotNull()` → `DataIntegrityViolationException`(`rag_documents_uploaded_by_fkey`) · `DuplicateKeyException`(`uq_rag_documents_alive_file`). 제약 이름을 바꾸면 실패한다
+  - `SourceNameRewriterTest` : 짧은 이름이 겹치는 문서 중 하나가 `_` 없는 경우 · 겹치는 이름이 나중 검색에서 처음 오는 경우 2건
+  - `OpenAiRealStageMappingTest` : 마지막 delta 가 파일 이름으로 끝나 completed flush 로만 나오는 꼬리(내보낸 토큰 합 == 저장 본문 == 짧은 이름) 1건
+
+### Fixed
+- **확장자 정규식 사본 하나로 · 스니펫 200자 절단이 이모지를 가르지 않게(#485).** `CitationMarkupFilter` 와 `SourceNameRewriter` 에 같은 값으로 두 벌 있던 확장자 정규식을 리라이터 것 하나로 모았다(동작 불변). `SnippetPicker.truncate` 는 200번째 자리가 서로게이트 쌍(BMP 밖 문자)의 앞 절반이면 199자에서 자른다. ZWJ 이모지 · 국기 같은 결합 문자열은 여전히 갈릴 수 있다 - 전에는 반쪽 글자가 DB 에 깨져 남을 수 있었다(`SnippetPickTest` 경계 케이스 2개 추가)
+- **관리자 문서 업로드 · 삭제가 OpenAI 429 · DNS 실패 · 내용 거절을 「처리되지 않은 예외」 500 으로 내고, 스토어 연결 실패 뒤 연결을 남길 수 있던 것을 고쳤다(#479).** #476 분류에서 빠진 응답들(10-26 리뷰 B1 · B2 · B4 · B7 · B3)
+  - 일시 장애에 429 와 연결 실패의 DNS 실패(`UnknownHostException`) · 경로 없음(`NoRouteToHostException`)을 더했다 — 업로드는 `503`, 삭제는 재시도. 429 중 `insufficient_quota` 는 다시 시도해도 같아 뺐다(폴백 ERROR). 연결 타임아웃은 읽기 타임아웃과 메시지로만 갈려 넣지 않았다. 429 재시도는 `Retry-After` 를 따르지 않는다(한계)
+  - 스토어 연결 실패 시 File 만 지우지 않고 연결 해제 → File 삭제 순으로 정리한다(해제 404 는 성공). 해제가 끝내 실패해도 File 은 지운다 — 남은 연결은 동기화가 `missing` 으로 끊는다
+  - `POST /files` 의 413 · 415 는 고정 문구 `400 BAD_REQUEST`. 400 은 우리 요청 결함과 갈리지 않아 예전처럼 폴백 500. 업스트림 원문은 WARN 로그에만 `error.code` · `error.message`(아니면 앞 300자, 줄바꿈은 공백)로
+  - 업로드 504 · 502 를 「다시 시도」로 안내하면 중복 파일이 생길 수 있는 틈은 features.md FEAT-ADMIN-002 실패 표 3단계에 적었다(코드 변경 없음)
+  - 테스트 : TC-ADMIN-070~075 신설 · TC-ADMIN-068 기대 순서(해제 DELETE 가 File DELETE 앞) 갱신 · 백엔드 하한 386 → 392
+
 ### Docs
 - **200 전에 끊긴 턴은 「서버가 답을 끝까지 만들어 저장한다」고 적던 문서 · 주석을 실측대로 고쳤다(#487).** 로컬 목업과 운영 실측 모두에서 서버는 끊긴 뒤의 전송이 실패할 때 생성을 멈췄고, 답을 끝까지 만든 회차는 없었다
   - 로컬(Windows 루프백 → Tomcat 직결, 목업 대역 1.5초 뒤 단계 · 토큰 100ms 간격, 끊기 FIN · RST × 시나리오별 5회) : 200 전 FIN 은 질문만 5/5 · RST 는 질문도 없음 5/5 · 200 뒤 첫 토큰 전 질문만 10/10 · 스트리밍 중 `complete` + `stopped` 10/10(이 간격에서 FIN 은 받은 것보다 1토큰 더 5/5). 결과 `.issue/487/evidence/after/probe-table.txt`

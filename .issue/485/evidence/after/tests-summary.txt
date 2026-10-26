@@ -1,0 +1,4 @@
+name="com.ragchatbot.openai.SnippetPickTest" time="0.037" tests="8" errors="0" skipped="0" failures="0"
+name="com.ragchatbot.openai.SourceNameRewriterTest" time="0.034" tests="11" errors="0" skipped="0" failures="0"
+name="com.ragchatbot.openai.CitationMarkupFilterTest" time="0.097" tests="16" errors="0" skipped="0" failures="0"
+name="com.ragchatbot.openai.CitationFromMarkupTest" time="0.81" tests="7" errors="0" skipped="0" failures="0"

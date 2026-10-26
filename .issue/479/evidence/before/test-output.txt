@@ -1,0 +1,150 @@
+17:06:34.302 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 실패 file-1 (1회 시도): 400 Bad Request: [no body]
+17:06:34.305 [main] ERROR com.ragchatbot.openai.OpenAiRealService -- OpenAI 파일 file-1 을 지우지 못해 스토어 밖 고아로 남음 - 동기화로도 보이지 않으니 OpenAI 에서 직접 지울 것 (DELETE /v1/files/file-1)
+17:06:34.388 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:06:34.703 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:06:35.318 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:06:35.629 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 일시 실패 file-1 - 다시 시도함: 500 Internal Server Error: [no body]
+17:06:35.933 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 일시 실패 file-1 - 다시 시도함: 500 Internal Server Error: [no body]
+17:06:36.538 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai vector_store_file 삭제 실패 file-1 (3회 시도): 500 Internal Server Error: [no body]
+17:06:36.538 [main] WARN com.ragchatbot.openai.OpenAiRealService -- 스토어 연결 해제 실패로 file file-1 은 지우지 않음 - 동기화하면 목록에 다시 보여 다시 지울 수 있음
+17:06:36.554 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:06:36.865 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 일시 실패 file-1 - 다시 시도함: 503 Service Unavailable: [no body]
+17:06:37.471 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 실패 file-1 (3회 시도): 503 Service Unavailable: [no body]
+17:06:37.471 [main] ERROR com.ragchatbot.openai.OpenAiRealService -- OpenAI 파일 file-1 을 지우지 못해 스토어 밖 고아로 남음 - 동기화로도 보이지 않으니 OpenAI 에서 직접 지울 것 (DELETE /v1/files/file-1)
+17:06:37.479 [main] WARN com.ragchatbot.openai.OpenAiRealService -- openai file 삭제 실패 file-1 (1회 시도): 429 : [no body]
+17:06:37.479 [main] ERROR com.ragchatbot.openai.OpenAiRealService -- OpenAI 파일 file-1 을 지우지 못해 스토어 밖 고아로 남음 - 동기화로도 보이지 않으니 OpenAI 에서 직접 지울 것 (DELETE /v1/files/file-1)
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 3.969 s <<< FAILURE! -- in com.ragchatbot.openai.OpenAiRealDeleteDocumentTest
+[ERROR] com.ragchatbot.openai.OpenAiRealDeleteDocumentTest.retries_file_delete_on_rate_limit -- Time elapsed: 0.019 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+Expecting actual:
+  ["DELETE /vector_stores/shared-store/files/file-1", "DELETE /files/file-1"]
+to contain exactly (and in same order):
+  ["DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /files/file-1",
+    "DELETE /files/file-1"]
+but could not find the following elements:
+  ["DELETE /files/file-1"]
+
+	at com.ragchatbot.openai.OpenAiRealDeleteDocumentTest.retries_file_delete_on_rate_limit(OpenAiRealDeleteDocumentTest.java:154)
+
+[ERROR] Tests run: 7, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 0.519 s <<< FAILURE! -- in com.ragchatbot.openai.OpenAiRealUploadDocumentTest
+[ERROR] com.ragchatbot.openai.OpenAiRealUploadDocumentTest.files_429_is_upstream_unavailable_without_retry -- Time elapsed: 0.055 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual throwable to be an instance of:
+  com.ragchatbot.exception.ApiExceptions.UpstreamUnavailableException
+but was:
+  org.springframework.web.client.HttpClientErrorException$TooManyRequests: 429 : "{"error":{"message":"upstream-detail"}}"
+	at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.java:133)
+	at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132)
+	at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHandler.java:107)
+	...(103 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.files_429_is_upstream_unavailable_without_retry(OpenAiRealUploadDocumentTest.java:132)
+
+[ERROR] com.ragchatbot.openai.OpenAiRealUploadDocumentTest.files_content_rejection_is_bad_request -- Time elapsed: 0.012 s <<< FAILURE!
+java.lang.AssertionError: 
+[POST /files 400] 
+Expecting actual throwable to be an instance of:
+  com.ragchatbot.exception.ApiExceptions.BadRequestException
+but was:
+  org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":{"message":"upstream-detail"}}"
+	at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.java:106)
+	at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132)
+	at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHandler.java:107)
+	...(103 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.files_content_rejection_is_bad_request(OpenAiRealUploadDocumentTest.java:158)
+
+[ERROR] com.ragchatbot.openai.OpenAiRealUploadDocumentTest.attach_5xx_cleans_up_file_then_reports_unavailable -- Time elapsed: 0.087 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+Expecting actual:
+  ["POST /files",
+    "POST /vector_stores/shared-store/files",
+    "DELETE /files/file-1"]
+to contain exactly (and in same order):
+  ["POST /files",
+    "POST /vector_stores/shared-store/files",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /files/file-1"]
+but could not find the following elements:
+  ["DELETE /vector_stores/shared-store/files/file-1"]
+
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.attach_5xx_cleans_up_file_then_reports_unavailable(OpenAiRealUploadDocumentTest.java:119)
+
+[ERROR] com.ragchatbot.openai.OpenAiRealUploadDocumentTest.unknown_host_is_upstream_unavailable -- Time elapsed: 0.022 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual throwable to be an instance of:
+  com.ragchatbot.exception.ApiExceptions.UpstreamUnavailableException
+but was:
+  org.springframework.web.client.ResourceAccessException: I/O error on POST request for "http://api.openai.invalid/files": api.openai.invalid
+	at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(DefaultRestClient.java:779)
+	at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestClient.java:624)
+	at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.java:572)
+	...(95 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+	at com.ragchatbot.openai.OpenAiRealUploadDocumentTest.unknown_host_is_upstream_unavailable(OpenAiRealUploadDocumentTest.java:143)
+
+[ERROR] Failures: 
+[ERROR]   OpenAiRealDeleteDocumentTest.retries_file_delete_on_rate_limit:154 
+Expecting actual:
+  ["DELETE /vector_stores/shared-store/files/file-1", "DELETE /files/file-1"]
+to contain exactly (and in same order):
+  ["DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /files/file-1",
+    "DELETE /files/file-1"]
+but could not find the following elements:
+  ["DELETE /files/file-1"]
+
+[ERROR]   OpenAiRealUploadDocumentTest.attach_5xx_cleans_up_file_then_reports_unavailable:119 
+Expecting actual:
+  ["POST /files",
+    "POST /vector_stores/shared-store/files",
+    "DELETE /files/file-1"]
+to contain exactly (and in same order):
+  ["POST /files",
+    "POST /vector_stores/shared-store/files",
+    "DELETE /vector_stores/shared-store/files/file-1",
+    "DELETE /files/file-1"]
+but could not find the following elements:
+  ["DELETE /vector_stores/shared-store/files/file-1"]
+
+[ERROR]   OpenAiRealUploadDocumentTest.files_429_is_upstream_unavailable_without_retry:132 
+Expecting actual throwable to be an instance of:
+  com.ragchatbot.exception.ApiExceptions.UpstreamUnavailableException
+but was:
+  org.springframework.web.client.HttpClientErrorException$TooManyRequests: 429 : "{"error":{"message":"upstream-detail"}}"
+	at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.java:133)
+	at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132)
+	at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHandler.java:107)
+	...(103 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+[ERROR]   OpenAiRealUploadDocumentTest.files_content_rejection_is_bad_request:158 [POST /files 400] 
+Expecting actual throwable to be an instance of:
+  com.ragchatbot.exception.ApiExceptions.BadRequestException
+but was:
+  org.springframework.web.client.HttpClientErrorException$BadRequest: 400 Bad Request: "{"error":{"message":"upstream-detail"}}"
+	at org.springframework.web.client.HttpClientErrorException.create(HttpClientErrorException.java:106)
+	at org.springframework.web.client.StatusHandler.createException(StatusHandler.java:132)
+	at org.springframework.web.client.StatusHandler.lambda$createDefaultStatusHandler$1(StatusHandler.java:107)
+	...(103 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+[ERROR]   OpenAiRealUploadDocumentTest.unknown_host_is_upstream_unavailable:143 
+Expecting actual throwable to be an instance of:
+  com.ragchatbot.exception.ApiExceptions.UpstreamUnavailableException
+but was:
+  org.springframework.web.client.ResourceAccessException: I/O error on POST request for "http://api.openai.invalid/files": api.openai.invalid
+	at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.createResourceAccessException(DefaultRestClient.java:779)
+	at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchangeInternal(DefaultRestClient.java:624)
+	at org.springframework.web.client.DefaultRestClient$DefaultRequestBodyUriSpec.exchange(DefaultRestClient.java:572)
+	...(95 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+[ERROR] Tests run: 15, Failures: 5, Errors: 0, Skipped: 0
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project backend: There are test failures.
+[ERROR] 
+[ERROR] See D:\dev\rag-chatbot\.issue\worktrees\479-upstream-error-classes\backend\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

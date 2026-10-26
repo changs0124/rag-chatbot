@@ -1,0 +1,5 @@
+172:        setError(errorMessage(e, '대화를 삭제하지 못했습니다'))
+194:      setError(errorMessage(e, '대화 이름을 바꾸지 못했습니다'))
+240:          setError(errorMessage(e, '대화를 만들 수 없습니다'))
+322:        setMessages((prev) => prev.filter((m) => !(aborted && (emptyAnswer(m) || unsentQuestion(m)))).map(settled))
+323:        if (aborted && !opened) {

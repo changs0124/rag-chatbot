@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * 관리 화면 문서 삭제의 OpenAI 정리 (#271 · TC-ADMIN-055~057, 일시 장애 재시도 #476 · TC-ADMIN-062~065).
+ * 관리 화면 문서 삭제의 OpenAI 정리 (#271 · TC-ADMIN-055~057, 일시 장애 재시도 #476 · TC-ADMIN-062~065, 429 재시도 #479 · TC-ADMIN-073).
  *
  * <p>스토어 연결 해제 {@code DELETE /vector_stores/{vs}/files/{id}} 는 본문이 없어도 JSON 이 아닌 Content-Type 을
  * 400 으로 거절한다. JDK HttpURLConnection 은 DELETE 에 출력 스트림을 열면 form Content-Type 을 붙이므로, 그대로
@@ -32,6 +32,8 @@ class OpenAiRealDeleteDocumentTest {
 	/** 앞에서부터 이 횟수만큼 503 을 돌려준다(#476) - 그 뒤는 위 상태 그대로 */
 	private final AtomicInteger detachUnavailable = new AtomicInteger();
 	private final AtomicInteger fileUnavailable = new AtomicInteger();
+	/** 앞에서부터 이 횟수만큼 File 삭제에 429 를 돌려준다(#479) */
+	private final AtomicInteger fileRateLimited = new AtomicInteger();
 	private volatile int fileStatus = 200;
 	private OpenAiRealService service;
 
@@ -50,7 +52,8 @@ class OpenAiRealDeleteDocumentTest {
 				}
 				status = badType ? 400 : detachUnavailable.getAndDecrement() > 0 ? 503 : detachStatus;
 			} else if (path.startsWith("/files/")) {
-				status = fileUnavailable.getAndDecrement() > 0 ? 503 : fileStatus;
+				status = fileRateLimited.getAndDecrement() > 0 ? 429
+						: fileUnavailable.getAndDecrement() > 0 ? 503 : fileStatus;
 			}
 			exchange.sendResponseHeaders(status, -1);
 			exchange.close();
@@ -138,6 +141,19 @@ class OpenAiRealDeleteDocumentTest {
 		assertThat(received).containsExactly(
 				"DELETE /vector_stores/shared-store/files/file-1",
 				"DELETE /vector_stores/shared-store/files/file-1",
+				"DELETE /files/file-1");
+	}
+
+	/** TC-ADMIN-073 : File 삭제가 429(속도 제한)면 일시 장애로 보고 다시 보낸다(#479) - 포기하면 스토어 밖 고아가 남는다 */
+	@Test
+	void retries_file_delete_on_rate_limit() {
+		fileRateLimited.set(1);
+
+		service.deleteDocument("shared-store", "file-1");
+
+		assertThat(received).containsExactly(
+				"DELETE /vector_stores/shared-store/files/file-1",
+				"DELETE /files/file-1",
 				"DELETE /files/file-1");
 	}
 

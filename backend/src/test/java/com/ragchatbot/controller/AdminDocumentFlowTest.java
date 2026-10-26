@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -379,7 +380,8 @@ class AdminDocumentFlowTest extends AbstractPgIntegrationTest {
 
 		assertThat(org.assertj.core.api.Assertions.catchThrowable(
 				() -> jdbc.update("delete from users where id = ?", uploaderId)))
-				.isNotNull();
+				.isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("rag_documents_uploaded_by_fkey");
 	}
 
 	/** TC-ADMIN-021 : 목업 모드에서 파일 ID 가 mock- 으로 시작해 실 데이터와 섞이지 않는다 */
