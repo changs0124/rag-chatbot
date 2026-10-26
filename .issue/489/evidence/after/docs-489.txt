@@ -1,0 +1,4 @@
+docs/02_architecture/frontend.md:138:      **질문을 걷는다**(#489 에서 해결, [api.md](../01_specs/api.md) 「API-POST-005: 채팅 (SSE)」). 걷힌 뒤 확인하면 「없음」이라 글 · 카드가 입력창에 돌아온다
+docs/02_architecture/frontend.md:142:    - 200 을 받은 뒤 · 첫 토큰 전에 멈추면 화면은 질문 말풍선을 남기지만(판정하지 않는다), 서버가 보낸 토큰이 없었으면 질문을 걷는다(#489) —
+docs/01_specs/api.md:329:**토큰을 하나도 못 보내고 끊긴 턴은 질문도 걷는다**(#489). 질문(사용자 메시지) 행을 지우고, 그 메시지에 붙은 첨부는 연결만 풀어
+docs/02_architecture/backend.md:178:- **보낸 토큰이 0개인 채 끊기면 질문을 걷는다**(#489, `ChatPersistenceService.retractQuestion`) — 답이 만들어지지 않으므로 두면 답 없는 질문이

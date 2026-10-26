@@ -1,0 +1,10 @@
+Using Node v24.19.0
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/489-retract-question-on-early-disconnect/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  42 passed (42)
+   Start at  19:37:41
+   Duration  1.08s (transform 121ms, setup 160ms, import 187ms, tests 93ms, environment 473ms)
+

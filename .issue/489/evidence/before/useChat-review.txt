@@ -1,0 +1,118 @@
+Using Node v24.19.0
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/489-retract-question-on-early-disconnect/frontend
+
+ ❯ src/hooks/useChat.test.ts (42 tests | 5 failed) 84ms
+     × 200 뒤 토큰 0개에서 중단이 아닌 끊김(종단 이벤트 없음)도 판정해, 서버가 걷었으면 되돌린다 (#489 리뷰) 5ms
+     × 200 뒤 토큰 0개 끊김에 서버가 error 답 행을 남겼으면(타임아웃 #359) 저장됨 - 실패 말풍선을 겹쳐 붙이지 않는다 (#489 리뷰) 4ms
+     × 새 대화의 재확인 중에 대화를 옮기면 옮긴 화면에서 곧바로 보낼 수 있고, 빈 대화 정리는 계속한다 (#489 리뷰) 1ms
+     × 기존 대화의 재확인 중에 대화를 옮기면 재확인을 곧바로 멈춘다 (#489 리뷰) 2ms
+     × 재확인 중 401 이면 곧바로 끝낸다 - 확인 요청에는 시간 제한 신호가 붙는다 (#489 리뷰) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 200 뒤 토큰 0개에서 중단이 아닌 끊김(종단 이벤트 없음)도 판정해, 서버가 걷었으면 되돌린다 (#489 리뷰)
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'c1' ]
+
+Number of calls: 0
+
+ ❯ src/hooks/useChat.test.ts:541:39
+    539|     })
+    540|
+    541|     expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+       |                                       ^
+    542|     expect(giveBack).toHaveBeenCalledWith(false)
+    543|     expect(result.current.messages).toHaveLength(0)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 200 뒤 토큰 0개 끊김에 서버가 error 답 행을 남겼으면(타임아웃 #359) 저장됨 - 실패 말풍선을 겹쳐 붙이지 않는다 (#489 리뷰)
+AssertionError: expected [ …(4) ] to deeply equal [ 'm1', 'm2', 'm3', 'm4' ]
+
+- Expected
++ Received
+
+  [
+-   "m1",
+-   "m2",
+-   "m3",
+-   "m4",
++   "526f5ae1-75ec-4e79-944a-639c03be86b8",
++   "1ec5ea59-2ba0-4267-af21-877b796df339",
++   "39e3424c-9bb6-464c-b3bd-7741dc9c87cf",
++   "d7de3de3-c325-40e7-a3a6-5a3511a80c0a",
+  ]
+
+ ❯ src/hooks/useChat.test.ts:562:54
+    560|
+    561|     expect(giveBack).not.toHaveBeenCalled()
+    562|     expect(result.current.messages.map((m) => m.id)).toEqual(['m1', 'm…
+       |                                                      ^
+    563|   })
+    564|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 새 대화의 재확인 중에 대화를 옮기면 옮긴 화면에서 곧바로 보낼 수 있고, 빈 대화 정리는 계속한다 (#489 리뷰)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/hooks/useChat.test.ts:575:38
+    573|     })
+    574|     await abort(stream)
+    575|     expect(result.current.streaming).toBe(true)
+       |                                      ^
+    576|
+    577|     await act(async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 기존 대화의 재확인 중에 대화를 옮기면 재확인을 곧바로 멈춘다 (#489 리뷰)
+AssertionError: expected 13 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 13
+
+ ❯ src/hooks/useChat.test.ts:620:83
+    618|     })
+    619|
+    620|     expect(vi.mocked(getMessages).mock.calls.filter((c) => c[0] === 'c…
+       |                                                                                   ^
+    621|     expect(giveBack).not.toHaveBeenCalled()
+    622|     expect(result.current.streaming).toBe(false)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 재확인 중 401 이면 곧바로 끝낸다 - 확인 요청에는 시간 제한 신호가 붙는다 (#489 리뷰)
+AssertionError: expected [ [ 'c1' ], [ 'c1' ], [ 'c1' ], …(10) ] to have a length of 2 but got 13
+
+- Expected
++ Received
+
+- 2
++ 13
+
+ ❯ src/hooks/useChat.test.ts:642:19
+    640|
+    641|     const calls = vi.mocked(getMessages).mock.calls.filter((c) => c[0]…
+    642|     expect(calls).toHaveLength(2)
+       |                   ^
+    643|     expect(calls[1][1]).toBeInstanceOf(AbortSignal)
+    644|     expect(result.current.streaming).toBe(false)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 37 passed (42)
+   Start at  19:35:54
+   Duration  923ms (transform 101ms, setup 142ms, import 158ms, tests 84ms, environment 380ms)
+

@@ -1,0 +1,99 @@
+19:16:04.225 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatEarlyDisconnectTest]: ChatEarlyDisconnectTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:16:04.443 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatEarlyDisconnectTest
+19:16:04.544 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.controller.ChatEarlyDisconnectTest]: ChatEarlyDisconnectTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:16:04.545 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+19:16:04.548 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.ChatEarlyDisconnectTest
+19:16:04.610 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+19:16:04.612 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+19:16:04.686 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+19:16:05.412 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with Environment variables, system properties and defaults. Resolved dockerHost=npipe:////./pipe/dockerDesktopLinuxEngine
+19:16:05.413 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+19:16:05.433 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 29.9.2
+  API Version: 1.56
+  Operating System: Docker Desktop
+  Total Memory: 31942 MB
+  Labels: 
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+19:16:05.595 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+19:16:05.692 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/
+19:16:05.832 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: a797d4265683216bbb5f9901754e3fdb86c472c56c68068deccfe9eac08671a0
+19:16:06.223 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT0.628267S
+19:16:06.231 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+19:16:06.231 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+19:16:06.232 [main] INFO org.testcontainers.DockerClientFactory -- ?? Docker server version should be at least 1.6.0
+19:16:06.288 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Creating container for image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+19:16:06.359 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea is starting: d11e5323db507d0470786cf30556790bb2ff71fc67d2bd5281b26039584e2bfe
+19:16:07.805 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea started in PT1.5168392S
+19:16:07.806 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container is started (JDBC URL: jdbc:postgresql://localhost:65224/test?loggerLevel=OFF)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-26T19:16:08.517+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] c.r.controller.ChatEarlyDisconnectTest   : Starting ChatEarlyDisconnectTest using Java 17.0.19 with PID 3792 (started by User in D:\dev\rag-chatbot\.issue\worktrees\489-retract-question-on-early-disconnect\backend)
+2026-10-26T19:16:08.519+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] c.r.controller.ChatEarlyDisconnectTest   : No active profile set, falling back to 1 default profile: "default"
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-10-26T19:16:12.532+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-26T19:16:12.585+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-26T19:16:12.586+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-26T19:16:12.759+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 4214 ms
+2026-10-26T19:16:14.080+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:65224/test?loggerLevel=OFF (PostgreSQL 16.15)
+2026-10-26T19:16:14.232+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-26T19:16:14.239+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 10 migrations (execution time 00:00.033s)
+2026-10-26T19:16:14.268+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-26T19:16:14.399+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-10-26T19:16:14.428+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - init"
+2026-10-26T19:16:14.487+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_users_updated_at" for relation "users" does not exist, skipping
+2026-10-26T19:16:14.490+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_conversations_updated_at" for relation "conversations" does not exist, skipping
+2026-10-26T19:16:14.524+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - auth hardening"
+2026-10-26T19:16:14.550+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - message stopped"
+2026-10-26T19:16:14.572+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - message token usage"
+2026-10-26T19:16:14.596+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - user role"
+2026-10-26T19:16:14.624+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - rag documents"
+2026-10-26T19:16:14.652+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - message timed out"
+2026-10-26T19:16:14.672+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - drop user theme"
+2026-10-26T19:16:14.691+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - rag documents alive file unique"
+2026-10-26T19:16:14.710+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "10 - drop unused openai columns"
+2026-10-26T19:16:14.734+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 10 migrations to schema "public", now at version v10 (execution time 00:00.146s)
+2026-10-26T19:16:14.758+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.f.c.i.c.SqlScriptCallbackFactory       : Executing SQL callback: afterMigrate - 
+2026-10-26T19:16:17.849+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 50065 (http) with context path '/'
+2026-10-26T19:16:17.862+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] c.r.controller.ChatEarlyDisconnectTest   : Started ChatEarlyDisconnectTest in 9.848 seconds (process running for 14.772)
+2026-10-26T19:16:17.957+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-26T19:16:18.021+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@679f3e12
+2026-10-26T19:16:18.023+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-26T19:16:18.144+09:00  WARN 3792 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : °ü¸®ÀÚ °èÁ¤ ¹ß±Þ : root@rag.test ¡¤ ÀÓ½Ã ºñ¹Ð¹øÈ£ YY2Y-wLwA-FTip (ÃÖÃÊ ·Î±×ÀÎ ÈÄ ¸¶ÀÌÆäÀÌÁö¿¡¼­ º¯°æÇÒ °Í)
+2026-10-26T19:16:18.195+09:00  INFO 3792 --- [rag-chatbot-backend] [           main] c.r.config.AdminRoleSynchronizer         : °ü¸®ÀÚ ¸í´Ü µ¿±âÈ­ : ¸í´Ü 1°Ç ¡¤ »ý¼º 1°Ç ¡¤ ½Â°Ý 0°Ç ¡¤ °­µî 0°Ç
+2026-10-26T19:16:18.497+09:00  INFO 3792 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-26T19:16:18.497+09:00  INFO 3792 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-26T19:16:18.500+09:00  INFO 3792 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 30.60 s <<< FAILURE! -- in com.ragchatbot.controller.ChatEarlyDisconnectTest
+[ERROR] com.ragchatbot.controller.ChatEarlyDisconnectTest.cut_right_after_meta_retracts_question_and_unlinks_attachment -- Time elapsed: 15.98 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 0
+ but was: 1
+	at com.ragchatbot.controller.ChatEarlyDisconnectTest.cut_right_after_meta_retracts_question_and_unlinks_attachment(ChatEarlyDisconnectTest.java:154)
+
+[ERROR] Failures: 
+[ERROR]   ChatEarlyDisconnectTest.cut_right_after_meta_retracts_question_and_unlinks_attachment:154 
+expected: 0
+ but was: 1
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.5.6:test (default-test) on project backend: There are test failures.
+[ERROR] 
+[ERROR] See D:\dev\rag-chatbot\.issue\worktrees\489-retract-question-on-early-disconnect\backend\target\surefire-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+--- surefire(ë³€ê²½ ì „ ì½”ë“œ + ìƒˆ í…ŒìŠ¤íŠ¸) ---

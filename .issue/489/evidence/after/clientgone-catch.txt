@@ -1,0 +1,23 @@
+270:		} catch (ClientGoneException gone) {
+271-			// REQ-CHAT-006 : 사용자가 정지했거나 연결이 끊긴 경우임. **실패가 아니므로** 받은 데까지 complete 로 저장함 -
+272-			// 화면도 complete 로 다루므로 재조회와 어긋나지 않음.
+273-			// 부분 텍스트가 비면 저장하지 않음 - 빈 답변 버블을 남기면 화면(버블 제거)과 재조회가 어긋남.
+274-			// stopped=true 로 남겨야 무자료 배너가 붙지 않음 - 인용은 스트림 끝에 오므로 여기서는 늘 0건임
+275-			//
+276-			// 단, 첫 토큰 전에 서버 타임아웃으로 닫힌 것이면 error 로 남긴다(#359) - 비었다고 건너뛰면 타임아웃 사실이
+277-			// 어디에도 남지 않고, 화면도 완료 이벤트 없이 끊겨 오류로 보인다(갈래 ③ 과 같은 모양)
+278-			//
+279-			// 토큰을 하나도 못 보내고 끊긴 것이면 질문을 걷는다(#489) - 서버는 끊긴 뒤 답을 만들지 않으므로(#487) 두면
+280-			// 답 없는 질문이 이력과 다음 턴의 모델 문맥에 영구히 남는다. 첨부는 연결만 풀어 다시 보낼 수 있게 둔다
+281-			if (!saved) {
+282-				if (timedOut.get() && buffer.isEmpty()) {
+283-					savePartial(prepared, userId, asstMsgId, "", "error", false, true, null);
+284-				} else if (buffer.isEmpty()) {
+285-					retractQuestion(prepared);
+286-				} else {
+287-					savePartial(prepared, userId, asstMsgId, buffer.toString(), "complete", true, timedOut.get(),
+288-							null);
+289-				}
+290-			}
+291-			completeQuietly(emitter);
+292-		} catch (Exception ex) {

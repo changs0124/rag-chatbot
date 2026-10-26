@@ -1,0 +1,23 @@
+268:		} catch (ClientGoneException gone) {
+269-			// REQ-CHAT-006 : 사용자가 정지했거나 연결이 끊긴 경우임. **실패가 아니므로** 받은 데까지 complete 로 저장함 -
+270-			// 화면도 complete 로 다루므로 재조회와 어긋나지 않음.
+271-			// 부분 텍스트가 비면 저장하지 않음 - 빈 답변 버블을 남기면 화면(버블 제거)과 재조회가 어긋남.
+272-			// stopped=true 로 남겨야 무자료 배너가 붙지 않음 - 인용은 스트림 끝에 오므로 여기서는 늘 0건임
+273-			//
+274-			// 단, 첫 토큰 전에 서버 타임아웃으로 닫힌 것이면 error 로 남긴다(#359) - 비었다고 건너뛰면 타임아웃 사실이
+275-			// 어디에도 남지 않고, 화면도 완료 이벤트 없이 끊겨 오류로 보인다(갈래 ③ 과 같은 모양)
+276-			if (!saved) {
+277-				if (timedOut.get() && buffer.isEmpty()) {
+278-					savePartial(prepared, userId, asstMsgId, "", "error", false, true, null);
+279-				} else {
+280-					savePartial(prepared, userId, asstMsgId, buffer.toString(), "complete", true, timedOut.get(),
+281-							null);
+282-				}
+283-			}
+284-			completeQuietly(emitter);
+285-		} catch (Exception ex) {
+286-			// 스트리밍 중 대화가 삭제됨(#437) - 다른 탭 · 기기에서 지웠다. 저장은 외래 키 위반으로 실패하지만 오류가 아니라
+287-			// 사용자가 버린 것이다. 이 검사가 없으면 지운 대화에 대고 error 이벤트를 보내고 「처리되지 않은 예외」 ERROR 를 남겼다
+288-			if (conversationGone(prepared.conversationId(), userId)) {
+289-				// 원인은 남긴다 - 모델 오류가 삭제와 우연히 겹쳤을 수도 있다(리뷰 지적)
+290-				log.info("스트리밍 중 대화가 삭제돼 답을 버림 conversation={} cause={}", prepared.conversationId(), ex.toString());

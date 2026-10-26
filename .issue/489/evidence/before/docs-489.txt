@@ -1,0 +1,1 @@
+docs/02_architecture/frontend.md:139:      다시 물으려면 새로 쳐야 한다. 서버에서 고칠 예정(#489)

@@ -1,0 +1,90 @@
+Using Node v24.19.0
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/489-retract-question-on-early-disconnect/frontend
+
+ ❯ src/hooks/useChat.test.ts (37 tests | 4 failed) 109ms
+     × 저장됨으로 보였어도 재확인에서 질문이 사라지면(#489 철회) 되돌리고 새 대화는 조건부 삭제를 다시 한다 6ms
+     × 재확인에서 질문 뒤에 답 행이 생기면 저장됨으로 확정한다 (#489) 5ms
+     × 재확인 구간 내내 질문만 있으면 지금처럼 저장됨으로 남긴다 (#489) 5ms
+     × 200 을 받은 뒤 토큰 0개에서 멈추면 200 전과 같은 판정을 탄다 (#489) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 저장됨으로 보였어도 재확인에서 질문이 사라지면(#489 철회) 되돌리고 새 대화는 조건부 삭제를 다시 한다
+AssertionError: expected "vi.fn()" to be called with arguments: [ false ]
+
+Number of calls: 0
+
+ ❯ src/hooks/useChat.test.ts:425:22
+    423|     })
+    424|
+    425|     expect(giveBack).toHaveBeenCalledWith(false)
+       |                      ^
+    426|     expect(deleteConversationIfEmpty).toHaveBeenCalledTimes(2)
+    427|     expect(result.current.activeId).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 재확인에서 질문 뒤에 답 행이 생기면 저장됨으로 확정한다 (#489)
+AssertionError: expected [ 'm1', 'm2', 'm3' ] to deeply equal [ 'm1', 'm2', 'm3', 'm4' ]
+
+- Expected
++ Received
+
+  [
+    "m1",
+    "m2",
+    "m3",
+-   "m4",
+  ]
+
+ ❯ src/hooks/useChat.test.ts:465:54
+    463|
+    464|     expect(giveBack).not.toHaveBeenCalled()
+    465|     expect(result.current.messages.map((m) => m.id)).toEqual(['m1', 'm…
+       |                                                      ^
+    466|     expect(result.current.streaming).toBe(false)
+    467|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 재확인 구간 내내 질문만 있으면 지금처럼 저장됨으로 남긴다 (#489)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/hooks/useChat.test.ts:489:38
+    487|     await abort(stream)
+    488|     // 구간 동안은 판정 중이라 다시 보내기가 막힌다
+    489|     expect(result.current.streaming).toBe(true)
+       |                                      ^
+    490|     await act(async () => {
+    491|       await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 200 을 받은 뒤 토큰 0개에서 멈추면 200 전과 같은 판정을 탄다 (#489)
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'c1' ]
+
+Number of calls: 0
+
+ ❯ src/hooks/useChat.test.ts:515:39
+    513|     await abort(stream)
+    514|
+    515|     expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+       |                                       ^
+    516|     expect(giveBack).toHaveBeenCalledWith(false)
+    517|     expect(result.current.messages).toHaveLength(0)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 33 passed (37)
+   Start at  19:22:58
+   Duration  1.05s (transform 128ms, setup 159ms, import 171ms, tests 109ms, environment 441ms)
+
