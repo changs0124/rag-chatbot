@@ -3,6 +3,7 @@ package com.ragchatbot.openai;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -27,10 +28,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.ragchatbot.exception.ApiExceptions.UpstreamUnavailableException;
 import com.ragchatbot.storage.FileStorage;
 
 /**
@@ -67,6 +71,16 @@ public class OpenAiRealService implements OpenAiService {
 	 * 붙인다. 이 경계는 {@code OpenAiRealBetaHeaderTest} 가 양방향으로 잠근다.
 	 */
 	private static final String OPENAI_BETA_ASSISTANTS_V2 = "assistants=v2";
+
+	/** 업로드가 OpenAI 일시 장애로 실패했을 때 관리자에게 보이는 문구(#476) */
+	private static final String UPSTREAM_RETRY_MESSAGE = "OpenAI 가 일시적으로 응답하지 않음 - 잠시 뒤 다시 시도해 주세요";
+
+	/**
+	 * DELETE 의 시도 횟수와 간격(#476). 10-26 운영에서 OpenAI 503 이 한 번씩 나 파일이 남았다. DELETE 는 몇 번 보내도
+	 * 결과가 같고 404 도 성공으로 치므로 다시 보내도 안전하다. 간격은 시도마다 늘린다(300 · 600ms) - 관리자 요청이 기다린다
+	 */
+	private static final int DELETE_ATTEMPTS = 3;
+	private static final long DELETE_RETRY_BACKOFF_MS = 300;
 
 	/** 스트리밍({@code /responses}) 전용. 읽기 타임아웃이 길다 */
 	private final RestClient streamClient;
@@ -481,7 +495,7 @@ public class OpenAiRealService implements OpenAiService {
 
 	/**
 	 * Files 업로드 → 공용 Vector Store 연결. 두 단계이며 <b>뒤 단계가 실패하면 고아 파일이 남으므로</b>
-	 * 즉시 삭제를 시도하고, 그것도 실패하면 경고 로그에 file_id 를 남김.
+	 * 즉시 삭제를 시도하고, 그것도 실패하면 ERROR 로그에 file_id 를 남김(#476). OpenAI 일시 장애(5xx · 연결 실패)는 503 으로 알릴 예외로 바꿈.
 	 *
 	 * <p>어느 경우에도 예외를 던짐 - 호출자가 DB 행을 만들지 않아야 함. 스토어에는 없는데 목록에만
 	 * 뜨는 상태가 가장 나쁨(화면에 보이는데 검색에는 안 잡히고 지울 수도 없음).
@@ -492,12 +506,19 @@ public class OpenAiRealService implements OpenAiService {
 		form.add("purpose", "assistants");
 		form.add("file", new NamedByteArrayResource(content, filename));
 
-		JsonNode uploaded = client.post()
-				.uri("/files")
-				.contentType(MediaType.MULTIPART_FORM_DATA)
-				.body(form)
-				.retrieve()
-				.body(JsonNode.class);
+		JsonNode uploaded;
+		try {
+			uploaded = client.post()
+					.uri("/files")
+					.contentType(MediaType.MULTIPART_FORM_DATA)
+					.body(form)
+					.retrieve()
+					.body(JsonNode.class);
+		} catch (HttpServerErrorException | ResourceAccessException e) {
+			// 관리자가 다시 시도하면 되는 일시 장애다(#476). **POST 는 여기서 다시 보내지 않는다** - OpenAI 가 실제로는
+			// 받아 처리했다면 같은 파일이 둘 생기고, 그중 하나는 아무도 모르는 고아가 된다
+			throw new UpstreamUnavailableException(UPSTREAM_RETRY_MESSAGE, e);
+		}
 
 		// 기본값 null 이 이 가드의 전제다 - `"id": null` 이 문자열 "null" 로 읽히면 가드를 지나
 		// openai_file_id = "null" 인 행이 생긴다. Jackson 3 은 기본값을 그대로 줘 여기서 걸린다(#63)
@@ -516,7 +537,10 @@ public class OpenAiRealService implements OpenAiService {
 					.toBodilessEntity();
 		} catch (Exception e) {
 			// 연결에 실패하면 파일만 덩그러니 남음. 여기서 지우지 않으면 아무도 그 존재를 모름
-			deleteQuietly("/files/" + fileId, "file", fileId);
+			deleteFileOrReport(fileId);
+			if (e instanceof HttpServerErrorException || e instanceof ResourceAccessException) {
+				throw new UpstreamUnavailableException(UPSTREAM_RETRY_MESSAGE, e);
+			}
 			throw new IllegalStateException("Vector Store 연결 실패 - 업로드한 파일을 정리함", e);
 		}
 		return new UploadedDocument(fileId, sharedVectorStoreId);
@@ -623,7 +647,18 @@ public class OpenAiRealService implements OpenAiService {
 			log.warn("스토어 연결 해제 실패로 file {} 은 지우지 않음 - 동기화하면 목록에 다시 보여 다시 지울 수 있음", openaiFileId);
 			return;
 		}
-		deleteQuietly("/files/" + openaiFileId, "file", openaiFileId);
+		deleteFileOrReport(openaiFileId);
+	}
+
+	/**
+	 * 스토어 밖 File 삭제. 재시도 뒤에도 실패하면 ERROR 로 남긴다(#476) - 그 File 은 스토어에 없어 동기화로도 다시
+	 * 보이지 않으므로 <b>이 로그가 유일한 단서</b>다. 남은 File 은 검색에 잡히지 않고 계정 저장 용량만 차지한다
+	 */
+	private void deleteFileOrReport(String fileId) {
+		if (!deleteQuietly("/files/" + fileId, "file", fileId)) {
+			log.error("OpenAI 파일 {} 을 지우지 못해 스토어 밖 고아로 남음 - 동기화로도 보이지 않으니 OpenAI 에서 직접 지울 것"
+					+ " (DELETE /v1/files/{})", fileId, fileId);
+		}
 	}
 
 	/** 멀티파트에 파일명을 실으려면 Resource 가 이름을 알아야 함 - ByteArrayResource 는 기본이 null */
@@ -641,26 +676,44 @@ public class OpenAiRealService implements OpenAiService {
 		}
 	}
 
-	/** 지워졌거나 이미 없으면(404) 참. 그 밖의 실패는 경고만 남기고 거짓 - 정리 실패는 삭제 흐름을 막지 않음 */
+	/**
+	 * 지워졌거나 이미 없으면(404) 참. 그 밖의 실패는 경고만 남기고 거짓 - 정리 실패는 삭제 흐름을 막지 않음.
+	 *
+	 * <p>일시 장애(5xx · 연결 거절)만 {@link #DELETE_ATTEMPTS} 번까지 다시 보낸다(#476). <b>읽기 타임아웃은 다시 보내지
+	 * 않는다</b> - 한 번에 요청 타임아웃만큼 걸려, 되풀이하면 관리자 요청이 그 몇 배로 묶인다
+	 */
 	private boolean deleteQuietly(String path, String kind, String id) {
-		try {
-			var request = client.delete().uri(path)
-					// **본문이 없어도 JSON 을 명시한다**(#271). JDK HttpURLConnection 은 DELETE 에 출력 스트림을 열면서
-					// 기본 Content-Type(application/x-www-form-urlencoded)을 붙이는데, 스토어 연결 해제는 그것을
-					// 400 unsupported_content_type 으로 거절한다
-					.header("Content-Type", MediaType.APPLICATION_JSON_VALUE);
-			// 이 메서드는 /files 삭제와 공유됨 - 베타 헤더는 vector store 쪽에만 붙임
-			if (path.startsWith("/vector_stores")) {
-				request = request.header("OpenAI-Beta", OPENAI_BETA_ASSISTANTS_V2);
+		for (int attempt = 1;; attempt++) {
+			try {
+				var request = client.delete().uri(path)
+						// **본문이 없어도 JSON 을 명시한다**(#271). JDK HttpURLConnection 은 DELETE 에 출력 스트림을 열면서
+						// 기본 Content-Type(application/x-www-form-urlencoded)을 붙이는데, 스토어 연결 해제는 그것을
+						// 400 unsupported_content_type 으로 거절한다
+						.header("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+				// 이 메서드는 /files 삭제와 공유됨 - 베타 헤더는 vector store 쪽에만 붙임
+				if (path.startsWith("/vector_stores")) {
+					request = request.header("OpenAI-Beta", OPENAI_BETA_ASSISTANTS_V2);
+				}
+				request.retrieve().toBodilessEntity();
+				return true;
+			} catch (HttpClientErrorException.NotFound e) {
+				// 이미 없음 - 지우려던 상태와 같다
+				return true;
+			} catch (Exception e) {
+				boolean transientFailure = e instanceof HttpServerErrorException
+						|| (e instanceof ResourceAccessException && e.getCause() instanceof ConnectException);
+				if (!transientFailure || attempt >= DELETE_ATTEMPTS) {
+					log.warn("openai {} 삭제 실패 {} ({}회 시도): {}", kind, id, attempt, e.getMessage());
+					return false;
+				}
+				log.warn("openai {} 삭제 일시 실패 {} - 다시 시도함: {}", kind, id, e.getMessage());
+				try {
+					Thread.sleep(DELETE_RETRY_BACKOFF_MS * attempt);
+				} catch (InterruptedException ie) {
+					Thread.currentThread().interrupt();
+					return false;
+				}
 			}
-			request.retrieve().toBodilessEntity();
-			return true;
-		} catch (HttpClientErrorException.NotFound e) {
-			// 이미 없음 - 지우려던 상태와 같다
-			return true;
-		} catch (Exception e) {
-			log.warn("openai {} 삭제 실패 {}: {}", kind, id, e.getMessage());
-			return false;
 		}
 	}
 }
