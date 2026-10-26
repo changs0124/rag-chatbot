@@ -202,13 +202,14 @@ export function useChat() {
   // 첨부는 입력창이 **고르는 즉시** 올려 두므로 여기서는 이미 올라간 것만 받음(업로드 책임이 컴포저에 있음).
   // settle 은 이 턴을 보냈는지를 생성 왕복이 끝나는 시점에 알린다(#349) - 스트림 완료는 기다리지 않는다.
   // 스트림 전에 끝나는 모든 경로가 settle 을 불러야 한다 - 빠뜨리면 입력창이 영영 기다린다.
-  // giveBack 은 받아들인 턴이 서버에 닿기 전에 끊겨 입력창이 보낸 것을 되돌려야 할 때 부른다(#440)
+  // giveBack 은 받아들인 턴이 서버에 닿기 전에 끊겨 입력창이 보낸 것을 되돌려야 할 때 부른다(#440).
+  // textOnly 면 첨부 카드는 버리고 글만 되돌린다 - 카드가 거절 원인일 수 있는 4xx(#480)
   const run = useCallback(
     async (
       text: string,
       attachments: Attachment[],
       settle: (accepted: boolean) => void,
-      giveBack?: () => void,
+      giveBack?: (textOnly?: boolean) => void,
     ) => {
       setError(null)
 
@@ -301,11 +302,19 @@ export function useChat() {
         // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지). 중단·절단 모두 단계는 즉시 비움
         clearStages()
         const aborted = controller.signal.aborted
+        // 중단이 아닌 200 전 실패(#480)
+        const failed = !opened && !aborted
+        const status = e instanceof ApiError ? e.status : null
         // 200 전 4xx 는 서버가 저장 전에 거절한 것이 확실하다(api.md 「검증은 동기」, #480) - 묻지 않고 되돌린다.
         // 5xx 는 아니다 - 질문 저장을 커밋한 뒤에도 날 수 있고(스트림 작업 넘기기 실패), 앞단 프록시의 5xx 는 앱이 저장했는지 모른다
-        const rejected = !opened && !aborted && e instanceof ApiError && e.status < 500
+        const rejected = failed && status !== null && status >= 400 && status < 500
+        // 401 은 로그아웃으로 가는 길이다 - 같은 토큰으로 더 물어도 401 이라 판정 · 빈 대화 삭제를 건너뛴다
+        const unauthorized = rejected && status === 401
+        // 429 밖의 4xx 는 첨부가 거절 원인일 수 있다(400 「이미 보낸 첨부」 · 404 「첨부 없음」 등) - 카드까지 돌리면 같은 거절이
+        // 되풀이되므로 글만 되돌린다. 429 · 5xx · 네트워크는 때의 문제라 카드도 되돌린다
+        const textOnly = rejected && status !== 429
         // fetch 자체의 실패(네트워크)는 onError 를 거치지 않아 여기서 배너를 띄운다(#480). ApiError 는 streamChat 이 이미 띄웠다
-        if (!opened && !aborted && !(e instanceof ApiError)) setError('서버에 연결하지 못했습니다. 다시 시도해 주세요.')
+        if (failed && status === null) setError('서버에 연결하지 못했습니다. 다시 시도해 주세요.')
         // 중단이면 받은 것이 없는 빈 버블을 남기지 않음 - 서버도 부분 텍스트가 비면 저장하지 않으므로,
         // 남겨 두면 새로고침에 사라져 화면과 재조회가 어긋남
         // 단 onDone 이 이미 확정한 메시지는 서버가 정상 경로로 저장했으므로 지우지 않음
@@ -331,30 +340,47 @@ export function useChat() {
           // 200 전 중단 · 실패는 서버에 물어서 가른다(judgeEarlyAbort, #480 에서 실패까지 넓힘).
           // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다
           const id = convId
-          // 4xx 거절은 저장되지 않은 것이 확실해 기존 대화는 묻지 않는다. 새 대화는 빈 대화를 지워야 하므로 조건부 삭제는 그대로 탄다
-          const outcome: EarlyAbortOutcome =
-            rejected && !isNew ? { kind: 'unknown' } : await judgeEarlyAbort(id, isNew, text)
+          // 4xx 거절은 저장되지 않은 것이 확실해 기존 대화는 묻지 않는다. 새 대화는 빈 대화를 지워야 하므로 조건부 삭제는 그대로 탄다.
+          // 단 기존 대화의 404 는 대화가 지워졌을 수 있어(다른 탭) 이력으로 확인한다 - 「첨부 없음」도 404 라 코드만으로는 못 가른다
+          let outcome: EarlyAbortOutcome = { kind: 'unknown' }
+          if (rejected && !isNew) {
+            if (status === 404) {
+              const gone = await getMessages(id).then(
+                () => false,
+                (err) => err instanceof ApiError && err.status === 404,
+              )
+              if (gone) outcome = { kind: 'deleted' }
+            }
+          } else if (!unauthorized) {
+            outcome = await judgeEarlyAbort(id, isNew, text)
+          }
           // 세대는 판정을 기다린 **뒤에** 본다 - 그사이 대화를 옮겼으면 화면 · 입력창을 건드리지 않는다
           const here = generation.current === mine
           if (outcome.kind === 'stored') {
-            // 저장된 질문은 남기고, 서버는 답을 끝까지 만들어 저장한다(#76) - 다시 열면 보인다.
+            // 저장된 질문은 남긴다. 200 전에 끊긴 턴은 서버가 답을 만들지 않는다(#487 실측) - 중단은 서버가 그 질문을 걷고(#489),
+            // 비중단 실패는 실패한 답 말풍선을 붙여 실패를 보인다(#480).
             // 이력을 못 받았으면 걷었던 질문 말풍선을 되살린다 - 안 그러면 저장된 질문이 화면 어디에도 없다(#447 리뷰)
             if (here) {
-              if (outcome.saved) setMessages(outcome.saved)
-              else setMessages((prev) => [...prev, userMsg])
+              const failedAnswer: ChatMessage[] = failed ? [{ ...assistantMsg, status: 'error' }] : []
+              if (outcome.saved) setMessages([...outcome.saved, ...failedAnswer])
+              else setMessages((prev) => [...prev, userMsg, ...failedAnswer])
             }
           } else if (here) {
             // 입력창에 되돌린다(#440). 대화를 옮겨 끊긴 경우는 되돌리지 않는다 - 입력창은 대화마다
             // 따로가 아니라서, 옮겨 간 대화로 그 글이 잘못 나갈 수 있다
-            giveBack?.()
+            giveBack?.(textOnly)
           }
           if (outcome.kind === 'deleted') {
-            // 남은 화면은 새 대화와 같게 되돌려 다음 전송이 지운 대화로 나가지 않게 한다
-            if (here) setActiveId(null)
+            // 남은 화면은 새 대화와 같게 되돌려 다음 전송이 지운 대화로 나가지 않게 한다.
+            // 기존 대화가 지워졌으면(다른 탭) 남은 이력도 비운다 - 다음 전송이 그 이력 뒤에 붙어 보인다
+            if (here) {
+              setActiveId(null)
+              setMessages([])
+            }
             setConversations((prev) => prev.filter((c) => c.id !== id))
           }
-          // 지운 뒤에 목록을 받아야 되살아나 보이지 않는다
-          if (isNew) refreshConversations()
+          // 지운 뒤에 목록을 받아야 되살아나 보이지 않는다. 401 은 목록도 401 이라 받지 않는다
+          if (isNew && !unauthorized) refreshConversations()
         } else if (isNew) refreshConversations()
       } finally {
         // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(useStageQueue)
@@ -377,7 +403,7 @@ export function useChat() {
    * 갈아 끼워 답 말풍선이 사라진다 - send 는 세대를 올리지 않으므로 그 이력은 버려지지 않는다.
    */
   const send = useCallback(
-    (text: string, attachments: Attachment[], giveBack?: () => void): Promise<boolean> => {
+    (text: string, attachments: Attachment[], giveBack?: (textOnly?: boolean) => void): Promise<boolean> => {
       if (streaming || creatingRef.current || loadingRef.current) return Promise.resolve(false)
       return new Promise<boolean>((resolve) => {
         void run(text, attachments, resolve, giveBack)

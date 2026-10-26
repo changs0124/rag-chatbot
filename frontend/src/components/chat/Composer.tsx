@@ -49,7 +49,7 @@ export default function Composer({
    * 받아들였으면 true - 거절된 전송은 입력과 첨부 초안을 그대로 둔다(#323). 새 대화는 생성 왕복 뒤에 정해진다(#349).
    * 받아들인 턴이 서버에 닿기 전에 끊기면 `giveBack` 을 부른다 - 보낸 글과 첨부를 입력창에 되돌린다(#440)
    */
-  onSend: (text: string, attachments: Attachment[], giveBack: () => void) => Promise<boolean>
+  onSend: (text: string, attachments: Attachment[], giveBack: (textOnly?: boolean) => void) => Promise<boolean>
   streaming: boolean
   /** 이력 로딩 · 대화 생성 중 - 이때 보낸 것은 어차피 거절되므로 비우기 전에 막는다(#323) */
   busy?: boolean
@@ -237,7 +237,8 @@ export default function Composer({
     const accepted = await onSend(
       text.trim(),
       sent.map((d) => d.attachment).filter((a): a is Attachment => !!a),
-      () => giveBack(text, sent),
+      // textOnly 면 카드는 버린다(#480) - 보낼 때 미리보기를 회수했고, 서버 첨부는 회수 크론이 걷는다
+      (textOnly) => giveBack(text, textOnly ? [] : sent),
     )
     sendingRef.current = []
     if (!accepted) return
