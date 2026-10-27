@@ -2,7 +2,8 @@
 # 응답 계약 대조 - `AdminDtos.DocumentResponse` 한 건만 본다
 #
 # 왜 이것만인가 : 저장소에서 repository 가 Response DTO 를 직접 매핑하는 경로는
-# `RagDocumentRepository.listAlive()` 뿐이다(docs/02_architecture/backend.md). 그 한 곳에서만
+# `RagDocumentRepository.listAlive()` · `findSummaryById()` 뿐이고 둘 다 같은 `summaryResult` 를 쓴다
+# (docs/02_architecture/backend.md). 그 resultMap 한 곳에서만
 # **SQL 이 응답 스펙에 직결**되고, 필드 이름이 프론트까지 그대로 흘러간다.
 #
 # 무엇을 잡나 : 네 곳의 필드 이름이 어긋나는 것. 필드 추가 · 삭제 · 개명 · resultMap arg 순서 변경.
