@@ -1,0 +1,13 @@
+
+> rag-chatbot-frontend@0.0.1 test
+> vitest run
+
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/505-leave-before-token/frontend
+
+
+ Test Files  30 passed (30)
+      Tests  295 passed (295)
+   Start at  10:22:16
+   Duration  5.96s (transform 4.46s, setup 8.76s, import 8.55s, tests 12.19s, environment 30.92s)
+

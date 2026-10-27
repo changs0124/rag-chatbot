@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/505-leave-before-token/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed | 45 skipped (47)
+   Start at  10:23:17
+   Duration  861ms (transform 116ms, setup 135ms, import 167ms, tests 24ms, environment 385ms)
+
