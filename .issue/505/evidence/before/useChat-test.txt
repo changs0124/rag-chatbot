@@ -1,0 +1,53 @@
+
+ RUN  v4.1.11 D:/dev/rag-chatbot/.issue/worktrees/505-leave-before-token/frontend
+
+ ❯ src/hooks/useChat.test.ts (47 tests | 2 failed | 45 skipped) 27ms
+     × 답이 시작되기 전에 대화를 옮겨 중단되면 옮겨 간 화면에 settling 이 서지 않고 곧바로 보낼 수 있다 (#505) 22ms
+     × 답이 시작되기 전에 새 채팅으로 옮겨 중단돼도 입력창이 잠기지 않고 글을 되돌리지 않는다 (#505) 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 답이 시작되기 전에 대화를 옮겨 중단되면 옮겨 간 화면에 settling 이 서지 않고 곧바로 보낼 수 있다 (#505)
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/hooks/useChat.test.ts:694:38
+    692|     })
+    693|     await abort(stream)
+    694|     expect(result.current.streaming).toBe(false)
+       |                                      ^
+    695|     expect(result.current.settling).toBe(false)
+    696|     const next = openStream()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/hooks/useChat.test.ts > useChat 중단·오류 상태(AC-9·AC-17) > 답이 시작되기 전에 새 채팅으로 옮겨 중단돼도 입력창이 잠기지 않고 글을 되돌리지 않는다 (#505)
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/hooks/useChat.test.ts:727:38
+    725|     })
+    726|     await abort(stream)
+    727|     expect(result.current.streaming).toBe(false)
+       |                                      ^
+    728|     expect(result.current.settling).toBe(false)
+    729|     // 입력창은 대화마다 따로가 아니라 옮겨 간 화면으로 되돌리지 않는다
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 45 skipped (47)
+   Start at  10:21:14
+   Duration  794ms (transform 110ms, setup 128ms, import 155ms, tests 27ms, environment 339ms)
+
