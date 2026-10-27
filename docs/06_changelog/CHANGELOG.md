@@ -8,9 +8,12 @@
 
 ## [Unreleased]
 
+### Docs
+- **compose 다이제스트로 뜨는 `cloudflared` · `db` 의 되돌리는 법을 `backend.md` 「감수하는 약점」에 적었다(#527).** 지금까지 롤백 절은 app 의 `:previous` · `prev-<sha>` 태그만 다뤄, #525 배포 때 터널 롤백 절차가 CHANGELOG 에만 있었다. compose 의 cloudflared 「올릴 때」 절차에는 `--version` · `--token-file` 확인 두 줄을 더했다 — `latest` 가 몇 버전인지는 다이제스트로 알 수 없다. 동작 변화 없음(compose 는 주석만)
+
 ## [2026-10-28]
 
-운영 배포 1회 — `1627392`(#525 cloudflared 2026.10.5, 롤백 `prev-2889bfd`). 백엔드 코드는 `2889bfd` 와 같고 compose 의 cloudflared 다이제스트만 바뀌었다. 배포 뒤 컨테이너 2026.10.5 · 터널 엣지 4 · 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `Config.Env` TUNNEL 0건 · Cloudflare 대시보드 커넥터 버전 2026.10.5. cloudflared 는 app 의 `prev-*` 태그로 되돌아가지 않는다 — 되돌리려면 서버 compose 의 image 를 `sha256:9b49eed8…`(2026.10.0)로 바꿔 `docker compose up -d cloudflared`.
+운영 배포 1회 — `1627392`(#525 cloudflared 2026.10.5, 롤백 `prev-2889bfd`). 백엔드 코드는 `2889bfd` 와 같고 compose 의 cloudflared 다이제스트만 바뀌었다. 배포 뒤 컨테이너 2026.10.5 · 터널 엣지 4 · 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `Config.Env` TUNNEL 0건 · Cloudflare 대시보드 커넥터 버전 2026.10.5. cloudflared 를 되돌릴 이전 다이제스트는 `sha256:9b49eed8…`(2026.10.0) — 절차는 `backend.md` 「감수하는 약점」.
 
 ### Security (1627392)
 - **cloudflared 고정 이미지를 2026.10.0 에서 2026.10.5 로 올렸다(#525).** Cloudflare 가 10-28 계정 메일로 「cloudflared 가 의존하는 서드파티 인증서가 손상됐다(10-20 블로그)」며 모든 인스턴스를 **2026.10.2 이상**으로 올리라고 요구했다. 운영 터널 커넥터는 healthy 였지만 버전은 2026.10.0 이었다 — healthy 는 연결 상태일 뿐이다

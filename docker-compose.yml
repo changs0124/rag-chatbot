@@ -203,13 +203,16 @@ services:
     # 올릴 때는 **다이제스트를 바꾸는 커밋**으로 올린다(그 자체가 이력이 된다) :
     #   docker pull cloudflare/cloudflared:latest
     #   docker inspect cloudflare/cloudflared:latest --format '{{.RepoDigests}}'
+    #   docker run --rm cloudflare/cloudflared@<다이제스트> --version                       # latest 가 몇 버전인지는 다이제스트로 알 수 없다
+    #   docker run --rm cloudflare/cloudflared@<다이제스트> tunnel run --help | grep token-file   # 아래 command 가 쓴다(#203)
+    # 되돌리는 법은 backend.md 「감수하는 약점」 - app 의 롤백 태그로는 되돌아가지 않는다
     image: cloudflare/cloudflared@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53
     # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ http://app:8080 매핑은 Cloudflare 대시보드에 있다.
     # 터널 설정을 저장소에 두지 않는 대신, 토큰만 있으면 어느 서버에서든 같은 주소로 붙는다
     #
     # **토큰은 환경변수가 아니라 파일로 넘긴다(#203).** env 로 넘기면 `docker inspect` 의 `Config.Env` 와
     # `/var/lib/docker/containers/<id>/config.v2.json` 에 평문으로 굳어, 장애 대응 중 inspect 출력을 붙여 넣는
-    # 순간 도메인 트래픽을 가로챌 수 있는 토큰이 같이 나간다. `--token-file` 지원이 필요하다(2026.10.5 에서 확인) - 다이제스트를 바꿀 때 확인
+    # 순간 도메인 트래픽을 가로챌 수 있는 토큰이 같이 나간다. `--token-file` 지원이 필요하다(2026.10.5 에서 확인)
     command: tunnel --no-autoupdate run --token-file /run/secrets/tunnel_token
     secrets:
       - tunnel_token
