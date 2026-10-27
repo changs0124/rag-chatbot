@@ -1,0 +1,11 @@
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중에 다른 대화를 누르면 확인창을 띄우고 아직 옮기지 않는다 15ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 확인하면 그 대화로 옮기고 확인창을 닫는다 28ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 취소하면 옮기지 않고 확인창만 닫는다 29ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 취소해도 모바일 드로어는 열린 채로 둔다 48ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중에 새 채팅을 눌러도 먼저 묻는다 - 모바일 헤더 버튼도 같다 30ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 사이드바의 새 대화 버튼도 먼저 묻는다 19ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중이 아니면 묻지 않고 바로 옮긴다 18ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 판정(재확인) 중에는 묻지 않는다 - 옮기면 잠금만 풀린다(#489 리뷰) 7ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중인 지금 대화를 다시 누르면 묻지 않는다(#359) 7ms
+Test Files  1 passed (1)
+Tests  22 passed (22)
