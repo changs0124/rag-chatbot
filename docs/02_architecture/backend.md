@@ -137,8 +137,8 @@ exception/    ApiExceptions + GlobalExceptionHandler
   1. **명단에 있는데 계정이 없으면 계정째로 만든다** — 가입 경로가 없고 계정 발급 API 는 관리자만 부를 수 있어,
      없으면 빈 DB 에서 아무도 첫 계정을 만들지 못한다.
   2. 임시 비밀번호는 **기동 로그에 한 번만** 찍는다 — 환경변수로 받으면 계속 유효한 비밀번호로 남고,
-     마이그레이션으로 심으면 모든 배포가 같은 초기 비밀번호를 갖는다. 로그는 10MB×3 으로 회전시킨다
-     (Docker 기본 json-file 은 회전이 없어 그 값이 평문으로 남는다).
+     마이그레이션으로 심으면 모든 배포가 같은 초기 비밀번호를 갖는다. 로그는 회전시킨다(아래 「배포」 하드닝 표,
+     Docker 기본 json-file 은 회전이 없어 그 값이 평문으로 남는다).
   3. **이미 계정이 있으면 손대지 않는다** — 매 기동마다 갈아엎으면 재기동이 곧 계정 잠금이 된다.
 
   대가는 **명단 변경에 재기동이 필요**하다는 것이다 — 사내 소규모에서 관리자 교체는 드물어 감수한다.
@@ -167,7 +167,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   **정상 HTTP 응답**으로 나간다. 스트림이 열린 뒤에는 상태 코드를 바꿀 수 없기 때문이다.
 - **동시성 상한은 `prepare` 앞에서 잡는다.** `prepare` 가 사용자 메시지를 저장하므로, 뒤에서 거절하면 답변 없는
   메시지가 대화에 남는다.
-- **스트림 수명은 SSE emitter 타임아웃이 단독으로 정한다**(기본 10분). MVC async 타임아웃은 꺼 둔다.
+- **스트림 수명은 SSE emitter 타임아웃이 단독으로 정한다**(`SSE_TIMEOUT_MS`). MVC async 타임아웃은 꺼 둔다.
   emitter 가 닫힌 뒤의 `send` 는 `IllegalStateException` 이라 `done` 도 `error` 도 실을 수 없다 —
   api.md 의 **세 번째 종료 경로**(종료 이벤트 없이 끊김)가 여기서 생긴다.
 - **중단(사용자 정지 · 연결 끊김)은 실패가 아니다** — 받은 데까지 `status=complete` + `stopped=true`, 서버 타임아웃은 `timed_out` 으로 따로 남긴다(#84). 인용은 스트림 끝에 오므로 중단 시점에는 늘 0건이라
@@ -221,7 +221,7 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 
 자르는 규칙(`ChatService.buildHistory`) :
 
-- **개수가 아니라 토큰 예산**(`app.chat.history-token-budget`, 기본 6000)으로 자른다. 메시지 길이 편차가
+- **개수가 아니라 토큰 예산**(`app.chat.history-token-budget`, `CHAT_HISTORY_TOKEN_BUDGET`)으로 자른다. 메시지 길이 편차가
   커서 "최근 N개"는 턴당 비용을 예측하지 못한다 — 같은 N 이 어떤 대화에서는 수백 토큰이고 어떤 대화에서는
   수만 토큰이 된다.
 - 최신부터 채우다 예산을 넘기면 **거기서 멈춘다.** 중간을 건너뛰고 더 오래된 짧은 메시지를 주워 담으면
@@ -390,8 +390,7 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 
 ## 배포
 
-두 갈래가 있다. **상시 공개**는 자체 호스팅 서버에 컨테이너를 올리고, **데모**는 로컬 인스턴스를 터널로 노출한다.
-환경변수 요구사항은 어느 쪽이든 같다.
+자체 호스팅 서버 한 대에 컨테이너를 올린다(아래 「상시 공개 - 자체 호스팅 서버」).
 
 **지금 무엇이 남았는지는 이 문서에 적지 않는다(#177).** 여기는 **절차**의 정본이고,
 남은 일은 [current-sprint](../04_tasks/current-sprint.md) 가 정본이다.
@@ -495,7 +494,7 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 두면 이미지를 못 찾았을 때 `up` 이 조용히 빌드로 빠지는 경로가 남는다.
 
 **이미지는 레지스트리를 거치지 않는다.** `scripts/deploy.sh` 가 로컬에서 빌드해
-`docker save` → `scp` → `docker load` 로 서버에 넣는다. 압축 후 90MB 남짓(10-06 GCP 시절 실측, CHANGELOG)이고 Lightsail 월 전송량(4TB)
+`docker save` → `scp` → `docker load` 로 서버에 넣는다. 압축 후 90MB 남짓(2026-10-06 실측, CHANGELOG)이고 Lightsail 월 전송량(4TB)
 안이다.
 
 **GHCR 을 쓰지 않는다** — 직접 전송은 토큰도 정리 정책도 필요 없고, 서버가 하나뿐이라 레지스트리의 이점을 쓸 데가 없다(경위는 CHANGELOG #137).
@@ -538,7 +537,6 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build d
 
 주제별 근거는 `docker-compose.yml` 의 해당 서비스 주석이 정본이다 — `db` 의 `cap_add` 넷(실측으로 좁힘 · **빈 볼륨으로 초기화 경로를 태워야**
 검증된다) · 네트워크 분리(`edge` 에서 `db` 는 이름 해석부터 안 된다) · `cloudflared` · `db` 다이제스트 고정(#130 · #357, 올릴 때는 다이제스트를 바꾸는 커밋으로).
-이전 운영 서버(GCP VM, 10-06 · 지금의 Lightsail 이전 #243 전)에서 로컬과 같은 값을 확인했다 — 원본은 `.issue/130/evidence/after/07-vm-runtime-20261006.txt`.
 
 백엔드 `Dockerfile` 의 두 `FROM`(다이제스트)과 `ci.yml` 의 `actions/*`(커밋 SHA + `# vX.Y.Z` 주석)도 같이 고정돼 있다(#416). **자동으로 갱신되지 않는다** — 올릴 때는 
 `docker buildx imagetools inspect <이미지:태그>` 의 최상단 `Digest:` 를, 액션은 `gh api repos/actions/<이름>/git/ref/tags/<태그>` 의 커밋 SHA(주석 태그면 한 번 더 벗긴다)를 새 값으로 바꾸는 커밋 하나로 올린다.
@@ -609,37 +607,6 @@ GB-월 과금)을 켜고, 종전 GCS 백업 스크립트는 삭제했다.
 2. **launch script 는 docker 보다 늦게 돈다** — cloudflared 가 몇 초 운영 터널에 같이 붙으므로 **사용자가 없는 시간에** 하고, 접속 즉시 `sudo docker ps` 로 cloudflared 가 꺼졌는지 본다
 3. 확인 : `127.0.0.1:8080/api/health` 200 · 표 7개(앱 테이블 6개 + `flyway_schema_history`) 행 수를 운영의 **스냅샷 시각 이전 생성분**(`created_at`/`installed_on` < 스냅샷 `createdAt`)과 대조
 4. 끝나면 인스턴스를 지우고 `get-instances` · `get-static-ips` · `get-disks` 로 남은 것이 없는지 본다. 고정 IP 는 붙이지 않는다(분리된 고정 IP 는 과금)
-
-### 데모 - 로컬 + 터널
-
-프론트는 Vercel(https)에 있고 백엔드는 로컬이므로 `http://공인IP:8080` 직결은 성립하지 않는다 —
-https 페이지가 http 를 부르면 브라우저가 mixed content 로 막는다. 터널이 https 종단을 대신 맡는다.
-
-1. 백엔드를 평소대로 띄운다(`./mvnw spring-boot:run`, `:8080`).
-   **이 경로는 `backend/.env` 를 읽지 않는다** — dotenv 로더가 없어 환경변수를 셸에 직접 넣어야 한다.
-   `.env` 를 그대로 쓰려면 `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app`
-   으로 띄운다 — 본체에는 `build` 가 없어 override 를 겹쳐야 로컬 빌드가 성립한다(#127)
-2. 터널을 연다 — `ngrok http 8080` 또는 `cloudflared tunnel --url http://localhost:8080`
-3. 백엔드 `ALLOWED_ORIGINS` 에 **Vercel 도메인**을 넣는다. 터널 주소가 아니다 —
-   이 값은 백엔드의 공개 주소가 아니라 **요청을 보내는 화면의 출처**다
-4. Vercel `VITE_API_BASE_URL` 에 **터널 주소**를 넣고 재배포한다
-
-터널 프로세스와 백엔드 프로세스는 수명이 다르다. 백엔드만 재시작하면 주소가 유지되므로 재배포가
-필요 없고, 주소가 바뀌는 것은 **터널을 재시작할 때**다. 여기서 도구가 갈린다 :
-
-| 도구 | 주소 | 대가 |
-|------|------|------|
-| ngrok 무료 | 계정당 고정 도메인 1개 — 재시작해도 같음 | 월 20,000 요청 · 1GB. 브라우저 요청에 경고 페이지(interstitial)를 끼움 |
-| cloudflared quick tunnel | 켤 때마다 랜덤 | 주소가 바뀔 때마다 Vercel 재배포 |
-
-ngrok 의 경고 페이지는 요청에 `ngrok-skip-browser-warning` 헤더를 실으면 건너뛴다. 다만 이 앱에서는
-그 우회가 절반만 가능하다 — `CorsConfig` 의 허용 헤더가 `Authorization` · `Content-Type` 화이트리스트라
-헤더를 실으려면 거기에도 추가해야 하고, 첨부 이미지는 `<img src>` 로 나가서(`MessageList`) 헤더를 실을 수 없다.
-ngrok 문서는 interstitial 이 HTML 브라우저 요청에만 붙고 이미지·API 요청에는 해당하지 않는다고 밝히지만
-**이 저장소에서 실측한 적은 없다.** 데모 전에 로그인과 첨부 이미지 표시부터 확인하고, 깨지면 그때 고친다.
-
-첨부는 로컬 디스크(`FILE_STORAGE_ROOT`, 기본 `./uploads`)에 그대로 쌓이므로 이 경로에는 볼륨 문제가 없다.
-대신 **PC 가 꺼지면 데모도 끝난다.**
 
 ## 테스트
 

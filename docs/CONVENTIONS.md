@@ -63,9 +63,8 @@
 - 유틸·훅 파일은 camelCase(`useChat.ts`), 상수는 UPPER_SNAKE_CASE(`STAGE_MIN_MS`).
 
 ### 상태관리
-- **외부 상태 라이브러리를 쓰지 않는다.** 전역은 Context(`auth/AuthContext.tsx`) 하나,
-  화면 상태는 도메인 훅(`hooks/useChat.ts`)이 `useState`/`useRef`로 보유한다.
-- 서버 캐시 라이브러리(react-query 등)도 없다. 필요한 시점에 직접 호출하고 로컬 상태를 갱신한다.
+- **외부 상태 라이브러리 · 서버 캐시 라이브러리를 쓰지 않는다.** 누가 무엇을 보유하는지와 근거는
+  [frontend.md](./02_architecture/frontend.md) 「상태관리」가 정본이다.
 
 ### API 통신
 - API 호출은 `lib/api.ts` 의 `api.*` 래퍼를 통하고, 엔드포인트 함수는 `lib/endpoints.ts` 에 둔다. 래퍼 밖 `fetch` 예외 · `ApiError` · 채팅 스트림 규칙은
@@ -86,7 +85,7 @@
 
 ## 테스트·CI 게이트
 
-- 백엔드 통합 테스트는 Testcontainers로 **실 PostgreSQL**을 띄운다(`AbstractPgIntegrationTest`). H2 대체 금지.
+- 백엔드 통합 테스트는 Testcontainers로 **실 PostgreSQL**을 띄운다(`AbstractPgIntegrationTest`). H2 대체 금지 — 근거는 [backend.md](./02_architecture/backend.md) 「테스트」.
 - **실행 시각·시계 해상도에 따라 결과가 갈리는 검사를 두지 않는다.** 게이트가 되지 못하고, 어느 날 갑자기
   빨간불이 된다. 실제로 두 건이 이렇게 샜다 :
   - 레이트리밋은 **고정 윈도우**라 분 경계에서 카운터가 리셋된다. 상한 검사는 **상한의 두 배 넘게** 보내

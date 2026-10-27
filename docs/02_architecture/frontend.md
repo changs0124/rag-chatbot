@@ -252,7 +252,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 ## 테스트
 
-Vitest + Testing Library. 테스트는 **소스 옆에** 둔다(`useChat.test.ts`, `LoginPage.test.tsx`). 실행은 `npm test`.
+도구와 테스트 파일을 두는 자리는 [CONVENTIONS](../CONVENTIONS.md) 「테스트」가 정본이다.
 케이스 수 하한은 `scripts/case-floors.env` 의 `FRONTEND_MIN` 이 잠근다 - **실측값이 정본이라 여기 숫자를 적지 않는다.**
 
 ## 배포 (Vercel)
@@ -286,5 +286,3 @@ GitHub 저장소가 연결돼 `main` 푸시가 자동 배포된다. **다시 연
 2. 백엔드의 `ALLOWED_ORIGINS` 에 Vercel 도메인을 넣는다(백엔드 설정 — `backend.md` 「배포」).
    안 넣으면 브라우저가 모든 호출을 CORS 로 막는다.
 
-백엔드를 로컬에 두고 터널로 노출하는 데모 구성이면 `VITE_API_BASE_URL` 이 터널 주소가 된다(바뀌면 1번대로 재배포).
-절차와 터널 도구 선택은 [backend.md](./backend.md) 「배포」 참고.

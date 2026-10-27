@@ -324,4 +324,4 @@ Vector Store 는 텍스트만 색인하므로 **그림은 따로 옮겨야 한�
 남기는 규칙은 [backend.md](../02_architecture/backend.md) 「배포」에 있다.
 
 `APP_MODE=mock` 은 **로컬 전용** 대피로다. 목업은 실 키 없이 전 경로가 동작하므로 원인을 찾을 시간을 벌 수 있다.
-compose 로 띄울 때는 `SPRING_PROFILES_ACTIVE=` 로 프로필을 비워야 하는데, 이는 가드를 일부러 끄는 것이라 운영에서 쓰지 않는다.
+compose 로 띄우는 법은 [backend.md](../02_architecture/backend.md) 「실행 모드」에 있다 — 가드를 일부러 끄는 것이라 운영에서 쓰지 않는다.

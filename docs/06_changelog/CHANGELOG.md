@@ -4,6 +4,8 @@
 
 배포 구획의 소절에 배포 라벨(커밋 또는 반영 방식, 예 : `### Fixed (62b3c3f)` · `### Fixed (Vector Store 교체)`)을 붙이는 형식은 `[2026-10-26]` 부터다. 그 이전 구획은 구획 머리 줄의 배포 → 이슈 매핑만 있고 소급하지 않는다.
 
+`[Unreleased]` 는 다음 **백엔드 운영 배포** 전까지 merge 된 변경을 모은다. 프론트만 바뀐 항목도 여기 둔다 — merge 때 Vercel 이 이미 운영에 배포했어도, 구획은 백엔드 배포 날짜로 닫는다.
+
 ## [Unreleased]
 
 ### Added
@@ -11,7 +13,7 @@
 
 ### Fixed
 - **답이 시작되기 전에 확인창으로 대화를 옮기면 옮겨 간 화면의 입력창이 「확인 중」으로 잠겼다(#505).** 이동이 스트림을 끊는 순간엔 아직 판정 전이라 `abortActiveStream` 이 놓아 줄 것이 없었고, 그 뒤 시작된 판정이 `settling` 을 세워 끝날 때까지(새 대화 최대 8초 · 기존 대화 한 왕복) 보내기를 막았다. `run` 의 catch 가 이미 옮긴 턴이면 settling 을 세우지 않고 잠금을 놓아 준다(판정은 뒤에서 이어 감). 확인창 문구에 「답이 시작되기 전이면 보낸 질문도 남지 않습니다」를 붙였다 · 테스트 2건 + 단언 1건 · 프론트 하한 293 → **295**
-- **끊긴 턴 판정의 재확인 창을 5초 → 8초로 넓혔다(#501).** #489 배포 뒤 운영 탐침(FIN 끊기 10회)에서 서버가 끊김을 알아채 질문을 걷기까지 3.2~5.9초가 걸려, 5초 창은 10회 중 2회(5.4 · 5.9초)를 놓치고 「저장됨」으로 끝나 글 · 첨부가 입력창에 돌아오지 않았다. `RECHECK_WINDOW_MS` 8000 · 판정 구간(「확인 중」 · 보내기 비활성)은 그만큼 길어진다 · 테스트 1건(6초 뒤 철회 → 되돌림)
+- **끊긴 턴 판정의 재확인 창을 5초 → 8초로 넓혔다(#501).** #489 배포 뒤 운영 탐침(FIN 끊기 10회)에서 서버가 끊김을 알아채 질문을 걷기까지 3.2~5.9초가 걸려, 5초 창은 10회 중 2회(5.4 · 5.9초)를 놓치고 「저장됨」으로 끝나 글 · 첨부가 입력창에 돌아오지 않았다. `RECHECK_WINDOW_MS` 8000 · 판정 구간(「확인 중」 · 보내기 비활성)은 그만큼 길어진다 · 테스트 1건(6초 뒤 철회 → 되돌림) · 프론트 하한 282 → **283**
 
 ### Docs
 - **문서 · 주석이 지금 코드와 다르게 말하던 9곳을 맞췄다(#506, 10-27 전체 리뷰).** 동작 변화 없음 — 셸 · compose · `.env.example` 은 주석만
@@ -20,6 +22,12 @@
   - `frontend.md` : `/admin` 보호 열을 실제(`ProtectedRoute` 뿐, 관리자 아니면 `AdminPage` 가 `/` 로) · 「남은 한계」의 해결된 항목을 실제로 남은 것(8초 넘게 이벤트 없음)만으로
   - `backend/.env.example` · `docker-compose.yml` : DB 비밀번호 출처를 #415 이후 구성(앱 `APP_DB_*` · 마이그레이션 `POSTGRES_PASSWORD`)으로, `FILE_STORAGE_ROOT` 는 compose 가 `/data/uploads` 로 덮어씀을 명시
   - `check-doc-sections.sh` : 「한 줄에 참조 둘인 줄은 없다」 → 있다(둘째 참조는 검사되지 않음)
+- **문서의 사본 · 낡은 경위를 정본 + 포인터로 줄였다(#508, 10-27 전체 리뷰).** 사실은 바꾸지 않았다
+  - 기본값 수치 사본 7곳 → env 이름(`OPENAI_STREAM_READ_TIMEOUT_MS` · `SSE_TIMEOUT_MS` · `RATELIMIT_UPLOAD_PER_MINUTE` · `CHAT_HISTORY_TOKEN_BUDGET` · `ORPHAN_TTL_MINUTES`) · `overview.md` 의 값 없는 「외부 연동」 포인터 → 「운영 파라미터」
+  - 같은 규칙 여러 곳 → 한 곳 + 포인터 : 로그 회전(`backend.md` 하드닝 표) · `SPRING_PROFILES_ACTIVE=` 비우기(`backend.md` 「실행 모드」) · 상태관리(`frontend.md`) · 테스트 배치(`CONVENTIONS`) · Testcontainers 근거(`backend.md` 「테스트」) · Spring Boot 4.1 기한(backlog)
+  - `README.md` env 표(`.env.example` 사본) 삭제 · 운영 URL 을 「데모」 → 「운영」 · `INDEX.md` 빈 `03_references` · `05_issues` 행 삭제 · 저장소에 없는 `CLAUDE.md` 참조 → 행동 지침 네 줄을 직접 적음
+  - 낡은 경위 : `backend.md` 「데모 - 로컬 + 터널」 절차(운영 중 · 미검증)와 `frontend.md` 의 터널 데모 문단 삭제, GCP 시절 표현 · 증거 경로, `requirements.md` ID 승계 경위, `current-sprint.md` 끝난 이슈 목록 → CHANGELOG 포인터
+  - CHANGELOG 머리 : `[Unreleased]` 가 프론트만 바뀐 항목(Vercel 자동 배포)도 모은다는 규칙 · #501 항목에 프론트 하한 282 → 283
 
 ### Changed
 - **어긋난 · 낡은 코드 주석과 쓰이지 않는 작은 조각을 정리했다(#507, 10-27 전체 리뷰).** 동작 변화 없음 · 케이스 수 그대로(단언 1건 추가)
