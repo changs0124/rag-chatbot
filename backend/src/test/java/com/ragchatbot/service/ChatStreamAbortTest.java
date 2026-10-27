@@ -123,6 +123,7 @@ class ChatStreamAbortTest {
 	void commit_failure_still_ends_the_request() {
 		var persistence = new RecordingPersistence();
 		var service = chatService(new StubOpenAi(List.of("답변"), null), persistence);
+		var completeFailure = new IllegalStateException("flush", new NullPointerException("MimeHeaders.setValue"));
 		var emitter = new SseEmitter() {
 			Throwable endedWith;
 
@@ -133,7 +134,7 @@ class ChatStreamAbortTest {
 
 			@Override
 			public void complete() {
-				throw new IllegalStateException("flush", new NullPointerException("MimeHeaders.setValue"));
+				throw completeFailure;
 			}
 
 			@Override
@@ -144,7 +145,7 @@ class ChatStreamAbortTest {
 
 		service.stream(UUID.randomUUID(), prepared(), emitter);
 
-		assertThat(emitter.endedWith).isNotNull();
+		assertThat(emitter.endedWith).isSameAs(completeFailure);
 	}
 
 	/** 끊김과 서버 쪽 고장을 가르는 기준(#515) - 감싼 예외까지 끊김으로 보면 커밋 NPE 가 다시 숨는다 */
