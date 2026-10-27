@@ -528,9 +528,10 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
 (예 : `sudo docker tag rag-chatbot-backend:latest rag-chatbot-backend:prev-<sha>`)가 있어야 하고,
 없으면 **그 커밋을 다시 빌드해야 한다.**
 배포가 잦지 않은 단일 서버 전제에서 감수한다.
-**`cloudflared` · `db` 는 이 태그로 되돌아가지 않는다** — 둘은 compose 의 다이제스트로 뜨고 `deploy.sh` 가 매번 compose 를 올려
+**`cloudflared` · `db` 는 이 태그로 되돌아가지 않는다** — 둘은 compose 의 다이제스트로 뜨고 `deploy.sh` 가 매번 compose 를 서버로 보내
 `up -d` 하므로, 다이제스트를 바꾼 커밋을 배포하는 순간 함께 바뀐다. 되돌리려면 서버 배포 디렉터리(`DEPLOY_DIR`, 기본 `~/deploy`)의 `docker-compose.yml` 에서 그 `image:` 줄을
-이전 다이제스트(이전 커밋의 compose)로 고치고 `sudo docker compose up -d <서비스>` 를 한다. `db` 는 같은 메이저 버전 안에서만 되돌릴 수 있다(데이터 디렉터리 형식).
+이전 다이제스트(이전 커밋의 compose)로 고치고 그 디렉터리에서 `sudo docker compose up -d <서비스>` 를 한다. **저장소의 compose 도 되돌리는 커밋을 올린다** —
+서버 파일만 고치면 다음 `deploy.sh` 가 저장소의 compose 로 덮어 새 다이제스트로 다시 올린다. `db` 는 같은 메이저 버전 안에서만 되돌릴 수 있다(데이터 디렉터리 형식).
 
 로컬에서 직접 빌드해 띄우려면 override 를 겹친다 :
 
