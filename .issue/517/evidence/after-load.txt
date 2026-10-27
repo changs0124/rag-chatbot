@@ -1,20 +1,20 @@
-# after — 수정 이미지(i517-after, INCLUDE 허용) 로컬 목업 부하
+# after — 수정 1차 이미지(i517-after, 리뷰 전 : INCLUDE 를 모든 경로에 허용) 로컬 목업 부하 · 최종 코드(/error 로 좁힘) 측정은 아래 after2
 조건 : before 와 같음(동시 16 x 3턴 x 3라운드 x 3회 = 432요청/컨테이너, 25% 끊기). 컨테이너 3개(새 DB)
 
 ## 컨테이너 1
- ȸ�� 1 ��û 144 ���� {'200': 144} ���� 38 ���� 0
- ȸ�� 2 ��û 144 ���� {'200': 144} ���� 33 ���� 0
- ȸ�� 3 ��û 144 ���� {'200': 144} ���� 38 ���� 0
+ 회차 1 요청 144 상태 {'200': 144} 끊기 38 멈춤 0
+ 회차 2 요청 144 상태 {'200': 144} 끊기 33 멈춤 0
+ 회차 3 요청 144 상태 {'200': 144} 끊기 38 멈춤 0
  앱 로그 ERROR 줄 0 · AuthorizationDeniedException 0 · 'Exception' 포함 줄 0
 ## 컨테이너 2
- ȸ�� 1 ��û 144 ���� {'200': 144} ���� 38 ���� 0
- ȸ�� 2 ��û 144 ���� {'200': 144} ���� 34 ���� 0
- ȸ�� 3 ��û 144 ���� {'200': 144} ���� 25 ���� 0
+ 회차 1 요청 144 상태 {'200': 144} 끊기 38 멈춤 0
+ 회차 2 요청 144 상태 {'200': 144} 끊기 34 멈춤 0
+ 회차 3 요청 144 상태 {'200': 144} 끊기 25 멈춤 0
  앱 로그 ERROR 줄 0 · AuthorizationDeniedException 0 · 'Exception' 포함 줄 0
 ## 컨테이너 3
- ȸ�� 1 ��û 144 ���� {'200': 144} ���� 34 ���� 0
- ȸ�� 2 ��û 144 ���� {'200': 144} ���� 36 ���� 0
- ȸ�� 3 ��û 144 ���� {'200': 144} ���� 29 ���� 0
+ 회차 1 요청 144 상태 {'200': 144} 끊기 34 멈춤 0
+ 회차 2 요청 144 상태 {'200': 144} 끊기 36 멈춤 0
+ 회차 3 요청 144 상태 {'200': 144} 끊기 29 멈춤 0
  앱 로그 ERROR 줄 0 · AuthorizationDeniedException 0 · 'Exception' 포함 줄 0
 
 ## 요약
@@ -29,8 +29,8 @@ before 864요청 : ERROR 8줄(4건 x 2줄, 컨테이너 1 은 0) · after 1,296�
  컨테이너 4 : ERROR 0 · AuthorizationDenied 0 · Exception 줄 0 · /error INCLUDE 진입 1건
 
 ## 발췌 (컨테이너 2)
-2026-10-27T05:12:04.095ZispatcherServlet        : Exiting from "ASYNC" dispatch, status 200
-2026-10-27T05:12:04.095ZispatcherServlet        : "INCLUDE" dispatch for POST "/error", parameters={}
-2026-10-27T05:12:04.099ZispatcherServlet        : Exiting from "INCLUDE" dispatch, status 200
+2026-10-27T05:12:04.095Z … DispatcherServlet : Exiting from "ASYNC" dispatch, status 200
+2026-10-27T05:12:04.095Z … DispatcherServlet : "INCLUDE" dispatch for POST "/error", parameters={}
+2026-10-27T05:12:04.099Z … DispatcherServlet : Exiting from "INCLUDE" dispatch, status 200
 
 결론 : /error INCLUDE 가 실제로 6건 돌았고 전부 status 200 으로 끝났으며 ERROR · 예외 0 — 에러 페이지가 커밋된 응답에 쓰다 새 ERROR 를 남기는 경로(리뷰 M1)도 관찰되지 않았다
