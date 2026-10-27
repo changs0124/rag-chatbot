@@ -1,0 +1,159 @@
+diff --git a/backend/.env.example b/backend/.env.example
+index 31073a8..851e65b 100644
+--- a/backend/.env.example
++++ b/backend/.env.example
+@@ -23,7 +23,8 @@ JWT_SECRET=
+ # 관리형 DB 가 주는 postgres://user:pass@host/db 형식을 그대로 넣으면 기동하지 않음.
+ #
+ # **compose 배포에서는 이 세 값이 무시된다** - 루트 docker-compose.yml 이 db 컨테이너를 가리키도록
+-# 덮어쓰며, 비밀번호는 루트 .env 의 POSTGRES_PASSWORD 한 곳에서 온다(정본 : 루트 .env.example).
++# 덮어쓰며, 비밀번호는 루트 .env 에서 온다 - 앱은 APP_DB_USER · APP_DB_PASSWORD(#415, 비우면 옛 구성처럼
++# POSTGRES_PASSWORD), 마이그레이션은 POSTGRES_PASSWORD(정본 : 루트 .env.example).
+ # 아래 값은 로컬 개발용이다
+ DB_URL=jdbc:postgresql://localhost:5432/ragchatbot
+ DB_USERNAME=postgres
+@@ -77,8 +78,8 @@ OPENAI_VECTOR_STORE_ID=
+ # 비우면 live 는 답변의 그림 표식이 전부 404 라 그림 없이 텍스트만 보임(기동은 정상). mock 은 classpath 견본(mock-figures/)을 씀. compose 는 /data/doc-figures 로 덮어씀
+ # DOC_FIGURES_DIR=
+ 
+-# 첨부 저장 루트. **컨테이너 배포 시 영속 볼륨 경로를 줄 것** -
+-# 로컬 디스크라 컨테이너가 갈리면 업로드된 이미지가 사라짐
++# 첨부 저장 루트. 로컬 디스크라 컨테이너 배포는 영속 볼륨 경로여야 함 - 컨테이너가 갈리면 업로드된 이미지가 사라짐.
++# compose 는 /data/uploads(볼륨)로 덮어씀 - 여기 값은 로컬 개발용
+ FILE_STORAGE_ROOT=./uploads
+ 
+ # 모델에 함께 보낼 이전 대화 이력의 토큰 예산. 0 에 가깝게 두면 매 턴 문맥이 초기화되고,
+diff --git a/docker-compose.yml b/docker-compose.yml
+index b66b7df..64a5583 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -135,7 +135,7 @@ services:
+       # 로컬에서 compose 로 목업을 띄울 때만 셸이나 루트 .env 에서 SPRING_PROFILES_ACTIVE= 로 비운다
+       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE-prod}
+       # DB 접속은 여기서 조립한다 - backend/.env 에 DB_URL 이 있어도 이 값이 이긴다.
+-      # 비밀번호를 .env 한 곳에만 두려는 것이고, 동시에 jdbc 스킴을 강제해
++      # 접속 정보를 루트 .env 에서만 받으려는 것이고(계정 · 비밀번호는 아래), 동시에 jdbc 스킴을 강제해
+       # 관리형 DB 형식(postgres://…)을 그대로 넣어 기동이 깨지는 사고를 막는다
+       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-ragchatbot}
+       # **앱은 런타임 계정으로, 마이그레이션만 소유자로 접속한다(#415).** 소유자는 슈퍼유저라, 앱이 그대로 쓰면
+diff --git a/docs/01_specs/features.md b/docs/01_specs/features.md
+index 3c03b4f..eeed2ec 100644
+--- a/docs/01_specs/features.md
++++ b/docs/01_specs/features.md
+@@ -366,7 +366,7 @@ Vector Store 는 텍스트만 색인하므로 **그림은 서버 디렉터리에
+ | 3단계(Files 업로드) 실패 | 아무것도 안 남는다. **OpenAI 일시 장애(5xx · 429 · 연결 실패 — 거절 · DNS 실패 · 경로 없음)는 `503` `SERVICE_UNAVAILABLE`**(「잠시 뒤 다시 시도」, 로그는 WARN)이고(#476 · #479) **파일 내용 거절(`413` · `415`)은 고정 문구 `400` `BAD_REQUEST`** 다 — 업스트림 원문은 WARN 로그에만 `error.code` · `error.message`(JSON 이 아니면 앞 300자, 줄바꿈은 공백)로 남긴다(#479). 그 밖은 `500` 이다 — OpenAI 의 `400` 은 손상 파일과 우리 요청 형식 결함이 갈리지 않아 내용 거절로 치지 않고, 429 라도 `error.code` 가 `insufficient_quota`(할당량 소진)면 다시 시도해도 같아 일시 장애로 치지 않는다(둘 다 폴백 ERROR). 연결 실패 중 `ENETUNREACH`(네트워크 자체 없음)는 따로 가르지 않았다 — 범위 밖이다. **POST 는 다시 보내지 않는다** — OpenAI 가 실제로는 받아 처리했다면 같은 파일이 둘 생겨 하나가 고아가 된다. **읽기 타임아웃은 일시 장애로 치지 않는다**(`500`) — 요청은 닿았고 파일이 만들어졌는지 모르는데 「다시 시도」를 권하면 중복을 부른다. 그 경우 OpenAI 에 파일이 남았을 수 있는데 `file_id` 를 받지 못해 로그로도 찾을 수 없다 — 이전부터 있던 틈이다. 연결 타임아웃도 일시 장애로 치지 않는다(`500`) — 읽기 타임아웃과 예외 타입이 같아 메시지로만 갈린다. **`504` · `502` 도 5xx 라 「다시 시도」로 안내하지만, 게이트웨이가 요청을 넘긴 뒤 끊긴 것이면 OpenAI 가 파일을 이미 만들었을 수 있다** — 그때 다시 시도하면 같은 파일이 둘이 되고 앞의 것은 `file_id` 를 모르는 고아로 남는다. 상태 코드로는 둘을 가를 수 없어 코드로 막지 않고 여기 적어 둔다(#479) |
+ | 4단계(스토어 연결) 실패 | OpenAI에 고아 파일이 남는다. 실패 응답이어도 연결이 만들어졌을 수 있어 **연결 해제 → 파일 삭제** 순으로 정리하고(#479, 해제 404 는 성공 · 아래 삭제 재시도 규칙) **해제가 끝내 실패해도 파일은 지운다** — 사용자 삭제의 #271 규칙과 다르다. 연결이 실제로 안 생겼다면 남긴 파일은 스토어 밖 고아라 동기화로도 보이지 않고, 연결이 남았더라도 동기화가 파일 404 를 `missing` 으로 잡아 끊는다. 파일 삭제가 끝내 실패하면 **ERROR 로그**에 `file_id` 를 남긴다. **행은 만들지 않는다.** 응답은 3단계와 같다 — 일시 장애면 `503`, 그 밖은 `500` |
+ | 5단계(DB 기록) 실패 | 스토어에는 들어갔는데 기록이 없는 상태로 **가장 나빴던 자리다.** 지금은 파일과 스토어 연결을 즉시 되돌리고(#72) 실패 시 로그에 `file_id` 를 남긴다(파일 삭제 실패는 ERROR, #476) — 4단계와 같은 방식이다. **되돌리기까지 실패하면 여전히 남는다**(`deleteQuietly` 라 조용히 실패한다). `OrphanCleanupScheduler` 는 로컬 첨부만 회수하므로 그 잔여분은 로그로만 찾을 수 있다 |
+-| 5단계 성공 **직후 재조회** 실패 | `upload()` 는 넣은 행을 목록에서 다시 찾아 응답을 만든다. 못 찾으면 `IllegalStateException` → `500` 인데 **`@Transactional` 이 없어 행은 이미 커밋돼 있다.** 관리자는 실패로 읽지만 목록에는 문서가 있다 — 위 5단계 실패와 정반대로 **행이 남는 쪽**의 어긋남이다 |
++| 5단계 성공 **직후 재조회** 실패 | `upload()` 는 넣은 행을 id 로 다시 읽어(`findSummaryById`) 응답을 만든다. 못 찾으면 `IllegalStateException` → `500` 인데 **`@Transactional` 이 없어 행은 이미 커밋돼 있다.** 관리자는 실패로 읽지만 목록에는 문서가 있다 — 위 5단계 실패와 정반대로 **행이 남는 쪽**의 어긋남이다 |
+ | 삭제 시 OpenAI 정리 실패 | `deleted_at` 은 그대로 채운다(`deleteQuietly` 라 던지지 않는다). **일시 장애(5xx · 429 · 연결 실패, #479)는 연결 해제 · 파일 삭제 각각 최대 3번 보낸다**(300 · 600ms 간격, #476) — DELETE 는 되풀이해도 결과가 같고 404 도 성공이다. **429 의 `Retry-After` 는 따르지 않는다** — 간격이 고정이라 연속 429 는 0.9초 재시도로 넘기지 못한다(한계, #479). 읽기 타임아웃 · 4xx 는 다시 보내지 않는다. 연결 해제가 끝내 실패하면 파일을 남겨 동기화로 다시 지울 수 있게 한다(#271, WARN). **해제는 됐는데 파일 삭제가 끝내 실패하면 그 파일은 스토어 밖이라 동기화로도 다시 보이지 않는다** — 검색에는 안 잡히고 계정 저장 용량만 차지한다. ERROR 로그의 `file_id` 로 OpenAI 에서 직접 지운다(`DELETE /v1/files/{id}`). 재시도는 동기화의 고아 연결 정리에도 걸려, 장애 중에는 항목당 최대 약 1초씩 동기화가 길어진다 |
+ | 동기화 중 OpenAI 조회 실패 | **아무 행도 넣지 않는다.** `500` — 관리자는 다시 시도한다 |
+ | 삭제 시 **DB 실패** | **아무것도 바뀌지 않는다**(#98). `softDelete` 를 먼저 부르므로 예외가 OpenAI 단계 앞에서 올라온다. 관리자는 오류를 보고 다시 시도한다 |
+@@ -536,8 +536,8 @@ REQ-AUTH-006을 충족시키기 위한 선택이다.
+ **대가로 생긴 것** : 빈 DB 에서 첫 관리자를 만들 길이 사라졌다. 종전에는 관리자도 스스로 가입해
+ 태어났기 때문이다. 그래서 기동 러너가 `ADMIN_EMAILS` 를 보고 **계정째로 만든다**(FEAT-ADMIN-001).
+ 
+-**화면:** 로그인 화면에서 회원가입 토글이 사라지고 「계정은 관리자가 발급합니다」 안내가 그 자리에
+-들어간다. 진입점만 지우면 사용자는 어디로 가야 할지 모른 채 멈춘다.
++**화면:** 로그인 화면에는 회원가입 진입점이 없고 그 자리에 「계정은 관리자가 발급합니다」 안내가 있다.
++진입점만 없으면 사용자는 어디로 가야 할지 모른 채 멈춘다.
+ 관리 화면 사용자 구역에는 **계정 추가 폼**이 생긴다 — 임시 비밀번호는 초기화와 같은 모달로 1회 보여준다.
+ 
+ **입력값:**
+diff --git a/docs/02_architecture/backend.md b/docs/02_architecture/backend.md
+index 3829922..10552c3 100644
+--- a/docs/02_architecture/backend.md
++++ b/docs/02_architecture/backend.md
+@@ -21,16 +21,16 @@ exception/    ApiExceptions + GlobalExceptionHandler
+ 
+ - **조회 전용 매핑은 예외다.** 조인 결과를 그대로 돌려주는 목록 조회는 `repository` 가 `dto` 의
+   Response 를 **직접** 매핑할 수 있다. MyBatis 는 JPA 와 달리 `resultMap` 에 임의 타입을 지정할 수 있어
+-  중간 엔티티가 필요 없다. 현재 그렇게 하는 것은 `RagDocumentRepository.listAlive()` 한 건이다 —
+-  `AdminDtos.DocumentResponse` 를 바로 돌려주며, 중첩 record 이므로 XML 에는 바이너리명
++  중간 엔티티가 필요 없다. 현재 그렇게 하는 것은 `RagDocumentRepository.listAlive()` · `findSummaryById()` 두 건이다 —
++  같은 `summaryResult` 로 `AdminDtos.DocumentResponse` 를 바로 돌려주며, 중첩 record 이므로 XML 에는 바이너리명
+   `com.ragchatbot.dto.AdminDtos$DocumentResponse` 로 쓴다.
+ - **그 대가로 SQL 이 응답 스펙에 직결된다.** 해당 엔드포인트의 응답 필드를 바꾸려면 XML 도 함께 고쳐야 한다.
+   같은 모양의 타입을 하나 더 두고 서비스에서 옮겨 담는 편이 나아 보일 수 있으나, 그 변환은 필드 복사일 뿐이라
+   실수할 자리만 늘린다. 직결된 만큼 **이름과 값을 따로 고정한다** — `scripts/check-response-contract.sh` 가 필드 이름을,
+   `AdminDocumentFlowTest` 의 목록 한 행 단언이 값의 출처를 본다.
+-- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 7 · `<update>` 9 · `<delete>` 2.
++- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 7 · `<update>` 10 · `<delete>` 3.
+   소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다. **`entity` 를 통째로 받는 것은 등록
+-  7건뿐이고**, **수정·삭제 11건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
++  7건뿐이고**, **수정·삭제 13건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
+ 
+ ## API 설계 원칙
+ 
+diff --git a/docs/02_architecture/frontend.md b/docs/02_architecture/frontend.md
+index abe598a..44d4f21 100644
+--- a/docs/02_architecture/frontend.md
++++ b/docs/02_architecture/frontend.md
+@@ -23,7 +23,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
+ | `/login` | `LoginPage` — 로그인 전용. 계정은 관리자가 발급한다 | 공개 |
+ | `/` | `ChatPage` | `ProtectedRoute` |
+ | `/me` | `MyPage` | `ProtectedRoute` |
+-| `/admin` | `AdminPage` — 문서 관리 · 사용자 관리 | `ProtectedRoute` + **관리자만** |
++| `/admin` | `AdminPage` — 문서 관리 · 사용자 관리 | `ProtectedRoute` — 관리자가 아니면 `AdminPage` 가 `/` 로 되돌린다(접근 제어는 서버의 404) |
+ | 그 외 | `/` 로 리다이렉트 | 해당 없음 |
+ 
+ `frontend/src/components/ProtectedRoute.tsx` 는 세 갈래다 — `loading` 중이면 로딩 표시, 끝난 뒤 사용자가 없으면
+@@ -142,9 +142,8 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
+     - 기존 대화에서 확인이 서버의 질문 저장보다 먼저 처리되면 「없음」으로 판정한다 — 질문이 뒤늦게 저장되고, 되돌린 카드는 이미 쓰여
+       다시 보내면 400 「이미 보낸 첨부」다. 새 대화는 조건부 삭제(#447)로 이 경합이 없다
+     - 기존 대화의 마지막 메시지가 같은 글(답이 아직 저장되지 않은 직전 턴)이면 「저장됨」으로 잘못 보고 글을 되돌리지 않는다
+-    - 답 없는 질문은 서버가 걷는다(#489 에서 해결, [api.md](../01_specs/api.md) 「API-POST-005: 채팅 (SSE)」) — 걷힌 것을 재확인이 보면 글 · 카드가
+-      입력창에 돌아온다(카드는 연결이 풀려 다시 보낼 수 있다). 서버가 끊김을 알아채는 것은 다음 이벤트를 쓸 때라(아래 429 항목) 모델이 8초 넘게
+-      이벤트를 내지 않으면 재확인 구간이 끝난 뒤 걷힌다 — 그때는 저장됨으로 남아 질문이 보이다가 새로고침하면 없고, 글 · 첨부는 돌아오지 않으며,
++    - 모델이 8초 넘게 이벤트를 내지 않으면 답 없는 질문이 재확인 구간이 끝난 뒤에 걷힌다 — 서버가 질문을 걷는 것은([api.md](../01_specs/api.md) 「API-POST-005: 채팅 (SSE)」)
++      끊김을 알아챈 뒤이고, 알아채는 것은 다음 이벤트를 쓸 때다(아래 429 항목). 구간 안에 걷히면 글 · 카드가 입력창에 돌아오지만, 구간 뒤에 걷히면 저장됨으로 남아 질문이 보이다가 새로고침하면 없고, 글 · 첨부는 돌아오지 않으며,
+       새 대화면 빈 대화가 목록에 남는다
+     - 판정 구간이 재확인만큼 길어진다 — 첫 확인 왕복 + 재확인 마감 8초 + 마감 직전에 나간 확인 요청 최대 3초 + (새 대화) 조건부 삭제 재시도 왕복.
+       그동안 그 화면은 `settling` 이라 보내기가 거절된다. 대화를 옮기면 잠금과 `settling` 을 함께 풀어 옮겨 간 화면에 확인 중 문구가 남지 않고 곧바로 보낼 수 있다.
+diff --git a/docs/06_changelog/CHANGELOG.md b/docs/06_changelog/CHANGELOG.md
+index ff231cc..21bb7da 100644
+--- a/docs/06_changelog/CHANGELOG.md
++++ b/docs/06_changelog/CHANGELOG.md
+@@ -13,6 +13,14 @@
+ - **답이 시작되기 전에 확인창으로 대화를 옮기면 옮겨 간 화면의 입력창이 「확인 중」으로 잠겼다(#505).** 이동이 스트림을 끊는 순간엔 아직 판정 전이라 `abortActiveStream` 이 놓아 줄 것이 없었고, 그 뒤 시작된 판정이 `settling` 을 세워 끝날 때까지(새 대화 최대 8초 · 기존 대화 한 왕복) 보내기를 막았다. `run` 의 catch 가 이미 옮긴 턴이면 settling 을 세우지 않고 잠금을 놓아 준다(판정은 뒤에서 이어 감). 확인창 문구에 「답이 시작되기 전이면 보낸 질문도 남지 않습니다」를 붙였다 · 테스트 2건 + 단언 1건 · 프론트 하한 293 → **295**
+ - **끊긴 턴 판정의 재확인 창을 5초 → 8초로 넓혔다(#501).** #489 배포 뒤 운영 탐침(FIN 끊기 10회)에서 서버가 끊김을 알아채 질문을 걷기까지 3.2~5.9초가 걸려, 5초 창은 10회 중 2회(5.4 · 5.9초)를 놓치고 「저장됨」으로 끝나 글 · 첨부가 입력창에 돌아오지 않았다. `RECHECK_WINDOW_MS` 8000 · 판정 구간(「확인 중」 · 보내기 비활성)은 그만큼 길어진다 · 테스트 1건(6초 뒤 철회 → 되돌림)
+ 
++### Docs
++- **문서 · 주석이 지금 코드와 다르게 말하던 9곳을 맞췄다(#506, 10-27 전체 리뷰).** 동작 변화 없음 — 셸 · compose · `.env.example` 은 주석만
++  - `backend.md` 「레이어」 : 쓰기 경로 수 `<update>` 9 · `<delete>` 2 → 10 · 3(#489 의 `unlinkFromMessage` · `deleteUserMessage`), DTO 직접 매핑 `listAlive()` 한 건 → `findSummaryById()` 까지 두 건(같은 `summaryResult`, `check-response-contract.sh` 머리 주석도)
++  - `features.md` : 업로드 직후 재조회가 목록이 아니라 id 조회(`findSummaryById`) · 로그인 화면 서술을 경위(「사라지고 · 들어간다」)에서 현재 상태로
++  - `frontend.md` : `/admin` 보호 열을 실제(`ProtectedRoute` 뿐, 관리자 아니면 `AdminPage` 가 `/` 로) · 「남은 한계」의 해결된 항목을 실제로 남은 것(8초 넘게 이벤트 없음)만으로
++  - `backend/.env.example` · `docker-compose.yml` : DB 비밀번호 출처를 #415 이후 구성(앱 `APP_DB_*` · 마이그레이션 `POSTGRES_PASSWORD`)으로, `FILE_STORAGE_ROOT` 는 compose 가 `/data/uploads` 로 덮어씀을 명시
++  - `check-doc-sections.sh` : 「한 줄에 참조 둘인 줄은 없다」 → 있다(둘째 참조는 검사되지 않음)
++
+ ## [2026-10-26]
+ 
+ 운영 배포 5회 — 백엔드 `a89fb83`(#452 주석 · #453 · #454 · #470, 롤백 `prev-20f26b3`, 지시문 문자열은 `20f26b3` 과 같음) · `a05d994`(#469 지시문 한 줄, 롤백 `prev-a89fb83`) · `62b3c3f`(#476, 롤백 `prev-a05d994`) · `ef68f53`(전체 리뷰 후속 #479 · #485, #486 · #487 은 주석, 롤백 `prev-62b3c3f`) · `73bb76a`(#489 · #483 · #488, 롤백 `prev-ef68f53`). #468 · #467 은 백엔드 배포 없이 운영 Vector Store 문서 교체로 반영했다(#467 이 나중, 운영 백엔드는 `62b3c3f` 그대로). 프론트 변경(#456 등)은 merge 때 Vercel 이 자동 배포했다. 10-26 전체 리뷰 후속 8건(#479 · #480 · #481 · #482 · #484 · #485 · #486 · #487) merge. 케이스 수 하한(main 통합 실측) : 백엔드 386 → **397** · 프론트 222 → **257**.
+diff --git a/scripts/check-doc-sections.sh b/scripts/check-doc-sections.sh
+index a6db9e4..ace0cc9 100644
+--- a/scripts/check-doc-sections.sh
++++ b/scripts/check-doc-sections.sh
+@@ -96,7 +96,8 @@ has_section() {
+ # 실제로 그렇게 **조용히 통과했다.** 그래서 여기서는 줄 끝까지 욕심껏 잡고, 섹션 이름은 아래에서
+ # 셸 파라미터 확장으로 잘라낸다 - 그쪽은 바이트 안전하다.
+ #
+-# 한계 : 한 줄에 이런 참조가 둘이면 첫 번째만 본다. 현재 문서에는 그런 줄이 없다.
++# 한계 : 한 줄에 이런 참조가 둘이면 첫 번째만 본다. 그런 줄이 있다(INDEX · README · requirements 등) -
++# 둘째 참조의 섹션 이름은 검사되지 않으니, 섹션 이름을 바꿀 때는 손으로 찾는다.
+ # 위와 같다 - 백틱을 리터럴로 찾는 정규식이라 단일 따옴표가 의도다
+ # shellcheck disable=SC2016
+ PATTERN='(\[[^]]*\]\([^)]+\.md[^)]*\)|`[^`]+\.md`)[[:space:]]*「.*'
+diff --git a/scripts/check-response-contract.sh b/scripts/check-response-contract.sh
+index 0c92112..dc86bd1 100644
+--- a/scripts/check-response-contract.sh
++++ b/scripts/check-response-contract.sh
+@@ -2,7 +2,8 @@
+ # 응답 계약 대조 - `AdminDtos.DocumentResponse` 한 건만 본다
+ #
+ # 왜 이것만인가 : 저장소에서 repository 가 Response DTO 를 직접 매핑하는 경로는
+-# `RagDocumentRepository.listAlive()` 뿐이다(docs/02_architecture/backend.md). 그 한 곳에서만
++# `RagDocumentRepository.listAlive()` · `findSummaryById()` 뿐이고 둘 다 같은 `summaryResult` 를 쓴다
++# (docs/02_architecture/backend.md). 그 resultMap 한 곳에서만
+ # **SQL 이 응답 스펙에 직결**되고, 필드 이름이 프론트까지 그대로 흘러간다.
+ #
+ # 무엇을 잡나 : 네 곳의 필드 이름이 어긋나는 것. 필드 추가 · 삭제 · 개명 · resultMap arg 순서 변경.

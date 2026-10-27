@@ -1,0 +1,10 @@
+참조 수집 292건 · 실재 검사 277건
+문서 참조 검사 통과
+섹션 참조 53 건 대조
+섹션 참조 검사 통과
+AdminDtos.DocumentResponse   id filename byteSize status uploadedByName createdAt
+summaryResult <arg column>   id filename byteSize status uploadedByName createdAt
+types.ts RagDocument         id filename byteSize status uploadedByName createdAt
+AdminPage.test.tsx doc()     id filename byteSize status uploadedByName createdAt
+✓ 응답 계약 4곳 일치 (6필드)
+bash -n ok
