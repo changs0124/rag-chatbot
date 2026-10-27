@@ -301,6 +301,8 @@ describe('ChatPage 답변 중 이동 확인 (#503)', () => {
     clickConversation('둘째 대화')
 
     expect(screen.getByRole('dialog', { name: '답변을 중단하고 이동할까요?' })).toBeInTheDocument()
+    // 답이 시작되기 전이면 질문도 남지 않는다(#505) - 「받은 부분만 남는다」만 말하면 그 경우가 거짓이다
+    expect(screen.getByText(/답이 시작되기 전이면 보낸 질문도 남지 않습니다/)).toBeInTheDocument()
     expect(chatState.selectConversation).not.toHaveBeenCalled()
   })
 

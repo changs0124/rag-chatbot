@@ -679,6 +679,57 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.streaming).toBe(false)
   })
 
+  it('답이 시작되기 전에 대화를 옮겨 중단되면 옮겨 간 화면에 settling 이 서지 않고 곧바로 보낼 수 있다 (#505)', async () => {
+    // #503 확인창의 「중단하고 이동」 순서 - stop 없이 이동이 중단을 일으킨다. 끊는 순간엔 아직 판정 전이라
+    // abortActiveStream 이 놓아 줄 것이 없고, 그 뒤 판정이 시작된다
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+    holdStored([{ id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] }], true)
+
+    await act(async () => {
+      await result.current.selectConversation('c9')
+    })
+    await abort(stream)
+    expect(result.current.streaming).toBe(false)
+    expect(result.current.settling).toBe(false)
+    const next = openStream()
+    let accepted = false
+    await act(async () => {
+      accepted = await result.current.send('다른 질문', [])
+    })
+    expect(accepted).toBe(true)
+    // 판정은 뒤에서 이어 가고(빈 대화 정리), 끝나도 옮겨 간 화면의 스트림을 덮지 않는다
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith('c1')
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
+    expect(result.current.streaming).toBe(true)
+    expect(result.current.settling).toBe(false)
+    expect(next.handlers).toBeDefined()
+  })
+
+  it('답이 시작되기 전에 새 채팅으로 옮겨 중단돼도 입력창이 잠기지 않고 글을 되돌리지 않는다 (#505)', async () => {
+    const { result } = await existingConversation()
+    const stream = openStream()
+    const giveBack = vi.fn()
+    await startStream(() => result.current.send('둘째 질문', [], giveBack))
+    // 판정의 이력 조회가 늦게 오는 동안(운영의 왕복)에도 옮겨 간 화면은 잠기지 않아야 한다
+    vi.mocked(getMessages).mockReturnValue(new Promise<ChatMessage[]>(() => {}))
+    onTestFinished(() => {
+      vi.mocked(getMessages).mockReset().mockResolvedValue([])
+    })
+
+    await act(async () => {
+      result.current.newConversation()
+    })
+    await abort(stream)
+    expect(result.current.streaming).toBe(false)
+    expect(result.current.settling).toBe(false)
+    // 입력창은 대화마다 따로가 아니라 옮겨 간 화면으로 되돌리지 않는다
+    expect(giveBack).not.toHaveBeenCalled()
+  })
+
   it('재확인 중 401 이면 곧바로 끝낸다 - 확인 요청에는 시간 제한 신호가 붙는다 (#489 리뷰)', async () => {
     const { result } = await existingConversation()
     const stream = openStream({ opened: false })
