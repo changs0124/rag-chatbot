@@ -9,7 +9,7 @@
 ## [Unreleased]
 
 ### Fixed
-- **사용자가 채팅 스트림을 끊을 때 가끔 남던 ERROR 로그 2줄(`AuthorizationDeniedException` · 「response is already committed」)을 없앴다(#517).** 끊긴 SSE 의 비동기 오류를 Tomcat 이 커밋된 응답 위에 에러 페이지로 부를 때 forward 대신 `INCLUDE` 디스패치를 쓰는데, 보안 설정이 `ASYNC` · `ERROR` 만 허용해 거절했다. `INCLUDE` 를 허용 목록에 더했다 — 컨테이너만 만드는 디스패치라 보호 경로는 넓어지지 않는다. 사용자 영향은 없던 로그 잡음이다(로컬 목업 432요청당 0~8줄). 테스트 2건(컨테이너 INCLUDE 는 통과 · 클라이언트 요청은 여전히 401) · 백엔드 하한 413 → **415**
+- **사용자가 채팅 스트림을 끊을 때 가끔 남던 ERROR 로그 2줄(`AuthorizationDeniedException` · 「response is already committed」)을 없앴다(#517).** 끊긴 SSE 의 비동기 오류를 Tomcat 이 커밋된 응답 위에 에러 페이지로 부를 때 forward 대신 `INCLUDE` 디스패치를 쓰는데, 보안 설정이 `ASYNC` · `ERROR` 만 허용해 거절했다. `/error` 로 가는 `INCLUDE` 만 허용했다 — 다른 경로의 `INCLUDE` 는 여전히 인가를 거친다. 사용자 영향은 없던 로그 잡음이다(로컬 목업 432요청당 0~8줄). 테스트 3건(`/error` INCLUDE 는 통과 · 다른 경로 INCLUDE 는 401 · 클라이언트 요청은 401) · 백엔드 하한 413 → **416**
 
 ## [2026-10-27]
 
