@@ -34,7 +34,7 @@
 ## 검증
 
 - 새 테스트를 지금 코드(`ChatPage.tsx` 변경 전)에 돌린 결과 : 확인창 케이스 6건 실패, 회귀 케이스 3건 통과 — [before](https://raw.githubusercontent.com/changs0124/rag-chatbot/main/.issue/503/evidence/before/ChatPage-test.txt)
-- 변경 뒤 : 9건 모두 통과. 리뷰 뒤 추가한 1건은 수정을 빼면 실패 · 넣으면 통과로 확인 — [after](https://raw.githubusercontent.com/changs0124/rag-chatbot/main/.issue/503/evidence/after/ChatPage-test.txt)
+- 변경 뒤 : 9건 모두 통과. 리뷰 뒤 추가한 1건은 수정을 빼면 실패([기록](https://raw.githubusercontent.com/changs0124/rag-chatbot/main/.issue/503/evidence/before/ChatPage-test-review-fix.txt)) · 넣으면 통과 — [after](https://raw.githubusercontent.com/changs0124/rag-chatbot/main/.issue/503/evidence/after/ChatPage-test.txt)
 - `npm run lint` · `npx tsc -b` · `npm test`(30 파일 · 293건 통과, [기록](https://raw.githubusercontent.com/changs0124/rag-chatbot/main/.issue/503/evidence/after/frontend-full.txt)) · `npm run build` 통과
 - `bash scripts/check-all.sh docs` 통과(shellcheck 는 로컬에 없어 건너뜀)
 

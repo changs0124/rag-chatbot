@@ -1,0 +1,15 @@
+# 리뷰 반영 수정(useEffect 의 setPendingLeave(null))을 뺀 ChatPage.tsx 로 돌린 결과
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중에 다른 대화를 누르면 확인창을 띄우고 아직 옮기지 않는다 11ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 확인하면 그 대화로 옮기고 확인창을 닫는다 21ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 취소하면 옮기지 않고 확인창만 닫는다 22ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 취소해도 모바일 드로어는 열린 채로 둔다 35ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중에 새 채팅을 눌러도 먼저 묻는다 - 모바일 헤더 버튼도 같다 23ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 사이드바의 새 대화 버튼도 먼저 묻는다 17ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중이 아니면 묻지 않고 바로 옮긴다 13ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 판정(재확인) 중에는 묻지 않는다 - 옮기면 잠금만 풀린다(#489 리뷰) 6ms
+× src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 묻는 사이 답이 끝나면 창을 내리고, 다음 턴이 시작돼도 옛 창이 다시 뜨지 않는다 17ms
+✓ src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중인 지금 대화를 다시 누르면 묻지 않는다(#359) 6ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+FAIL  src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 묻는 사이 답이 끝나면 창을 내리고, 다음 턴이 시작돼도 옛 창이 다시 뜨지 않는다
+Test Files  1 failed (1)
+Tests  1 failed | 22 passed (23)
