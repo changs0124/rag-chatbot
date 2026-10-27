@@ -48,8 +48,9 @@ public class SecurityConfig {
 				}))
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
-						// SSE 비동기 재디스패치 - 인증은 최초 REQUEST 디스패치에서 검사됨(async/error 재검사 방지)
-						.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
+						// SSE 비동기 재디스패치 - 인증은 최초 REQUEST 디스패치에서 검사됨(async/error 재검사 방지).
+						// INCLUDE 는 커밋된 응답의 에러 페이지를 컨테이너가 부르는 길(끊긴 SSE, #517) - 클라이언트가 만들 수 없다
+						.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR, DispatcherType.INCLUDE).permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
 						// 파일 서빙은 서명 쿼리 토큰으로 검증(Bearer 불가한 <img src> 대응)
