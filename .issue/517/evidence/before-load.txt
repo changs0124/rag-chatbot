@@ -1,0 +1,28 @@
+# before â€” ìˆ˜ì • ì „ ì´ë¯¸ì§€(i517-before, 3ae1e47) ë¡œì»¬ ëª©ì—… ë¶€í•˜
+ì¡°ê±´ : ë™ì‹œ 16 x 3í„´ x 3ë¼ìš´ë“œ = 144ìš”ì²­ x 3íšŒ = 432ìš”ì²­/ì»¨í…Œì´ë„ˆ, 25% ì¤‘ë„ ëŠê¸°(headers/meta/token ì¤‘ ë¬´ì‘ìœ„). ì»¨í…Œì´ë„ˆ 2ê°œ(ìƒˆ DB)
+
+## ì»¨í…Œì´ë„ˆ 1
+ È¸Â÷ 1 ¿äÃ» 144 »óÅÂ {'200': 144} ²÷±â 34 ¸ØÃã 0
+ È¸Â÷ 2 ¿äÃ» 144 »óÅÂ {'200': 144} ²÷±â 35 ¸ØÃã 0
+ È¸Â÷ 3 ¿äÃ» 144 »óÅÂ {'200': 144} ²÷±â 29 ¸ØÃã 0
+ ì•± ë¡œê·¸ ERROR ì¤„ 0 Â· AuthorizationDeniedException 0
+## ì»¨í…Œì´ë„ˆ 2
+ È¸Â÷ 1 ¿äÃ» 144 »óÅÂ {'200': 144} ²÷±â 30 ¸ØÃã 0
+ È¸Â÷ 2 ¿äÃ» 144 »óÅÂ {'200': 144} ²÷±â 40 ¸ØÃã 0
+ È¸Â÷ 3 ¿äÃ» 144 »óÅÂ {'200': 144} ²÷±â 30 ¸ØÃã 0
+ ì•± ë¡œê·¸ ERROR ì¤„ 8 Â· AuthorizationDeniedException 8
+
+## ë°œì·Œ (ì»¨í…Œì´ë„ˆ 2, ì²« ê±´)
+2026-10-27T04:53:16.103Z ERROR 1 --- [rag-chatbot-backend] [nio-8080-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] threw exception
+
+org.springframework.security.authorization.AuthorizationDeniedException: Access Denied
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:99) ~[spring-security-web-7.1.1.jar!/:7.1.1]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:385) ~[spring-security-web-7.1.1.jar!/:7.1.1]
+2026-10-27T04:53:16.109Z ERROR 1 --- [rag-chatbot-backend] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost]           : Exception Processing [ErrorPage[errorCode=0, location=/error]]
+
+jakarta.servlet.ServletException: Unable to handle the Spring Security Exception because the response is already committed.
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:144) ~[spring-security-web-7.1.1.jar!/:7.1.1]
+	at org.apache.catalina.core.ApplicationDispatcher.include(ApplicationDispatcher.java:413) ~[tomcat-embed-core-11.0.24.jar!/:na]
+	at org.apache.catalina.core.StandardHostValve.custom(StandardHostValve.java:360) ~[tomcat-embed-core-11.0.24.jar!/:na]
+	at org.apache.catalina.core.StandardHostValve.throwable(StandardHostValve.java:286) ~[tomcat-embed-core-11.0.24.jar!/:na]
+	at org.apache.catalina.core.AsyncContextImpl.setErrorState(AsyncContextImpl.java:552) ~[tomcat-embed-core-11.0.24.jar!/:na]
