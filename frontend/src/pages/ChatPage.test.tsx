@@ -385,6 +385,34 @@ describe('ChatPage 답변 중 이동 확인 (#503)', () => {
     expect(chatState.selectConversation).toHaveBeenCalledWith('c2')
   })
 
+  it('묻는 사이 답이 끝나면 창을 내리고, 다음 턴이 시작돼도 옛 창이 다시 뜨지 않는다', () => {
+    streamingIn('c1')
+    const view = render(
+      <BrowserRouter>
+        <ChatPage />
+      </BrowserRouter>,
+    )
+    clickConversation('둘째 대화')
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    chatState.streaming = false
+    view.rerender(
+      <BrowserRouter>
+        <ChatPage />
+      </BrowserRouter>,
+    )
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    chatState.streaming = true
+    view.rerender(
+      <BrowserRouter>
+        <ChatPage />
+      </BrowserRouter>,
+    )
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(chatState.selectConversation).not.toHaveBeenCalled()
+  })
+
   it('답을 받는 중인 지금 대화를 다시 누르면 묻지 않는다(#359)', () => {
     streamingIn('c1')
     renderChatPage()

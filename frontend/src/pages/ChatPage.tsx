@@ -101,6 +101,10 @@ export default function ChatPage() {
   // 옮기면 잠금만 풀리고 판정은 뒤에서 이어 간다(#489 리뷰). 이 값은 턴마다 두 번만 바뀌어 #405 의 memo 를 무너뜨리지 않는다
   const guardLeave = chat.streaming && !chat.settling
   const [pendingLeave, setPendingLeave] = useState<LeaveTarget | null>(null)
+  // 묻는 사이 답이 끝나면(또는 판정으로 넘어가면) 끊을 것이 없으니 창을 내린다. 남겨 두면 다음 턴이 시작될 때 옛 창이 다시 뜬다
+  useEffect(() => {
+    if (!guardLeave) setPendingLeave(null)
+  }, [guardLeave])
 
   const startNewChat = useCallback(() => {
     if (guardLeave) setPendingLeave({ to: 'new' })
