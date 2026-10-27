@@ -67,6 +67,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
 | `MethodArgumentTypeMismatchException` | 400 | `BAD_REQUEST` |
 | `NoResourceFoundException` | 404 | `NOT_FOUND` |
 | `HttpRequestMethodNotSupportedException` | 405 | `METHOD_NOT_ALLOWED` |
+| `HttpMediaTypeNotAcceptableException`(#519) | 406 | `NOT_ACCEPTABLE` |
 | `HttpMediaTypeNotSupportedException` | 415 | `UNSUPPORTED_MEDIA_TYPE` |
 | `MissingServletRequestPartException` · `MultipartException` | 400 | `BAD_REQUEST` |
 | `AsyncRequestTimeoutException`(SSE 타임아웃) | 503 · **커밋 뒤면 본문 없음** | `SERVICE_UNAVAILABLE` |

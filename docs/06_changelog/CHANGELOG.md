@@ -9,7 +9,8 @@
 ## [Unreleased]
 
 ### Fixed
-- **`HEAD /api/health` 가 401 이던 것을 200 으로 고쳤다(#520).** 인증 없이 여는 헬스체크 경로가 `GET` 만 허용돼, HEAD 로 찌르는 가동 감시 도구는 서버가 살아 있어도 실패로 봤다(10-27 운영 HTTP 계약 감사). `SecurityConfig` 에 `HEAD /api/health` permitAll 한 줄 — 컨트롤러는 GET 매핑에 HEAD 를 자동으로 붙인다. 다른 보호 경로의 HEAD 는 그대로 401 이다. 테스트 2건 · 백엔드 하한 416 → **418**
+- **`Accept` 가 JSON 을 받지 않는 요청이 500 + ERROR 로그(스택)로 끝나던 것을 406 `NOT_ACCEPTABLE` 로 고쳤다(#519).** 10-27 운영 HTTP 계약 감사에서 `GET /api/conversations` 에 `Accept: application/xml` 을 보내자 `HttpMediaTypeNotAcceptableException` 이 최종 폴백으로 떨어져 500 과 「처리되지 않은 예외」 ERROR 가 남았다 — 스캐너 하나로 오류 경보가 울린다. 415 처리기 옆에 전용 처리기를 두고 로그는 남기지 않는다(415 와 같은 요청 헤더 문제). 본문은 다른 오류처럼 Accept 와 상관없이 JSON 이다(#279). 테스트 TC-OPS-036 · 백엔드 하한 416 → **417**
+- **`HEAD /api/health` 가 401 이던 것을 200 으로 고쳤다(#520).** 인증 없이 여는 헬스체크 경로가 `GET` 만 허용돼, HEAD 로 찌르는 가동 감시 도구는 서버가 살아 있어도 실패로 봤다(10-27 운영 HTTP 계약 감사). `SecurityConfig` 에 `HEAD /api/health` permitAll 한 줄 — 컨트롤러는 GET 매핑에 HEAD 를 자동으로 붙인다. 다른 보호 경로의 HEAD 는 그대로 401 이다. 테스트 2건 · 백엔드 하한 417 → **419**(#519 와 합친 실측)
 
 ## [2026-10-27]
 

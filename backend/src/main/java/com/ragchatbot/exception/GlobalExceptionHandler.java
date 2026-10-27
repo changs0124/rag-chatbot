@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -206,6 +207,20 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiError> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
 		return json(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
 				.body(new ApiError("UNSUPPORTED_MEDIA_TYPE", "지원하지 않는 Content-Type"));
+	}
+
+	/**
+	 * Accept 가 이 라우트가 내는 형식(JSON)을 받지 않음(#519).
+	 *
+	 * <p><b>415 의 짝이다.</b> 415 는 보낸 본문의 형식, 이쪽은 받을 응답의 형식이 맞지 않는 것이라 둘 다 요청 헤더를
+	 * 고치면 된다. 이 핸들러가 없으면 {@link #handleUnexpected} 가 받아 500 + ERROR(스택)를 남겼다 - 스캐너나
+	 * 잘못 설정된 클라이언트 하나로 오류 경보가 울린다.
+	 *
+	 * <p>본문은 {@link #json} 이 협상을 건너뛰어 Accept 와 상관없이 JSON 으로 나간다(#279).
+	 */
+	@ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+	public ResponseEntity<ApiError> handleNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
+		return json(HttpStatus.NOT_ACCEPTABLE).body(new ApiError("NOT_ACCEPTABLE", "요청한 응답 형식(Accept)을 줄 수 없음"));
 	}
 
 	/**
