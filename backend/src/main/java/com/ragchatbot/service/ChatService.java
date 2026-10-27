@@ -1,5 +1,6 @@
 package com.ragchatbot.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -278,6 +279,12 @@ public class ChatService {
 			//
 			// 토큰을 하나도 못 보내고 끊긴 것이면 질문을 걷는다(#489) - 서버는 끊긴 뒤 답을 만들지 않으므로(#487) 두면
 			// 답 없는 질문이 이력과 다음 턴의 모델 문맥에 영구히 남는다. 첨부는 연결만 풀어 다시 보낼 수 있게 둔다
+			// 끊김이면 원인이 I/O 오류(소켓)거나 이미 닫힌 emitter(원인 없는 IllegalState)다. emitter 는 그 밖의 예외를
+			// IllegalState 로 감싸 던지는데, 그것은 연결이 아니라 서버 쪽 고장이다 - 끊김과 같은 길로 조용히 흡수돼 커밋
+			// NPE 가 그렇게 숨었다(#515). 처리는 그대로 두고 흔적만 남긴다
+			if (!isDisconnect(gone.getCause())) {
+				log.warn("SSE 전송이 끊김이 아닌 예외로 실패 conversation={}", prepared.conversationId(), gone.getCause());
+			}
 			if (!saved) {
 				if (timedOut.get() && buffer.isEmpty()) {
 					savePartial(prepared, userId, asstMsgId, "", "error", false, true, null);
@@ -368,6 +375,11 @@ public class ChatService {
 		}
 	}
 
+	static boolean isDisconnect(Throwable cause) {
+		return cause instanceof IOException
+				|| (cause instanceof IllegalStateException && cause.getCause() == null);
+	}
+
 	private void sendIgnoringFailure(SseEmitter emitter, String event, Object data) {
 		try {
 			emitter.send(SseEmitter.event().name(event).data(data));
@@ -379,8 +391,14 @@ public class ChatService {
 	private void completeQuietly(SseEmitter emitter) {
 		try {
 			emitter.complete();
-		} catch (Exception ignored) {
-			// 이미 끊긴 연결
+		} catch (Exception e) {
+			// 이미 끊긴 연결. complete 는 flush 가 던지면 비동기 요청을 끝내지 못한 채 빠진다 - 그대로 두면 응답이 SSE
+			// 타임아웃(기본 10분)까지 열려 있다(#515). completeWithError 는 flush 없이 끝내므로 여기서 마무리한다
+			try {
+				emitter.completeWithError(e);
+			} catch (Exception ignored) {
+				// 끝낼 곳도 없음
+			}
 		}
 	}
 

@@ -115,6 +115,48 @@ class ChatStreamAbortTest {
 		assertThat(persistence.saves.get(0).stopped()).isFalse(); // 오류는 중단이 아님
 	}
 
+	/**
+	 * 응답 커밋이 깨진 모양(#515) - emitter 는 send 의 비 I/O 예외를 IllegalState 로 감싸고, complete 도 flush 에서
+	 * 던진다. 그래도 비동기 요청은 끝나야 한다 - 안 끝내면 헤더 0바이트인 채 SSE 타임아웃(10분)까지 열려 있었다
+	 */
+	@Test
+	void commit_failure_still_ends_the_request() {
+		var persistence = new RecordingPersistence();
+		var service = chatService(new StubOpenAi(List.of("답변"), null), persistence);
+		var emitter = new SseEmitter() {
+			Throwable endedWith;
+
+			@Override
+			public void send(SseEventBuilder builder) {
+				throw new IllegalStateException("Failed to send", new NullPointerException("MimeHeaders.setValue"));
+			}
+
+			@Override
+			public void complete() {
+				throw new IllegalStateException("flush", new NullPointerException("MimeHeaders.setValue"));
+			}
+
+			@Override
+			public void completeWithError(Throwable ex) {
+				endedWith = ex;
+			}
+		};
+
+		service.stream(UUID.randomUUID(), prepared(), emitter);
+
+		assertThat(emitter.endedWith).isNotNull();
+	}
+
+	/** 끊김과 서버 쪽 고장을 가르는 기준(#515) - 감싼 예외까지 끊김으로 보면 커밋 NPE 가 다시 숨는다 */
+	@Test
+	void disconnect_is_io_error_or_closed_emitter_only() {
+		assertThat(ChatService.isDisconnect(new IOException("broken pipe"))).isTrue();
+		assertThat(ChatService.isDisconnect(new IllegalStateException("ResponseBodyEmitter has already completed")))
+				.isTrue();
+		assertThat(ChatService.isDisconnect(new IllegalStateException("Failed to send", new NullPointerException())))
+				.isFalse();
+	}
+
 	/** 정상 종료는 한 번만 저장함 - 저장 뒤 전송이 깨져도 같은 id 로 다시 넣지 않음 */
 	@Test
 	void disconnect_after_save_does_not_save_twice() {
