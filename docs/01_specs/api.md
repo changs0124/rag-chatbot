@@ -3,8 +3,8 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 | rag-chatbot |
-| 문서 버전 | v1.9 |
-| 최종 수정일 | 2026-10-26 |
+| 문서 버전 | v2.0 |
+| 최종 수정일 | 2026-10-27 |
 | 작성자 | changs0124 |
 | 상태 | `반영됨` (2026-10-06 런칭) |
 
@@ -142,6 +142,7 @@
 | API-GET-008 | GET | `/api/admin/users` | 사용자 목록 | ADMIN | 구현됨 |
 | API-POST-007 | POST | `/api/admin/users/{id}/password-reset` | 임시 비밀번호 발급 | ADMIN | 구현됨 |
 | API-POST-008 | POST | `/api/admin/users` | **계정 발급** | ADMIN | 구현됨 |
+| API-DELETE-004 | DELETE | `/api/admin/users/{id}` | **사용자 삭제** (FEAT-ADMIN-004) | ADMIN | 예정(#513) |
 
 **페이지네이션이 없다.** 대화 목록·메시지 목록·문서 목록 모두 전량을 돌려준다. 사내 소규모 전제이며,
 양이 늘면 그때 넣는다. 지금 넣으면 쓰이지 않는 파라미터가 계약에 남는다.
@@ -474,6 +475,23 @@ OpenAI 정리(스토어 연결 해제 · 파일 삭제)의 실패는 응답을 �
 
 **자기 자신은 대상에서 제외한다.** 마이페이지에 비밀번호 변경이 이미 있고, 관리자가 자기 세션을
 스스로 끊는 경로를 만들 이유가 없다.
+
+### API-DELETE-004: 사용자 삭제
+
+**DELETE** `/api/admin/users/{id}` → **204**. 본문 없음.
+
+그 사용자의 대화 · 메시지 · 출처 · 첨부 행이 cascade 로 함께 지워지고, 첨부 파일은 DB 삭제 뒤 디스크에서 지운다.
+**파일 삭제 실패는 응답을 바꾸지 않는다**(WARN 로그, 남은 파일은 저장소 스캔 회수). 그 사용자의 기존 토큰은 다음 요청부터 `401` 이다.
+순서 · 회수 · 막는 이유는 `features.md` FEAT-ADMIN-004.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `NOT_FOUND` | 404 | 비관리자 접근 · 없는 사용자 |
+| `BAD_REQUEST` | 400 | **관리자 계정**(`role=admin`, 자기 자신 포함) — 관리자는 `ADMIN_EMAILS` 명단으로만 정해진다 |
+| `BAD_REQUEST` | 400 | 형식이 틀린 경로 변수 — 관리자 확인보다 먼저 걸린다(`AdminController` javadoc) |
+| `CONFLICT` | 409 | **문서를 올린 기록이 있는 사용자** — `rag_documents.uploaded_by` restrict. soft delete 된 문서 행도 포함. 아무것도 지워지지 않는다 |
 
 ### API-POST-008: 계정 발급
 
