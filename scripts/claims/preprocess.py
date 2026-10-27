@@ -130,9 +130,14 @@ def claims_to_md(xlsx, terms):
             if isinstance(r[key], str):
                 r[key] = mask(fmt(r[key]), alias)
 
-    def count(key, top=None):
-        c = collections.Counter(fmt(r[key]) or "(비어 있음)" for r in recs)
-        return [f"- {k} : {n}건" for k, n in c.most_common(top)]
+    def count(key, top=None, nums_upto=0):
+        """nums_upto 이하인 항목은 클레임 번호를 덧붙인다 - 「케이블 문제로 판명된 클레임」처럼 몇 건짜리를
+        물으면 상세 절을 하나씩 검색으로 모으다 한 건을 빠뜨렸다(#521)"""
+        g = collections.defaultdict(list)
+        for r in recs:
+            g[fmt(r[key]) or "(비어 있음)"].append(r)
+        top_items = sorted(g.items(), key=lambda kv: -len(kv[1]))[:top]
+        return [f"- {k} : {len(rs)}건" + (f" · 클레임 {nums(rs)}" if len(rs) <= nums_upto else "") for k, rs in top_items]
 
     def nums(rs):
         return "·".join(fmt(r["순번"]) for r in sorted(rs, key=lambda r: r["순번"]))
@@ -237,8 +242,9 @@ def claims_to_md(xlsx, terms):
         f"- 총 {len(recs)}건 · 입고일자 {dates[0].date()} ~ {dates[-1].date()}",
         f"- 출하 후 고장까지 사용일 : 평균 {sum(usage) / len(usage):.0f}일 · 최소 {min(usage)}일 · 최대 {max(usage)}일",
         "",
-        "### 최종원인별 건수", "", *count("최종원인"), "",
-        "### 불량유형별 건수", "", *count("불량유형"), "",
+        "### 최종원인별 건수 (5건 이하는 클레임 번호도)", "", *count("최종원인", nums_upto=5), "",
+        "### 불량원인별 건수 (회수품 분석 결과, 5건 이하는 클레임 번호도)", "", *count("불량원인", nums_upto=5), "",
+        "### 불량유형별 건수 (5건 이하는 클레임 번호도)", "", *count("불량유형", nums_upto=5), "",
         "### 소손 및 불량소자별 건수 (상위 15)", "", *count("소손및불량소자", 15), "",
         "### 품번별 건수와 최종원인 · 평균 사용일", "", *breakdown(by_part, avg=True), "",
         "### 입고 연도별 건수와 최종원인 (입고일자의 연도 기준)", "", *breakdown(by_year, by_name=True, avg=True), "",
