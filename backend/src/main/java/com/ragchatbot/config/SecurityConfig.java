@@ -5,12 +5,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 
 import jakarta.servlet.DispatcherType;
+import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.HeaderWriterFilter;
 
 import com.ragchatbot.security.JwtAuthenticationFilter;
 
@@ -34,6 +36,16 @@ public class SecurityConfig {
 				.cors(cors -> {
 				})
 				.csrf(csrf -> csrf.disable())
+				// 보안 헤더를 체인 앞에서 쓴다(#515). 기본값은 컨트롤러가 돌아온 뒤 요청 스레드에서 쓰는데, SSE 는 그때
+				// 스트림 스레드가 응답을 커밋하고 있을 수 있어 두 스레드가 Tomcat 헤더 목록을 동시에 고친다 - 커밋 NPE 로
+				// 헤더 0바이트인 채 SSE 타임아웃까지 멈췄다(Cloudflare 524)
+				.headers(h -> h.withObjectPostProcessor(new ObjectPostProcessor<HeaderWriterFilter>() {
+					@Override
+					public <O extends HeaderWriterFilter> O postProcess(O filter) {
+						filter.setShouldWriteHeadersEagerly(true);
+						return filter;
+					}
+				}))
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						// SSE 비동기 재디스패치 - 인증은 최초 REQUEST 디스패치에서 검사됨(async/error 재검사 방지)

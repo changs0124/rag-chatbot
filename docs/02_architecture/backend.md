@@ -178,6 +178,14 @@ exception/    ApiExceptions + GlobalExceptionHandler
 - **보낸 토큰이 0개인 채 끊기면 질문을 걷는다**(#489, `ChatPersistenceService.retractQuestion`) — 답이 만들어지지 않으므로 두면 답 없는 질문이
   이력과 다음 턴의 모델 문맥에 영구히 남는다. 첨부 연결을 **먼저** 푼 뒤 질문 행을 지운다(`attachments.message_id` 가 on delete cascade 라
   거꾸로 하면 첨부 행까지 사라진다). 질문 저장은 대화를 touch 하지 않으므로 되돌릴 `updated_at` 은 없다. 서버 타임아웃(#359)은 걷지 않는다.
+- **컨트롤러가 돌아온 뒤 요청 스레드는 응답을 건드리지 않는다**(#515). 스트림 스레드가 그 순간 이미 응답을 커밋하고 있을 수 있어서다 —
+  Spring Security 의 보안 헤더를 기본값(나중에 쓰기)으로 두었을 때 두 스레드가 Tomcat 헤더 목록을 동시에 고쳐 커밋이 NPE 로 깨졌고,
+  응답 헤더 0바이트인 채 SSE 타임아웃까지 멈췄다(Cloudflare 524). 그래서 `SecurityConfig` 가 보안 헤더를 체인 앞에서 쓴다.
+  응답에 헤더를 더하는 필터를 새로 둘 때도 `chain.doFilter` **앞에서** 쓴다(`JwtAuthenticationFilter` 의 재발급 헤더처럼).
+  커밋이 깨진 뒤에도 요청은 끝낸다 — `complete` 가 flush 에서 던지면 `completeWithError` 로 마무리한다(`ChatService.completeQuietly`).
+  이 길은 오류 재디스패치로 `GlobalExceptionHandler` 의 ERROR 를 남긴다 — 서버 쪽 고장이라 남는 것이 맞다(정상 끊김은 I/O 예외라 이 길로 오지 않는다).
+  헤더를 앞에서 쓰면서 바뀐 것 하나 : 응답이 `Cache-Control` 을 직접 정해도(문서 그림) 보안 기본값의 `Pragma: no-cache` · `Expires: 0` 이 남는다 —
+  `Cache-Control` 이 있으면 둘 다 무시되므로(RFC 9111) 캐시 동작은 그대로다
 - 스트리밍 구간에서는 DB 커넥션을 잡지 않는다. 저장은 `ChatPersistenceService` 가 메시지·출처·touch 를
   **한 트랜잭션**으로 처리한다.
 - **진행 단계 라벨 문자열은 LLM 구현이 소유한다.** `ChatService` 는 실행 모드를 알지 못한다. 목업은 목업임이
