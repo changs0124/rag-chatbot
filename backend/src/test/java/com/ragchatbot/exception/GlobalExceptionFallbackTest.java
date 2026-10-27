@@ -2,6 +2,7 @@ package com.ragchatbot.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ragchatbot.support.AbstractPgIntegrationTest;
+
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * 예외 최종 폴백 (FEAT-OPS-002 · TC-OPS-010~019 · 028~031 · 035).
@@ -281,6 +284,24 @@ class GlobalExceptionFallbackTest extends AbstractPgIntegrationTest {
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
 		assertThat(res.getBody().get("code")).isEqualTo("UNSUPPORTED_MEDIA_TYPE");
+	}
+
+	/**
+	 * TC-OPS-036 : 응답을 JSON 으로만 줄 수 있는 라우트에 JSON 을 받지 않는 Accept 가 오면 406 이다(#519).
+	 *
+	 * <p>전용 핸들러가 없으면 폴백으로 떨어져 500 + ERROR 로그(스택)가 남았다 - 스캐너 하나로 오류 경보가 울린다.
+	 * 본문은 Accept 와 상관없이 JSON 이다(#279) - 여기서 응답을 문자열로 받아 본문 형태까지 확인한다.
+	 */
+	@Test
+	void not_acceptable_accept_header_is_406() throws Exception {
+		String token = createUser("boom-accept@b.com");
+		HttpHeaders headers = bearer(token);
+		headers.setAccept(List.of(MediaType.APPLICATION_XML));
+		var res = rest.exchange("/api/conversations", HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_ACCEPTABLE);
+		assertThat(res.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+		assertThat(new ObjectMapper().readTree(res.getBody()).get("code").asText()).isEqualTo("NOT_ACCEPTABLE");
 	}
 
 	/**
