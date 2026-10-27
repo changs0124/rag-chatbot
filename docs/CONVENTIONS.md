@@ -113,7 +113,7 @@
   `pom.xml` · `frontend/package.json` · Spring Boot BOM 의 실제 값과 대조한다(문서 값이 실제의 **접두**면 통과).
   JUnit 이 Boot BOM 에 있어 m2 가 채워진 뒤에야 읽히므로 **`backend` 잡에서 돈다.**
 - `scripts/check-response-contract.sh` 가 `AdminDtos.DocumentResponse` · `summaryResult` 의 `<arg>` · 프론트 `RagDocument` ·
-  `AdminPage.test.tsx` 의 `doc()` 픽스처, **네 곳의 필드 이름**을 대조한다(record ↔ `resultMap` 은 순서까지).
+  `AdminDocumentsPage.test.tsx` 의 `doc()` 픽스처, **네 곳의 필드 이름**을 대조한다(record ↔ `resultMap` 은 순서까지).
   `tsc -b` 가 픽스처 타입을 봐도 **지우지 않는다** — 백엔드와의 대조는 이 게이트만 한다. 값의 출처는 `AdminDocumentFlowTest` 가 본다.
 - 시크릿 스캔(gitleaks)·의존성 취약점 스캔(Trivy · `npm audit`)은 **변경마다 + 주 1회** 돈다(#135).
   공개 저장소는 **시크릿이 한 번 들어오면 회수가 불가능**하므로 merge 전에 돌아야 한다.

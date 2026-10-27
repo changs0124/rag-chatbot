@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import BackLink from '../components/BackLink'
 import PageShell from '../components/PageShell'
 import TextInput from '../components/TextInput'
-import { IconChevronRight, IconFile } from '../components/icons'
+import { IconChevronRight, IconFile, IconUser } from '../components/icons'
 import { primaryButtonClass } from '../components/primaryButton'
 import { errorMessage, setToken } from '../lib/api'
 import { updateName, updatePassword } from '../lib/endpoints'
@@ -122,16 +122,28 @@ export default function MyPage() {
         {/* 관리자에게만 렌더한다 — 눌러서 404 를 만나는 것보다 없는 편이 낫다(접근 제어는 Me.role 주석) */}
         {user?.role === 'admin' && (
           <Card title="관리">
-            <Link
-              to="/admin"
-              className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas"
-            >
-              <span className="inline-flex items-center gap-2">
-                <IconFile className="h-4 w-4 text-ink-muted" />
-                문서 관리
-              </span>
-              <IconChevronRight className="h-4 w-4 text-ink-muted" />
-            </Link>
+            <div className="space-y-2">
+              <Link
+                to="/admin/documents"
+                className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <IconFile className="h-4 w-4 text-ink-muted" />
+                  문서 관리
+                </span>
+                <IconChevronRight className="h-4 w-4 text-ink-muted" />
+              </Link>
+              <Link
+                to="/admin/users"
+                className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <IconUser className="h-4 w-4 text-ink-muted" />
+                  사용자 관리
+                </span>
+                <IconChevronRight className="h-4 w-4 text-ink-muted" />
+              </Link>
+            </div>
           </Card>
         )}
       </div>

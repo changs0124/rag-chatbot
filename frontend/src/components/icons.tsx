@@ -122,6 +122,16 @@ export function IconFile({ className }: IconProps) {
   )
 }
 
+// 사람 — 사용자 관리 링크(#513). IconFile 과 짝이다
+export function IconUser({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+    </Svg>
+  )
+}
+
 // 문서 상태 「완료」(#192)
 export function IconCheck({ className }: IconProps) {
   return (

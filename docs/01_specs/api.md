@@ -77,7 +77,7 @@
 | `UNAUTHORIZED` | 401 | 자격 증명 불일치 |
 | `NOT_FOUND` | 404 | 리소스 없음 **또는 소유권·권한 위반 은닉** · **없는 URL**(인증된 요청 기준. 미인증이면 401 이 먼저) |
 | `METHOD_NOT_ALLOWED` | 405 | 라우트는 있으나 그 메서드를 받지 않음. 응답에 `Allow` 헤더가 함께 나간다 |
-| `CONFLICT` | 409 | 이메일 중복 · **이미 보낸 메시지에 붙은 첨부 삭제**(API-DELETE-002) · **`?ifEmpty=true` 인데 메시지가 있는 대화 삭제**(API-DELETE-001) |
+| `CONFLICT` | 409 | 이메일 중복 · **이미 보낸 메시지에 붙은 첨부 삭제**(API-DELETE-002) · **`?ifEmpty=true` 인데 메시지가 있는 대화 삭제**(API-DELETE-001) · **문서를 올린 기록이 있는 사용자 삭제**(API-DELETE-004) |
 | `PAYLOAD_TOO_LARGE` | 413 | 멀티파트 하드 한도 초과. **약 32MB 까지만 이 응답이 도달한다** — 그보다 크면 Tomcat 이 연결을 끊어 클라이언트는 상태 코드 없이 I/O 오류를 받는다(근거는 `application.yml` 멀티파트 주석) |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` 을 그 라우트가 받지 않음. **본문을 읽을 수 없는 것(400)과 다르다** — 이쪽은 본문에 닿기 전 협상 단계에서 거절된다 |
 | `RATE_LIMIT` | 429 | 분당 상한(채팅 · 첨부 업로드 · 비밀번호 변경 · 로그인 실패) · 동시 스트림 상한. 값은 [backend.md](../02_architecture/backend.md) 「유량 제어」 |
@@ -142,7 +142,7 @@
 | API-GET-008 | GET | `/api/admin/users` | 사용자 목록 | ADMIN | 구현됨 |
 | API-POST-007 | POST | `/api/admin/users/{id}/password-reset` | 임시 비밀번호 발급 | ADMIN | 구현됨 |
 | API-POST-008 | POST | `/api/admin/users` | **계정 발급** | ADMIN | 구현됨 |
-| API-DELETE-004 | DELETE | `/api/admin/users/{id}` | **사용자 삭제** (FEAT-ADMIN-004) | ADMIN | 예정(#513) |
+| API-DELETE-004 | DELETE | `/api/admin/users/{id}` | **사용자 삭제** (FEAT-ADMIN-004) | ADMIN | 구현됨 |
 
 **페이지네이션이 없다.** 대화 목록·메시지 목록·문서 목록 모두 전량을 돌려준다. 사내 소규모 전제이며,
 양이 늘면 그때 넣는다. 지금 넣으면 쓰이지 않는 파라미터가 계약에 남는다.

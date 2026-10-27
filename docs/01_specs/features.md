@@ -32,7 +32,7 @@
 | FEAT-OPS-003 | 세션 슬라이딩 재발급 | 운영 | Should | REQ-AUTH-005 |
 | FEAT-AUTH-001 | 관리자 계정 발급 + 이메일 도메인 화이트리스트 | 인증 | Must | REQ-AUTH-007 |
 
-**구현 상태** : `FEAT-CHAT-*` · `FEAT-OPS-*` · `FEAT-ADMIN-001~003` · `FEAT-AUTH-001` **11종 구현 완료**. FEAT-ADMIN-004 는 구현 중(#513).
+**구현 상태** : `FEAT-CHAT-*` · `FEAT-OPS-*` · `FEAT-ADMIN-*` · `FEAT-AUTH-001` **12종 모두 구현 완료**.
 
 **의존 순서** : FEAT-ADMIN-001 → 002 · 003 · 004. 001이 없으면 나머지의 접근 제어가 성립하지 않는다.
 FEAT-OPS-* 3종은 서로 독립이다. FEAT-OPS-003 은 대응 요구사항이 REQ-AUTH-005 지만 ID · 테스트 번호(TC-OPS)를 따라 카테고리를 운영으로 둔다.
