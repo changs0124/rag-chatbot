@@ -8,7 +8,11 @@
 
 ## [Unreleased]
 
-### Security
+## [2026-10-28]
+
+운영 배포 1회 — `1627392`(#525 cloudflared 2026.10.5, 롤백 `prev-2889bfd`). 백엔드 코드는 `2889bfd` 와 같고 compose 의 cloudflared 다이제스트만 바뀌었다. 배포 뒤 컨테이너 2026.10.5 · 터널 엣지 4 · 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `Config.Env` TUNNEL 0건 · Cloudflare 대시보드 커넥터 버전 2026.10.5. cloudflared 는 app 의 `prev-*` 태그로 되돌아가지 않는다 — 되돌리려면 서버 compose 의 image 를 `sha256:9b49eed8…`(2026.10.0)로 바꿔 `docker compose up -d cloudflared`.
+
+### Security (1627392)
 - **cloudflared 고정 이미지를 2026.10.0 에서 2026.10.5 로 올렸다(#525).** Cloudflare 가 10-28 계정 메일로 「cloudflared 가 의존하는 서드파티 인증서가 손상됐다(10-20 블로그)」며 모든 인스턴스를 **2026.10.2 이상**으로 올리라고 요구했다. 운영 터널 커넥터는 healthy 였지만 버전은 2026.10.0 이었다 — healthy 는 연결 상태일 뿐이다
   - 새 다이제스트 `sha256:1b1d34d0…` 는 레지스트리에서 `2026.10.5` 태그와 `latest` 가 같은 값을 가리키는 것으로 확인했다(10-28 조회). 하한 2026.10.2 대신 최신 패치를 골랐다
   - 호환성 : `--token-file` · `--no-autoupdate` 지원과 실행 사용자 `65532:65532` 가 그대로라 #203 의 secrets 권한도 그대로다
