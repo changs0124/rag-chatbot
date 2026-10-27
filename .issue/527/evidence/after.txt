@@ -1,0 +1,60 @@
+$ git diff origin/main -- docker-compose.yml docs/02_architecture/backend.md docs/06_changelog/CHANGELOG.md
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 897910b..cecc1ea 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -203,13 +203,16 @@ services:
+     # 올릴 때는 **다이제스트를 바꾸는 커밋**으로 올린다(그 자체가 이력이 된다) :
+     #   docker pull cloudflare/cloudflared:latest
+     #   docker inspect cloudflare/cloudflared:latest --format '{{.RepoDigests}}'
++    #   docker run --rm cloudflare/cloudflared@<다이제스트> --version                       # latest 가 몇 버전인지는 다이제스트로 알 수 없다
++    #   docker run --rm cloudflare/cloudflared@<다이제스트> tunnel run --help | grep token-file   # 아래 command 가 쓴다(#203)
++    # 되돌리는 법은 backend.md 「감수하는 약점」 - app 의 롤백 태그로는 되돌아가지 않는다
+     image: cloudflare/cloudflared@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53
+     # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ http://app:8080 매핑은 Cloudflare 대시보드에 있다.
+     # 터널 설정을 저장소에 두지 않는 대신, 토큰만 있으면 어느 서버에서든 같은 주소로 붙는다
+     #
+     # **토큰은 환경변수가 아니라 파일로 넘긴다(#203).** env 로 넘기면 `docker inspect` 의 `Config.Env` 와
+     # `/var/lib/docker/containers/<id>/config.v2.json` 에 평문으로 굳어, 장애 대응 중 inspect 출력을 붙여 넣는
+-    # 순간 도메인 트래픽을 가로챌 수 있는 토큰이 같이 나간다. `--token-file` 지원이 필요하다(2026.10.5 에서 확인) - 다이제스트를 바꿀 때 확인
++    # 순간 도메인 트래픽을 가로챌 수 있는 토큰이 같이 나간다. `--token-file` 지원이 필요하다(2026.10.5 에서 확인)
+     command: tunnel --no-autoupdate run --token-file /run/secrets/tunnel_token
+     secrets:
+       - tunnel_token
+diff --git a/docs/02_architecture/backend.md b/docs/02_architecture/backend.md
+index 8975173..53a53f4 100644
+--- a/docs/02_architecture/backend.md
++++ b/docs/02_architecture/backend.md
+@@ -528,6 +528,9 @@ Lightsail 은 인스턴스 방화벽에서 **22 만 남기고** 나머지(기본
+ (예 : `sudo docker tag rag-chatbot-backend:latest rag-chatbot-backend:prev-<sha>`)가 있어야 하고,
+ 없으면 **그 커밋을 다시 빌드해야 한다.**
+ 배포가 잦지 않은 단일 서버 전제에서 감수한다.
++**`cloudflared` · `db` 는 이 태그로 되돌아가지 않는다** — 둘은 compose 의 다이제스트로 뜨고 `deploy.sh` 가 매번 compose 를 올려
++`up -d` 하므로, 다이제스트를 바꾼 커밋을 배포하는 순간 함께 바뀐다. 되돌리려면 서버 배포 디렉터리(`DEPLOY_DIR`, 기본 `~/deploy`)의 `docker-compose.yml` 에서 그 `image:` 줄을
++이전 다이제스트(이전 커밋의 compose)로 고치고 `sudo docker compose up -d <서비스>` 를 한다. `db` 는 같은 메이저 버전 안에서만 되돌릴 수 있다(데이터 디렉터리 형식).
+ 
+ 로컬에서 직접 빌드해 띄우려면 override 를 겹친다 :
+ 
+diff --git a/docs/06_changelog/CHANGELOG.md b/docs/06_changelog/CHANGELOG.md
+index df10972..22632a1 100644
+--- a/docs/06_changelog/CHANGELOG.md
++++ b/docs/06_changelog/CHANGELOG.md
+@@ -8,9 +8,12 @@
+ 
+ ## [Unreleased]
+ 
++### Docs
++- **compose 다이제스트로 뜨는 `cloudflared` · `db` 의 되돌리는 법을 `backend.md` 「감수하는 약점」에 적었다(#527).** 지금까지 롤백 절은 app 의 `:previous` · `prev-<sha>` 태그만 다뤄, #525 배포 때 터널 롤백 절차가 CHANGELOG 에만 있었다. compose 의 cloudflared 「올릴 때」 절차에는 `--version` · `--token-file` 확인 두 줄을 더했다 — `latest` 가 몇 버전인지는 다이제스트로 알 수 없다. 동작 변화 없음(compose 는 주석만)
++
+ ## [2026-10-28]
+ 
+-운영 배포 1회 — `1627392`(#525 cloudflared 2026.10.5, 롤백 `prev-2889bfd`). 백엔드 코드는 `2889bfd` 와 같고 compose 의 cloudflared 다이제스트만 바뀌었다. 배포 뒤 컨테이너 2026.10.5 · 터널 엣지 4 · 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `Config.Env` TUNNEL 0건 · Cloudflare 대시보드 커넥터 버전 2026.10.5. cloudflared 는 app 의 `prev-*` 태그로 되돌아가지 않는다 — 되돌리려면 서버 compose 의 image 를 `sha256:9b49eed8…`(2026.10.0)로 바꿔 `docker compose up -d cloudflared`.
++운영 배포 1회 — `1627392`(#525 cloudflared 2026.10.5, 롤백 `prev-2889bfd`). 백엔드 코드는 `2889bfd` 와 같고 compose 의 cloudflared 다이제스트만 바뀌었다. 배포 뒤 컨테이너 2026.10.5 · 터널 엣지 4 · 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `Config.Env` TUNNEL 0건 · Cloudflare 대시보드 커넥터 버전 2026.10.5. cloudflared 를 되돌릴 이전 다이제스트는 `sha256:9b49eed8…`(2026.10.0) — 절차는 `backend.md` 「감수하는 약점」.
+ 
+ ### Security (1627392)
+ - **cloudflared 고정 이미지를 2026.10.0 에서 2026.10.5 로 올렸다(#525).** Cloudflare 가 10-28 계정 메일로 「cloudflared 가 의존하는 서드파티 인증서가 손상됐다(10-20 블로그)」며 모든 인스턴스를 **2026.10.2 이상**으로 올리라고 요구했다. 운영 터널 커넥터는 healthy 였지만 버전은 2026.10.0 이었다 — healthy 는 연결 상태일 뿐이다
+
+# 검증
+- docker compose config : exit 0 (image 줄 무변경)
+- bash scripts/check-all.sh docs : 돌린 검사는 전부 통과
+- 주석 절차의 두 명령은 #525 때 2026.10.5 이미지에서 실행 확인 (after.txt of #525)
