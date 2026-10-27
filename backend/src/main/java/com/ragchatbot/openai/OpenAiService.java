@@ -100,7 +100,7 @@ public interface OpenAiService {
 	 *
 	 * <p>둘 중 뒤 단계가 실패하면 <b>고아 파일이 남으므로</b> 구현이 즉시 연결 해제 → 파일 삭제로 정리하고(#479, 해제가
 	 * 실패해도 파일은 지움), 파일 삭제도 실패하면 ERROR 로그에 file_id 를 남김(#476). 어느 경우에도 예외를 던져 호출자가
-	 * DB 행을 만들지 않게 함. OpenAI 일시 장애(5xx · 429 · 연결 거절 · DNS 실패 · 경로 없음)는
+	 * DB 행을 만들지 않게 함. OpenAI 일시 장애(5xx · 429 · 연결 거절 · DNS 실패 · 경로 없음, 할당량 소진 429 는 제외 #479)는
 	 * {@code UpstreamUnavailableException}(503)으로, 파일 내용 거절(413 · 415)은 {@code BadRequestException}(400)으로 던짐.
 	 */
 	UploadedDocument uploadDocument(String filename, byte[] content);
@@ -123,7 +123,7 @@ public interface OpenAiService {
 	 * 살아 있는 행으로 치지 않음) 관리자가 다시 지울 수 있다.
 	 *
 	 * <p><b>연결 해제 뒤 파일 삭제가 끝내 실패하면 ERROR 로 남긴다</b>(#476). 그 파일은 스토어 밖이라 동기화로도 다시 보이지
-	 * 않는다 - 로그의 file_id 로 OpenAI 에서 직접 지운다. 일시 장애(5xx · 429 · 연결 거절 · DNS 실패 · 경로 없음)는
+	 * 않는다 - 로그의 file_id 로 OpenAI 에서 직접 지운다. 일시 장애(5xx · 429 · 연결 거절 · DNS 실패 · 경로 없음, 할당량 소진 429 는 제외 #479)는
 	 * 구현이 몇 번 다시 보낸다.
 	 */
 	void deleteDocument(String vectorStoreId, String openaiFileId);

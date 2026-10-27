@@ -84,7 +84,7 @@ export default function ChatPage() {
   }
 
   // 사이드바에 넘기는 핸들러는 참조를 고정한다(#405) - 매 렌더 새 함수면 Sidebar 의 memo 가 스트리밍 토큰마다 무너진다.
-  // useChat 의 두 콜백은 이미 안정적이다
+  // useChat 의 두 콜백은 토큰마다 바뀌지 않는다 - selectConversation 은 대화가 바뀔 때만 새로 만들어진다
   const { newConversation, selectConversation } = chat
 
   // 사이드바 버튼과 모바일 헤더 버튼이 같이 쓴다 - 모바일 드로어가 열려 있으면 닫는다

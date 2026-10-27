@@ -21,6 +21,12 @@
   - `backend/.env.example` · `docker-compose.yml` : DB 비밀번호 출처를 #415 이후 구성(앱 `APP_DB_*` · 마이그레이션 `POSTGRES_PASSWORD`)으로, `FILE_STORAGE_ROOT` 는 compose 가 `/data/uploads` 로 덮어씀을 명시
   - `check-doc-sections.sh` : 「한 줄에 참조 둘인 줄은 없다」 → 있다(둘째 참조는 검사되지 않음)
 
+### Changed
+- **어긋난 · 낡은 코드 주석과 쓰이지 않는 작은 조각을 정리했다(#507, 10-27 전체 리뷰).** 동작 변화 없음 · 케이스 수 그대로(단언 1건 추가)
+  - 백엔드 : `ChatService.savePartial` 의 도달 불가 분기(#489 이후 빈 `complete` 는 오지 않음)와 Javadoc · `Message` 머리 주석의 타임아웃 세 갈래에 ①②③ 번호(`ChatService` 가 「갈래 ② · ③」으로 가리킴) · 「TTL 15분」 사본 → `FILE_ACCESS_TOKEN_TTL_MINUTES` · `OpenAiService` 일시 장애 429 에 「할당량 소진 제외(#479)」 · `FileService` · `OpenAiMockService` · `JwtService` 주석
+  - 프론트 : 「200 전에 끊긴 턴」 서술 6곳을 #489 이후 판정 대상(200 전, 또는 200 뒤 토큰 0개)으로 · `ChatPage` 콜백 안정성 주석 · `MessageList` 지연 로딩 주석 위치 · `RECHECK_REQUEST_TIMEOUT_MS` 의 쓰이지 않는 `export`
+  - 테스트 : 안 쓰는 `HttpHeaders` import 6곳 · `ChatFlowTest` 의 분당 상한을 베이스 프로퍼티에서 읽음 · `ChatStreamExceptionHandlerTest` 케이스 번호를 TC-OPS-032 · 033 으로 · 스파이크 테스트 실패 메시지 · `useChatRace.test` 「목록도 그대로다」에 목록 단언과 떠 있던 JSDoc 위치
+
 ## [2026-10-26]
 
 운영 배포 5회 — 백엔드 `a89fb83`(#452 주석 · #453 · #454 · #470, 롤백 `prev-20f26b3`, 지시문 문자열은 `20f26b3` 과 같음) · `a05d994`(#469 지시문 한 줄, 롤백 `prev-a89fb83`) · `62b3c3f`(#476, 롤백 `prev-a05d994`) · `ef68f53`(전체 리뷰 후속 #479 · #485, #486 · #487 은 주석, 롤백 `prev-62b3c3f`) · `73bb76a`(#489 · #483 · #488, 롤백 `prev-ef68f53`). #468 · #467 은 백엔드 배포 없이 운영 Vector Store 문서 교체로 반영했다(#467 이 나중, 운영 백엔드는 `62b3c3f` 그대로). 프론트 변경(#456 등)은 merge 때 Vercel 이 자동 배포했다. 10-26 전체 리뷰 후속 8건(#479 · #480 · #481 · #482 · #484 · #485 · #486 · #487) merge. 케이스 수 하한(main 통합 실측) : 백엔드 386 → **397** · 프론트 222 → **257**.

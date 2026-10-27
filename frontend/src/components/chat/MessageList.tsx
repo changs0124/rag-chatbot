@@ -7,10 +7,10 @@ import ImageLightbox from './ImageLightbox'
 import DocFigure from './DocFigure'
 import { splitFigures } from '../../lib/docFigures'
 
-// 지연 로딩(#417) - react-markdown · remark 묶음은 번들의 큰 몫인데 로그인 화면은 쓰지 않는다. 첫 답변을 그릴 때 받는다
 function PlainText({ text }: { text: string }) {
   return <p className="whitespace-pre-wrap break-words">{text}</p>
 }
+// 지연 로딩(#417) - react-markdown · remark 묶음은 번들의 큰 몫인데 로그인 화면은 쓰지 않는다. 첫 답변을 그릴 때 받는다
 // 청크를 못 받으면 평문으로 물러선다 - 재배포로 옛 청크가 사라지거나(SPA 리라이트가 HTML 을 돌려준다) 망이 끊기면
 // lazy 가 던진 오류가 최상위 ErrorBoundary 까지 올라가 **앱 전체가 오류 화면**이 된다. ChatPage 가 미리 받아 둔다
 const Markdown = lazy(() => import('./Markdown').catch(() => ({ default: PlainText })))

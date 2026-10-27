@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { act, renderHook } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { useChat } from './useChat'
 import type { ChatMessage, Conversation } from '../lib/types'
 import { conv, deferred, msg } from '../test/fixtures'
@@ -14,7 +14,7 @@ vi.mock('../lib/endpoints', () => ({
   streamChat: vi.fn().mockResolvedValue(undefined),
 }))
 
-const { createConversation, getMessages, streamChat, deleteConversation, renameConversation } =
+const { listConversations, createConversation, getMessages, streamChat, deleteConversation, renameConversation } =
   await import('../lib/endpoints')
 
 /**
@@ -242,14 +242,17 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
    * 콘솔에는 unhandled rejection 만 남는다.
    */
   it('삭제가 실패하면 오류가 뜨고 목록도 그대로다', async () => {
+    vi.mocked(listConversations).mockResolvedValueOnce([conv('A')])
     vi.mocked(deleteConversation).mockRejectedValue(new Error('network'))
     const { result } = renderHook(() => useChat())
+    await waitFor(() => expect(result.current.conversations).toHaveLength(1))
 
     await act(async () => {
       await result.current.deleteConversation('A')
     })
 
     expect(result.current.error).toBeTruthy()
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['A'])
   })
 
   /** 이름 변경도 같다 - 실패하면 헤더가 옛 제목으로 조용히 되돌아가던 자리다 */
@@ -264,7 +267,6 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
     expect(result.current.error).toBeTruthy()
   })
 
-  /** 반대편 - 성공하면 오류가 뜨지 않고 목록에서 빠진다 */
   /**
    * #251 — 지금 보던 A 를 지우는 사이 B 로 옮기면, 삭제 응답이 B 를 끊고 비우지 않는다.
    * 고치기 전에는 삭제를 시작할 때 잡은 activeId(A)로 비교해 B 의 메시지 로드를 버리고 빈 화면이 됐다.
@@ -312,6 +314,7 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
     expect(result.current.messages).toEqual([])
   })
 
+  /** 반대편 - 성공하면 오류가 뜨지 않고 목록에서 빠진다 */
   it('삭제가 성공하면 오류 없이 목록에서 빠진다', async () => {
     vi.mocked(deleteConversation).mockResolvedValue(undefined)
     const { result } = renderHook(() => useChat())

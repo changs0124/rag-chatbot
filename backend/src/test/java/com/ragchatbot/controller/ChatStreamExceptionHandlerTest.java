@@ -42,7 +42,7 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  */
 @ExtendWith(OutputCaptureExtension.class)
 @TestPropertySource(properties = {
-		// 도중 오류 케이스(026)가 넉넉히 끝날 만큼 길게 두고, 타임아웃 케이스(025)는 래치로 그보다 오래 붙잡는다
+		// 도중 오류 케이스(033)가 넉넉히 끝날 만큼 길게 두고, 타임아웃 케이스(032)는 래치로 그보다 오래 붙잡는다
 		"app.chat.sse-timeout-ms=2000" })
 class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
 

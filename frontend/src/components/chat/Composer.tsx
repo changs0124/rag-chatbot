@@ -46,12 +46,12 @@ export default function Composer({
 }: {
   /**
    * 받아들였으면 true - 거절된 전송은 입력과 첨부 초안을 그대로 둔다(#323). 새 대화는 생성 왕복 뒤에 정해진다(#349).
-   * 받아들인 턴이 서버에 닿기 전에 끊기면 `giveBack` 을 부른다 - 보낸 글과 첨부를 입력창에 되돌린다(#440)
+   * 받아들인 턴이 서버에 남지 않은 채 끊기면(200 전, 또는 200 뒤 토큰 0개 #489) `giveBack` 을 부른다 - 보낸 글과 첨부를 입력창에 되돌린다(#440)
    */
   onSend: (text: string, attachments: Attachment[], giveBack: (textOnly?: boolean) => void) => Promise<boolean>
   streaming: boolean
   /**
-   * 200 전에 끊긴 턴이 서버에 닿았는지 확인하는 중(#483 F17). 이때 `streaming` 은 아직 참이지만 정지는 아무 일도 하지 않으므로
+   * 200 전(또는 200 뒤 토큰 0개, #489)에 끊긴 턴이 서버에 남았는지 확인하는 중(#483 F17). 이때 `streaming` 은 아직 참이지만 정지는 아무 일도 하지 않으므로
    * 정지 버튼 대신 이유를 단 비활성 보내기를 보인다
    */
   settling?: boolean
