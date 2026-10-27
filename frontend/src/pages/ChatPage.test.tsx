@@ -24,6 +24,11 @@ const chatState = vi.hoisted(() => ({
   error: null as string | null,
   // 제목 저장 호출을 세려고 렌더마다 같은 함수를 쓴다(#483 F5)
   renameConversation: vi.fn(),
+  // 이동 확인창(#503) - 답을 받는 중인지 · 판정 중인지와 이동 호출
+  streaming: false,
+  settling: false,
+  selectConversation: vi.fn(),
+  newConversation: vi.fn(),
 }))
 
 vi.mock('../hooks/useChat', () => ({
@@ -32,13 +37,14 @@ vi.mock('../hooks/useChat', () => ({
     activeId: chatState.activeId,
     messages: [],
     loadingMessages: chatState.loadingMessages,
-    streaming: false,
+    streaming: chatState.streaming,
+    settling: chatState.settling,
     stage: null,
     error: chatState.error,
     send: vi.fn(),
     stop: vi.fn(),
-    selectConversation: vi.fn(),
-    newConversation: vi.fn(),
+    selectConversation: chatState.selectConversation,
+    newConversation: chatState.newConversation,
     deleteConversation: vi.fn(),
     renameConversation: chatState.renameConversation,
   }),
@@ -261,5 +267,132 @@ describe('ChatPage 오류 배너 (#484)', () => {
     renderChatPage()
 
     expect(screen.getByRole('alert')).toHaveTextContent('답변을 받지 못했습니다')
+  })
+})
+
+// #503 : 답을 받는 중에 다른 대화 · 새 채팅으로 옮기면 그 턴이 중단된다 - 옮기기 전에 묻는다
+describe('ChatPage 답변 중 이동 확인 (#503)', () => {
+  afterEach(() => {
+    chatState.conversations = []
+    chatState.activeId = null
+    chatState.streaming = false
+    chatState.settling = false
+    chatState.selectConversation.mockClear()
+    chatState.newConversation.mockClear()
+  })
+
+  function streamingIn(activeId: string) {
+    chatState.conversations = [
+      { id: 'c1', title: '첫 대화' },
+      { id: 'c2', title: '둘째 대화' },
+    ]
+    chatState.activeId = activeId
+    chatState.streaming = true
+  }
+
+  // jsdom 은 데스크톱 사이드바(hidden md:block)를 그대로 그리므로 첫 번째가 데스크톱 쪽이다
+  const clickConversation = (title: string) => fireEvent.click(screen.getAllByText(title)[0])
+  const clickNewChat = () => fireEvent.click(screen.getAllByRole('button', { name: '새 대화' })[0])
+
+  it('답을 받는 중에 다른 대화를 누르면 확인창을 띄우고 아직 옮기지 않는다', () => {
+    streamingIn('c1')
+    renderChatPage()
+
+    clickConversation('둘째 대화')
+
+    expect(screen.getByRole('dialog', { name: '답변을 중단하고 이동할까요?' })).toBeInTheDocument()
+    expect(chatState.selectConversation).not.toHaveBeenCalled()
+  })
+
+  it('확인하면 그 대화로 옮기고 확인창을 닫는다', () => {
+    streamingIn('c1')
+    renderChatPage()
+
+    clickConversation('둘째 대화')
+    fireEvent.click(screen.getByRole('button', { name: '중단하고 이동' }))
+
+    expect(chatState.selectConversation).toHaveBeenCalledWith('c2')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('취소하면 옮기지 않고 확인창만 닫는다', () => {
+    streamingIn('c1')
+    renderChatPage()
+
+    clickConversation('둘째 대화')
+    fireEvent.click(screen.getByRole('button', { name: '취소' }))
+
+    expect(chatState.selectConversation).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('취소해도 모바일 드로어는 열린 채로 둔다', () => {
+    streamingIn('c1')
+    renderChatPage()
+    fireEvent.click(screen.getByRole('button', { name: '대화 목록 열기' }))
+    const before = screen.getAllByText('둘째 대화').length
+
+    // 드로어 쪽(마지막) 항목을 누른다
+    fireEvent.click(screen.getAllByText('둘째 대화').at(-1)!)
+    fireEvent.click(screen.getByRole('button', { name: '취소' }))
+
+    expect(screen.getAllByText('둘째 대화')).toHaveLength(before)
+  })
+
+  it('답을 받는 중에 새 채팅을 눌러도 먼저 묻는다 - 모바일 헤더 버튼도 같다', () => {
+    streamingIn('c1')
+    renderChatPage()
+
+    fireEvent.click(screen.getByRole('button', { name: '새 채팅' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(chatState.newConversation).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: '중단하고 이동' }))
+    expect(chatState.newConversation).toHaveBeenCalledTimes(1)
+  })
+
+  it('사이드바의 새 대화 버튼도 먼저 묻는다', () => {
+    streamingIn('c1')
+    renderChatPage()
+
+    clickNewChat()
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(chatState.newConversation).not.toHaveBeenCalled()
+  })
+
+  it('답을 받는 중이 아니면 묻지 않고 바로 옮긴다', () => {
+    streamingIn('c1')
+    chatState.streaming = false
+    renderChatPage()
+
+    clickConversation('둘째 대화')
+    clickNewChat()
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(chatState.selectConversation).toHaveBeenCalledWith('c2')
+    expect(chatState.newConversation).toHaveBeenCalledTimes(1)
+  })
+
+  it('판정(재확인) 중에는 묻지 않는다 - 옮기면 잠금만 풀린다(#489 리뷰)', () => {
+    streamingIn('c1')
+    chatState.settling = true
+    renderChatPage()
+
+    clickConversation('둘째 대화')
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(chatState.selectConversation).toHaveBeenCalledWith('c2')
+  })
+
+  it('답을 받는 중인 지금 대화를 다시 누르면 묻지 않는다(#359)', () => {
+    streamingIn('c1')
+    renderChatPage()
+
+    clickConversation('첫 대화')
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    // 끊지 않는 처리는 useChat 의 몫이다 - 화면은 그대로 넘긴다
+    expect(chatState.selectConversation).toHaveBeenCalledWith('c1')
   })
 })
