@@ -8,13 +8,13 @@
 
 ## [Unreleased]
 
-### Fixed
-- **`Accept` 가 JSON 을 받지 않는 요청이 500 + ERROR 로그(스택)로 끝나던 것을 406 `NOT_ACCEPTABLE` 로 고쳤다(#519).** 10-27 운영 HTTP 계약 감사에서 `GET /api/conversations` 에 `Accept: application/xml` 을 보내자 `HttpMediaTypeNotAcceptableException` 이 최종 폴백으로 떨어져 500 과 「처리되지 않은 예외」 ERROR 가 남았다 — 스캐너 하나로 오류 경보가 울린다. 415 처리기 옆에 전용 처리기를 두고 로그는 남기지 않는다(415 와 같은 요청 헤더 문제). 본문은 다른 오류처럼 Accept 와 상관없이 JSON 이다(#279). 테스트 TC-OPS-036 · 백엔드 하한 416 → **417**
-- **`HEAD /api/health` 가 401 이던 것을 200 으로 고쳤다(#520).** 인증 없이 여는 헬스체크 경로가 `GET` 만 허용돼, HEAD 로 찌르는 가동 감시 도구는 서버가 살아 있어도 실패로 봤다(10-27 운영 HTTP 계약 감사). `SecurityConfig` 에 `HEAD /api/health` permitAll 한 줄 — 컨트롤러는 GET 매핑에 HEAD 를 자동으로 붙인다. 다른 보호 경로의 HEAD 는 그대로 401 이다. 테스트 2건 · 백엔드 하한 417 → **419**(#519 와 합친 실측)
-
 ## [2026-10-27]
 
-운영 배포 3회 — 백엔드 `c2f8617`(#517 끊긴 SSE 의 에러 페이지 INCLUDE 거절 ERROR, 롤백 `prev-ea2e647`) · 그 전 `ea2e647`(#515 SSE 헤더 경합, 롤백 `prev-bcb94fb`) · 그 전 `bcb94fb`(#513 사용자 삭제 API · #507 주석 정리 포함, 롤백 `prev-73bb76a`). #513 은 merge 전에 브랜치(`4ccb18d`, merge 결과와 `.issue` 를 빼면 차이 0)로 백엔드를 먼저 배포하고 운영 스모크(400 · 404 · 204 · 삭제 뒤 401) 뒤 merge 했다 — 프론트가 먼저 나가면 삭제 버튼이 404 를 받기 때문이다. 프론트 변경(#501 · #503 · #505 · #513)은 merge 때 Vercel 이 자동 배포했다. 같은 날 운영 표준 회귀 QA(73bb76a) — 새 이상 1건은 [#515](https://github.com/changs0124/rag-chatbot/issues/515). 케이스 수 하한(main 통합 실측) : 백엔드 399 → **410** · 프론트 282 → **308**.
+운영 배포 4회 — 백엔드 `2889bfd`(#519 Accept 불일치 406 · #520 HEAD 헬스체크, 롤백 `prev-c2f8617`) · 그 전 `c2f8617`(#517 끊긴 SSE 의 에러 페이지 INCLUDE 거절 ERROR, 롤백 `prev-ea2e647`) · 그 전 `ea2e647`(#515 SSE 헤더 경합, 롤백 `prev-bcb94fb`) · 그 전 `bcb94fb`(#513 사용자 삭제 API · #507 주석 정리 포함, 롤백 `prev-73bb76a`). #513 은 merge 전에 브랜치(`4ccb18d`, merge 결과와 `.issue` 를 빼면 차이 0)로 백엔드를 먼저 배포하고 운영 스모크(400 · 404 · 204 · 삭제 뒤 401) 뒤 merge 했다 — 프론트가 먼저 나가면 삭제 버튼이 404 를 받기 때문이다. 프론트 변경(#501 · #503 · #505 · #513)은 merge 때 Vercel 이 자동 배포했다. 같은 날 운영 표준 회귀 QA(73bb76a) — 새 이상 1건은 [#515](https://github.com/changs0124/rag-chatbot/issues/515). 케이스 수 하한(main 통합 실측) : 백엔드 399 → **410** → **419**(#519 · #520) · 프론트 282 → **308**.
+
+### Fixed (2889bfd)
+- **`Accept` 가 JSON 을 받지 않는 요청이 500 + ERROR 로그(스택)로 끝나던 것을 406 `NOT_ACCEPTABLE` 로 고쳤다(#519).** 10-27 운영 HTTP 계약 감사에서 `GET /api/conversations` 에 `Accept: application/xml` 을 보내자 `HttpMediaTypeNotAcceptableException` 이 최종 폴백으로 떨어져 500 과 「처리되지 않은 예외」 ERROR 가 남았다 — 스캐너 하나로 오류 경보가 울린다. 415 처리기 옆에 전용 처리기를 두고 로그는 남기지 않는다(415 와 같은 요청 헤더 문제). 본문은 다른 오류처럼 Accept 와 상관없이 JSON 이다(#279). 테스트 TC-OPS-036 · 백엔드 하한 416 → **417**
+- **`HEAD /api/health` 가 401 이던 것을 200 으로 고쳤다(#520).** 인증 없이 여는 헬스체크 경로가 `GET` 만 허용돼, HEAD 로 찌르는 가동 감시 도구는 서버가 살아 있어도 실패로 봤다(10-27 운영 HTTP 계약 감사). `SecurityConfig` 에 `HEAD /api/health` permitAll 한 줄 — 컨트롤러는 GET 매핑에 HEAD 를 자동으로 붙인다. 다른 보호 경로의 HEAD 는 그대로 401 이다. 테스트 2건 · 백엔드 하한 417 → **419**(#519 와 합친 실측)
 
 ### Fixed (c2f8617)
 - **사용자가 채팅 스트림을 끊을 때 가끔 남던 ERROR 로그 2줄(`AuthorizationDeniedException` · 「response is already committed」)을 없앴다(#517).** 끊긴 SSE 의 비동기 오류를 Tomcat 이 커밋된 응답 위에 에러 페이지로 부를 때 forward 대신 `INCLUDE` 디스패치를 쓰는데, 보안 설정이 `ASYNC` · `ERROR` 만 허용해 거절했다. `/error` 로 가는 `INCLUDE` 만 허용했다 — 다른 경로의 `INCLUDE` 는 여전히 인가를 거친다. 사용자 영향은 없던 로그 잡음이다(로컬 목업 432요청당 0~8줄). 테스트 3건(`/error` INCLUDE 는 통과 · 다른 경로 INCLUDE 는 401 · 클라이언트 요청은 401) · 백엔드 하한 413 → **416**
