@@ -16,3 +16,13 @@
 - 원자료 : [before-load.txt](https://github.com/changs0124/rag-chatbot/blob/main/.issue/517/evidence/before-load.txt) · [after-load.txt](https://github.com/changs0124/rag-chatbot/blob/main/.issue/517/evidence/after-load.txt) · [before-test.txt](https://github.com/changs0124/rag-chatbot/blob/main/.issue/517/evidence/before-test.txt) · [after-test.txt](https://github.com/changs0124/rag-chatbot/blob/main/.issue/517/evidence/after-test.txt)
 - 한계 : 빈도가 낮아(컨테이너당 0~8줄) 부하 0 건만으로는 약하다. 결정적 근거는 회귀 테스트(전 실패 → 후 통과)다.
 - 문서 : `backend.md` 인가 절 · CHANGELOG `[Unreleased]` · 하한 413 → 415
+
+---
+
+### 리뷰 반영 (독립 보안 리뷰 : CRITICAL 0 · HIGH 0 · MEDIUM 1 · LOW 3)
+
+- **L1 허용 범위** : INCLUDE 허용을 모든 경로 → **`/error` 로만** 좁혔다(`AndRequestMatcher(INCLUDE, /error)`). 뒷날 코드가 `include` 를 써도 다른 경로는 인가를 건너뛰지 않는다
+- **L2 테스트** : 「다른 경로 INCLUDE 는 401」 테스트 추가 — 이전 401 테스트는 REQUEST 라 변경을 건드리지 않았다. include 대상은 Tomcat 처럼 include 속성으로 준다. 3/3 통과 · 전체 416/416
+- **M1 `/error` 가 커밋된 응답에 쓰다 새 ERROR 를 남기는가** : DispatcherServlet DEBUG 로 다시 부하(1,728요청) — `/error` INCLUDE 가 **실제로 6건 돌았고** 전부 status 200 으로 끝났으며 ERROR · 예외 **0**. 앞선 「after 0건」이 경로가 안 돈 탓이 아니었음을 확인
+- **L3 문서** : backend.md 의 「인증은 이미 검사됐다」 · 「넓어지지 않는다」 문구를 실제 보장(`/error` 로 좁힘 + 테스트)에 맞게 고쳤다
+- 하한 415 → **416**
