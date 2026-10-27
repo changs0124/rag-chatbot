@@ -1,0 +1,16 @@
+$ grep -n "cloudflared@sha256\|2026.10" docker-compose.yml
+206:    image: cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
+212:    # 순간 도메인 트래픽을 가로챌 수 있는 토큰이 같이 나간다. `--token-file` 지원이 필요하다(2026.10.0 에서 확인) - 다이제스트를 바꿀 때 확인
+
+# 레지스트리 태그 -> 다이제스트 (2026-10-28 조회)
+cloudflare/cloudflared:2026.10.0  -> sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
+cloudflare/cloudflared:2026.10.2  -> sha256:0e56c13c7058fcef9c4f0e7d83372f82330548dbf8f8b366f3d8b506526d93b2
+cloudflare/cloudflared:2026.10.3  -> sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39
+cloudflare/cloudflared:2026.10.4  -> sha256:c6c7ae1d5dfdcb094ad344ed68ccffc26635c9c6be80965664c33baf064b0515
+cloudflare/cloudflared:2026.10.5  -> sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53
+cloudflare/cloudflared:latest     -> sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53
+
+$ docker run --rm cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07 --version
+cloudflared version 2026.10.0 (built 2026-10-05-17:58 UTC)
+
+# 판정 : 고정 이미지 2026.10.0 < Cloudflare 요구 하한 2026.10.2

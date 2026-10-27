@@ -1,0 +1,22 @@
+$ grep -n "cloudflared@sha256\|2026.10" docker-compose.yml
+206:    image: cloudflare/cloudflared@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53
+212:    # 순간 도메인 트래픽을 가로챌 수 있는 토큰이 같이 나간다. `--token-file` 지원이 필요하다(2026.10.5 에서 확인) - 다이제스트를 바꿀 때 확인
+
+$ docker run --rm cloudflare/cloudflared@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53 --version
+cloudflared version 2026.10.5 (built 2026-10-27-13:37 UTC)
+
+$ ... tunnel run --help | grep token-file
+  --token-file value                           Filepath at which to read the tunnel token. When provided along with credentials, this will take precedence. [$TUNNEL_TOKEN_FILE]
+$ ... tunnel --help | grep no-autoupdate
+   --no-autoupdate          Disable periodic check for updates, restarting the server with the new version. (default: false) [$NO_AUTOUPDATE]
+
+$ docker image inspect --format '{{.Config.User}}'
+65532:65532
+
+$ docker compose config (빈 backend/.env, POSTGRES_PASSWORD=x) | grep cloudflared@
+    image: cloudflare/cloudflared@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53   (exit 0)
+
+$ bash scripts/check-all.sh docs  ->  돌린 검사는 전부 통과 (shellcheck 미설치로 1건 건너뜀)
+
+# 판정 : 고정 이미지 2026.10.5 >= Cloudflare 요구 하한 2026.10.2 · 태그 2026.10.5 = latest 다이제스트
+# 운영 반영(재배포 · 커넥터 버전 확인)은 merge 뒤
