@@ -1,0 +1,21 @@
+# after 부하 (수정 워크트리 빌드 i515-after, 목업, 동시 16 x 3턴 x 3라운드, 끊기 25%) - 새 컨테이너 3번 x 3회
+# 2026-10-27T04:17:04Z
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 35, "headers_ms": {"p50": 16, "p95": 125, "max": 141}, "meta_ms": {"p50": 16, "p95": 125, "max": 141}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 36, "headers_ms": {"p50": 16, "p95": 31, "max": 47}, "meta_ms": {"p50": 16, "p95": 31, "max": 47}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 40, "headers_ms": {"p50": 16, "p95": 32, "max": 47}, "meta_ms": {"p50": 16, "p95": 32, "max": 47}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 41, "headers_ms": {"p50": 16, "p95": 93, "max": 109}, "meta_ms": {"p50": 16, "p95": 93, "max": 109}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 37, "headers_ms": {"p50": 16, "p95": 32, "max": 47}, "meta_ms": {"p50": 16, "p95": 32, "max": 47}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 39, "headers_ms": {"p50": 16, "p95": 31, "max": 32}, "meta_ms": {"p50": 16, "p95": 31, "max": 32}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 34, "headers_ms": {"p50": 16, "p95": 93, "max": 109}, "meta_ms": {"p50": 31, "p95": 93, "max": 109}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 41, "headers_ms": {"p50": 16, "p95": 32, "max": 47}, "meta_ms": {"p50": 16, "p95": 32, "max": 47}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 32, "headers_ms": {"p50": 16, "p95": 31, "max": 46}, "meta_ms": {"p50": 16, "p95": 31, "max": 46}}
+
+# before 재측정(새 컨테이너) 3회
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 36, "headers_ms": {"p50": 16, "p95": 94, "max": 94}, "meta_ms": {"p50": 16, "p95": 94, "max": 94}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 42, "headers_ms": {"p50": 16, "p95": 32, "max": 32}, "meta_ms": {"p50": 16, "p95": 32, "max": 32}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 33, "headers_ms": {"p50": 16, "p95": 31, "max": 32}, "meta_ms": {"p50": 16, "p95": 31, "max": 32}}
+
+# 서버 ERROR (끊긴 스트림의 비동기 오류 → 에러 페이지 INCLUDE 디스패치를 보안 설정이 거절)
+before 1차 0건 · before 2차 1건(ERROR 2줄)
+after 1차 1건(ERROR 2줄, 스택은 컨테이너 교체로 소실) · after 2차 3건(6줄) · after 3차 0건
+=> 수정 전후 모두 나는 기존 문제(#515 범위 밖)

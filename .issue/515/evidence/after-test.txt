@@ -1,0 +1,4 @@
+# after : SecurityHeadersEagerTest · ChatStreamAbortTest(커밋 실패에도 요청 종료 · 끊김 판정 추가) · 전체 verify
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.ragchatbot.security.SecurityHeadersEagerTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.ragchatbot.service.ChatStreamAbortTest
+전체 mvnw verify : run 413 fail 0 err 0

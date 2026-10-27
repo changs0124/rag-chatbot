@@ -1,0 +1,5 @@
+# before 부하 (수정 전 워크트리 빌드 i515-before, 목업, 동시 16 x 3턴 x 3라운드, 끊기 25%) x 3회
+# commit 608b8d0, 2026-10-27T04:08:29Z
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 37, "headers_ms": {"p50": 16, "p95": 62, "max": 93}, "meta_ms": {"p50": 16, "p95": 62, "max": 93}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 36, "headers_ms": {"p50": 16, "p95": 32, "max": 32}, "meta_ms": {"p50": 16, "p95": 32, "max": 32}}
+{"requests": 144, "status": {"200": 144}, "stalls": 0, "errors": [], "aborts": 28, "headers_ms": {"p50": 16, "p95": 31, "max": 32}, "meta_ms": {"p50": 16, "p95": 31, "max": 32}}
