@@ -8,8 +8,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,6 +25,10 @@ import tools.jackson.databind.ObjectMapper;
  * 무자료(REQ-RAG-003) · 출처 저장·재조회(REQ-RAG-002) · 429(REQ-OPS-003) · 리소스 정리 · 첨부 전달 · 이미지 단독 질문.
  */
 class ChatFlowTest extends AbstractPgIntegrationTest {
+
+	/** 상한은 베이스 프로퍼티에서 읽는다 - 사본을 두면 베이스를 바꿀 때 조용히 어긋난다 */
+	@Value("${app.ratelimit.chat-per-minute}")
+	int perMinute;
 
 	@Autowired
 	private OpenAiMockService mock;
@@ -385,7 +389,6 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 	void rate_limit_returns_429_when_exceeded() {
 		String token = createUser("chat-rl@b.com");
 		String convId = createConversation(token);
-		int perMinute = 5;
 		int attempts = perMinute * 2 + 1;
 
 		boolean saw429 = false;
@@ -397,6 +400,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
 		}
 		assertThat(saw429).as("%d회 중 최소 1회는 429여야 함", attempts).isTrue();
 	}
+
 	/**
 	 * 이미 다른 메시지에 붙은 첨부는 <b>모델 호출 전에</b> 거절한다 (#99).
 	 *

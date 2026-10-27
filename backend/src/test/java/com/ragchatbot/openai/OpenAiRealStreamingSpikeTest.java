@@ -88,7 +88,7 @@ class OpenAiRealStreamingSpikeTest {
 		// 핵심 단언 - 응답이 끝나기 전에 첫 토큰이 클라이언트에 도착했음
 		assertThat(serverSawSignal)
 				.withFailMessage("첫 delta 를 흘렸는데 클라이언트가 응답 종료 전에 받지 못함 "
-						+ "= RestClient 가 응답을 통째로 버퍼링함(M3 스파이크의 무효화 조건)")
+						+ "= RestClient 가 응답을 통째로 버퍼링함(스트리밍 전제의 무효화 조건)")
 				.isTrue();
 
 		assertThat(tokens).containsExactly("첫 조각", "둘째 조각");

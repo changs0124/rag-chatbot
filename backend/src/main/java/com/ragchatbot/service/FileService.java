@@ -45,7 +45,7 @@ public class FileService {
 	/** 첨부의 file_type - 받는 것이 이미지뿐이라 항상 이 값 */
 	private static final String FILE_TYPE = "image";
 
-	/** 형식마다 상한이 같아 항목별로 두지 않는다 - 갈라 둘 이유가 생기면 그때 record 로 되돌린다 */
+	/** 형식마다 상한이 같아 항목별로 두지 않는다 - 갈라 둘 이유가 생기면 그때 {@code AllowedType} 에 넣는다 */
 	private static final long MAX_SIZE = 10 * MB;
 
 	/** content-type(맵 키) → (확장자, 매직바이트) */
@@ -235,7 +235,7 @@ public class FileService {
 		return cutoff.isAfter(floor) ? floor : cutoff;
 	}
 
-	/** 재조회 응답용 - 조회 시점에 새 서명 URL 을 발급함(저장된 URL 재사용 금지, TTL 15분) */
+	/** 재조회 응답용 - 조회 시점에 새 서명 URL 을 발급함(저장된 URL 재사용 금지, TTL 은 {@code FILE_ACCESS_TOKEN_TTL_MINUTES}) */
 	public String issueUrl(UUID fileId, UUID userId) {
 		return "/api/files/" + fileId + "?token=" + fileTokenService.issue(fileId, userId);
 	}

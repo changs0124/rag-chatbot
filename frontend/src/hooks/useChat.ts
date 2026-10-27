@@ -13,7 +13,7 @@ import type { Attachment, ChatMessage, Conversation } from '../lib/types'
 import { useStageQueue } from './useStageQueue'
 
 /**
- * 200 전 중단 · 실패의 판정 결과(#440 · #447 · #480). 훅은 이것을 화면에 적용만 한다.
+ * 서버에 질문이 남았는지 모르는 턴(200 전, 또는 200 뒤 토큰 0개에서 중단 · 실패, #489)의 판정 결과(#440 · #447 · #480). 훅은 이것을 화면에 적용만 한다.
  * - `stored` : 질문이 저장된 것이 확실하다 - 이력(`saved`)을 못 받았어도 되돌리지 않는다
  * - `deleted` : 새 대화가 비어 있어 지웠다(또는 이미 없다) - 저장된 것이 없다
  * - `unknown` : 저장을 확인하지 못했다 - 글만 되돌리고 대화는 둔다
@@ -31,7 +31,7 @@ type EarlyAbortOutcome =
 export const RECHECK_INTERVAL_MS = 400
 export const RECHECK_WINDOW_MS = 8000
 /** 재확인 요청 하나의 시간 제한 - 매달린 요청이 판정을 붙들지 않게 한다 */
-export const RECHECK_REQUEST_TIMEOUT_MS = 3000
+const RECHECK_REQUEST_TIMEOUT_MS = 3000
 
 /** 이력의 마지막이 보낸 질문인지 - 답 행이 아직 없다 */
 function endsWithQuestion(server: ChatMessage[], text: string) {
@@ -90,7 +90,7 @@ async function recheckUnanswered(
 }
 
 /**
- * 200 을 받기 전에 끊긴 턴의 질문이 서버에 있는지 서버에 물어 가른다(#440). 화면 상태는 건드리지 않는다.
+ * 200 을 받기 전에, 또는 200 뒤 토큰 0개에서(#489) 끊긴 턴의 질문이 서버에 있는지 서버에 물어 가른다(#440). 화면 상태는 건드리지 않는다.
  *
  * **200 이 없었다고 서버에 없는 것은 아니다**(#440 리뷰) - 서버는 질문 저장 · 첨부 연결을 커밋한 뒤에
  * 200 을 돌려주므로, 그 사이에 끊으면 질문은 저장돼 있고 첨부는 이미 쓰였다.
@@ -143,7 +143,7 @@ export function useChat() {
   // send 의 거절 판정용 사본(#323) - 고른 직후 같은 틱의 전송도 막으려고 상태와 함께 바로 쓴다
   const loadingRef = useRef(false)
   const [streaming, setStreaming] = useState(false)
-  // 200 전에 끊긴 턴을 서버에 물어 가르는 중(#483 F17). streaming 도 참인 구간이다 - 입력창이 정지 버튼 대신 비활성 보내기를 보이게 한다
+  // 200 전(또는 200 뒤 토큰 0개, #489)에 끊긴 턴을 서버에 물어 가르는 중(#483 F17). streaming 도 참인 구간이다 - 입력창이 정지 버튼 대신 비활성 보내기를 보이게 한다
   const [settling, setSettling] = useState(false)
   // 진행 단계(REQ-CHAT-005) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
   const { stage, pushStage, clearStages } = useStageQueue()
@@ -513,7 +513,7 @@ export function useChat() {
    * 조용히 버리면 입력이 사라지고 이미 올린 첨부는 회수 크론을 기다리는 고아가 된다.
    *
    * 기존 대화는 곧바로, 새 대화는 **생성 왕복이 끝난 뒤에** 정해진다(#349) - 생성이 실패하면 보낸 것이 없다.
-   * 받아들인 뒤 200 전에 중단 · 실패했고 서버에 질문이 없으면 `giveBack` 으로 알린다(#440 · #480) - 입력창은 이미 비웠으므로 되돌릴 몫이 거기 있다.
+   * 받아들인 뒤 200 전(또는 200 뒤 토큰 0개, #489)에 중단 · 실패했고 서버에 질문이 없으면 `giveBack` 으로 알린다(#440 · #480) - 입력창은 이미 비웠으므로 되돌릴 몫이 거기 있다.
    * 거절 판정과 생성 중 표시는 같은 틱에 끝나므로 같은 틱의 두 번째 전송도 막힌다.
    *
    * 이력 로딩 중에도 거절한다. 받아 들이면 말풍선이 직전 대화의 목록에 붙고, 곧 도착한 이력이 목록을

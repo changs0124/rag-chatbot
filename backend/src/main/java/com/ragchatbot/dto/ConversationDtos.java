@@ -28,7 +28,7 @@ public final class ConversationDtos {
 
 	/**
 	 * 메시지 + 출처(재조회 시 유지, REQ-RAG-002) + 첨부.
-	 * 첨부 URL 은 조회 시점에 새로 서명함 - 저장된 URL 을 그대로 내리면 서명 토큰 TTL(15분) 뒤 404 가 됨.
+	 * 첨부 URL 은 조회 시점에 새로 서명함 - 저장된 URL 을 그대로 내리면 서명 토큰 TTL({@code FILE_ACCESS_TOKEN_TTL_MINUTES}) 뒤 404 가 됨.
 	 * {@code stopped} 는 중단으로 끝나 <b>출처 판정을 못 마친</b> 답변임 - 화면이 무자료 배너를 억제하는 데 씀.
 	 * {@code timedOut} 은 <b>서버가 스트림을 타임아웃으로 닫았음</b>(#84) - {@code stopped} 와의 조합은 {@code Message} 머리 주석.
 	 */

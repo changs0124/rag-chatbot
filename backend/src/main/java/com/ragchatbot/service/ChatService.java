@@ -314,7 +314,7 @@ public class ChatService {
 	}
 
 	/**
-	 * 중단·오류 경로의 부분 저장. 중단인데 받은 것이 없으면 아무것도 남기지 않음.
+	 * 중단·오류 경로의 부분 저장. 받은 것 없이 끝난 중단은 여기로 오지 않음 - 호출자가 질문을 걷음(#489).
 	 *
 	 * @param completion 스트림이 완주해 <b>손에 쥔 것이 있으면</b> 그것, 아니면 null. null 이면 인용 0건 ·
 	 *                   사용량 null 로 저장함 - 중단·업스트림 오류 경로는 완료 이벤트가 오기 전에 끝나
@@ -322,9 +322,6 @@ public class ChatService {
 	 */
 	private void savePartial(PreparedChat prepared, UUID userId, UUID asstMsgId, String text, String status,
 			boolean stopped, boolean timedOut, ChatCompletion completion) {
-		if (text.isEmpty() && "complete".equals(status)) {
-			return;
-		}
 		try {
 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, text, status, stopped,
 					timedOut,

@@ -131,7 +131,7 @@ public class OpenAiMockService implements OpenAiService {
 	/** 목업 스토어 ID. 실 값과 구분되도록 접두를 붙임 */
 	static final String MOCK_STORE_ID = "mock-vector-store";
 
-	/** 목업 스토어 - file_id → (파일명, 크기). 동기화(#193)가 파일명·크기를 돌려줘야 해 집합이 아니라 맵이다 */
+	/** 목업 스토어 - file_id → {@code StoreFile}(파일명, 크기). 동기화(#193)가 파일명·크기를 돌려줘야 해 집합이 아니라 맵이다 */
 	private final Map<String, StoreFile> mockDocuments = new ConcurrentHashMap<>();
 
 	@Override
