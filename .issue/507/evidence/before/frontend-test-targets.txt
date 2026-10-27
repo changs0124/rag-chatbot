@@ -1,0 +1,195 @@
+===== frontend/src/hooks/useChat.ts:12-36
+    12	import type { Attachment, ChatMessage, Conversation } from '../lib/types'
+    13	import { useStageQueue } from './useStageQueue'
+    14	
+    15	/**
+    16	 * 200 전 중단 · 실패의 판정 결과(#440 · #447 · #480). 훅은 이것을 화면에 적용만 한다.
+    17	 * - `stored` : 질문이 저장된 것이 확실하다 - 이력(`saved`)을 못 받았어도 되돌리지 않는다
+    18	 * - `deleted` : 새 대화가 비어 있어 지웠다(또는 이미 없다) - 저장된 것이 없다
+    19	 * - `unknown` : 저장을 확인하지 못했다 - 글만 되돌리고 대화는 둔다
+    20	 */
+    21	type EarlyAbortOutcome =
+    22	  | { kind: 'stored'; saved: ChatMessage[] | null }
+    23	  | { kind: 'deleted' }
+    24	  | { kind: 'unknown' }
+    25	
+    26	/**
+    27	 * 「저장됨」인데 답이 없는 질문을 다시 확인하는 간격과 최대 구간(#489). 서버는 토큰을 하나도 못 보낸 턴의 질문을 걷지만,
+    28	 * 끊김을 **다음 이벤트(단계 · 토큰)를 쓸 때** 알아채므로(#487) 첫 확인이 철회보다 먼저 처리될 수 있다.
+    29	 * 창은 8초다(#501) - 운영 실측에서 철회까지 3.2~5.9초가 걸려 5초 창은 10회 중 2회를 놓쳤다
+    30	 */
+    31	export const RECHECK_INTERVAL_MS = 400
+    32	export const RECHECK_WINDOW_MS = 8000
+    33	/** 재확인 요청 하나의 시간 제한 - 매달린 요청이 판정을 붙들지 않게 한다 */
+    34	export const RECHECK_REQUEST_TIMEOUT_MS = 3000
+    35	
+    36	/** 이력의 마지막이 보낸 질문인지 - 답 행이 아직 없다 */
+===== frontend/src/hooks/useChat.ts:88-96
+    88	  }
+    89	  return { kind: 'stored', saved }
+    90	}
+    91	
+    92	/**
+    93	 * 200 을 받기 전에 끊긴 턴의 질문이 서버에 있는지 서버에 물어 가른다(#440). 화면 상태는 건드리지 않는다.
+    94	 *
+    95	 * **200 이 없었다고 서버에 없는 것은 아니다**(#440 리뷰) - 서버는 질문 저장 · 첨부 연결을 커밋한 뒤에
+    96	 * 200 을 돌려주므로, 그 사이에 끊으면 질문은 저장돼 있고 첨부는 이미 쓰였다.
+===== frontend/src/hooks/useChat.ts:143-149
+   143	  // send 의 거절 판정용 사본(#323) - 고른 직후 같은 틱의 전송도 막으려고 상태와 함께 바로 쓴다
+   144	  const loadingRef = useRef(false)
+   145	  const [streaming, setStreaming] = useState(false)
+   146	  // 200 전에 끊긴 턴을 서버에 물어 가르는 중(#483 F17). streaming 도 참인 구간이다 - 입력창이 정지 버튼 대신 비활성 보내기를 보이게 한다
+   147	  const [settling, setSettling] = useState(false)
+   148	  // 진행 단계(REQ-CHAT-005) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
+   149	  const { stage, pushStage, clearStages } = useStageQueue()
+===== frontend/src/hooks/useChat.ts:505-512
+   505	        }
+   506	      }
+   507	    },
+   508	    [activeId, refreshConversations, clearStages, pushStage],
+   509	  )
+   510	
+   511	  /**
+   512	   * 전송을 받아들였는지 돌려준다(#323). 입력창은 받아들였을 때만 입력과 첨부 초안을 비운다 -
+===== frontend/src/components/chat/Composer.tsx:46-56
+    46	}: {
+    47	  /**
+    48	   * 받아들였으면 true - 거절된 전송은 입력과 첨부 초안을 그대로 둔다(#323). 새 대화는 생성 왕복 뒤에 정해진다(#349).
+    49	   * 받아들인 턴이 서버에 닿기 전에 끊기면 `giveBack` 을 부른다 - 보낸 글과 첨부를 입력창에 되돌린다(#440)
+    50	   */
+    51	  onSend: (text: string, attachments: Attachment[], giveBack: (textOnly?: boolean) => void) => Promise<boolean>
+    52	  streaming: boolean
+    53	  /**
+    54	   * 200 전에 끊긴 턴이 서버에 닿았는지 확인하는 중(#483 F17). 이때 `streaming` 은 아직 참이지만 정지는 아무 일도 하지 않으므로
+    55	   * 정지 버튼 대신 이유를 단 비활성 보내기를 보인다
+    56	   */
+===== frontend/src/pages/ChatPage.tsx:82-90
+    82	      chat.renameConversation(chat.activeId, next)
+    83	    }
+    84	  }
+    85	
+    86	  // 사이드바에 넘기는 핸들러는 참조를 고정한다(#405) - 매 렌더 새 함수면 Sidebar 의 memo 가 스트리밍 토큰마다 무너진다.
+    87	  // useChat 의 두 콜백은 이미 안정적이다
+    88	  const { newConversation, selectConversation } = chat
+    89	
+    90	  // 사이드바 버튼과 모바일 헤더 버튼이 같이 쓴다 - 모바일 드로어가 열려 있으면 닫는다
+===== frontend/src/components/chat/MessageList.tsx:6-18
+     6	import ImageLightbox from './ImageLightbox'
+     7	import DocFigure from './DocFigure'
+     8	import { splitFigures } from '../../lib/docFigures'
+     9	
+    10	// 지연 로딩(#417) - react-markdown · remark 묶음은 번들의 큰 몫인데 로그인 화면은 쓰지 않는다. 첫 답변을 그릴 때 받는다
+    11	function PlainText({ text }: { text: string }) {
+    12	  return <p className="whitespace-pre-wrap break-words">{text}</p>
+    13	}
+    14	// 청크를 못 받으면 평문으로 물러선다 - 재배포로 옛 청크가 사라지거나(SPA 리라이트가 HTML 을 돌려준다) 망이 끊기면
+    15	// lazy 가 던진 오류가 최상위 ErrorBoundary 까지 올라가 **앱 전체가 오류 화면**이 된다. ChatPage 가 미리 받아 둔다
+    16	const Markdown = lazy(() => import('./Markdown').catch(() => ({ default: PlainText })))
+    17	
+    18	/** 스크롤을 실제로 하는 조상. MessageList 는 컨테이너를 소유하지 않는다(ChatPage 가 가진다) */
+===== frontend/src/hooks/useChatRace.test.ts:240-270
+   240	   *
+   241	   * 확인 모달이 먼저 닫히므로, 실패를 표시하지 않으면 사용자는 「삭제를 눌렀는데 그대로다」만 보고
+   242	   * 콘솔에는 unhandled rejection 만 남는다.
+   243	   */
+   244	  it('삭제가 실패하면 오류가 뜨고 목록도 그대로다', async () => {
+   245	    vi.mocked(deleteConversation).mockRejectedValue(new Error('network'))
+   246	    const { result } = renderHook(() => useChat())
+   247	
+   248	    await act(async () => {
+   249	      await result.current.deleteConversation('A')
+   250	    })
+   251	
+   252	    expect(result.current.error).toBeTruthy()
+   253	  })
+   254	
+   255	  /** 이름 변경도 같다 - 실패하면 헤더가 옛 제목으로 조용히 되돌아가던 자리다 */
+   256	  it('이름 변경이 실패하면 오류가 뜬다', async () => {
+   257	    vi.mocked(renameConversation).mockRejectedValue(new Error('network'))
+   258	    const { result } = renderHook(() => useChat())
+   259	
+   260	    await act(async () => {
+   261	      await result.current.renameConversation('A', '새 제목')
+   262	    })
+   263	
+   264	    expect(result.current.error).toBeTruthy()
+   265	  })
+   266	
+   267	  /** 반대편 - 성공하면 오류가 뜨지 않고 목록에서 빠진다 */
+   268	  /**
+   269	   * #251 — 지금 보던 A 를 지우는 사이 B 로 옮기면, 삭제 응답이 B 를 끊고 비우지 않는다.
+   270	   * 고치기 전에는 삭제를 시작할 때 잡은 activeId(A)로 비교해 B 의 메시지 로드를 버리고 빈 화면이 됐다.
+===== frontend/src/hooks/useChatRace.test.ts:310-318
+   310	
+   311	    expect(result.current.activeId).toBeNull()
+   312	    expect(result.current.messages).toEqual([])
+   313	  })
+   314	
+   315	  it('삭제가 성공하면 오류 없이 목록에서 빠진다', async () => {
+   316	    vi.mocked(deleteConversation).mockResolvedValue(undefined)
+   317	    const { result } = renderHook(() => useChat())
+   318	
+===== backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java:30-50
+    30	import com.ragchatbot.support.AbstractPgIntegrationTest;
+    31	
+    32	/**
+    33	 * 스트림이 열린 뒤의 예외가 범용 폴백에 잡혀 열린 스트림에 JSON 을 쓰지 않는지 (#326).
+    34	 *
+    35	 * <p>SSE 타임아웃과 {@code emitter.completeWithError} 는 둘 다 비동기 디스패치로 예외 처리기에 간다.
+    36	 * 변경 전에는 {@code @ExceptionHandler(Exception.class)} 가 받아 타임아웃마다 ERROR 를 남기고, 이미
+    37	 * 커밋된 {@code text/event-stream} 에 500 JSON 을 쓰려 했다. 다른 통합 테스트는 목업 모드라 타임아웃을
+    38	 * 한 번도 타지 않아 이 경로가 비어 있었다.
+    39	 *
+    40	 * <p><b>실 톰캣 위에서 원시 바이트를 읽는다.</b> 스트림 본문에 무엇이 섞였는지가 관심사라
+    41	 * TestRestTemplate 의 변환을 거치지 않는다.
+    42	 */
+    43	@ExtendWith(OutputCaptureExtension.class)
+    44	@TestPropertySource(properties = {
+    45			// 도중 오류 케이스(026)가 넉넉히 끝날 만큼 길게 두고, 타임아웃 케이스(025)는 래치로 그보다 오래 붙잡는다
+    46			"app.chat.sse-timeout-ms=2000" })
+    47	class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
+    48	
+    49		@MockitoBean
+    50		OpenAiService openAi;
+===== backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java:30-38
+    30	 * <p>타이밍으로 재지 않고 <b>핸드셰이크</b>로 증명함 : 서버가 첫 delta 를 흘린 뒤 <b>클라이언트가
+    31	 * 그것을 받았다는 신호를 기다림</b>. 버퍼링이면 클라이언트는 응답이 끝나야 첫 토큰을 보므로 신호가
+    32	 * 오지 않고 서버가 대기하다 지나감 - 그 사실이 단언으로 드러남. 지연 시간에 기대지 않으므로
+    33	 * CI 부하와 무관하게 결정적임.
+    34	 */
+    35	class OpenAiRealStreamingSpikeTest {
+    36	
+    37		private HttpServer server;
+    38		private final CountDownLatch firstTokenSeen = new CountDownLatch(1);
+===== backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java:88-94
+    88			// 핵심 단언 - 응답이 끝나기 전에 첫 토큰이 클라이언트에 도착했음
+    89			assertThat(serverSawSignal)
+    90					.withFailMessage("첫 delta 를 흘렸는데 클라이언트가 응답 종료 전에 받지 못함 "
+    91							+ "= RestClient 가 응답을 통째로 버퍼링함(M3 스파이크의 무효화 조건)")
+    92					.isTrue();
+    93	
+    94			assertThat(tokens).containsExactly("첫 조각", "둘째 조각");
+===== backend/src/test/java/com/ragchatbot/controller/ChatFlowTest.java:380-402
+   380		 *
+   381		 * <p>그래서 <b>상한의 두 배 + 1</b>회를 보냄 - 경계를 한 번 넘어 최악으로 갈려도(5/6) 한쪽 창에는
+   382		 * 반드시 상한 초과분이 쌓임. 요청이 1초 안에 끝나므로 경계를 두 번 넘을 일은 없음.
+   383		 */
+   384		@Test
+   385		void rate_limit_returns_429_when_exceeded() {
+   386			String token = createUser("chat-rl@b.com");
+   387			String convId = createConversation(token);
+   388			int perMinute = 5;
+   389			int attempts = perMinute * 2 + 1;
+   390	
+   391			boolean saw429 = false;
+   392			for (int i = 0; i < attempts; i++) {
+   393				var res = chat(token, Map.of("conversationId", convId, "message", "가격 문의 " + i));
+   394				if (res.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+   395					saw429 = true;
+   396				}
+   397			}
+   398			assertThat(saw429).as("%d회 중 최소 1회는 429여야 함", attempts).isTrue();
+   399		}
+   400		/**
+   401		 * 이미 다른 메시지에 붙은 첨부는 <b>모델 호출 전에</b> 거절한다 (#99).
+   402		 *
