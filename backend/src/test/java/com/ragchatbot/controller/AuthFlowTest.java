@@ -45,6 +45,20 @@ class AuthFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getBody().get("status")).isEqualTo("ok");
 	}
 
+	/** HEAD 로 헬스체크하는 가동 감시 도구가 있다 - GET 만 열어 두면 살아 있어도 401 로 실패를 본다(#520) */
+	@Test
+	void health_head_is_public() {
+		var res = rest.exchange("/api/health", HttpMethod.HEAD, null, Void.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+	/** HEAD 허용은 헬스체크 하나뿐이다 - 보호 경로의 HEAD 는 GET 과 같이 인증을 거친다(#520) */
+	@Test
+	void head_on_protected_route_still_requires_auth() {
+		var res = rest.exchange("/api/conversations", HttpMethod.HEAD, null, Void.class);
+		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
 	/**
 	 * 가입 경로가 <b>존재하지 않는다</b>(FEAT-AUTH-001, 2026-09-07).
 	 *

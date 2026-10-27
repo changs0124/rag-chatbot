@@ -58,6 +58,8 @@ public class SecurityConfig {
 								PathPatternRequestMatcher.withDefaults().matcher("/error"))).permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+						// 가동 감시 도구 상당수가 HEAD 로 찌른다(#520) - 컨트롤러는 GET 매핑에 HEAD 를 자동으로 붙여 준다
+						.requestMatchers(HttpMethod.HEAD, "/api/health").permitAll()
 						// 파일 서빙은 서명 쿼리 토큰으로 검증(Bearer 불가한 <img src> 대응)
 						.requestMatchers(HttpMethod.GET, "/api/files/**").permitAll()
 						.anyRequest().authenticated())

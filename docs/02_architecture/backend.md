@@ -122,7 +122,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   서명 검증만으로 끝난다), 비밀번호를 **스스로 바꾼** 사용자도 열려 있던 화면의 이미지가 전부 깨진다 —
   `MyPage` 는 새 토큰으로 갈아 끼우지만 **이미 렌더된 `<img>` 의 URL 은 갱신되지 않는다.**
   창이 TTL 만큼으로 짧고, 정상 사용자에게 눈에 보이는 회귀를 만들지 않는 쪽을 택했다.
-- permitAll 은 로그인·헬스·파일 서빙, SSE 비동기 재디스패치(`ASYNC`/`ERROR`), 그리고 **`/error` 로 가는 `INCLUDE` 디스패치**다 —
+- permitAll 은 로그인·헬스(GET · HEAD)·파일 서빙, SSE 비동기 재디스패치(`ASYNC`/`ERROR`), 그리고 **`/error` 로 가는 `INCLUDE` 디스패치**다 —
   재디스패치는 최초 `REQUEST` 디스패치가 이미 인가를 거쳤다. `INCLUDE` 는 끊긴 SSE 의 비동기 오류를 Tomcat 이 커밋된 응답 위에
   에러 페이지로 부르는 길이다 — 막으면 커밋된 응답이라 401 도 못 쓰고 ERROR 2줄만 남았다(#517).
   허용을 `/error` 로만 좁혀, 뒷날 코드가 `include` 를 써도 다른 경로는 인가를 건너뛰지 않는다(테스트가 `/api/conversations` 의
@@ -420,7 +420,7 @@ File 을 지운다. 해제가 실패한 채 File 만 지우면 스토어에 이�
 **배포 순서(#447).** `DELETE /api/conversations/{id}?ifEmpty=true` 를 부르는 프론트보다 **백엔드를 먼저 배포한다.** 옛 백엔드는 `ifEmpty` 를 무시하고 조건 없이 지우므로,
 프론트가 먼저 나가면 메시지가 있는 대화까지 지워진다. **롤백은 반대로 프론트를 먼저 되돌린다.**
 
-헬스체크 경로는 `GET /api/health`(인증 불필요)다.
+헬스체크 경로는 `GET /api/health`(인증 불필요)다. HEAD 로 찌르는 가동 감시 도구를 위해 `HEAD` 도 인증 없이 200 이다(#520).
 첨부는 compose `uploads` 볼륨에 있다 — 소실 조건은 [overview](./overview.md) 「알려진 제약」.
 
 ### 상시 공개 - 자체 호스팅 서버
