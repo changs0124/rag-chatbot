@@ -5,12 +5,16 @@ import Sidebar from '../components/chat/Sidebar'
 import ResizableSidebar from '../components/chat/ResizableSidebar'
 import MessageList from '../components/chat/MessageList'
 import Composer from '../components/chat/Composer'
+import ConfirmModal from '../components/ConfirmModal'
 import { IconEdit, IconMenu } from '../components/icons'
 import { MAX_TITLE_CHARS } from '../lib/limits'
 
 // 헤더 양끝의 모바일 전용 아이콘 버튼(목록 열기 · 새 채팅)(#390)
 const headerIconBtn =
   'grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink md:hidden'
+
+// 확인을 기다리는 이동 - 새 채팅 또는 다른 대화(#503)
+type LeaveTarget = { to: 'new' } | { to: 'select'; id: string }
 
 export default function ChatPage() {
   const { user, logout } = useAuth()
@@ -84,17 +88,36 @@ export default function ChatPage() {
   const { newConversation, selectConversation } = chat
 
   // 사이드바 버튼과 모바일 헤더 버튼이 같이 쓴다 - 모바일 드로어가 열려 있으면 닫는다
+  const leave = useCallback(
+    (target: LeaveTarget) => {
+      if (target.to === 'new') newConversation()
+      else selectConversation(target.id)
+      setSidebarOpen(false)
+    },
+    [newConversation, selectConversation],
+  )
+
+  // 답을 받는 중에 떠나면 그 턴이 중단된다 - 먼저 묻는다(#503). 판정(settling) 중에는 묻지 않는다 -
+  // 옮기면 잠금만 풀리고 판정은 뒤에서 이어 간다(#489 리뷰). 이 값은 턴마다 두 번만 바뀌어 #405 의 memo 를 무너뜨리지 않는다
+  const guardLeave = chat.streaming && !chat.settling
+  const [pendingLeave, setPendingLeave] = useState<LeaveTarget | null>(null)
+  // 묻는 사이 답이 끝나면(또는 판정으로 넘어가면) 끊을 것이 없으니 창을 내린다. 남겨 두면 다음 턴이 시작될 때 옛 창이 다시 뜬다
+  useEffect(() => {
+    if (!guardLeave) setPendingLeave(null)
+  }, [guardLeave])
+
   const startNewChat = useCallback(() => {
-    newConversation()
-    setSidebarOpen(false)
-  }, [newConversation])
+    if (guardLeave) setPendingLeave({ to: 'new' })
+    else leave({ to: 'new' })
+  }, [guardLeave, leave])
 
   const selectFromSidebar = useCallback(
     (id: string) => {
-      selectConversation(id)
-      setSidebarOpen(false)
+      // 지금 대화를 다시 누르면 끊기지 않으므로(#359) 묻지 않는다
+      if (guardLeave && id !== chat.activeId) setPendingLeave({ to: 'select', id })
+      else leave({ to: 'select', id })
     },
-    [selectConversation],
+    [guardLeave, chat.activeId, leave],
   )
 
   const sidebar = (
@@ -225,6 +248,19 @@ export default function ChatPage() {
           onStop={chat.stop}
         />
       </div>
+
+      {pendingLeave && (
+        <ConfirmModal
+          title="답변을 중단하고 이동할까요?"
+          message="답변 생성이 멈추고, 지금까지 받은 부분만 남습니다."
+          confirmLabel="중단하고 이동"
+          onConfirm={() => {
+            leave(pendingLeave)
+            setPendingLeave(null)
+          }}
+          onCancel={() => setPendingLeave(null)}
+        />
+      )}
     </div>
   )
 }
