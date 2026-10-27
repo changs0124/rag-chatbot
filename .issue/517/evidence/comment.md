@@ -11,11 +11,11 @@
 | 로컬 목업 부하(동시 16 × 3턴 × 3라운드 × 3회, 끊기 25%) | 864요청 · ERROR **8줄**(4건) | 1,296요청 · ERROR **0** · 예외 0 |
 | `IncludeDispatchPermitTest` INCLUDE 통과 | **실패** | 통과 |
 | 미인증 클라이언트 요청 401 | 통과 | 통과 |
-| 전체 `mvnw verify` | — | 415 / 415 |
+| 전체 `mvnw verify` | — | 416 / 416 |
 
 - 원자료 : [before-load.txt](https://github.com/changs0124/rag-chatbot/blob/main/.issue/517/evidence/before-load.txt) · [after-load.txt](https://github.com/changs0124/rag-chatbot/blob/main/.issue/517/evidence/after-load.txt) · [before-test.txt](https://github.com/changs0124/rag-chatbot/blob/main/.issue/517/evidence/before-test.txt) · [after-test.txt](https://github.com/changs0124/rag-chatbot/blob/main/.issue/517/evidence/after-test.txt)
 - 한계 : 빈도가 낮아(컨테이너당 0~8줄) 부하 0 건만으로는 약하다. 결정적 근거는 회귀 테스트(전 실패 → 후 통과)다.
-- 문서 : `backend.md` 인가 절 · CHANGELOG `[Unreleased]` · 하한 413 → 415
+- 문서 : `backend.md` 인가 절 · CHANGELOG `[Unreleased]` · 하한 413 → 416
 
 ---
 
