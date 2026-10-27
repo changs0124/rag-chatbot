@@ -1,0 +1,15 @@
+     × 답을 받는 중에 다른 대화를 누르면 확인창을 띄우고 아직 옮기지 않는다 100ms
+     × 확인하면 그 대화로 옮기고 확인창을 닫는다 81ms
+     × 취소하면 옮기지 않고 확인창만 닫는다 81ms
+     × 취소해도 모바일 드로어는 열린 채로 둔다 98ms
+     × 답을 받는 중에 새 채팅을 눌러도 먼저 묻는다 - 모바일 헤더 버튼도 같다 76ms
+     × 사이드바의 새 대화 버튼도 먼저 묻는다 72ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중에 다른 대화를 누르면 확인창을 띄우고 아직 옮기지 않는다
+ FAIL  src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 확인하면 그 대화로 옮기고 확인창을 닫는다
+ FAIL  src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 취소하면 옮기지 않고 확인창만 닫는다
+ FAIL  src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 취소해도 모바일 드로어는 열린 채로 둔다
+ FAIL  src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 답을 받는 중에 새 채팅을 눌러도 먼저 묻는다 - 모바일 헤더 버튼도 같다
+ FAIL  src/pages/ChatPage.test.tsx > ChatPage 답변 중 이동 확인 (#503) > 사이드바의 새 대화 버튼도 먼저 묻는다
+ Test Files  1 failed (1)
+      Tests  6 failed | 16 passed (22)
