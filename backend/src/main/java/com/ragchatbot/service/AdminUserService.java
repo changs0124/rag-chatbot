@@ -5,7 +5,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,12 +18,14 @@ import com.ragchatbot.entity.User;
 import com.ragchatbot.exception.ApiExceptions.BadRequestException;
 import com.ragchatbot.exception.ApiExceptions.ConflictException;
 import com.ragchatbot.exception.ApiExceptions.NotFoundException;
+import com.ragchatbot.repository.AttachmentRepository;
 import com.ragchatbot.repository.UserRepository;
+import com.ragchatbot.storage.FileStorage;
 import com.ragchatbot.dto.AdminDtos.AdminUserResponse;
 import com.ragchatbot.dto.AdminDtos.CreateUserRequest;
 
 /**
- * 관리자에 의한 사용자 관리(FEAT-ADMIN-003 · REQ-AUTH-006).
+ * 관리자에 의한 사용자 관리(FEAT-ADMIN-003 · FEAT-ADMIN-004 · REQ-AUTH-006).
  *
  * <p>이메일 발송 수단(SMTP)을 도입하지 않고 비밀번호 복구 경로를 만들기 위한 선택이다.
  * <b>감수하는 약점</b> : 임시 비밀번호 전달 경로가 제품 밖(사내 메신저 등)이라 그 구간은
@@ -29,16 +34,23 @@ import com.ragchatbot.dto.AdminDtos.CreateUserRequest;
 @Service
 public class AdminUserService {
 
+	private static final Logger log = LoggerFactory.getLogger(AdminUserService.class);
+
 	private final UserRepository userRepository;
+	private final AttachmentRepository attachmentRepository;
+	private final FileStorage fileStorage;
 	private final PasswordEncoder passwordEncoder;
 	private final TemporaryPasswordGenerator temporaryPasswords;
 	private final EmailDomainPolicy emailDomainPolicy;
 	private final int maxNameChars;
 
-	public AdminUserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+	public AdminUserService(UserRepository userRepository, AttachmentRepository attachmentRepository,
+			FileStorage fileStorage, PasswordEncoder passwordEncoder,
 			TemporaryPasswordGenerator temporaryPasswords, EmailDomainPolicy emailDomainPolicy,
 			@Value("${app.user.max-name-chars}") int maxNameChars) {
 		this.userRepository = userRepository;
+		this.attachmentRepository = attachmentRepository;
+		this.fileStorage = fileStorage;
 		this.passwordEncoder = passwordEncoder;
 		this.temporaryPasswords = temporaryPasswords;
 		this.emailDomainPolicy = emailDomainPolicy;
@@ -108,5 +120,44 @@ public class AdminUserService {
 		OffsetDateTime changedAt = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS).plusSeconds(1);
 		userRepository.updatePasswordHash(target.id(), hash, changedAt);
 		return temporary;
+	}
+
+	/**
+	 * 사용자 삭제(FEAT-ADMIN-004). 대화 · 메시지 · 인용 · 첨부 행은 외래 키 cascade 로 함께 지워진다.
+	 *
+	 * <p><b>관리자(자기 자신 포함)는 지우지 않는다</b> - 관리자는 {@code ADMIN_EMAILS} 명단으로만 정해지고,
+	 * 명단에 남은 계정을 지우면 기동 동기화가 다시 만든다. 내리려면 명단에서 빼는 것이 유일한 길이다.
+	 *
+	 * <p><b>문서를 올린 기록이 있으면 409</b> - {@code rag_documents.uploaded_by} 가 {@code on delete restrict} 라
+	 * 감사 기록(REQ-ADMIN-002)을 지키려고 DB 가 막는다. soft delete 된 문서 행도 남아 있으므로 함께 막힌다.
+	 * 미리 조회하지 않고 삭제 문장의 외래 키 위반을 받는다 - 확인과 삭제 사이에 끼어들 틈이 없다.
+	 *
+	 * <p>순서는 대화 삭제({@link ConversationService#delete})와 같다 - <b>DB 를 먼저 지우고 파일은 그 뒤에</b>.
+	 * cascade 삭제는 단일 문장이라 그 자체로 원자적이다. 파일 삭제 실패나, 경로를 읽은 뒤 삭제 전에 올라온 첨부의
+	 * 파일은 가리키는 행이 없으므로 저장소 스캔 회수({@link FileService#cleanupUnreferencedFiles})가 거둔다.
+	 * 남은 토큰은 {@code JwtAuthenticationFilter} 가 기준선(없는 사용자)으로 거른다 - 다음 요청부터 401.
+	 */
+	public void delete(UUID targetUserId) {
+		User target = userRepository.findById(targetUserId)
+				.orElseThrow(() -> new NotFoundException("사용자 없음"));
+		if ("admin".equals(target.role())) {
+			throw new BadRequestException("관리자 계정은 삭제 대상이 아님 - ADMIN_EMAILS 명단에서 빼면 일반 사용자가 됨");
+		}
+		List<String> paths = attachmentRepository.findStoragePathsByUser(targetUserId);
+
+		try {
+			userRepository.deleteById(targetUserId); // cascade - 단일 문장
+		} catch (DataIntegrityViolationException e) {
+			// users 를 restrict 로 가리키는 것이 rag_documents.uploaded_by 하나뿐일 때만 맞는 변환이다
+			throw new ConflictException("문서를 올린 기록이 있는 사용자는 삭제할 수 없음");
+		}
+
+		for (String path : paths) {
+			try {
+				fileStorage.delete(path);
+			} catch (RuntimeException e) {
+				log.warn("사용자 삭제 후 첨부 파일 정리 실패 - 저장소 스캔 회수가 다음 주기에 지움. path={}", path, e);
+			}
+		}
 	}
 }

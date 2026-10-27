@@ -25,6 +25,9 @@ public interface UserRepository {
 	/** 관리자 화면의 사용자 목록(FEAT-ADMIN-003). 가입 순 */
 	List<User> listAll();
 
+	/** 사용자 삭제(FEAT-ADMIN-004). 대화 · 첨부는 cascade, 문서 업로더면 외래 키 위반. 지운 행 수 */
+	int deleteById(UUID id);
+
 	void updateName(@Param("id") UUID id, @Param("name") String name);
 
 	/**

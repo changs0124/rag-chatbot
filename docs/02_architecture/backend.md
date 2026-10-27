@@ -28,9 +28,9 @@ exception/    ApiExceptions + GlobalExceptionHandler
   같은 모양의 타입을 하나 더 두고 서비스에서 옮겨 담는 편이 나아 보일 수 있으나, 그 변환은 필드 복사일 뿐이라
   실수할 자리만 늘린다. 직결된 만큼 **이름과 값을 따로 고정한다** — `scripts/check-response-contract.sh` 가 필드 이름을,
   `AdminDocumentFlowTest` 의 목록 한 행 단언이 값의 출처를 본다.
-- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 7 · `<update>` 10 · `<delete>` 3.
+- **이 예외는 조회에만 적용된다.** 쓰기 경로(mapper XML 기준 `<insert>` 7 · `<update>` 10 · `<delete>` 4.
   소프트 삭제는 `<update>` 로 센다)는 `dto` 를 매핑하지 않는다. **`entity` 를 통째로 받는 것은 등록
-  7건뿐이고**, **수정·삭제 13건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
+  7건뿐이고**, **수정·삭제 14건은 전부 식별자·값 스칼라 또는 이메일 `List` 를 받는다.**
 
 ## API 설계 원칙
 
@@ -39,7 +39,7 @@ exception/    ApiExceptions + GlobalExceptionHandler
   매핑한다. **서블릿 필터 단계에서 나가는 오류는 이 경로를 거치지 않는다** — 미인증 401(`SecurityConfig` 의
   `authenticationEntryPoint` 가 `sendError`, Spring 기본 오류 본문에 `message` 없음) · CORS 403(Spring
   `CorsFilter` 가 평문). 어느 쪽도 `ApiError` 가 아니다.
-- **성공 상태는 컨트롤러가 정한다** — `@ResponseStatus(CREATED)`(201) 가 둘(문서 업로드 · 계정 발급), 삭제 3곳이
+- **성공 상태는 컨트롤러가 정한다** — `@ResponseStatus(CREATED)`(201) 가 둘(문서 업로드 · 계정 발급), 삭제 4곳이
   `ResponseEntity<Void>` 의 `ResponseEntity.noContent()`(204), 파일 · 문서 그림 서빙이 `ResponseEntity.ok()`(200 + Content-Type).
   그 밖의 핸들러는 반환값을 그대로 돌려주고 상태를 지정하지 않는다. 채팅만 `SseEmitter`(text/event-stream) 다.
 - **소유권 위반은 403 이 아니라 404 로 은닉한다.** 남의 리소스는 "없는 것"으로 보인다.

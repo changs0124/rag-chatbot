@@ -29,7 +29,7 @@ import com.ragchatbot.dto.AdminDtos.SyncResponse;
 import com.ragchatbot.dto.AdminDtos.TemporaryPasswordResponse;
 
 /**
- * 관리자 - RAG 문서 관리(FEAT-ADMIN-002) · 사용자 관리(FEAT-ADMIN-003).
+ * 관리자 - RAG 문서 관리(FEAT-ADMIN-002) · 사용자 관리(FEAT-ADMIN-003 · 004).
  *
  * <p><b>인가는 메서드 본문 진입 시 확인하고, 관리자가 아니면 404 를 던진다</b>(P-3).
  * 403 을 쓰지 않는 이유는 관리 기능의 존재 자체를 드러내지 않기 위함이다.
@@ -101,5 +101,12 @@ public class AdminController {
 		UUID adminId = CurrentUser.id();
 		guard.requireAdmin(adminId);
 		return new TemporaryPasswordResponse(userService.resetPassword(adminId, id));
+	}
+
+	@DeleteMapping("/users/{id}")
+	public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
+		guard.requireAdmin(CurrentUser.id());
+		userService.delete(id);
+		return ResponseEntity.noContent().build();
 	}
 }
