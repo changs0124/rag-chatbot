@@ -1,0 +1,111 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------------< com.ragchatbot:backend >-----------------------
+[INFO] Building backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 18 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ backend ---
+[INFO] skip non existing resourceDirectory D:\dev\rag-chatbot\.issue\worktrees\520-head-health-permit\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ backend ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.ragchatbot.controller.AuthFlowTest
+16:40:18.554 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.controller.AuthFlowTest]: AuthFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:40:18.696 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AuthFlowTest
+16:40:18.785 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.controller.AuthFlowTest]: AuthFlowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:40:18.785 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.ragchatbot.support.AbstractPgIntegrationTest]: AbstractPgIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:40:18.789 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.ragchatbot.BackendApplication for test class com.ragchatbot.controller.AuthFlowTest
+16:40:18.850 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+16:40:18.853 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+16:40:18.913 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+16:40:19.472 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with Environment variables, system properties and defaults. Resolved dockerHost=npipe:////./pipe/dockerDesktopLinuxEngine
+16:40:19.474 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+16:40:19.489 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 29.9.2
+  API Version: 1.56
+  Operating System: Docker Desktop
+  Total Memory: 31942 MB
+  Labels: 
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+16:40:19.601 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+16:40:19.676 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/
+16:40:19.816 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: 5127a506c360d6683ef5fcf4866829a8697d08d45bf1e98bee394bc3bc270f4e
+16:40:20.097 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT0.4956307S
+16:40:20.103 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+16:40:20.104 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+16:40:20.104 [main] INFO org.testcontainers.DockerClientFactory -- ?? Docker server version should be at least 1.6.0
+16:40:20.148 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Creating container for image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+16:40:20.208 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea is starting: bb382f07a1d348b4e9b373ba04fadffad377c8346e647974edbd4c156830b76b
+16:40:21.468 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea started in PT1.3203809S
+16:40:21.469 [main] INFO tc.postgres:16-alpine@sha256:721873... -- Container is started (JDBC URL: jdbc:postgresql://localhost:49651/test?loggerLevel=OFF)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-27T16:40:21.966+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] com.ragchatbot.controller.AuthFlowTest   : Starting AuthFlowTest using Java 17.0.19 with PID 31468 (started by User in D:\dev\rag-chatbot\.issue\worktrees\520-head-health-permit\backend)
+2026-10-27T16:40:21.966+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] com.ragchatbot.controller.AuthFlowTest   : No active profile set, falling back to 1 default profile: "default"
+2026-10-27T16:40:23.802+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-27T16:40:23.825+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-27T16:40:23.825+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-27T16:40:23.915+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1930 ms
+2026-10-27T16:40:24.482+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:49651/test?loggerLevel=OFF (PostgreSQL 16.15)
+2026-10-27T16:40:24.553+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-27T16:40:24.557+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 10 migrations (execution time 00:00.019s)
+2026-10-27T16:40:24.572+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-27T16:40:24.652+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-10-27T16:40:24.671+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - init"
+2026-10-27T16:40:24.711+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_users_updated_at" for relation "users" does not exist, skipping
+2026-10-27T16:40:24.713+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: trigger "trg_conversations_updated_at" for relation "conversations" does not exist, skipping
+2026-10-27T16:40:24.737+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - auth hardening"
+2026-10-27T16:40:24.759+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - message stopped"
+2026-10-27T16:40:24.775+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - message token usage"
+2026-10-27T16:40:24.790+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - user role"
+2026-10-27T16:40:24.806+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - rag documents"
+2026-10-27T16:40:24.823+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - message timed out"
+2026-10-27T16:40:24.836+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - drop user theme"
+2026-10-27T16:40:24.850+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - rag documents alive file unique"
+2026-10-27T16:40:24.863+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "10 - drop unused openai columns"
+2026-10-27T16:40:24.881+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 10 migrations to schema "public", now at version v10 (execution time 00:00.099s)
+2026-10-27T16:40:24.899+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.f.c.i.c.SqlScriptCallbackFactory       : Executing SQL callback: afterMigrate - 
+2026-10-27T16:40:26.654+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 49656 (http) with context path '/'
+2026-10-27T16:40:26.665+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] com.ragchatbot.controller.AuthFlowTest   : Started AuthFlowTest in 5.022 seconds (process running for 8.932)
+2026-10-27T16:40:26.706+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-27T16:40:26.729+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@58e2af93
+2026-10-27T16:40:26.731+09:00  INFO 31468 --- [rag-chatbot-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+2026-10-27T16:40:27.490+09:00  INFO 31468 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-27T16:40:27.490+09:00  INFO 31468 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-27T16:40:27.491+09:00  INFO 31468 --- [rag-chatbot-backend] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.66 s -- in com.ragchatbot.controller.AuthFlowTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  15.972 s
+[INFO] Finished at: 2026-10-27T16:40:31+09:00
+[INFO] ------------------------------------------------------------------------

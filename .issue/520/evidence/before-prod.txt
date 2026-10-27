@@ -1,0 +1,7 @@
+# #520 before — 운영 재현 (2026-10-27T07:35:37Z, 백엔드 c2f8617)
+
+$ curl -I https://api.chseong.fyi/api/health
+HTTP/1.1 401 Unauthorized
+
+$ curl https://api.chseong.fyi/api/health  (GET)
+HTTP 200
