@@ -1,0 +1,10 @@
+# #519 before — 운영 재현 (2026-10-27, 백엔드 c2f8617)
+
+요청 : GET https://api.chseong.fyi/api/conversations  (유효 Bearer, Accept: application/xml)
+응답 : 500  Content-Type: application/json
+본문 : {"code":"INTERNAL_ERROR","message":"처리 중 오류가 발생했습니다 (오류 번호: 9212b041)"}
+
+서버 로그(같은 시각) :
+2026-10-27T06:24:32.284Z ERROR 1 --- [rag-chatbot-backend] [nio-8080-exec-2] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [9212b041] GET /api/conversations
+org.springframework.web.HttpMediaTypeNotAcceptableException: No acceptable representation
+	at org.springframework.web.servlet.mvc.method.annotation.AbstractMessageConverterMethodProcessor.writeWithMessageConverters(AbstractMessageConverterMethodProcessor.java:287) ~[spring-webmvc-7.0.9.jar!/:7.0.9]
