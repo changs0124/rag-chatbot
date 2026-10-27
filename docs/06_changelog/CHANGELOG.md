@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- **`Accept` 가 JSON 을 받지 않는 요청이 500 + ERROR 로그(스택)로 끝나던 것을 406 `NOT_ACCEPTABLE` 로 고쳤다(#519).** 10-27 운영 HTTP 계약 감사에서 `GET /api/conversations` 에 `Accept: application/xml` 을 보내자 `HttpMediaTypeNotAcceptableException` 이 최종 폴백으로 떨어져 500 과 「처리되지 않은 예외」 ERROR 가 남았다 — 스캐너 하나로 오류 경보가 울린다. 415 처리기 옆에 전용 처리기를 두고 로그는 남기지 않는다(415 와 같은 요청 헤더 문제). 본문은 다른 오류처럼 Accept 와 상관없이 JSON 이다(#279). 테스트 TC-OPS-036 · 백엔드 하한 416 → **417**
+
 ## [2026-10-27]
 
 운영 배포 3회 — 백엔드 `c2f8617`(#517 끊긴 SSE 의 에러 페이지 INCLUDE 거절 ERROR, 롤백 `prev-ea2e647`) · 그 전 `ea2e647`(#515 SSE 헤더 경합, 롤백 `prev-bcb94fb`) · 그 전 `bcb94fb`(#513 사용자 삭제 API · #507 주석 정리 포함, 롤백 `prev-73bb76a`). #513 은 merge 전에 브랜치(`4ccb18d`, merge 결과와 `.issue` 를 빼면 차이 0)로 백엔드를 먼저 배포하고 운영 스모크(400 · 404 · 204 · 삭제 뒤 401) 뒤 merge 했다 — 프론트가 먼저 나가면 삭제 버튼이 404 를 받기 때문이다. 프론트 변경(#501 · #503 · #505 · #513)은 merge 때 Vercel 이 자동 배포했다. 같은 날 운영 표준 회귀 QA(73bb76a) — 새 이상 1건은 [#515](https://github.com/changs0124/rag-chatbot/issues/515). 케이스 수 하한(main 통합 실측) : 백엔드 399 → **410** · 프론트 282 → **308**.
