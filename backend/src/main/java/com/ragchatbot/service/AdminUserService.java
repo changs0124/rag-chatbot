@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +36,9 @@ import com.ragchatbot.dto.AdminDtos.CreateUserRequest;
 public class AdminUserService {
 
 	private static final Logger log = LoggerFactory.getLogger(AdminUserService.class);
+
+	/** V6 가 만든 외래 키 이름(이름을 적지 않아 PostgreSQL 기본 규칙 {표}_{컬럼}_fkey 로 붙었다). 409 로 바꾸는 유일한 위반 */
+	static final String UPLOADER_FK = "rag_documents_uploaded_by_fkey";
 
 	private final UserRepository userRepository;
 	private final AttachmentRepository attachmentRepository;
@@ -148,8 +152,14 @@ public class AdminUserService {
 		try {
 			userRepository.deleteById(targetUserId); // cascade - 단일 문장
 		} catch (DataIntegrityViolationException e) {
-			// users 를 restrict 로 가리키는 것이 rag_documents.uploaded_by 하나뿐일 때만 맞는 변환이다
-			throw new ConflictException("문서를 올린 기록이 있는 사용자는 삭제할 수 없음");
+			// 업로더 외래 키일 때만 409 다. 나중에 users 를 restrict 로 가리키는 표가 생겨도 그 위반을
+			// 「문서를 올린 기록」으로 잘못 말하지 않도록, 다른 위반은 그대로 던진다(폴백 500 + 로그). 드라이버가 runtime
+			// 범위라 드라이버 타입 대신 원인 메시지의 제약 이름을 본다 - PostgreSQL 은 언어 설정과 무관하게 이름을 싣는다
+			String cause = NestedExceptionUtils.getMostSpecificCause(e).getMessage();
+			if (cause != null && cause.contains(UPLOADER_FK)) {
+				throw new ConflictException("문서를 올린 기록이 있는 사용자는 삭제할 수 없음");
+			}
+			throw e;
 		}
 
 		for (String path : paths) {

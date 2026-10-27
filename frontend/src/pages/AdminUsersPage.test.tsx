@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
 import { ApiError, setToken } from '../lib/api'
@@ -49,13 +49,13 @@ function renderPage() {
 
 /** 행의 「비밀번호 초기화」 → 확인 창의 「초기화」 (#325) */
 async function confirmReset() {
-  fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+  fireEvent.click(await screen.findByRole('button', { name: /비밀번호 초기화/ }))
   fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '초기화' }))
 }
 
 /** 행의 「삭제」 → 확인 창의 「삭제」. 같은 이름의 버튼이 행과 창에 둘 있어 창 안에서 찾는다 */
 async function confirmDelete() {
-  fireEvent.click(await screen.findByRole('button', { name: '삭제' }))
+  fireEvent.click(await screen.findByRole('button', { name: '박사원 삭제' }))
   fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '삭제' }))
 }
 
@@ -145,7 +145,7 @@ describe('사용자 관리 화면', () => {
     vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+    fireEvent.click(await screen.findByRole('button', { name: /비밀번호 초기화/ }))
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText(/박사원/)).toBeInTheDocument()
     expect(within(dialog).getByText(/기존 로그인이 모두 해제됩니다/)).toBeInTheDocument()
@@ -162,7 +162,7 @@ describe('사용자 관리 화면', () => {
     ])
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+    fireEvent.click(await screen.findByRole('button', { name: /비밀번호 초기화/ }))
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '취소' }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
@@ -178,7 +178,7 @@ describe('사용자 관리 화면', () => {
     vi.mocked(resetUserPassword).mockReturnValue(new Promise((r) => (resolve = r)))
     renderPage()
 
-    const rowButton = await screen.findByRole('button', { name: '비밀번호 초기화' })
+    const rowButton = await screen.findByRole('button', { name: /비밀번호 초기화/ })
     fireEvent.click(rowButton)
     const confirm = within(await screen.findByRole('dialog')).getByRole('button', { name: '초기화' })
     fireEvent.click(confirm)
@@ -203,7 +203,7 @@ describe('사용자 관리 화면', () => {
     renderPage()
 
     await screen.findByText('a@b.com')
-    expect(screen.queryByRole('button', { name: '비밀번호 초기화' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /비밀번호 초기화/ })).not.toBeInTheDocument()
   })
 
   /**
@@ -242,7 +242,7 @@ describe('사용자 관리 화면', () => {
     ])
     vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     renderPage()
-    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
+    fireEvent.click(await screen.findByRole('button', { name: /비밀번호 초기화/ }))
     expect(screen.getByRole('dialog', { name: /박사원 님의 비밀번호를 초기화할까요/ })).toBeInTheDocument()
 
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '초기화' }))
@@ -276,8 +276,8 @@ describe('사용자 관리 화면', () => {
     renderPage()
 
     const parkRow = (await screen.findByText('park@b.com')).closest('li') as HTMLElement
-    expect(within(parkRow).getByRole('button', { name: '삭제' })).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: '삭제' })).toHaveLength(1)
+    expect(within(parkRow).getByRole('button', { name: '박사원 삭제' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: / 삭제$/ })).toHaveLength(1)
   })
 
   /** TC-ADMIN-090 : 삭제는 확인 창을 거친다 - 대화 · 첨부가 함께 지워지고 되돌릴 수 없다는 것을 알린다 */
@@ -286,7 +286,7 @@ describe('사용자 관리 화면', () => {
     vi.mocked(deleteAdminUser).mockResolvedValue(undefined)
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: '삭제' }))
+    fireEvent.click(await screen.findByRole('button', { name: '박사원 삭제' }))
     const dialog = await screen.findByRole('dialog', { name: '박사원 님을 삭제할까요?' })
     expect(within(dialog).getByText(/대화와 첨부가 함께 지워지며 되돌릴 수 없습니다/)).toBeInTheDocument()
     expect(deleteAdminUser).not.toHaveBeenCalled()
@@ -303,27 +303,26 @@ describe('사용자 관리 화면', () => {
     vi.mocked(listAdminUsers).mockResolvedValue([PARK])
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: '삭제' }))
+    fireEvent.click(await screen.findByRole('button', { name: '박사원 삭제' }))
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '취소' }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(deleteAdminUser).not.toHaveBeenCalled()
   })
 
-  /** 초기화와 같은 패턴 - 요청 중에는 삭제 버튼이 막혀 한 번만 나간다 */
-  it('삭제 요청 중에는 버튼이 비활성이고 연타해도 한 번만 요청한다', async () => {
+  /** 초기화와 같은 패턴 - 요청 중에는 행의 삭제 버튼이 막혀 확인 창을 다시 열 수 없고, 글자로 진행을 알린다 */
+  it('삭제 요청 중에는 행 버튼이 비활성이고 다시 눌러도 확인 창이 열리지 않는다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([PARK])
     let resolve!: () => void
     vi.mocked(deleteAdminUser).mockReturnValue(new Promise<void>((r) => (resolve = r)))
     renderPage()
 
-    const rowButton = await screen.findByRole('button', { name: '삭제' })
+    const rowButton = await screen.findByRole('button', { name: '박사원 삭제' })
     fireEvent.click(rowButton)
-    const confirm = within(await screen.findByRole('dialog')).getByRole('button', { name: '삭제' })
-    fireEvent.click(confirm)
-    fireEvent.click(confirm)
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '삭제' }))
 
     await waitFor(() => expect(rowButton).toBeDisabled())
+    expect(rowButton).toHaveTextContent('삭제 중…')
     fireEvent.click(rowButton)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(deleteAdminUser).toHaveBeenCalledTimes(1)
@@ -345,5 +344,48 @@ describe('사용자 관리 화면', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('문서를 올린 기록이 있는 사용자는 삭제할 수 없음')
     expect(screen.getByText('park@b.com')).toBeInTheDocument()
+  })
+
+  // 리뷰 반영 : 다른 관리자가 먼저 지워 404 가 와도 목록을 다시 읽어 사라진 행을 걷는다
+  it('삭제가 실패해도 목록을 다시 읽는다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([PARK])
+    vi.mocked(deleteAdminUser).mockRejectedValueOnce(new ApiError(404, '사용자 없음'))
+    renderPage()
+    await screen.findByText('park@b.com')
+    vi.mocked(listAdminUsers).mockResolvedValue([])
+
+    await confirmDelete()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('사용자 없음')
+    await waitFor(() => expect(screen.queryByText('park@b.com')).not.toBeInTheDocument())
+  })
+
+  // 리뷰 반영 : 늦게 온 옛 목록 응답이 새 응답을 덮지 않는다(문서 화면의 listGen 과 같은 세대 카운터)
+  it('늦게 온 목록 응답은 나중에 나간 재조회 결과를 덮지 않는다', async () => {
+    let resolveFirst!: (v: typeof PARK[]) => void
+    vi.mocked(listAdminUsers)
+      .mockReturnValueOnce(new Promise((r) => (resolveFirst = r)))
+      .mockResolvedValue([])
+    vi.mocked(createAdminUser).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    renderPage()
+
+    fireEvent.change(await screen.findByLabelText('이메일'), { target: { value: 'new@b.com' } })
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '새사원' } })
+    fireEvent.click(screen.getByRole('button', { name: '계정 추가' }))
+    expect(await screen.findByText('사용자 0명')).toBeInTheDocument()
+
+    await act(async () => resolveFirst([PARK]))
+
+    expect(screen.queryByText('park@b.com')).not.toBeInTheDocument()
+    expect(screen.getByText('사용자 0명')).toBeInTheDocument()
+  })
+
+  /** 행 버튼의 접근 가능한 이름에 대상이 들어간다 - 「삭제」만 여러 개면 화면 낭독기로는 누구인지 모른다 */
+  it('행 버튼 이름에 사용자 이름이 붙는다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([PARK])
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: '박사원 삭제' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '박사원 비밀번호 초기화' })).toBeInTheDocument()
   })
 })

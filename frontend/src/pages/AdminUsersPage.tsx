@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
@@ -23,15 +23,22 @@ export default function AdminUsersPage() {
   const [listError, setListError] = useState<string | null>(null)
   // 첫 로드가 **성공**했는지(#483) - 못 불러온 것을 「0명」으로 보이지 않는다
   const [loaded, setLoaded] = useState(false)
+  // 목록 요청 세대(문서 화면의 listGen 과 같은 패턴). 첫 로드가 늦게 와 발급 · 삭제 뒤 재조회 결과를 덮으면
+  // 방금 만든 계정이 안 보이거나 지운 사람이 되살아나 보인다 - 나중에 나간 요청의 응답만 쓴다
+  const listGen = useRef(0)
 
   const isAdmin = user?.role === 'admin'
 
   const refresh = useCallback(async () => {
+    const mine = ++listGen.current
     try {
-      setUsers(await listAdminUsers())
+      const people = await listAdminUsers()
+      if (listGen.current !== mine) return
+      setUsers(people)
       setListError(null)
       setLoaded(true)
     } catch (e) {
+      if (listGen.current !== mine) return
       setListError(errorMessage(e, '목록을 불러오지 못했습니다'))
     }
   }, [])
@@ -131,7 +138,8 @@ function UsersSection({
     }
   }
 
-  // 409(문서를 올린 기록) · 400(관리자) 은 서버 메시지가 이유를 말하므로 그대로 배너에 보인다
+  // 409(문서를 올린 기록) · 400(관리자) 은 서버 메시지가 이유를 말하므로 그대로 배너에 보인다.
+  // 실패해도 목록은 다시 읽는다 - 다른 관리자가 먼저 지운 404 면 화면에만 남은 행을 걷어야 한다(refresh 는 던지지 않는다)
   async function confirmDelete() {
     const target = pendingDelete
     setPendingDelete(null)
@@ -140,12 +148,11 @@ function UsersSection({
     setDeletingId(target.id)
     try {
       await deleteAdminUser(target.id)
-      await refresh()
     } catch (e) {
       setError(errorMessage(e, '삭제하지 못했습니다'))
-    } finally {
-      setDeletingId(null)
     }
+    await refresh()
+    setDeletingId(null)
   }
 
   async function onCreate(e: FormEvent) {
@@ -220,6 +227,7 @@ function UsersSection({
                 <button
                   onClick={() => setPendingReset(person)}
                   disabled={resettingId !== null}
+                  aria-label={`${person.name} 비밀번호 초기화`}
                   className={actionButtonClass + ' hover:text-ink'}
                 >
                   비밀번호 초기화
@@ -227,12 +235,14 @@ function UsersSection({
               )}
               {/* 관리자(자기 자신 포함)는 지우지 않는다 — ADMIN_EMAILS 명단에 남으면 기동 동기화가 다시 만든다(서버도 400) */}
               {person.role !== 'admin' && (
+                // 이름은 보이는 글자를 포함해야 한다(WCAG 2.5.3) - 진행 중 글자가 바뀌면 이름도 같이 바꾼다
                 <button
                   onClick={() => setPendingDelete(person)}
                   disabled={deletingId !== null}
+                  aria-label={`${person.name} ${deletingId === person.id ? '삭제 중' : '삭제'}`}
                   className={actionButtonClass + ' hover:text-danger'}
                 >
-                  삭제
+                  {deletingId === person.id ? '삭제 중…' : '삭제'}
                 </button>
               )}
             </li>

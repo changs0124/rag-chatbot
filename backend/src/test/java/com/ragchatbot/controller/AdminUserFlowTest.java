@@ -20,7 +20,7 @@ import com.ragchatbot.storage.FileStorage;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * 관리자에 의한 사용자 관리 (FEAT-ADMIN-003 · TC-ADMIN-030~034 · 006) · 사용자 삭제 (FEAT-ADMIN-004 · TC-ADMIN-080~087).
+ * 관리자에 의한 사용자 관리 (FEAT-ADMIN-003 · TC-ADMIN-030~034 · 006) · 사용자 삭제 (FEAT-ADMIN-004 · TC-ADMIN-080~087, 088 · 092 · 093 은 별도 클래스).
  */
 class AdminUserFlowTest extends AbstractPgIntegrationTest {
 
@@ -360,13 +360,19 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	 * <p>목록에서 내린(soft delete) 문서로 고정한다 - 살아 있는 문서만 막는다고 읽으면 "문서를 지우고 다시 시도"가
 	 * 통할 것 같지만 행이 남아 있어 restrict 가 그대로 걸린다. 업로드는 관리자만 하므로 행을 직접 넣어
 	 * 강등된 전 관리자의 기록을 흉내 낸다.
+	 *
+	 * <p>첨부 파일이 디스크에 남는지도 본다 - 파일 정리를 삭제 문장 앞으로 옮기면 409 로 거절했는데 파일만 사라진다.
 	 */
 	@Test
-	void uploader_cannot_be_deleted_even_after_document_removed() {
+	void uploader_cannot_be_deleted_even_after_document_removed() throws Exception {
 		String adminToken = createAdminUser("del-uploader-admin@b.com");
 		String uploaderToken = createUser("del-uploader@b.com");
 		UUID uploader = userId("del-uploader@b.com");
 		createConversation(uploaderToken);
+		assertThat(rest.postForEntity("/api/files", multipart(uploaderToken, "a.png", PNG_MAGIC, MediaType.IMAGE_PNG),
+				String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
+		Path file = fileStorage.load(jdbc.queryForObject("select storage_path from attachments where user_id = ?",
+				String.class, uploader)).getFile().toPath();
 		jdbc.update("insert into rag_documents (filename, openai_file_id, vector_store_id, byte_size, status, "
 				+ "uploaded_by, deleted_at) values ('내린문서.pdf', 'mock-del-uploader', 'vs_test', 10, 'completed', ?, now())",
 				uploader);
@@ -376,5 +382,6 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 		assertThat(countUsers(uploader)).isOne();
 		assertThat(jdbc.queryForObject("select count(*) from conversations where user_id = ?", Integer.class,
 				uploader)).isOne();
+		assertThat(Files.exists(file)).isTrue();
 	}
 }
