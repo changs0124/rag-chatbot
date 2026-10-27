@@ -8,12 +8,12 @@
 
 ## [Unreleased]
 
-### Fixed
-- **사용자가 채팅 스트림을 끊을 때 가끔 남던 ERROR 로그 2줄(`AuthorizationDeniedException` · 「response is already committed」)을 없앴다(#517).** 끊긴 SSE 의 비동기 오류를 Tomcat 이 커밋된 응답 위에 에러 페이지로 부를 때 forward 대신 `INCLUDE` 디스패치를 쓰는데, 보안 설정이 `ASYNC` · `ERROR` 만 허용해 거절했다. `/error` 로 가는 `INCLUDE` 만 허용했다 — 다른 경로의 `INCLUDE` 는 여전히 인가를 거친다. 사용자 영향은 없던 로그 잡음이다(로컬 목업 432요청당 0~8줄). 테스트 3건(`/error` INCLUDE 는 통과 · 다른 경로 INCLUDE 는 401 · 클라이언트 요청은 401) · 백엔드 하한 413 → **416**
-
 ## [2026-10-27]
 
-운영 배포 2회 — 백엔드 `ea2e647`(#515 SSE 헤더 경합, 롤백 `prev-bcb94fb`) · 그 전 `bcb94fb`(#513 사용자 삭제 API · #507 주석 정리 포함, 롤백 `prev-73bb76a`). #513 은 merge 전에 브랜치(`4ccb18d`, merge 결과와 `.issue` 를 빼면 차이 0)로 백엔드를 먼저 배포하고 운영 스모크(400 · 404 · 204 · 삭제 뒤 401) 뒤 merge 했다 — 프론트가 먼저 나가면 삭제 버튼이 404 를 받기 때문이다. 프론트 변경(#501 · #503 · #505 · #513)은 merge 때 Vercel 이 자동 배포했다. 같은 날 운영 표준 회귀 QA(73bb76a) — 새 이상 1건은 [#515](https://github.com/changs0124/rag-chatbot/issues/515). 케이스 수 하한(main 통합 실측) : 백엔드 399 → **410** · 프론트 282 → **308**.
+운영 배포 3회 — 백엔드 `c2f8617`(#517 끊긴 SSE 의 에러 페이지 INCLUDE 거절 ERROR, 롤백 `prev-ea2e647`) · 그 전 `ea2e647`(#515 SSE 헤더 경합, 롤백 `prev-bcb94fb`) · 그 전 `bcb94fb`(#513 사용자 삭제 API · #507 주석 정리 포함, 롤백 `prev-73bb76a`). #513 은 merge 전에 브랜치(`4ccb18d`, merge 결과와 `.issue` 를 빼면 차이 0)로 백엔드를 먼저 배포하고 운영 스모크(400 · 404 · 204 · 삭제 뒤 401) 뒤 merge 했다 — 프론트가 먼저 나가면 삭제 버튼이 404 를 받기 때문이다. 프론트 변경(#501 · #503 · #505 · #513)은 merge 때 Vercel 이 자동 배포했다. 같은 날 운영 표준 회귀 QA(73bb76a) — 새 이상 1건은 [#515](https://github.com/changs0124/rag-chatbot/issues/515). 케이스 수 하한(main 통합 실측) : 백엔드 399 → **410** · 프론트 282 → **308**.
+
+### Fixed (c2f8617)
+- **사용자가 채팅 스트림을 끊을 때 가끔 남던 ERROR 로그 2줄(`AuthorizationDeniedException` · 「response is already committed」)을 없앴다(#517).** 끊긴 SSE 의 비동기 오류를 Tomcat 이 커밋된 응답 위에 에러 페이지로 부를 때 forward 대신 `INCLUDE` 디스패치를 쓰는데, 보안 설정이 `ASYNC` · `ERROR` 만 허용해 거절했다. `/error` 로 가는 `INCLUDE` 만 허용했다 — 다른 경로의 `INCLUDE` 는 여전히 인가를 거친다. 사용자 영향은 없던 로그 잡음이다(로컬 목업 432요청당 0~8줄). 테스트 3건(`/error` INCLUDE 는 통과 · 다른 경로 INCLUDE 는 401 · 클라이언트 요청은 401) · 백엔드 하한 413 → **416**
 
 ### Fixed (ea2e647)
 - **동시 채팅 중 요청 하나가 응답 헤더 없이 10분 멈추던 것(Cloudflare 524 · 질문 미저장)을 고쳤다(#515).** 원인은 Spring Security 의 보안 헤더 쓰기 시점이다 — 기본값은 컨트롤러가 돌아온 **뒤** 요청 스레드에서 헤더를 쓰는데, SSE 는 그때 스트림 스레드가 이미 meta 를 쓰며 응답을 커밋하고 있을 수 있어 두 스레드가 Tomcat 의 헤더 목록을 동시에 고쳤다. 커밋이 NPE 로 깨지면 meta 전송 실패가 끊김으로 흡수돼 질문을 걷고(#489), 이어 `complete` 도 같은 flush 에서 던져 비동기 요청이 SSE 타임아웃까지 열려 있었다(같은 사용자의 다음 턴이 126초에 200 을 받은 것 = 스트림 작업은 이미 끝났다는 증거). 10-23 의 Cloudflare 502 「malformed MIME header」 1회도 같은 경합으로 본다. 고친 것 : `SecurityConfig` 가 보안 헤더를 체인 **앞에서** 쓴다(`HeaderWriterFilter.setShouldWriteHeadersEagerly`) · `ChatService.completeQuietly` 는 `complete` 가 던지면 `completeWithError` 로 요청을 끝낸다 · 전송 실패의 원인이 I/O 도 닫힌 emitter 도 아니면 WARN 한 줄(지금까지 끊김과 같은 길로 조용히 흡수됐다). 로컬 목업 동시 16 × 3턴 × 3라운드 × 3회(432요청, 끊기 25%)로는 수정 전에도 재현되지 않았다 — 경합 창이 좁다. 테스트 3건(헤더가 컨트롤러 전에 쓰여 있음 · 커밋 실패에도 요청 종료 · 끊김 판정) · 백엔드 하한 410 → **413**
