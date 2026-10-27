@@ -13,6 +13,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.HeaderWriterFilter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.AndRequestMatcher;
+import org.springframework.security.web.util.matcher.DispatcherTypeRequestMatcher;
 
 import com.ragchatbot.security.JwtAuthenticationFilter;
 
@@ -50,6 +53,9 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						// SSE 비동기 재디스패치 - 인증은 최초 REQUEST 디스패치에서 검사됨(async/error 재검사 방지)
 						.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
+						// 커밋된 응답의 에러 페이지는 Tomcat 이 forward 대신 INCLUDE 로 부른다(끊긴 SSE, #517) - /error 로만 좁힌다
+						.requestMatchers(new AndRequestMatcher(new DispatcherTypeRequestMatcher(DispatcherType.INCLUDE),
+								PathPatternRequestMatcher.withDefaults().matcher("/error"))).permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
 						// 파일 서빙은 서명 쿼리 토큰으로 검증(Bearer 불가한 <img src> 대응)

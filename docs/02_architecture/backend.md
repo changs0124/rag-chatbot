@@ -121,8 +121,11 @@ exception/    ApiExceptions + GlobalExceptionHandler
   서명 검증만으로 끝난다), 비밀번호를 **스스로 바꾼** 사용자도 열려 있던 화면의 이미지가 전부 깨진다 —
   `MyPage` 는 새 토큰으로 갈아 끼우지만 **이미 렌더된 `<img>` 의 URL 은 갱신되지 않는다.**
   창이 TTL 만큼으로 짧고, 정상 사용자에게 눈에 보이는 회귀를 만들지 않는 쪽을 택했다.
-- permitAll 은 로그인·헬스·파일 서빙, 그리고 SSE 비동기 재디스패치(`ASYNC`/`ERROR`)다 —
-  인증은 최초 `REQUEST` 디스패치에서 이미 검사됐다.
+- permitAll 은 로그인·헬스·파일 서빙, SSE 비동기 재디스패치(`ASYNC`/`ERROR`), 그리고 **`/error` 로 가는 `INCLUDE` 디스패치**다 —
+  재디스패치는 최초 `REQUEST` 디스패치가 이미 인가를 거쳤다. `INCLUDE` 는 끊긴 SSE 의 비동기 오류를 Tomcat 이 커밋된 응답 위에
+  에러 페이지로 부르는 길이다 — 막으면 커밋된 응답이라 401 도 못 쓰고 ERROR 2줄만 남았다(#517).
+  허용을 `/error` 로만 좁혀, 뒷날 코드가 `include` 를 써도 다른 경로는 인가를 건너뛰지 않는다(테스트가 `/api/conversations` 의
+  `INCLUDE` 거절을 고정한다). `/error` 는 `server.error.*` 기본값이라 메시지 · 스택을 내보내지 않는다.
 - **만료가 임박하면 응답 헤더 `X-Refresh-Token` 으로 새 토큰을 보낸다**(FEAT-OPS-003).
   임계는 `JWT_REFRESH_THRESHOLD_MINUTES`(기본값은 `features.md` FEAT-OPS-003 입력값)이고 **0 이면 기능이 꺼져** 종전 고정 만료로 돌아간다.
   재발급본은 처음 인증 시각(`auth_time`)을 그대로 옮기고, 그로부터 `JWT_MAX_SESSION_HOURS`(기본값은 `api.md` 「인증」)가 지나면 재발급하지 않는다(#403).
