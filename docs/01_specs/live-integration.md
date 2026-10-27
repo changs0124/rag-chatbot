@@ -3,8 +3,8 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 | rag-chatbot |
-| 문서 버전 | v2.0 |
-| 최종 수정일 | 2026-10-26 |
+| 문서 버전 | v2.1 |
+| 최종 수정일 | 2026-10-27 |
 | 작성자 | changs0124 |
 | 상태 | `반영됨` (2026-10-06 런칭) |
 
@@ -110,7 +110,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 ### 2-3. 관리자로 로그인해 문서 1건만 올린다
 
 처음부터 전량을 올리지 않는다. **문서 1건**이면 3절의 가정이 전부 드러난다.
-경로는 `/admin` 화면 또는 `POST /api/admin/documents` — 둘 다 5절의 같은 경로다.
+경로는 `/admin/documents` 화면 또는 `POST /api/admin/documents` — 둘 다 5절의 같은 경로다.
 **OpenAI 대시보드로 올리지 않는다**(이유는 5절).
 
 - 확인 : 응답이 201 이고 `status` 가 `in_progress` 다.
@@ -260,7 +260,7 @@ cd ~/deploy && sudo docker compose logs app | grep -iE "openai|vector|관리자"
 **제품 안에 있다**(FEAT-ADMIN-002). `POST /api/admin/documents` 로 올리면 백엔드가 OpenAI Files 에
 업로드하고 공용 Vector Store 에 연결한 뒤 `rag_documents` 에 기록한다 — 누가 언제 올렸는지가 저장소에 남는다.
 
-**관리자 화면은 `/admin`** 이다. 마이페이지 → 문서 관리로 들어간다. API 를 직접 불러도 된다.
+**문서 관리 화면은 `/admin/documents`** 다. 마이페이지 → 문서 관리로 들어간다. API 를 직접 불러도 된다.
 
 | 필요한 것 | 방법 |
 |-----------|------|

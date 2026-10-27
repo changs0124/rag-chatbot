@@ -2,27 +2,45 @@ package com.ragchatbot.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
+import com.ragchatbot.storage.FileStorage;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * 관리자에 의한 사용자 관리 (FEAT-ADMIN-003 · TC-ADMIN-030~034 · 006).
+ * 관리자에 의한 사용자 관리 (FEAT-ADMIN-003 · TC-ADMIN-030~034 · 006) · 사용자 삭제 (FEAT-ADMIN-004 · TC-ADMIN-080~087, 088 · 092 · 093 은 별도 클래스).
  */
 class AdminUserFlowTest extends AbstractPgIntegrationTest {
+
+	@Autowired
+	private FileStorage fileStorage;
 
 	@SuppressWarnings("rawtypes")
 	private ResponseEntity<Map> reset(String token, UUID targetId) {
 		return rest.exchange("/api/admin/users/" + targetId + "/password-reset", HttpMethod.POST,
 				new HttpEntity<>(bearer(token)), Map.class);
+	}
+
+	// 성공은 본문이 없고 오류는 ApiError 객체라 상태 코드만 보면 되므로 String 으로 받는다
+	private ResponseEntity<String> deleteUser(String token, UUID targetId) {
+		return rest.exchange("/api/admin/users/" + targetId, HttpMethod.DELETE,
+				new HttpEntity<>(bearer(token)), String.class);
+	}
+
+	private int countUsers(UUID id) {
+		return jdbc.queryForObject("select count(*) from users where id = ?", Integer.class, id);
 	}
 
 	/**
@@ -228,5 +246,142 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 		ResponseEntity<Map> res = issueRaw("fifty-name@b.com", "😀".repeat(49) + "가");
 
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+	}
+
+	/** TC-ADMIN-080 : 일반 사용자를 지우면 204 이고 목록에서 사라진다 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	void admin_deletes_plain_user() {
+		String adminToken = createAdminUser("del-admin@b.com");
+		createUser("del-target@b.com");
+		UUID target = userId("del-target@b.com");
+
+		assertThat(deleteUser(adminToken, target).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+		assertThat(countUsers(target)).isZero();
+		List<Map<String, Object>> rows = rest.exchange("/api/admin/users", HttpMethod.GET,
+				new HttpEntity<>(bearer(adminToken)), List.class).getBody();
+		assertThat(rows).noneSatisfy(r -> assertThat(r.get("email")).isEqualTo("del-target@b.com"));
+	}
+
+	/**
+	 * TC-ADMIN-081 : 대화 · 첨부 행은 cascade 로, 첨부 파일은 DB 삭제 뒤 디스크에서 함께 지워진다.
+	 *
+	 * <p>파일은 DB 가 모르므로 앱이 지우기 전에 경로를 읽어 두어야 한다 - 그 순서가 빠지면 행만 사라지고 파일은
+	 * 매시 회수까지 남는다. 여기서는 회수를 기다리지 않고 응답 직후 파일이 없는지 본다.
+	 */
+	@Test
+	void delete_cascades_conversations_attachments_and_files() throws Exception {
+		String adminToken = createAdminUser("del-cascade-admin@b.com");
+		String targetToken = createUser("del-cascade@b.com");
+		UUID target = userId("del-cascade@b.com");
+		createConversation(targetToken);
+		assertThat(rest.postForEntity("/api/files", multipart(targetToken, "a.png", PNG_MAGIC, MediaType.IMAGE_PNG),
+				String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
+		String storagePath = jdbc.queryForObject("select storage_path from attachments where user_id = ?",
+				String.class, target);
+		Path file = fileStorage.load(storagePath).getFile().toPath();
+		assertThat(Files.exists(file)).isTrue();
+
+		assertThat(deleteUser(adminToken, target).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+		assertThat(jdbc.queryForObject("select count(*) from conversations where user_id = ?", Integer.class,
+				target)).isZero();
+		assertThat(jdbc.queryForObject("select count(*) from attachments where user_id = ?", Integer.class,
+				target)).isZero();
+		assertThat(Files.exists(file)).isFalse();
+	}
+
+	/**
+	 * TC-ADMIN-082 : 지운 사용자의 남은 토큰은 다음 요청에서 401 이다.
+	 *
+	 * <p>코드를 더하지 않았다 - 인증 필터가 비밀번호 변경 기준선을 읽을 때 사용자가 없으면 무효로 친다.
+	 * 그 규칙이 바뀌면 지운 사람의 세션이 만료까지 살아남으므로 케이스로 잠근다.
+	 */
+	@Test
+	void deleted_user_token_is_rejected() {
+		String adminToken = createAdminUser("del-token-admin@b.com");
+		String targetToken = createUser("del-token@b.com");
+		assertThat(rest.exchange("/api/auth/me", HttpMethod.GET, new HttpEntity<>(bearer(targetToken)),
+				String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		deleteUser(adminToken, userId("del-token@b.com"));
+
+		assertThat(rest.exchange("/api/auth/me", HttpMethod.GET, new HttpEntity<>(bearer(targetToken)),
+				String.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	/**
+	 * TC-ADMIN-083 : 관리자 계정은 지우지 않는다(400) - 명단에 남은 계정은 기동 동기화가 다시 만든다.
+	 * 내리려면 명단에서 빼는 것이 유일한 길이다
+	 */
+	@Test
+	void admin_account_cannot_be_deleted() {
+		String adminToken = createAdminUser("del-admin2@b.com");
+		createAdminUser("del-other-admin@b.com");
+		UUID other = userId("del-other-admin@b.com");
+
+		assertThat(deleteUser(adminToken, other).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(countUsers(other)).isOne();
+	}
+
+	/** TC-ADMIN-084 : 자기 자신도 관리자이므로 같은 규칙으로 400 이다 */
+	@Test
+	void admin_cannot_delete_self() {
+		String adminToken = createAdminUser("del-self@b.com");
+		UUID self = userId("del-self@b.com");
+
+		assertThat(deleteUser(adminToken, self).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(countUsers(self)).isOne();
+	}
+
+	/** TC-ADMIN-085 : 없는 사용자는 404 */
+	@Test
+	void deleting_missing_user_is_not_found() {
+		String adminToken = createAdminUser("del-missing-admin@b.com");
+
+		assertThat(deleteUser(adminToken, UUID.randomUUID()).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	/** TC-ADMIN-086 : 일반 사용자는 남을 지울 수 없다 - 다른 관리자 API 와 같이 404 이고 대상은 그대로다 */
+	@Test
+	void plain_user_cannot_delete_others() {
+		createUser("del-victim@b.com");
+		String plainToken = createUser("del-intruder@b.com");
+		UUID victim = userId("del-victim@b.com");
+
+		assertThat(deleteUser(plainToken, victim).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(countUsers(victim)).isOne();
+	}
+
+	/**
+	 * TC-ADMIN-087 : 문서를 올린 기록이 있으면 409 이고 아무것도 지워지지 않는다.
+	 *
+	 * <p>목록에서 내린(soft delete) 문서로 고정한다 - 살아 있는 문서만 막는다고 읽으면 "문서를 지우고 다시 시도"가
+	 * 통할 것 같지만 행이 남아 있어 restrict 가 그대로 걸린다. 업로드는 관리자만 하므로 행을 직접 넣어
+	 * 강등된 전 관리자의 기록을 흉내 낸다.
+	 *
+	 * <p>첨부 파일이 디스크에 남는지도 본다 - 파일 정리를 삭제 문장 앞으로 옮기면 409 로 거절했는데 파일만 사라진다.
+	 */
+	@Test
+	void uploader_cannot_be_deleted_even_after_document_removed() throws Exception {
+		String adminToken = createAdminUser("del-uploader-admin@b.com");
+		String uploaderToken = createUser("del-uploader@b.com");
+		UUID uploader = userId("del-uploader@b.com");
+		createConversation(uploaderToken);
+		assertThat(rest.postForEntity("/api/files", multipart(uploaderToken, "a.png", PNG_MAGIC, MediaType.IMAGE_PNG),
+				String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
+		Path file = fileStorage.load(jdbc.queryForObject("select storage_path from attachments where user_id = ?",
+				String.class, uploader)).getFile().toPath();
+		jdbc.update("insert into rag_documents (filename, openai_file_id, vector_store_id, byte_size, status, "
+				+ "uploaded_by, deleted_at) values ('내린문서.pdf', 'mock-del-uploader', 'vs_test', 10, 'completed', ?, now())",
+				uploader);
+
+		assertThat(deleteUser(adminToken, uploader).getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+
+		assertThat(countUsers(uploader)).isOne();
+		assertThat(jdbc.queryForObject("select count(*) from conversations where user_id = ?", Integer.class,
+				uploader)).isOne();
+		assertThat(Files.exists(file)).isTrue();
 	}
 }

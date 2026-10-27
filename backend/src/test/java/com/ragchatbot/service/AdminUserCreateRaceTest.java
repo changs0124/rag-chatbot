@@ -16,7 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.ragchatbot.config.EmailDomainPolicy;
 import com.ragchatbot.dto.AdminDtos.CreateUserRequest;
 import com.ragchatbot.exception.ApiExceptions.ConflictException;
+import com.ragchatbot.repository.AttachmentRepository;
 import com.ragchatbot.repository.UserRepository;
+import com.ragchatbot.storage.FileStorage;
 
 /**
  * 동시 중복 발급(#327). 사전 조회와 삽입 사이(bcrypt 로 ~100ms)에 같은 이메일이 먼저 들어가면
@@ -36,7 +38,8 @@ class AdminUserCreateRaceTest {
 		PasswordEncoder encoder = mock(PasswordEncoder.class);
 		when(encoder.encode(anyString())).thenReturn("hash");
 
-		var service = new AdminUserService(repo, encoder, new TemporaryPasswordGenerator(),
+		var service = new AdminUserService(repo, mock(AttachmentRepository.class), mock(FileStorage.class), encoder,
+				new TemporaryPasswordGenerator(),
 				new EmailDomainPolicy("mock", "", ""), 50);
 
 		assertThatThrownBy(() -> service.create(new CreateUserRequest("race@b.com", "사용자")))

@@ -3,8 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
 import { setToken } from '../lib/api'
-import AdminPage from './AdminPage'
-import { primaryButtonClass } from '../components/primaryButton'
+import AdminDocumentsPage from './AdminDocumentsPage'
 import type { RagDocument } from '../lib/types'
 import { deferred } from '../test/fixtures'
 
@@ -13,8 +12,6 @@ vi.mock('../lib/endpoints', () => ({
   listAdminUsers: vi.fn(),
   uploadDocument: vi.fn(),
   deleteDocument: vi.fn(),
-  resetUserPassword: vi.fn(),
-  createAdminUser: vi.fn(),
   syncDocuments: vi.fn(),
 }))
 
@@ -34,15 +31,9 @@ vi.mock('../lib/api', async (importOriginal) => {
   }
 })
 
-const {
-  listDocuments,
-  listAdminUsers,
-  deleteDocument,
-  resetUserPassword,
-  createAdminUser,
-  syncDocuments,
-  uploadDocument,
-} = await import('../lib/endpoints')
+const { listDocuments, listAdminUsers, deleteDocument, syncDocuments, uploadDocument } = await import(
+  '../lib/endpoints'
+)
 
 function doc(over: Partial<RagDocument> = {}): RagDocument {
   return {
@@ -60,25 +51,17 @@ function renderPage() {
   return render(
     <BrowserRouter>
       <AuthProvider>
-        <AdminPage />
+        <AdminDocumentsPage />
       </AuthProvider>
     </BrowserRouter>,
   )
 }
 
-/** 행의 「비밀번호 초기화」 → 확인 창의 「초기화」 (#325) */
-async function confirmReset() {
-  fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
-  fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '초기화' }))
-}
-
-describe('관리자 화면', () => {
+describe('문서 관리 화면', () => {
   beforeEach(() => {
     currentRole = 'admin'
     setToken('t')
     vi.mocked(listDocuments).mockResolvedValue([])
-    vi.mocked(listAdminUsers).mockResolvedValue([])
-    vi.mocked(createAdminUser).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
   })
 
   afterEach(() => {
@@ -119,16 +102,6 @@ describe('관리자 화면', () => {
     expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument()
   })
 
-  // #483 : 못 불러온 사용자 목록을 「사용자 0명」으로 보이지 않는다
-  it('첫 로드가 실패하면 사용자 수를 적지 않는다', async () => {
-    vi.mocked(listAdminUsers).mockRejectedValueOnce(new Error('503'))
-    renderPage()
-    await screen.findByText('목록을 불러오지 못했습니다')
-
-    expect(screen.getByRole('heading', { name: '사용자' })).toBeInTheDocument()
-    expect(screen.queryByText(/사용자 0명/)).not.toBeInTheDocument()
-  })
-
   /** TC-ADMIN-043 : 상태별 표시가 구분된다 */
   it('완료·처리중·실패가 각각 다른 문구로 보인다', async () => {
     vi.mocked(listDocuments).mockResolvedValue([
@@ -164,7 +137,7 @@ describe('관리자 화면', () => {
    * 제어하지 못해 "폴링을 안 한다"는 잘못된 결론이 나온다. `shouldAdvanceTime` 이 있어야
    * 그 사이 프로미스(목록 조회)도 해소된다.
    *
-   * #330 : 폴링은 문서 목록만 다시 읽는다 - 지켜보는 것은 인덱싱 상태뿐이라 사용자 목록까지 받을 이유가 없다.
+   * #330 : 폴링은 문서 목록만 다시 읽는다 - 지켜보는 것은 인덱싱 상태뿐이다. #513 뒤로 이 화면은 사용자 목록을 아예 읽지 않는다.
    */
   it('인덱싱 중이면 문서 목록만 폴링한다', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
@@ -172,12 +145,11 @@ describe('관리자 화면', () => {
     renderPage()
     await screen.findByText('처리중')
     const before = vi.mocked(listDocuments).mock.calls.length
-    const usersBefore = vi.mocked(listAdminUsers).mock.calls.length
 
     await vi.advanceTimersByTimeAsync(6000)
 
     expect(vi.mocked(listDocuments).mock.calls.length).toBeGreaterThan(before)
-    expect(vi.mocked(listAdminUsers).mock.calls.length).toBe(usersBefore)
+    expect(listAdminUsers).not.toHaveBeenCalled()
   })
 
   /**
@@ -292,159 +264,6 @@ describe('관리자 화면', () => {
     expect(screen.getByText('아직 문서가 없습니다')).toBeInTheDocument()
   })
 
-  /** 임시 비밀번호는 "다시 못 본다"와 "대상이 로그아웃된다"를 함께 알려야 한다 */
-  it('임시 비밀번호 발급이 두 가지 사실을 함께 알린다', async () => {
-    vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
-    ])
-    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
-    renderPage()
-
-    await confirmReset()
-
-    expect(await screen.findByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
-    expect(screen.getByText(/다시 확인할 수 없습니다/)).toBeInTheDocument()
-    expect(screen.getByText(/기존 로그인은 모두 해제되었습니다/)).toBeInTheDocument()
-  })
-
-  /**
-   * #253 : 일회용 비밀번호 창은 배경 클릭으로 닫히지 않는다 — 한 번 헛클릭하면 값을 다시 볼 수 없다.
-   * Esc 와 「닫기」로는 닫힌다
-   */
-  it('일회용 비밀번호 창은 배경 클릭으로 닫히지 않고 Esc · 닫기로 닫힌다', async () => {
-    vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
-    ])
-    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
-    renderPage()
-
-    await confirmReset()
-    await screen.findByText('Xk7m-Qp29-Vr4t')
-    const dialog = screen.getByRole('dialog')
-    // 배경 요소가 있으면 그것을, 없으면 덮개 자체를 누른다 - 어느 쪽이든 「창 바깥」 클릭이다
-    fireEvent.click(dialog.querySelector('[aria-hidden="true"]') ?? dialog)
-    expect(screen.getByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
-
-    fireEvent.keyDown(window, { key: 'Escape' })
-    await waitFor(() => expect(screen.queryByText('Xk7m-Qp29-Vr4t')).not.toBeInTheDocument())
-
-    await confirmReset()
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '닫기' }))
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-  })
-
-  /** #330 : 발급 창 「닫기」도 주요 버튼이라 44px(h-11) 공용 클래스를 쓴다 */
-  it('발급 창 「닫기」는 44px 주요 버튼이다', async () => {
-    vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
-    ])
-    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
-    renderPage()
-
-    await confirmReset()
-    const close = within(await screen.findByRole('dialog')).getByRole('button', { name: '닫기' })
-    expect(close).toHaveClass('h-11')
-    expect(close.className).toContain(primaryButtonClass)
-  })
-
-  /** #325 : 초기화는 되돌릴 수 없어(기존 로그인 전부 해제) 문서 삭제처럼 확인 창을 거친다 */
-  it('비밀번호 초기화는 확인 창을 거친 뒤에만 요청한다', async () => {
-    vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
-    ])
-    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
-    renderPage()
-
-    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
-    const dialog = await screen.findByRole('dialog')
-    expect(within(dialog).getByText(/박사원/)).toBeInTheDocument()
-    expect(within(dialog).getByText(/기존 로그인이 모두 해제됩니다/)).toBeInTheDocument()
-    expect(resetUserPassword).not.toHaveBeenCalled()
-
-    fireEvent.click(within(dialog).getByRole('button', { name: '초기화' }))
-    await waitFor(() => expect(resetUserPassword).toHaveBeenCalledWith('u2'))
-    expect(resetUserPassword).toHaveBeenCalledTimes(1)
-  })
-
-  it('확인 창에서 취소하면 초기화를 요청하지 않는다', async () => {
-    vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
-    ])
-    renderPage()
-
-    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: '취소' }))
-
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    expect(resetUserPassword).not.toHaveBeenCalled()
-  })
-
-  /** #325 : 연타로 두 번 나가면 늦게 온 응답이 이미 덮어써진 비밀번호를 보여 줄 수 있다 */
-  it('초기화 요청 중에는 버튼이 비활성이고 연타해도 한 번만 요청한다', async () => {
-    vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
-    ])
-    let resolve!: (v: { temporaryPassword: string }) => void
-    vi.mocked(resetUserPassword).mockReturnValue(new Promise((r) => (resolve = r)))
-    renderPage()
-
-    const rowButton = await screen.findByRole('button', { name: '비밀번호 초기화' })
-    fireEvent.click(rowButton)
-    const confirm = within(await screen.findByRole('dialog')).getByRole('button', { name: '초기화' })
-    fireEvent.click(confirm)
-    fireEvent.click(confirm)
-
-    await waitFor(() => expect(rowButton).toBeDisabled())
-    fireEvent.click(rowButton)
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(resetUserPassword).toHaveBeenCalledTimes(1)
-
-    resolve({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
-    expect(await screen.findByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
-    expect(rowButton).toBeEnabled()
-    expect(resetUserPassword).toHaveBeenCalledTimes(1)
-  })
-
-  /** 자기 자신에게는 초기화 버튼을 띄우지 않는다 */
-  it('자기 자신에게는 초기화 버튼이 없다', async () => {
-    vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u1', email: 'a@b.com', name: '관리자', role: 'admin' },
-    ])
-    renderPage()
-
-    await screen.findByText('a@b.com')
-    expect(screen.queryByRole('button', { name: '비밀번호 초기화' })).not.toBeInTheDocument()
-  })
-
-  /**
-   * 계정 발급은 이 화면에만 있다(FEAT-AUTH-001). 스스로 가입하는 길이 없어졌으므로,
-   * 이 폼이 사라지면 새 사용자가 <b>어디에서도</b> 태어나지 못한다.
-   */
-  it('계정을 발급하고 임시 비밀번호를 한 번 보여준다', async () => {
-    vi.mocked(createAdminUser).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
-    renderPage()
-
-    fireEvent.change(await screen.findByLabelText('이메일'), {
-      target: { value: 'new@b.com' },
-    })
-    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '새사원' } })
-    fireEvent.click(screen.getByRole('button', { name: '계정 추가' }))
-
-    await waitFor(() => expect(createAdminUser).toHaveBeenCalledWith('new@b.com', '새사원'))
-    expect(await screen.findByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
-    // 초기화와 달리 "기존 로그인 해제"가 아니라 "전달하세요"여야 한다 - 새 계정에는 끊을 세션이 없다
-    expect(screen.getByText(/전달하세요/)).toBeInTheDocument()
-    expect(screen.getByText(/다시 확인할 수 없습니다/)).toBeInTheDocument()
-  })
-
-  // 서버 상한(app.user.max-name-chars 기본값)과 같은 값 - 넘기면 서버가 400 으로 거절한다(#413)
-  it('계정 발급 이름 입력은 50자까지만 받는다', async () => {
-    renderPage()
-
-    await screen.findByText('아직 문서가 없습니다') // 비동기 조회가 끝난 뒤에 마친다
-    expect(screen.getByLabelText('이름')).toHaveAttribute('maxLength', '50')
-  })
-
   /** TC-ADMIN-041 : 일반 사용자는 되돌려진다 */
   it('일반 사용자는 관리 화면을 보지 못한다', async () => {
     currentRole = 'user'
@@ -469,17 +288,12 @@ describe('관리자 화면', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('이미 스토어와 맞습니다')
   })
 
-  // #484 F10
-  it('확인 창과 발급 창은 이름이 있는 대화상자다', async () => {
-    vi.mocked(listAdminUsers).mockResolvedValue([
-      { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
-    ])
-    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+  // #513 : 사용자 목록 · 발급 · 초기화 · 삭제는 사용자 관리 화면에만 있다
+  it('문서 관리 화면에는 사용자 구역이 없다', async () => {
     renderPage()
-    fireEvent.click(await screen.findByRole('button', { name: '비밀번호 초기화' }))
-    expect(screen.getByRole('dialog', { name: /박사원 님의 비밀번호를 초기화할까요/ })).toBeInTheDocument()
 
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '초기화' }))
-    expect(await screen.findByRole('dialog', { name: '임시 비밀번호가 발급되었습니다' })).toBeInTheDocument()
+    await screen.findByText('아직 문서가 없습니다')
+    expect(screen.queryByRole('heading', { name: /사용자/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '계정 추가' })).not.toBeInTheDocument()
   })
 })

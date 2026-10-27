@@ -112,13 +112,16 @@ describe('MyPage 비밀번호 변경', () => {
 
     await screen.findByText('a@b.com')
     expect(screen.queryByText('문서 관리')).not.toBeInTheDocument()
+    expect(screen.queryByText('사용자 관리')).not.toBeInTheDocument()
   })
 
-  it('관리자에게는 관리 메뉴가 보인다', async () => {
+  // #513 : 관리 화면이 둘로 나뉘었다 - 링크도 둘이고 각자 제 경로로 간다
+  it('관리자에게는 문서 관리 · 사용자 관리 두 링크가 보인다', async () => {
     currentRole = 'admin'
     renderMyPage()
 
-    expect(await screen.findByText(/문서 관리/)).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: '문서 관리' })).toHaveAttribute('href', '/admin/documents')
+    expect(screen.getByRole('link', { name: '사용자 관리' })).toHaveAttribute('href', '/admin/users')
   })
 
   /**

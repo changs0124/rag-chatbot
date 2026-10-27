@@ -40,7 +40,7 @@ export function uploadFile(file: File, signal?: AbortSignal): Promise<Attachment
 // 전송 전에 첨부를 뺀 경우. 안 지우면 message_id 가 비어 있는 고아로 남아 회수 크론을 기다리게 됨
 export const deleteAttachment = (id: string) => api.del<void>(`/api/files/${id}`)
 
-// 관리자 (FEAT-ADMIN-002 · 003). 관리자가 아니면 서버가 404 를 준다 - 403 이 아니다
+// 관리자 (FEAT-ADMIN-002 · 003 · 004). 관리자가 아니면 서버가 404 를 준다 - 403 이 아니다
 export const listDocuments = () => api.get<RagDocument[]>('/api/admin/documents')
 export const deleteDocument = (id: string) => api.del<void>(`/api/admin/documents/${id}`)
 /** 스토어와 동기화(#193). added · total 의 뜻은 api.md API-POST-009 */
@@ -53,6 +53,8 @@ export const createAdminUser = (email: string, name: string) =>
   api.post<{ temporaryPassword: string }>('/api/admin/users', { email, name })
 export const resetUserPassword = (id: string) =>
   api.post<{ temporaryPassword: string }>(`/api/admin/users/${id}/password-reset`)
+/** 사용자 삭제(FEAT-ADMIN-004). 관리자 계정은 400, 문서를 올린 기록이 있으면 409 - 이유는 서버 메시지에 있다 */
+export const deleteAdminUser = (id: string) => api.del<void>(`/api/admin/users/${id}`)
 
 export function uploadDocument(file: File): Promise<RagDocument> {
   const form = new FormData()

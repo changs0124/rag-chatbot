@@ -143,7 +143,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | `highlight` · `highlight-ink` | `chat/MessageList.tsx` 「자료 없음」 배지 | 각 1회 (같은 줄) |
 | `highlight` | `chat/Composer.tsx` 첨부 실패 아이콘 | 1회. 어두운 고정 스크림 위라 밝은 면 기준 토큰을 못 쓴다 |
 | `danger-ink` | `ConfirmModal.tsx` 확인 버튼(삭제 · 비밀번호 초기화) | 1회 — `bg-danger` 가 있는 유일한 자리다 |
-| `danger-soft` | `pages/AdminPage.tsx` 관리자 오류 배너 | 1회 |
+| `danger-soft` | `pages/AdminDocumentsPage.tsx` · `pages/AdminUsersPage.tsx` 관리자 오류 배너 | 화면마다 1회(같은 모양, #513 에서 둘로 나뉨) |
 | `danger-soft` | `pages/MyPage.tsx` 오류 배너 | 1회. 관리자 쪽과 같은 색 조합(모서리 · 여백은 다르다) |
 
 쓰이지 않는 토큰은 다음 사람이 아무 데나 갖다 쓰는 근거가 된다.
@@ -153,7 +153,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - **본문 서체** : Pretendard Variable (npm 패키지로 번들에 넣는다 — CDN 을 새로 물리지 않는다).
   받지 못하는 환경을 위해 시스템 스택을 뒤에 둔다.
 - **금지** : `Noto Sans KR` · `Malgun Gothic` 을 **선순위로** 지정하지 않는다. 자소 간격이 넓어 화면이 헐거워 보인다.
-- **크기** : 본문 15px / 보조는 14px(`text-sm`)이 주이고 13px · 12px(`text-xs`)도 쓴다(라벨 · 배지 11px, 첨부 재시도 버튼 10px). 화면 제목은 화면마다 다르다 — `AdminPage` 20px(`text-xl`) · `MyPage` 24px(`text-2xl`) ·
+- **크기** : 본문 15px / 보조는 14px(`text-sm`)이 주이고 13px · 12px(`text-xs`)도 쓴다(라벨 · 배지 11px, 첨부 재시도 버튼 10px). 화면 제목은 화면마다 다르다 — `AdminDocumentsPage` · `AdminUsersPage` 20px(`text-xl`) · `MyPage` 24px(`text-2xl`) ·
   `LoginPage` 24px → md 이상 36px(`text-2xl md:text-4xl`). **답변 문단**은 14px 보다 작게 두지 않는다
   (`Markdown.tsx` 의 코드 블록 13px · 표 14px 는 이 규칙 밖이다).
 - **한국어 규칙**
@@ -177,7 +177,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | 토큰 | 값 | 쓰는 곳 |
 |------|-----|---------|
 | `--shadow-ambient` | `0 1px 2px rgb(0 0 0 / .04), 0 8px 24px -12px rgb(0 0 0 / .1)` | 면 위 카드 · 입력창 · 「새 대화」 버튼 |
-| `--shadow-lifted` | `0 2px 4px rgb(0 0 0 / .05), 0 16px 40px -16px rgb(0 0 0 / .18)` | **화면 위에 뜬 것** — 모달(`ConfirmModal` · `AdminPage`) · 드로어(`ChatPage`) · 팝오버(`Sidebar`) |
+| `--shadow-lifted` | `0 2px 4px rgb(0 0 0 / .05), 0 16px 40px -16px rgb(0 0 0 / .18)` | **화면 위에 뜬 것** — 모달(`ConfirmModal` · `AdminUsersPage` 발급 창) · 드로어(`ChatPage`) · 팝오버(`Sidebar`) |
 
 모달에 `ambient` 를 쓰면 기존 모달과 깊이가 갈린다.
 
@@ -378,7 +378,7 @@ s.save('frontend/public/favicon.ico',sizes=[(16,16),(32,32),(48,48)])"
 | `frontend/src/components/Logo.tsx` | 브랜드색 2 + 램프 5스톱 | **로고는 화면 토큰을 따라가면 안 된다.** CI 색은 고정이어야 한다 — 토큰으로 빼는 순간 화면 색을 바꿀 때 로고가 다른 회사 색이 된다. 파비콘도 여기서 렌더하므로 사본을 따로 두지 않는다 |
 | `frontend/index.html` | `theme-color` **1개** | `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 **같은 값을 손으로 맞춘다**. `media="(prefers-color-scheme: …)"` 로 두지 않는다 — OS 가 다크면 주소창만 다크가 된다 |
 | 사진·영상 위 오버레이 — `chat/ImageLightbox.tsx` · `chat/Composer.tsx` 썸네일 | `bg-black/*` · `bg-white/*` · `text-white*` · `border-white/*` | 아래 면이 **토큰이 아닌 이미지**라 화면 색과 무관하다 |
-| 모달·드로어 뒤 스크림 — `ConfirmModal.tsx` · `pages/AdminPage.tsx`(발급 모달) · `pages/ChatPage.tsx`(모바일 드로어) | `bg-black/40` | 화면 전체를 가리는 반투명 막이라 바탕 토큰과 짝지을 대상이 없다 |
+| 모달·드로어 뒤 스크림 — `ConfirmModal.tsx` · `pages/AdminUsersPage.tsx`(발급 모달) · `pages/ChatPage.tsx`(모바일 드로어) | `bg-black/40` | 화면 전체를 가리는 반투명 막이라 바탕 토큰과 짝지을 대상이 없다 |
 | 문서 그림 바탕 — `chat/DocFigure.tsx` | `bg-white` | 그림 자체가 화면 토큰과 무관한 이미지다 |
 
 **[CONVENTIONS.md](../CONVENTIONS.md) 「스타일」은 이 표를 가리킨다.** 자리를 늘리면 이 표를 고친다.

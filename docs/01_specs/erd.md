@@ -3,8 +3,8 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 | rag-chatbot |
-| 문서 버전 | v1.4 |
-| 최종 수정일 | 2026-10-21 |
+| 문서 버전 | v1.5 |
+| 최종 수정일 | 2026-10-27 |
 | 작성자 | changs0124 |
 | 상태 | `반영됨` (2026-10-06 런칭) |
 
@@ -208,7 +208,8 @@ erDiagram
 
 **`on delete restrict` 인 이유** : 다른 테이블은 전부 cascade 인데 여기만 다르다. 사용자를 지웠다고
 문서 이력이 사라지면 감사 기록(REQ-ADMIN-002)이 성립하지 않는다. **의도된 차이**이며 마이그레이션
-주석에 남긴다.
+주석에 남긴다. 그래서 사용자 삭제(FEAT-ADMIN-004)는 이 사용자를 가리키는 행이 하나라도 있으면 **`409` 로 막힌다** —
+soft delete 된 행도 남아 있으므로 문서를 내려도 풀리지 않는다.
 
 **soft delete 를 쓰는 유일한 테이블** : "언제 내려갔는가"가 감사 대상이다(REQ-ADMIN-002) — 행을 지우면 그 사실이 남지 않는다. 목록 조회는
 `deleted_at is null` 만 본다.
@@ -238,7 +239,11 @@ erDiagram
 | messages → citations | 메시지는 여러 출처를 가짐 | 1:N | cascade |
 | messages → attachments | 메시지는 여러 첨부를 가짐 | 1:N (nullable) | cascade — 파일 삭제보다 첨부 행이 먼저 사라짐 |
 
-**대화 삭제 시 알려진 결함** : cascade로 `attachments` 행이 먼저 사라진 뒤 파일 삭제가 실패하면,
+**사용자 삭제 시**(FEAT-ADMIN-004) : `users` 행 하나를 지우는 단일 문장이 `conversations` · `attachments`(→ `messages` · `citations`)를
+cascade 로 함께 지운다. `rag_documents` 가 가리키면 restrict 로 문장 전체가 실패해 **아무것도 지워지지 않는다**.
+첨부 파일은 DB 가 아니므로 앱이 지우기 전에 경로를 읽어 두고 삭제 뒤 디스크에서 지운다.
+
+**대화 · 사용자 삭제 시 알려진 결함** : cascade로 `attachments` 행이 먼저 사라진 뒤 파일 삭제가 실패하면,
 고아 회수가 **행 기준**이라 그 파일을 구조적으로 찾지 못한다. 저장소 스캔 회수(`cleanupUnreferencedFiles`)가
 이 경우를 보완한다.
 

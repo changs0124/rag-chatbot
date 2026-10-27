@@ -35,6 +35,9 @@ public interface AttachmentRepository {
 	/** 고아 첨부 : message_id 가 null 이고 cutoff 이전에 만들어진 것 */
 	List<Attachment> findOrphans(@Param("cutoff") OffsetDateTime cutoff);
 
+	/** 그 사용자의 첨부 저장 경로 전부 - 사용자 삭제(FEAT-ADMIN-004)가 cascade 전에 읽어 두고 커밋 뒤 파일을 지움 */
+	List<String> findStoragePathsByUser(@Param("userId") UUID userId);
+
 	/** 현재 행이 가리키는 저장 경로 전부 - 저장소 스캔 회수에서 "참조됨" 판정에 씀 */
 	List<String> findAllStoragePaths();
 }

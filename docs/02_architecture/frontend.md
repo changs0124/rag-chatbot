@@ -7,7 +7,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 | 경로 | 역할 |
 |------|------|
-| `frontend/src/pages/` | 라우트 단위 화면 — `LoginPage` · `ChatPage` · `MyPage` · `AdminPage` |
+| `frontend/src/pages/` | 라우트 단위 화면 — `LoginPage` · `ChatPage` · `MyPage` · `AdminDocumentsPage` · `AdminUsersPage` |
 | `frontend/src/components/` | 재사용 컴포넌트. 기능이 커지면 `components/chat/` 처럼 하위 폴더 |
 | `frontend/src/hooks/` | 도메인 훅 — `useChat.ts` 와, 그것이 쓰는 진행 단계 표시 큐 `useStageQueue.ts` |
 | `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `limits.ts`(서버 상한과 맞춘 입력 상한 — 이름 · 첨부 수 · 본문 · 제목, 사본은 여기 한 곳, #483) · `docFigures.ts`(그림 표식 파서) |
@@ -23,7 +23,9 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | `/login` | `LoginPage` — 로그인 전용. 계정은 관리자가 발급한다 | 공개 |
 | `/` | `ChatPage` | `ProtectedRoute` |
 | `/me` | `MyPage` | `ProtectedRoute` |
-| `/admin` | `AdminPage` — 문서 관리 · 사용자 관리 | `ProtectedRoute` — 관리자가 아니면 `AdminPage` 가 `/` 로 되돌린다(접근 제어는 서버의 404) |
+| `/admin/documents` | `AdminDocumentsPage` — 문서 관리(업로드 · 목록 · 삭제 · 동기화) | `ProtectedRoute` — 관리자가 아니면 페이지가 `/` 로 되돌린다(접근 제어는 서버의 404) |
+| `/admin/users` | `AdminUsersPage` — 사용자 관리(목록 · 계정 발급 · 비밀번호 초기화 · 삭제) | 위와 같다 |
+| `/admin` | `/admin/documents` 로 리다이렉트(replace) — 화면을 둘로 나누기 전(#513) 경로의 북마크 | 해당 없음 |
 | 그 외 | `/` 로 리다이렉트 | 해당 없음 |
 
 `frontend/src/components/ProtectedRoute.tsx` 는 세 갈래다 — `loading` 중이면 로딩 표시, 끝난 뒤 사용자가 없으면

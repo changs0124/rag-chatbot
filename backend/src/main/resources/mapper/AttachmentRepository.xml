@@ -54,6 +54,10 @@
 		where message_id is null and created_at &lt; #{cutoff}
 	</select>
 
+	<select id="findStoragePathsByUser" resultType="java.lang.String">
+		select storage_path from attachments where user_id = #{userId}
+	</select>
+
 	<select id="findAllStoragePaths" resultType="java.lang.String">
 		select storage_path from attachments
 	</select>

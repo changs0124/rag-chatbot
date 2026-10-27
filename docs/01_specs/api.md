@@ -3,8 +3,8 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 | rag-chatbot |
-| 문서 버전 | v1.9 |
-| 최종 수정일 | 2026-10-26 |
+| 문서 버전 | v2.0 |
+| 최종 수정일 | 2026-10-27 |
 | 작성자 | changs0124 |
 | 상태 | `반영됨` (2026-10-06 런칭) |
 
@@ -77,7 +77,7 @@
 | `UNAUTHORIZED` | 401 | 자격 증명 불일치 |
 | `NOT_FOUND` | 404 | 리소스 없음 **또는 소유권·권한 위반 은닉** · **없는 URL**(인증된 요청 기준. 미인증이면 401 이 먼저) |
 | `METHOD_NOT_ALLOWED` | 405 | 라우트는 있으나 그 메서드를 받지 않음. 응답에 `Allow` 헤더가 함께 나간다 |
-| `CONFLICT` | 409 | 이메일 중복 · **이미 보낸 메시지에 붙은 첨부 삭제**(API-DELETE-002) · **`?ifEmpty=true` 인데 메시지가 있는 대화 삭제**(API-DELETE-001) |
+| `CONFLICT` | 409 | 이메일 중복 · **이미 보낸 메시지에 붙은 첨부 삭제**(API-DELETE-002) · **`?ifEmpty=true` 인데 메시지가 있는 대화 삭제**(API-DELETE-001) · **문서를 올린 기록이 있는 사용자 삭제**(API-DELETE-004) |
 | `PAYLOAD_TOO_LARGE` | 413 | 멀티파트 하드 한도 초과. **약 32MB 까지만 이 응답이 도달한다** — 그보다 크면 Tomcat 이 연결을 끊어 클라이언트는 상태 코드 없이 I/O 오류를 받는다(근거는 `application.yml` 멀티파트 주석) |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` 을 그 라우트가 받지 않음. **본문을 읽을 수 없는 것(400)과 다르다** — 이쪽은 본문에 닿기 전 협상 단계에서 거절된다 |
 | `RATE_LIMIT` | 429 | 분당 상한(채팅 · 첨부 업로드 · 비밀번호 변경 · 로그인 실패) · 동시 스트림 상한. 값은 [backend.md](../02_architecture/backend.md) 「유량 제어」 |
@@ -142,6 +142,7 @@
 | API-GET-008 | GET | `/api/admin/users` | 사용자 목록 | ADMIN | 구현됨 |
 | API-POST-007 | POST | `/api/admin/users/{id}/password-reset` | 임시 비밀번호 발급 | ADMIN | 구현됨 |
 | API-POST-008 | POST | `/api/admin/users` | **계정 발급** | ADMIN | 구현됨 |
+| API-DELETE-004 | DELETE | `/api/admin/users/{id}` | **사용자 삭제** (FEAT-ADMIN-004) | ADMIN | 구현됨 |
 
 **페이지네이션이 없다.** 대화 목록·메시지 목록·문서 목록 모두 전량을 돌려준다. 사내 소규모 전제이며,
 양이 늘면 그때 넣는다. 지금 넣으면 쓰이지 않는 파라미터가 계약에 남는다.
@@ -474,6 +475,23 @@ OpenAI 정리(스토어 연결 해제 · 파일 삭제)의 실패는 응답을 �
 
 **자기 자신은 대상에서 제외한다.** 마이페이지에 비밀번호 변경이 이미 있고, 관리자가 자기 세션을
 스스로 끊는 경로를 만들 이유가 없다.
+
+### API-DELETE-004: 사용자 삭제
+
+**DELETE** `/api/admin/users/{id}` → **204**. 본문 없음.
+
+그 사용자의 대화 · 메시지 · 출처 · 첨부 행이 cascade 로 함께 지워지고, 첨부 파일은 DB 삭제 뒤 디스크에서 지운다.
+**파일 삭제 실패는 응답을 바꾸지 않는다**(WARN 로그, 남은 파일은 저장소 스캔 회수). 그 사용자의 기존 토큰은 다음 요청부터 `401` 이다.
+순서 · 회수 · 막는 이유는 `features.md` FEAT-ADMIN-004.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `NOT_FOUND` | 404 | 비관리자 접근 · 없는 사용자 |
+| `BAD_REQUEST` | 400 | **관리자 계정**(`role=admin`, 자기 자신 포함) — 관리자는 `ADMIN_EMAILS` 명단으로만 정해진다 |
+| `BAD_REQUEST` | 400 | 형식이 틀린 경로 변수 — 관리자 확인보다 먼저 걸린다(`AdminController` javadoc) |
+| `CONFLICT` | 409 | **문서를 올린 기록이 있는 사용자** — `rag_documents.uploaded_by` restrict. soft delete 된 문서 행도 포함. 아무것도 지워지지 않는다 |
 
 ### API-POST-008: 계정 발급
 

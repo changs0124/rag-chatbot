@@ -61,6 +61,11 @@
 		order by created_at asc
 	</select>
 
+	<!-- cascade 는 스키마가 한다(V1 conversations · attachments). rag_documents.uploaded_by 는 restrict(V6) -->
+	<delete id="deleteById">
+		delete from users where id = #{id}
+	</delete>
+
 	<update id="updateName">
 		update users set name = #{name} where id = #{id}
 	</update>

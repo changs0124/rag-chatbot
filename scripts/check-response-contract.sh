@@ -21,7 +21,7 @@ cd "$(git rev-parse --show-toplevel)"
 java_src=backend/src/main/java/com/ragchatbot/dto/AdminDtos.java
 xml_src=backend/src/main/resources/mapper/RagDocumentRepository.xml
 ts_src=frontend/src/lib/types.ts
-fixture_src=frontend/src/pages/AdminPage.test.tsx
+fixture_src=frontend/src/pages/AdminDocumentsPage.test.tsx
 
 for f in "$java_src" "$xml_src" "$ts_src" "$fixture_src"; do
   [ -f "$f" ] || { echo "대조 실패 : $f 없음" >&2; exit 1; }
@@ -72,14 +72,14 @@ types="$(joined from_types)"
 fixture="$(joined from_fixture)"
 
 # 빈 목록을 조용히 통과시키지 않음 - 추출이 깨지면 게이트가 아무것도 안 보게 됨
-for pair in "record:$record" "resultMap:$result_map" "types.ts:$types" "AdminPage.test.tsx doc():$fixture"; do
+for pair in "record:$record" "resultMap:$result_map" "types.ts:$types" "AdminDocumentsPage.test.tsx doc():$fixture"; do
   [ -n "${pair#*:}" ] || { echo "대조 실패 : ${pair%%:*} 에서 필드를 한 개도 못 뽑음" >&2; exit 1; }
 done
 
 echo "AdminDtos.DocumentResponse   ${record% }"
 echo "summaryResult <arg column>   ${result_map% }"
 echo "types.ts RagDocument         ${types% }"
-echo "AdminPage.test.tsx doc()     ${fixture% }"
+echo "AdminDocumentsPage.test.tsx doc() ${fixture% }"
 
 fail=0
 if [ "$record" != "$result_map" ]; then
@@ -88,7 +88,7 @@ if [ "$record" != "$result_map" ]; then
 fi
 
 record_sorted="$(sorted from_record)"
-for pair in "types.ts:$(sorted from_types)" "AdminPage.test.tsx doc():$(sorted from_fixture)"; do
+for pair in "types.ts:$(sorted from_types)" "AdminDocumentsPage.test.tsx doc():$(sorted from_fixture)"; do
   name="${pair%%:*}"; got="${pair#*:}"
   [ "$record_sorted" = "$got" ] && continue
   echo "어긋남 : record 와 $name 쪽 필드 이름 집합이 다르다" >&2

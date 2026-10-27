@@ -1,25 +1,14 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import BackLink from '../components/BackLink'
 import ConfirmModal from '../components/ConfirmModal'
 import PageShell from '../components/PageShell'
-import TextInput from '../components/TextInput'
+import { actionButtonClass } from '../components/actionButton'
 import { IconAlert, IconCheck, IconClock } from '../components/icons'
-import { primaryButtonClass } from '../components/primaryButton'
 import { errorMessage } from '../lib/api'
-import {
-  createAdminUser,
-  deleteDocument,
-  listAdminUsers,
-  listDocuments,
-  resetUserPassword,
-  syncDocuments,
-  uploadDocument,
-} from '../lib/endpoints'
-import { MAX_NAME_CHARS } from '../lib/limits'
-import type { AdminUser, RagDocument } from '../lib/types'
+import { deleteDocument, listDocuments, syncDocuments, uploadDocument } from '../lib/endpoints'
+import type { RagDocument } from '../lib/types'
 
 /** 인덱싱 중인 문서가 있을 때만 도는 폴링 간격. 완료를 알려줄 푸시 경로가 없어 폴링으로 한다 */
 const POLL_MS = 5000
@@ -45,10 +34,6 @@ const STATUS_CLASS: Record<RagDocument['status'], string> = {
 
 const ACCEPT = '.pdf,.txt,.md,.docx'
 
-// 행 끝의 작은 동작 버튼(동기화 · 삭제 · 초기화). 모바일만 44px 로 키운다(design-system 「7. 모바일」). hover 글자색만 호출부가 덧붙인다
-const actionBtn =
-  'min-h-11 shrink-0 rounded-full px-3 py-1.5 text-xs text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-raised disabled:opacity-60 md:min-h-0'
-
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
@@ -60,11 +45,11 @@ function formatDate(iso: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
-// 공유하는 것만 여기 둔다(#390) - 목록 두 개(한 번에 읽는다) · 오류 배너 · 관리자 가드. 각 구역의 입력 · 진행 · 확인 상태는 구역 안에 있다
-export default function AdminPage() {
+// 문서 관리(FEAT-ADMIN-002). 사용자 관리는 AdminUsersPage 로 나뉘었다(#513).
+// 페이지에는 목록 · 오류 배너 · 관리자 가드만 두고, 업로드 · 동기화 · 삭제의 진행 · 확인 상태는 구역 안에 있다(#390)
+export default function AdminDocumentsPage() {
   const { user } = useAuth()
   const [documents, setDocuments] = useState<RagDocument[]>([])
-  const [users, setUsers] = useState<AdminUser[]>([])
   const [error, setError] = useState<string | null>(null)
   // 목록 오류는 따로 둔다 - 폴링 성공이 걷어야 하는데, 공유 error 를 지우면 업로드 · 삭제 오류까지 사라진다(#324)
   const [listError, setListError] = useState<string | null>(null)
@@ -82,10 +67,9 @@ export default function AdminPage() {
   const refresh = useCallback(async () => {
     const mine = ++listGen.current
     try {
-      const [docs, people] = await Promise.all([listDocuments(), listAdminUsers()])
+      const docs = await listDocuments()
       if (listGen.current !== mine) return
       setDocuments(docs)
-      setUsers(people)
       setListError(null)
       setLoaded(true)
     } catch (e) {
@@ -98,8 +82,7 @@ export default function AdminPage() {
     if (isAdmin) void refresh()
   }, [isAdmin, refresh])
 
-  // 폴링이 지켜보는 것은 인덱싱 상태뿐이다 - 사용자 목록은 첫 로드와 변경 뒤에만 다시 읽는다(#330).
-  // 그래서 사용자 목록 로드가 실패한 뒤 문서 폴링이 성공하면 배너는 지워지고 사용자 목록은 옛 값으로 남는다 - 받아들인 대가
+  // 폴링은 인덱싱 상태를 지켜본다. refresh 와 달리 세대를 올리지 않고 loaded 도 건드리지 않는다
   const pollDocuments = useCallback(async () => {
     const mine = listGen.current
     try {
@@ -150,8 +133,6 @@ export default function AdminPage() {
       )}
 
       <DocumentsSection documents={documents} loaded={loaded} refresh={refresh} setError={setError} />
-
-      <UsersSection users={users} loaded={loaded} currentUserId={user?.id} refresh={refresh} setError={setError} />
     </PageShell>
   )
 }
@@ -244,7 +225,7 @@ function DocumentsSection({
           <button
             onClick={() => void onSync()}
             disabled={syncing}
-            className={actionBtn + ' hover:text-ink'}
+            className={actionButtonClass + ' hover:text-ink'}
           >
             {syncing ? '맞추는 중…' : '스토어와 동기화'}
           </button>
@@ -286,7 +267,7 @@ function DocumentsSection({
                 </div>
                 <button
                   onClick={() => setPendingDelete(doc)}
-                  className={actionBtn + ' hover:text-danger'}
+                  className={actionButtonClass + ' hover:text-danger'}
                 >
                   삭제
                 </button>
@@ -306,189 +287,6 @@ function DocumentsSection({
           onConfirm={() => void confirmDelete()}
           onCancel={() => setPendingDelete(null)}
         />
-      )}
-    </>
-  )
-}
-
-function UsersSection({
-  users,
-  loaded,
-  currentUserId,
-  refresh,
-  setError,
-}: {
-  users: AdminUser[]
-  loaded: boolean
-  currentUserId: string | undefined
-  refresh: () => Promise<void>
-  setError: (message: string | null) => void
-}) {
-  // 초기화는 기존 로그인을 전부 끊고 되돌릴 수 없어 삭제처럼 확인을 거친다(#325)
-  const [pendingReset, setPendingReset] = useState<AdminUser | null>(null)
-  // 요청 중에는 초기화 버튼을 모두 막는다 - 연타 · 동시 요청이면 늦게 온 응답이 발급 창을 덮어써
-  // 이미 무효가 된 비밀번호나 다른 사람의 값만 남는다
-  const [resettingId, setResettingId] = useState<string | null>(null)
-  // kind 로 갈리는 것은 안내 문구뿐이다 — 발급은 "새 계정"이고 초기화는 "기존 세션이 끊긴다"
-  const issuedTitleId = useId()
-  const [issued, setIssued] = useState<{
-    kind: 'created' | 'reset'
-    name: string
-    password: string
-  } | null>(null)
-  const [newEmail, setNewEmail] = useState('')
-  const [newName, setNewName] = useState('')
-  const [creating, setCreating] = useState(false)
-
-  // 일회용 비밀번호 창은 Esc 와 「닫기」로만 닫는다(#253). 배경 클릭으로 닫히면 「지금만 볼 수 있는」 값이
-  // 한 번의 헛클릭에 사라져 비밀번호를 다시 초기화해야 한다 - 그래서 이 창만 배경 닫기를 두지 않는다
-  useEffect(() => {
-    if (!issued) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIssued(null)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [issued])
-
-  async function confirmReset() {
-    const target = pendingReset
-    setPendingReset(null)
-    if (!target || resettingId) return
-    setError(null)
-    setResettingId(target.id)
-    try {
-      const res = await resetUserPassword(target.id)
-      setIssued({ kind: 'reset', name: target.name, password: res.temporaryPassword })
-    } catch (e) {
-      setError(errorMessage(e, '초기화하지 못했습니다'))
-    } finally {
-      setResettingId(null)
-    }
-  }
-
-  async function onCreate(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setCreating(true)
-    try {
-      const res = await createAdminUser(newEmail, newName)
-      setIssued({ kind: 'created', name: newName, password: res.temporaryPassword })
-      setNewEmail('')
-      setNewName('')
-      await refresh()
-    } catch (e) {
-      setError(errorMessage(e, '계정을 만들지 못했습니다'))
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  return (
-    <>
-      <section className="mt-10">
-        {/* 못 불러온 것을 「0명」으로 보이지 않는다(#483) */}
-        <h2 className="text-sm font-medium text-ink-muted">사용자{loaded && ` ${users.length}명`}</h2>
-        {/* 스스로 가입하는 경로가 없으므로 계정은 여기서만 태어난다 */}
-        <form onSubmit={onCreate} className="mt-3 rounded-2xl bg-surface px-4 py-3 md:flex md:items-end md:gap-3">
-          <label className="block flex-1">
-            <span className="text-xs text-ink-muted">이메일</span>
-            <TextInput
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              required
-              autoComplete="off"
-            />
-          </label>
-          <label className="mt-3 block flex-1 md:mt-0">
-            <span className="text-xs text-ink-muted">이름</span>
-            <TextInput
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              maxLength={MAX_NAME_CHARS}
-              required
-              autoComplete="off"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={creating}
-            className={primaryButtonClass + ' mt-3 md:mt-0'}
-          >
-            {creating ? '발급 중…' : '계정 추가'}
-          </button>
-        </form>
-        <ul className="mt-3 space-y-2">
-          {users.map((person) => (
-            <li
-              key={person.id}
-              className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 md:gap-4"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-ink">
-                  {person.name}
-                  <span className="ml-2 text-xs text-ink-muted">
-                    {person.role === 'admin' ? '관리자' : '사용자'}
-                  </span>
-                </p>
-                <p className="mt-0.5 truncate text-xs text-ink-muted">{person.email}</p>
-              </div>
-              {/* 자기 자신은 대상이 아니다 — 마이페이지에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
-              {person.id !== currentUserId && (
-                <button
-                  onClick={() => setPendingReset(person)}
-                  disabled={resettingId !== null}
-                  className={actionBtn + ' hover:text-ink'}
-                >
-                  비밀번호 초기화
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {pendingReset && (
-        <ConfirmModal
-          title={`${pendingReset.name} 님의 비밀번호를 초기화할까요?`}
-          message="새 임시 비밀번호를 발급합니다. 기존 로그인이 모두 해제됩니다."
-          confirmLabel="초기화"
-          onConfirm={() => void confirmReset()}
-          onCancel={() => setPendingReset(null)}
-        />
-      )}
-
-      {issued && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={issuedTitleId}>
-          <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
-            <div className="rounded-[1.375rem] bg-raised p-6">
-              <h2 id={issuedTitleId} className="text-base font-semibold text-ink">
-                {issued.kind === 'created' ? '계정이 발급되었습니다' : '임시 비밀번호가 발급되었습니다'}
-              </h2>
-              <p className="mt-4 rounded-xl bg-surface px-4 py-3 text-center font-mono text-base text-ink">
-                {issued.password}
-              </p>
-              {/* 두 문장 모두 필요하다 : 다시 못 본다는 사실과, 이 발급이 상대에게 무엇을 뜻하는지 */}
-              <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-                이 값은 지금만 볼 수 있습니다. 닫으면 다시 확인할 수 없습니다.
-                <br />
-                {issued.kind === 'created'
-                  ? `${issued.name} 님에게 이메일과 함께 전달하세요.`
-                  : `${issued.name} 님의 기존 로그인은 모두 해제되었습니다.`}
-              </p>
-              <div className="mt-6 flex justify-end">
-                <button
-                  autoFocus
-                  onClick={() => setIssued(null)}
-                  className={primaryButtonClass}
-                >
-                  닫기
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </>
   )
