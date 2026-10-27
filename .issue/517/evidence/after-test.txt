@@ -8,3 +8,7 @@ Expecting AtomicBoolean(false) to have value:
 
 ## 수정 후
 IncludeDispatchPermitTest 2/2 통과 · 전체 mvnw verify 415 tests, 실패 0 · 오류 0 · 건너뜀 0 · 하한 BACKEND_MIN=415 통과
+
+## 리뷰 반영 후 (INCLUDE 허용을 /error 로 좁힘)
+IncludeDispatchPermitTest 3/3 통과 — /error INCLUDE 통과 · /api/conversations INCLUDE 401 · 미인증 REQUEST 401. include 대상은 Tomcat 처럼 jakarta.servlet.include.request_uri 속성으로 준다
+전체 mvnw verify 416 tests, 실패 0 · 오류 0 · 하한 BACKEND_MIN=416 통과

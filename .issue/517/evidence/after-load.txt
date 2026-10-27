@@ -20,3 +20,17 @@
 ## 요약
 before 864요청 : ERROR 8줄(4건 x 2줄, 컨테이너 1 은 0) · after 1,296요청 : ERROR 0 · 다른 예외 0(에러 페이지가 커밋된 응답에 쓰다 실패하는 새 로그도 없음)
 한계 : 빈도가 낮아(컨테이너당 0~8줄) 0 은 통계적으로 강한 근거가 아니다. 결정적 근거는 IncludeDispatchPermitTest(수정 전 실패 → 후 통과)
+
+# after2 — 리뷰 반영(INCLUDE 허용을 /error 로 좁힘) + DispatcherServlet DEBUG 로 INCLUDE 경로가 실제로 돌았는지 확인
+조건 : 같은 부하, 컨테이너 4개(1,728요청). SPRING_APPLICATION_JSON 으로 org.springframework.web.servlet.DispatcherServlet=DEBUG
+ 컨테이너 1 : ERROR 0 · AuthorizationDenied 0 · Exception 줄 0 · /error INCLUDE 진입 1건
+ 컨테이너 2 : ERROR 0 · AuthorizationDenied 0 · Exception 줄 0 · /error INCLUDE 진입 3건
+ 컨테이너 3 : ERROR 0 · AuthorizationDenied 0 · Exception 줄 0 · /error INCLUDE 진입 1건
+ 컨테이너 4 : ERROR 0 · AuthorizationDenied 0 · Exception 줄 0 · /error INCLUDE 진입 1건
+
+## 발췌 (컨테이너 2)
+2026-10-27T05:12:04.095ZispatcherServlet        : Exiting from "ASYNC" dispatch, status 200
+2026-10-27T05:12:04.095ZispatcherServlet        : "INCLUDE" dispatch for POST "/error", parameters={}
+2026-10-27T05:12:04.099ZispatcherServlet        : Exiting from "INCLUDE" dispatch, status 200
+
+결론 : /error INCLUDE 가 실제로 6건 돌았고 전부 status 200 으로 끝났으며 ERROR · 예외 0 — 에러 페이지가 커밋된 응답에 쓰다 새 ERROR 를 남기는 경로(리뷰 M1)도 관찰되지 않았다
