@@ -1,0 +1,5 @@
+mvnw -B verify (Docker Testcontainers) exit=0
+Tests run: 399, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.281 s -- in com.ragchatbot.controller.ChatFlowTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.935 s -- in com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.ragchatbot.openai.OpenAiRealStreamingSpikeTest

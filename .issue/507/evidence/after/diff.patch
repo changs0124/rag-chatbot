@@ -1,0 +1,417 @@
+diff --git a/backend/src/main/java/com/ragchatbot/dto/ConversationDtos.java b/backend/src/main/java/com/ragchatbot/dto/ConversationDtos.java
+index 35fa820..5429f2c 100644
+--- a/backend/src/main/java/com/ragchatbot/dto/ConversationDtos.java
++++ b/backend/src/main/java/com/ragchatbot/dto/ConversationDtos.java
+@@ -28,7 +28,7 @@ public final class ConversationDtos {
+ 
+ 	/**
+ 	 * 메시지 + 출처(재조회 시 유지, REQ-RAG-002) + 첨부.
+-	 * 첨부 URL 은 조회 시점에 새로 서명함 - 저장된 URL 을 그대로 내리면 서명 토큰 TTL(15분) 뒤 404 가 됨.
++	 * 첨부 URL 은 조회 시점에 새로 서명함 - 저장된 URL 을 그대로 내리면 서명 토큰 TTL({@code FILE_ACCESS_TOKEN_TTL_MINUTES}) 뒤 404 가 됨.
+ 	 * {@code stopped} 는 중단으로 끝나 <b>출처 판정을 못 마친</b> 답변임 - 화면이 무자료 배너를 억제하는 데 씀.
+ 	 * {@code timedOut} 은 <b>서버가 스트림을 타임아웃으로 닫았음</b>(#84) - {@code stopped} 와의 조합은 {@code Message} 머리 주석.
+ 	 */
+diff --git a/backend/src/main/java/com/ragchatbot/entity/Message.java b/backend/src/main/java/com/ragchatbot/entity/Message.java
+index 8de296c..af0b10b 100644
+--- a/backend/src/main/java/com/ragchatbot/entity/Message.java
++++ b/backend/src/main/java/com/ragchatbot/entity/Message.java
+@@ -11,9 +11,9 @@ import java.util.UUID;
+  * 무자료 배너가 "출처 0건"만 보고 붙으면 중단된 답변에 거짓으로 붙기 때문임.
+  *
+  * <p>{@code timedOut} 은 <b>서버가 스트림을 타임아웃으로 닫았음</b>을 뜻함(#84). {@code stopped} 와
+- * 별개의 축인 이유는 타임아웃이 세 갈래로 갈리기 때문임 - 토큰이 흐르는 중이면 {@code stopped=true}
+- * 로, 토큰을 다 보낸 뒤 완료 응답만 늦게 오면 <b>전문이 그대로</b> {@code stopped=false} 로,
+- * 끝내 무응답이거나 첫 토큰 전에 닫혔으면 {@code status=error} 로 저장됨. 이 플래그가 없으면 앞의 둘이 각각 「사용자 중단」과
++ * 별개의 축인 이유는 타임아웃이 세 갈래로 갈리기 때문임 - ① 토큰이 흐르는 중이면 {@code stopped=true}
++ * 로, ② 토큰을 다 보낸 뒤 완료 응답만 늦게 오면 <b>전문이 그대로</b> {@code stopped=false} 로,
++ * ③ 끝내 무응답이거나 첫 토큰 전에 닫혔으면 {@code status=error} 로 저장됨. 이 플래그가 없으면 앞의 둘이 각각 「사용자 중단」과
+  * 「정상 완료」를, 마지막이 「진짜 오류」를 사칭함.
+  *
+  * <p>{@code inputTokens}·{@code outputTokens} 는 <b>null 이 될 수 있음</b>(FEAT-OPS-001). 사용자 메시지 ·
+diff --git a/backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java b/backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java
+index 4617b38..d18bba1 100644
+--- a/backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java
++++ b/backend/src/main/java/com/ragchatbot/openai/OpenAiMockService.java
+@@ -131,7 +131,7 @@ public class OpenAiMockService implements OpenAiService {
+ 	/** 목업 스토어 ID. 실 값과 구분되도록 접두를 붙임 */
+ 	static final String MOCK_STORE_ID = "mock-vector-store";
+ 
+-	/** 목업 스토어 - file_id → (파일명, 크기). 동기화(#193)가 파일명·크기를 돌려줘야 해 집합이 아니라 맵이다 */
++	/** 목업 스토어 - file_id → {@code StoreFile}(파일명, 크기). 동기화(#193)가 파일명·크기를 돌려줘야 해 집합이 아니라 맵이다 */
+ 	private final Map<String, StoreFile> mockDocuments = new ConcurrentHashMap<>();
+ 
+ 	@Override
+diff --git a/backend/src/main/java/com/ragchatbot/openai/OpenAiService.java b/backend/src/main/java/com/ragchatbot/openai/OpenAiService.java
+index f76043f..de68d55 100644
+--- a/backend/src/main/java/com/ragchatbot/openai/OpenAiService.java
++++ b/backend/src/main/java/com/ragchatbot/openai/OpenAiService.java
+@@ -100,7 +100,7 @@ public interface OpenAiService {
+ 	 *
+ 	 * <p>둘 중 뒤 단계가 실패하면 <b>고아 파일이 남으므로</b> 구현이 즉시 연결 해제 → 파일 삭제로 정리하고(#479, 해제가
+ 	 * 실패해도 파일은 지움), 파일 삭제도 실패하면 ERROR 로그에 file_id 를 남김(#476). 어느 경우에도 예외를 던져 호출자가
+-	 * DB 행을 만들지 않게 함. OpenAI 일시 장애(5xx · 429 · 연결 거절 · DNS 실패 · 경로 없음)는
++	 * DB 행을 만들지 않게 함. OpenAI 일시 장애(5xx · 429 · 연결 거절 · DNS 실패 · 경로 없음, 할당량 소진 429 는 제외 #479)는
+ 	 * {@code UpstreamUnavailableException}(503)으로, 파일 내용 거절(413 · 415)은 {@code BadRequestException}(400)으로 던짐.
+ 	 */
+ 	UploadedDocument uploadDocument(String filename, byte[] content);
+@@ -123,7 +123,7 @@ public interface OpenAiService {
+ 	 * 살아 있는 행으로 치지 않음) 관리자가 다시 지울 수 있다.
+ 	 *
+ 	 * <p><b>연결 해제 뒤 파일 삭제가 끝내 실패하면 ERROR 로 남긴다</b>(#476). 그 파일은 스토어 밖이라 동기화로도 다시 보이지
+-	 * 않는다 - 로그의 file_id 로 OpenAI 에서 직접 지운다. 일시 장애(5xx · 429 · 연결 거절 · DNS 실패 · 경로 없음)는
++	 * 않는다 - 로그의 file_id 로 OpenAI 에서 직접 지운다. 일시 장애(5xx · 429 · 연결 거절 · DNS 실패 · 경로 없음, 할당량 소진 429 는 제외 #479)는
+ 	 * 구현이 몇 번 다시 보낸다.
+ 	 */
+ 	void deleteDocument(String vectorStoreId, String openaiFileId);
+diff --git a/backend/src/main/java/com/ragchatbot/security/JwtService.java b/backend/src/main/java/com/ragchatbot/security/JwtService.java
+index 8cb20cf..5d7d67b 100644
+--- a/backend/src/main/java/com/ragchatbot/security/JwtService.java
++++ b/backend/src/main/java/com/ragchatbot/security/JwtService.java
+@@ -14,7 +14,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
+ 
+ /**
+  * JWT 발급/검증 (HS256, java-jwt). subject=userId 뿐이고 개인정보 클레임은 싣지 않음(#328).
+- * 토큰에 email 클레임이 남아 있어도 검증에서 보지 않으므로 그대로 통과함.
+  * 시크릿은 app.jwt.secret(env 주입). 비어 있으면 기동 시 실패시킴(운영 안전).
+  *
+  * <p>{@code auth_time} 은 최초 인증(로그인 · 비밀번호 변경) 시각이다. 재발급본은 이 값을 그대로 옮겨, 그로부터
+diff --git a/backend/src/main/java/com/ragchatbot/service/ChatService.java b/backend/src/main/java/com/ragchatbot/service/ChatService.java
+index 1253e60..23dd3c0 100644
+--- a/backend/src/main/java/com/ragchatbot/service/ChatService.java
++++ b/backend/src/main/java/com/ragchatbot/service/ChatService.java
+@@ -314,7 +314,7 @@ public class ChatService {
+ 	}
+ 
+ 	/**
+-	 * 중단·오류 경로의 부분 저장. 중단인데 받은 것이 없으면 아무것도 남기지 않음.
++	 * 중단·오류 경로의 부분 저장. 받은 것 없이 끝난 중단은 여기로 오지 않음 - 호출자가 질문을 걷음(#489).
+ 	 *
+ 	 * @param completion 스트림이 완주해 <b>손에 쥔 것이 있으면</b> 그것, 아니면 null. null 이면 인용 0건 ·
+ 	 *                   사용량 null 로 저장함 - 중단·업스트림 오류 경로는 완료 이벤트가 오기 전에 끝나
+@@ -322,9 +322,6 @@ public class ChatService {
+ 	 */
+ 	private void savePartial(PreparedChat prepared, UUID userId, UUID asstMsgId, String text, String status,
+ 			boolean stopped, boolean timedOut, ChatCompletion completion) {
+-		if (text.isEmpty() && "complete".equals(status)) {
+-			return;
+-		}
+ 		try {
+ 			chatPersistence.saveAssistant(prepared.conversationId(), userId, asstMsgId, text, status, stopped,
+ 					timedOut,
+diff --git a/backend/src/main/java/com/ragchatbot/service/FileService.java b/backend/src/main/java/com/ragchatbot/service/FileService.java
+index c059823..61d4ecf 100644
+--- a/backend/src/main/java/com/ragchatbot/service/FileService.java
++++ b/backend/src/main/java/com/ragchatbot/service/FileService.java
+@@ -45,7 +45,7 @@ public class FileService {
+ 	/** 첨부의 file_type - 받는 것이 이미지뿐이라 항상 이 값 */
+ 	private static final String FILE_TYPE = "image";
+ 
+-	/** 형식마다 상한이 같아 항목별로 두지 않는다 - 갈라 둘 이유가 생기면 그때 record 로 되돌린다 */
++	/** 형식마다 상한이 같아 항목별로 두지 않는다 - 갈라 둘 이유가 생기면 그때 {@code AllowedType} 에 넣는다 */
+ 	private static final long MAX_SIZE = 10 * MB;
+ 
+ 	/** content-type(맵 키) → (확장자, 매직바이트) */
+@@ -235,7 +235,7 @@ public class FileService {
+ 		return cutoff.isAfter(floor) ? floor : cutoff;
+ 	}
+ 
+-	/** 재조회 응답용 - 조회 시점에 새 서명 URL 을 발급함(저장된 URL 재사용 금지, TTL 15분) */
++	/** 재조회 응답용 - 조회 시점에 새 서명 URL 을 발급함(저장된 URL 재사용 금지, TTL 은 {@code FILE_ACCESS_TOKEN_TTL_MINUTES}) */
+ 	public String issueUrl(UUID fileId, UUID userId) {
+ 		return "/api/files/" + fileId + "?token=" + fileTokenService.issue(fileId, userId);
+ 	}
+diff --git a/backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java b/backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java
+index 793c169..0878ed5 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/AdminDocumentFlowTest.java
+@@ -11,7 +11,6 @@ import java.util.UUID;
+ import org.junit.jupiter.api.Test;
+ import org.springframework.dao.DataIntegrityViolationException;
+ import org.springframework.http.HttpEntity;
+-import org.springframework.http.HttpHeaders;
+ import org.springframework.http.HttpMethod;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.MediaType;
+diff --git a/backend/src/test/java/com/ragchatbot/controller/AdminDocumentSyncFlowTest.java b/backend/src/test/java/com/ragchatbot/controller/AdminDocumentSyncFlowTest.java
+index 661542c..f1d5689 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/AdminDocumentSyncFlowTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/AdminDocumentSyncFlowTest.java
+@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.dao.DuplicateKeyException;
+ import org.springframework.http.HttpEntity;
+-import org.springframework.http.HttpHeaders;
+ import org.springframework.http.HttpMethod;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.MediaType;
+diff --git a/backend/src/test/java/com/ragchatbot/controller/AttachmentQuotaTest.java b/backend/src/test/java/com/ragchatbot/controller/AttachmentQuotaTest.java
+index f816ec8..2ad8e5f 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/AttachmentQuotaTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/AttachmentQuotaTest.java
+@@ -11,7 +11,6 @@ import java.util.stream.Stream;
+ import org.junit.jupiter.api.Test;
+ import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.http.HttpEntity;
+-import org.springframework.http.HttpHeaders;
+ import org.springframework.http.HttpMethod;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.MediaType;
+diff --git a/backend/src/test/java/com/ragchatbot/controller/ChatFlowTest.java b/backend/src/test/java/com/ragchatbot/controller/ChatFlowTest.java
+index 2cb5d7b..8adbaed 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/ChatFlowTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/ChatFlowTest.java
+@@ -8,8 +8,8 @@ import java.util.Map;
+ 
+ import org.junit.jupiter.api.Test;
+ import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.http.HttpEntity;
+-import org.springframework.http.HttpHeaders;
+ import org.springframework.http.HttpMethod;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.MediaType;
+@@ -26,6 +26,10 @@ import tools.jackson.databind.ObjectMapper;
+  */
+ class ChatFlowTest extends AbstractPgIntegrationTest {
+ 
++	/** 상한은 베이스 프로퍼티에서 읽는다 - 사본을 두면 베이스를 바꿀 때 조용히 어긋난다 */
++	@Value("${app.ratelimit.chat-per-minute}")
++	int perMinute;
++
+ 	@Autowired
+ 	private OpenAiMockService mock;
+ 
+@@ -385,7 +389,6 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
+ 	void rate_limit_returns_429_when_exceeded() {
+ 		String token = createUser("chat-rl@b.com");
+ 		String convId = createConversation(token);
+-		int perMinute = 5;
+ 		int attempts = perMinute * 2 + 1;
+ 
+ 		boolean saw429 = false;
+@@ -397,6 +400,7 @@ class ChatFlowTest extends AbstractPgIntegrationTest {
+ 		}
+ 		assertThat(saw429).as("%d회 중 최소 1회는 429여야 함", attempts).isTrue();
+ 	}
++
+ 	/**
+ 	 * 이미 다른 메시지에 붙은 첨부는 <b>모델 호출 전에</b> 거절한다 (#99).
+ 	 *
+diff --git a/backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java b/backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java
+index a1361f5..41b7e0b 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/ChatStreamExceptionHandlerTest.java
+@@ -42,7 +42,7 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
+  */
+ @ExtendWith(OutputCaptureExtension.class)
+ @TestPropertySource(properties = {
+-		// 도중 오류 케이스(026)가 넉넉히 끝날 만큼 길게 두고, 타임아웃 케이스(025)는 래치로 그보다 오래 붙잡는다
++		// 도중 오류 케이스(033)가 넉넉히 끝날 만큼 길게 두고, 타임아웃 케이스(032)는 래치로 그보다 오래 붙잡는다
+ 		"app.chat.sse-timeout-ms=2000" })
+ class ChatStreamExceptionHandlerTest extends AbstractPgIntegrationTest {
+ 
+diff --git a/backend/src/test/java/com/ragchatbot/controller/FileFlowTest.java b/backend/src/test/java/com/ragchatbot/controller/FileFlowTest.java
+index 6203349..40e0b1b 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/FileFlowTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/FileFlowTest.java
+@@ -14,7 +14,6 @@ import java.util.UUID;
+ import org.junit.jupiter.api.Test;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.http.HttpEntity;
+-import org.springframework.http.HttpHeaders;
+ import org.springframework.http.HttpMethod;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.MediaType;
+diff --git a/backend/src/test/java/com/ragchatbot/controller/UploadRateLimitTest.java b/backend/src/test/java/com/ragchatbot/controller/UploadRateLimitTest.java
+index ea2bb30..c657b12 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/UploadRateLimitTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/UploadRateLimitTest.java
+@@ -6,7 +6,6 @@ import java.util.Map;
+ 
+ import org.junit.jupiter.api.Test;
+ import org.springframework.http.HttpEntity;
+-import org.springframework.http.HttpHeaders;
+ import org.springframework.http.HttpMethod;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.MediaType;
+diff --git a/backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java b/backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java
+index 6eb2458..6320317 100644
+--- a/backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java
++++ b/backend/src/test/java/com/ragchatbot/openai/OpenAiRealStreamingSpikeTest.java
+@@ -88,7 +88,7 @@ class OpenAiRealStreamingSpikeTest {
+ 		// 핵심 단언 - 응답이 끝나기 전에 첫 토큰이 클라이언트에 도착했음
+ 		assertThat(serverSawSignal)
+ 				.withFailMessage("첫 delta 를 흘렸는데 클라이언트가 응답 종료 전에 받지 못함 "
+-						+ "= RestClient 가 응답을 통째로 버퍼링함(M3 스파이크의 무효화 조건)")
++						+ "= RestClient 가 응답을 통째로 버퍼링함(스트리밍 전제의 무효화 조건)")
+ 				.isTrue();
+ 
+ 		assertThat(tokens).containsExactly("첫 조각", "둘째 조각");
+diff --git a/docs/06_changelog/CHANGELOG.md b/docs/06_changelog/CHANGELOG.md
+index 21bb7da..3fbbc04 100644
+--- a/docs/06_changelog/CHANGELOG.md
++++ b/docs/06_changelog/CHANGELOG.md
+@@ -21,6 +21,12 @@
+   - `backend/.env.example` · `docker-compose.yml` : DB 비밀번호 출처를 #415 이후 구성(앱 `APP_DB_*` · 마이그레이션 `POSTGRES_PASSWORD`)으로, `FILE_STORAGE_ROOT` 는 compose 가 `/data/uploads` 로 덮어씀을 명시
+   - `check-doc-sections.sh` : 「한 줄에 참조 둘인 줄은 없다」 → 있다(둘째 참조는 검사되지 않음)
+ 
++### Changed
++- **어긋난 · 낡은 코드 주석과 쓰이지 않는 작은 조각을 정리했다(#507, 10-27 전체 리뷰).** 동작 변화 없음 · 케이스 수 그대로(단언 1건 추가)
++  - 백엔드 : `ChatService.savePartial` 의 도달 불가 분기(#489 이후 빈 `complete` 는 오지 않음)와 Javadoc · `Message` 머리 주석의 타임아웃 세 갈래에 ①②③ 번호(`ChatService` 가 「갈래 ② · ③」으로 가리킴) · 「TTL 15분」 사본 → `FILE_ACCESS_TOKEN_TTL_MINUTES` · `OpenAiService` 일시 장애 429 에 「할당량 소진 제외(#479)」 · `FileService` · `OpenAiMockService` · `JwtService` 주석
++  - 프론트 : 「200 전에 끊긴 턴」 서술 6곳을 #489 이후 판정 대상(200 전, 또는 200 뒤 토큰 0개)으로 · `ChatPage` 콜백 안정성 주석 · `MessageList` 지연 로딩 주석 위치 · `RECHECK_REQUEST_TIMEOUT_MS` 의 쓰이지 않는 `export`
++  - 테스트 : 안 쓰는 `HttpHeaders` import 6곳 · `ChatFlowTest` 의 분당 상한을 베이스 프로퍼티에서 읽음 · `ChatStreamExceptionHandlerTest` 케이스 번호를 TC-OPS-032 · 033 으로 · 스파이크 테스트 실패 메시지 · `useChatRace.test` 「목록도 그대로다」에 목록 단언과 떠 있던 JSDoc 위치
++
+ ## [2026-10-26]
+ 
+ 운영 배포 5회 — 백엔드 `a89fb83`(#452 주석 · #453 · #454 · #470, 롤백 `prev-20f26b3`, 지시문 문자열은 `20f26b3` 과 같음) · `a05d994`(#469 지시문 한 줄, 롤백 `prev-a89fb83`) · `62b3c3f`(#476, 롤백 `prev-a05d994`) · `ef68f53`(전체 리뷰 후속 #479 · #485, #486 · #487 은 주석, 롤백 `prev-62b3c3f`) · `73bb76a`(#489 · #483 · #488, 롤백 `prev-ef68f53`). #468 · #467 은 백엔드 배포 없이 운영 Vector Store 문서 교체로 반영했다(#467 이 나중, 운영 백엔드는 `62b3c3f` 그대로). 프론트 변경(#456 등)은 merge 때 Vercel 이 자동 배포했다. 10-26 전체 리뷰 후속 8건(#479 · #480 · #481 · #482 · #484 · #485 · #486 · #487) merge. 케이스 수 하한(main 통합 실측) : 백엔드 386 → **397** · 프론트 222 → **257**.
+diff --git a/frontend/src/components/chat/Composer.tsx b/frontend/src/components/chat/Composer.tsx
+index 9bd72d3..3879706 100644
+--- a/frontend/src/components/chat/Composer.tsx
++++ b/frontend/src/components/chat/Composer.tsx
+@@ -46,12 +46,12 @@ export default function Composer({
+ }: {
+   /**
+    * 받아들였으면 true - 거절된 전송은 입력과 첨부 초안을 그대로 둔다(#323). 새 대화는 생성 왕복 뒤에 정해진다(#349).
+-   * 받아들인 턴이 서버에 닿기 전에 끊기면 `giveBack` 을 부른다 - 보낸 글과 첨부를 입력창에 되돌린다(#440)
++   * 받아들인 턴이 서버에 남지 않은 채 끊기면(200 전, 또는 200 뒤 토큰 0개 #489) `giveBack` 을 부른다 - 보낸 글과 첨부를 입력창에 되돌린다(#440)
+    */
+   onSend: (text: string, attachments: Attachment[], giveBack: (textOnly?: boolean) => void) => Promise<boolean>
+   streaming: boolean
+   /**
+-   * 200 전에 끊긴 턴이 서버에 닿았는지 확인하는 중(#483 F17). 이때 `streaming` 은 아직 참이지만 정지는 아무 일도 하지 않으므로
++   * 200 전(또는 200 뒤 토큰 0개, #489)에 끊긴 턴이 서버에 남았는지 확인하는 중(#483 F17). 이때 `streaming` 은 아직 참이지만 정지는 아무 일도 하지 않으므로
+    * 정지 버튼 대신 이유를 단 비활성 보내기를 보인다
+    */
+   settling?: boolean
+diff --git a/frontend/src/components/chat/MessageList.tsx b/frontend/src/components/chat/MessageList.tsx
+index 6135dcf..9bd7c3c 100644
+--- a/frontend/src/components/chat/MessageList.tsx
++++ b/frontend/src/components/chat/MessageList.tsx
+@@ -7,10 +7,10 @@ import ImageLightbox from './ImageLightbox'
+ import DocFigure from './DocFigure'
+ import { splitFigures } from '../../lib/docFigures'
+ 
+-// 지연 로딩(#417) - react-markdown · remark 묶음은 번들의 큰 몫인데 로그인 화면은 쓰지 않는다. 첫 답변을 그릴 때 받는다
+ function PlainText({ text }: { text: string }) {
+   return <p className="whitespace-pre-wrap break-words">{text}</p>
+ }
++// 지연 로딩(#417) - react-markdown · remark 묶음은 번들의 큰 몫인데 로그인 화면은 쓰지 않는다. 첫 답변을 그릴 때 받는다
+ // 청크를 못 받으면 평문으로 물러선다 - 재배포로 옛 청크가 사라지거나(SPA 리라이트가 HTML 을 돌려준다) 망이 끊기면
+ // lazy 가 던진 오류가 최상위 ErrorBoundary 까지 올라가 **앱 전체가 오류 화면**이 된다. ChatPage 가 미리 받아 둔다
+ const Markdown = lazy(() => import('./Markdown').catch(() => ({ default: PlainText })))
+diff --git a/frontend/src/hooks/useChat.ts b/frontend/src/hooks/useChat.ts
+index 7a663ed..1d5d603 100644
+--- a/frontend/src/hooks/useChat.ts
++++ b/frontend/src/hooks/useChat.ts
+@@ -13,7 +13,7 @@ import type { Attachment, ChatMessage, Conversation } from '../lib/types'
+ import { useStageQueue } from './useStageQueue'
+ 
+ /**
+- * 200 전 중단 · 실패의 판정 결과(#440 · #447 · #480). 훅은 이것을 화면에 적용만 한다.
++ * 서버에 질문이 남았는지 모르는 턴(200 전, 또는 200 뒤 토큰 0개에서 중단 · 실패, #489)의 판정 결과(#440 · #447 · #480). 훅은 이것을 화면에 적용만 한다.
+  * - `stored` : 질문이 저장된 것이 확실하다 - 이력(`saved`)을 못 받았어도 되돌리지 않는다
+  * - `deleted` : 새 대화가 비어 있어 지웠다(또는 이미 없다) - 저장된 것이 없다
+  * - `unknown` : 저장을 확인하지 못했다 - 글만 되돌리고 대화는 둔다
+@@ -31,7 +31,7 @@ type EarlyAbortOutcome =
+ export const RECHECK_INTERVAL_MS = 400
+ export const RECHECK_WINDOW_MS = 8000
+ /** 재확인 요청 하나의 시간 제한 - 매달린 요청이 판정을 붙들지 않게 한다 */
+-export const RECHECK_REQUEST_TIMEOUT_MS = 3000
++const RECHECK_REQUEST_TIMEOUT_MS = 3000
+ 
+ /** 이력의 마지막이 보낸 질문인지 - 답 행이 아직 없다 */
+ function endsWithQuestion(server: ChatMessage[], text: string) {
+@@ -90,7 +90,7 @@ async function recheckUnanswered(
+ }
+ 
+ /**
+- * 200 을 받기 전에 끊긴 턴의 질문이 서버에 있는지 서버에 물어 가른다(#440). 화면 상태는 건드리지 않는다.
++ * 200 을 받기 전에, 또는 200 뒤 토큰 0개에서(#489) 끊긴 턴의 질문이 서버에 있는지 서버에 물어 가른다(#440). 화면 상태는 건드리지 않는다.
+  *
+  * **200 이 없었다고 서버에 없는 것은 아니다**(#440 리뷰) - 서버는 질문 저장 · 첨부 연결을 커밋한 뒤에
+  * 200 을 돌려주므로, 그 사이에 끊으면 질문은 저장돼 있고 첨부는 이미 쓰였다.
+@@ -143,7 +143,7 @@ export function useChat() {
+   // send 의 거절 판정용 사본(#323) - 고른 직후 같은 틱의 전송도 막으려고 상태와 함께 바로 쓴다
+   const loadingRef = useRef(false)
+   const [streaming, setStreaming] = useState(false)
+-  // 200 전에 끊긴 턴을 서버에 물어 가르는 중(#483 F17). streaming 도 참인 구간이다 - 입력창이 정지 버튼 대신 비활성 보내기를 보이게 한다
++  // 200 전(또는 200 뒤 토큰 0개, #489)에 끊긴 턴을 서버에 물어 가르는 중(#483 F17). streaming 도 참인 구간이다 - 입력창이 정지 버튼 대신 비활성 보내기를 보이게 한다
+   const [settling, setSettling] = useState(false)
+   // 진행 단계(REQ-CHAT-005) - 휘발성 표시라 저장하지 않음. 중단·오류에서는 즉시 비움
+   const { stage, pushStage, clearStages } = useStageQueue()
+@@ -513,7 +513,7 @@ export function useChat() {
+    * 조용히 버리면 입력이 사라지고 이미 올린 첨부는 회수 크론을 기다리는 고아가 된다.
+    *
+    * 기존 대화는 곧바로, 새 대화는 **생성 왕복이 끝난 뒤에** 정해진다(#349) - 생성이 실패하면 보낸 것이 없다.
+-   * 받아들인 뒤 200 전에 중단 · 실패했고 서버에 질문이 없으면 `giveBack` 으로 알린다(#440 · #480) - 입력창은 이미 비웠으므로 되돌릴 몫이 거기 있다.
++   * 받아들인 뒤 200 전(또는 200 뒤 토큰 0개, #489)에 중단 · 실패했고 서버에 질문이 없으면 `giveBack` 으로 알린다(#440 · #480) - 입력창은 이미 비웠으므로 되돌릴 몫이 거기 있다.
+    * 거절 판정과 생성 중 표시는 같은 틱에 끝나므로 같은 틱의 두 번째 전송도 막힌다.
+    *
+    * 이력 로딩 중에도 거절한다. 받아 들이면 말풍선이 직전 대화의 목록에 붙고, 곧 도착한 이력이 목록을
+diff --git a/frontend/src/hooks/useChatRace.test.ts b/frontend/src/hooks/useChatRace.test.ts
+index 702928b..5721a15 100644
+--- a/frontend/src/hooks/useChatRace.test.ts
++++ b/frontend/src/hooks/useChatRace.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, it, expect, vi, afterEach } from 'vitest'
+-import { act, renderHook } from '@testing-library/react'
++import { act, renderHook, waitFor } from '@testing-library/react'
+ import { useChat } from './useChat'
+ import type { ChatMessage, Conversation } from '../lib/types'
+ import { conv, deferred, msg } from '../test/fixtures'
+@@ -14,7 +14,7 @@ vi.mock('../lib/endpoints', () => ({
+   streamChat: vi.fn().mockResolvedValue(undefined),
+ }))
+ 
+-const { createConversation, getMessages, streamChat, deleteConversation, renameConversation } =
++const { listConversations, createConversation, getMessages, streamChat, deleteConversation, renameConversation } =
+   await import('../lib/endpoints')
+ 
+ /**
+@@ -242,14 +242,17 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
+    * 콘솔에는 unhandled rejection 만 남는다.
+    */
+   it('삭제가 실패하면 오류가 뜨고 목록도 그대로다', async () => {
++    vi.mocked(listConversations).mockResolvedValueOnce([conv('A')])
+     vi.mocked(deleteConversation).mockRejectedValue(new Error('network'))
+     const { result } = renderHook(() => useChat())
++    await waitFor(() => expect(result.current.conversations).toHaveLength(1))
+ 
+     await act(async () => {
+       await result.current.deleteConversation('A')
+     })
+ 
+     expect(result.current.error).toBeTruthy()
++    expect(result.current.conversations.map((c) => c.id)).toEqual(['A'])
+   })
+ 
+   /** 이름 변경도 같다 - 실패하면 헤더가 옛 제목으로 조용히 되돌아가던 자리다 */
+@@ -264,7 +267,6 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
+     expect(result.current.error).toBeTruthy()
+   })
+ 
+-  /** 반대편 - 성공하면 오류가 뜨지 않고 목록에서 빠진다 */
+   /**
+    * #251 — 지금 보던 A 를 지우는 사이 B 로 옮기면, 삭제 응답이 B 를 끊고 비우지 않는다.
+    * 고치기 전에는 삭제를 시작할 때 잡은 activeId(A)로 비교해 B 의 메시지 로드를 버리고 빈 화면이 됐다.
+@@ -312,6 +314,7 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
+     expect(result.current.messages).toEqual([])
+   })
+ 
++  /** 반대편 - 성공하면 오류가 뜨지 않고 목록에서 빠진다 */
+   it('삭제가 성공하면 오류 없이 목록에서 빠진다', async () => {
+     vi.mocked(deleteConversation).mockResolvedValue(undefined)
+     const { result } = renderHook(() => useChat())
+diff --git a/frontend/src/pages/ChatPage.tsx b/frontend/src/pages/ChatPage.tsx
+index 4770c61..286bc71 100644
+--- a/frontend/src/pages/ChatPage.tsx
++++ b/frontend/src/pages/ChatPage.tsx
+@@ -84,7 +84,7 @@ export default function ChatPage() {
+   }
+ 
+   // 사이드바에 넘기는 핸들러는 참조를 고정한다(#405) - 매 렌더 새 함수면 Sidebar 의 memo 가 스트리밍 토큰마다 무너진다.
+-  // useChat 의 두 콜백은 이미 안정적이다
++  // useChat 의 두 콜백은 토큰마다 바뀌지 않는다 - selectConversation 은 대화가 바뀔 때만 새로 만들어진다
+   const { newConversation, selectConversation } = chat
+ 
+   // 사이드바 버튼과 모바일 헤더 버튼이 같이 쓴다 - 모바일 드로어가 열려 있으면 닫는다
