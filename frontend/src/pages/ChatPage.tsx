@@ -252,7 +252,7 @@ export default function ChatPage() {
       {pendingLeave && (
         <ConfirmModal
           title="답변을 중단하고 이동할까요?"
-          message="답변 생성이 멈추고, 지금까지 받은 부분만 남습니다."
+          message="답변 생성이 멈추고, 지금까지 받은 부분만 남습니다. 답이 시작되기 전이면 보낸 질문도 남지 않습니다."
           confirmLabel="중단하고 이동"
           onConfirm={() => {
             leave(pendingLeave)

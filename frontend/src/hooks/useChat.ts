@@ -189,7 +189,8 @@ export function useChat() {
     clearStages()
     // 판정(재확인) 중에 떠나면 옮겨 간 화면의 보내기를 막지 않게 놓아 준다(#489 리뷰). 판정은 뒤에서 이어 가고,
     // 그 턴의 finally 는 자기 컨트롤러가 아니면 상태를 건드리지 않는다
-    // 확인 중 문구(settling, #483)도 함께 내린다 - 옮겨 간 화면에 남지 않게
+    // 확인 중 문구(settling, #483)도 함께 내린다 - 옮겨 간 화면에 남지 않게.
+    // 판정 전에 떠나 이 abort 가 판정을 일으킨 경우는 아직 놓아 줄 것이 없어, run 의 catch 가 놓아 준다(#505)
     if (judgingRef.current && judgingRef.current === abortRef.current) {
       abortRef.current = null
       setStreaming(false)
@@ -439,9 +440,15 @@ export function useChat() {
         if (unconfirmed) {
           // 200 전 중단 · 실패는 서버에 물어서 가른다(judgeEarlyAbort, #480 에서 실패까지, #489 에서 200 뒤 토큰 0개 중단 · 끊김까지 넓힘).
           // 이 확인이 끝날 때까지 streaming 이 참이라 그사이 다시 보내기는 거절된다. 그 구간을 settling 으로 드러낸다(#483)
-          setSettling(true)
           // 판정 구간 전체를 판정 턴으로 표시한다 - 그사이 대화를 옮기면 abortActiveStream 이 잠금 · settling 을 푼다(#489 리뷰)
           judgingRef.current = controller
+          if (generation.current === mine) setSettling(true)
+          else if (abortRef.current === controller) {
+            // 대화를 옮긴 것이 이 중단을 일으켰으면(#505) abortActiveStream 이 돌 때는 아직 판정 전이라 놓아 줄 것이 없었다 -
+            // 여기서 놓아 준다. 판정은 뒤에서 이어 간다
+            abortRef.current = null
+            setStreaming(false)
+          }
           const id = convId
           // 4xx 거절은 저장되지 않은 것이 확실해 기존 대화는 묻지 않는다. 새 대화는 빈 대화를 지워야 하므로 조건부 삭제는 그대로 탄다.
           // 단 기존 대화의 404 는 대화가 지워졌을 수 있어(다른 탭) 이력으로 확인한다 - 「첨부 없음」도 404 라 코드만으로는 못 가른다
