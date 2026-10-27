@@ -1,0 +1,10 @@
+# 회귀 테스트 IncludeDispatchPermitTest
+## 수정 전
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 10.80 s <<< FAILURE! -- in com.ragchatbot.security.IncludeDispatchPermitTest
+[ERROR] com.ragchatbot.security.IncludeDispatchPermitTest.container_include_of_the_error_page_is_not_denied -- Time elapsed: 0.013 s <<< FAILURE!
+Expecting AtomicBoolean(false) to have value:
+Expecting AtomicBoolean(false) to have value:
+[ERROR] Tests run: 2, Failures: 1, Errors: 0, Skipped: 0
+
+## 수정 후
+IncludeDispatchPermitTest 2/2 통과 · 전체 mvnw verify 415 tests, 실패 0 · 오류 0 · 건너뜀 0 · 하한 BACKEND_MIN=415 통과
