@@ -4,7 +4,7 @@
 답변에는 근거 자료의 출처를 항상 함께 보여 준다. 「자료 없음」 표시는 텍스트 접두가 아니라 **출처 0건에서 파생**한다 —
 자료가 없으면 그 사실을 밝힌 뒤 추론으로 답한다. 질문에 첨부한 이미지는 모델의 비전 입력으로 전달된다.
 
-> **데모** — https://rag-chatbot-jade-pi.vercel.app
+> **운영** — https://rag-chatbot-jade-pi.vercel.app
 > 가입 화면은 없다. **계정은 관리자가 발급**하므로 계정 없이는 로그인 화면까지만 볼 수 있다.
 
 ## 주요 기능
@@ -75,17 +75,7 @@ Maven Central 에서 내려받아, 그 요청이 거절되면 이미지 빌드�
 환경변수 전량과 빠뜨렸을 때의 증상은 `.env.example` 파일 셋이 정본이다 —
 `backend/.env.example`(앱) · `.env.example`(compose 의 DB 자격) · `frontend/.env.example`(프론트).
 
-| 변수 | 쓰임 |
-|------|------|
-| `APP_MODE` | `mock` \| `live`. **기본값이 없어** 비우면 기동에 실패한다 |
-| `JWT_SECRET` | 32바이트 이상. 짧거나 비면 기동에 실패한다 |
-| `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` · `OPENAI_MODEL` | `live` 에서만. 모델 기본값은 `OPENAI_MODEL` 항목(`backend/.env.example`). 스토어 ID 를 비우면 출처가 늘 0건(전부 「자료 없음」) |
-| `ALLOWED_EMAIL_DOMAINS` | 계정을 만들 수 있는 도메인. **`live` 에서는 필수** |
-| `ADMIN_EMAILS` | 관리자 명단. 계정이 없는 주소는 기동 시 만들어지고 임시 비밀번호가 로그에 한 번 찍힌다 |
-| `ALLOWED_ORIGINS` | CORS 허용 출처. 기본값은 `http://localhost:5173` 하나뿐이다 |
-| `VITE_API_BASE_URL` | 프론트가 부를 백엔드 주소. 빌드 시점에 번들에 박힌다 |
-
-**목업 모드**(OpenAI 키 불필요)는 `APP_MODE=mock` · `JWT_SECRET` · `DB_*` 만 있으면 기동된다. 로그인하려면 `ADMIN_EMAILS` 도 준다(위 표 — 첫 계정은 여기서만 생긴다).
+**목업 모드**(OpenAI 키 불필요)는 `APP_MODE=mock` · `JWT_SECRET` · `DB_*` 만 있으면 기동된다. 로그인하려면 `ADMIN_EMAILS` 도 준다(첫 계정은 여기서만 생긴다).
 **실 연동 모드**는 여기에 `APP_MODE=live` · `OPENAI_API_KEY` · `OPENAI_VECTOR_STORE_ID` · `ALLOWED_EMAIL_DOMAINS` 를 더한다.
 
 백엔드 — 둘 중 하나로 띄운다 :
@@ -100,8 +90,7 @@ cd backend && ./mvnw spring-boot:run          # http://localhost:8080
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app
 ```
 
-compose 는 app 에 `prod` 프로필을 기본으로 켜고, `prod` + `APP_MODE=mock` 조합은 기동을 막는다.
-compose 로 목업을 띄울 때만 `SPRING_PROFILES_ACTIVE=` 로 비운다.
+compose 로 목업을 띄우는 법(`prod` 프로필과의 관계)은 `docs/02_architecture/backend.md` 「실행 모드」에 있다.
 
 프론트 :
 

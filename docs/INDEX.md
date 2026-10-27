@@ -27,10 +27,8 @@
 | [디자인 시스템](./02_architecture/design-system.md) | 색 토큰 · 타이포 · 모션 · 컴포넌트 규칙 |
 | [Conventions](./CONVENTIONS.md) | 코드 스타일 & 패턴 규칙 |
 | [Feedback](./FEEDBACK.md) | 다건 수정 요청을 모아 한 번에 전달 |
-| [References](./03_references/) | 외부 레퍼런스(디자인 · API · 라이브러리) |
 | [Current Tasks](./04_tasks/current-sprint.md) | 현재 진행 중 작업 |
 | [Backlog](./04_tasks/backlog.md) | 코드베이스에서 확인된 미결 항목 |
-| [Open Issues](./05_issues/open/) | 골격(`.gitkeep`, 해결분 자리는 `05_issues/resolved/`) — 이슈는 GitHub Issues |
 | [Changelog](./06_changelog/CHANGELOG.md) | 변경 이력 |
 
 **정본 위치** — `REQ-` 는 요구사항정의서, `FEAT-` 는 기능명세서, `API-` 는 API 명세서,
@@ -54,4 +52,8 @@
 
 문서에 없는 파일 경로를 적으면 CI의 `scripts/check-doc-refs.sh`가 실패한다. 푸시 전에 `bash scripts/check-all.sh docs` 로 미리 확인할 수 있다.
 
-루트 `CLAUDE.md`의 행동 지침(가정 금지 · 단순함 우선 · 외과적 변경 · 목표 기반 실행)이 이 가이드의 1~4번보다 우선한다.
+아래 행동 지침이 위 1~4번보다 우선한다.
+- **가정 금지** — 해석이 갈리거나 불확실하면 고르지 말고 묻는다
+- **단순함 우선** — 요청 밖의 기능 · 추상화 · 설정을 넣지 않는다
+- **외과적 변경** — 요청과 무관한 줄은 건드리지 않고, 내 변경이 남긴 찌꺼기만 치운다
+- **목표 기반 실행** — 검증할 수 있는 완료 기준을 먼저 정하고, 통과할 때까지 돈다
