@@ -229,6 +229,28 @@ echo '';
 if sudo docker image inspect '$PREV' >/dev/null 2>&1; then echo '되돌리려면 (load 전에 $PREV 로 태그한 이미지) :'; echo \"  cd $REMOTE_DIR && sudo docker tag $PREV $IMAGE && sudo docker compose up -d\"; else echo '$PREV 가 없어 되돌릴 이미지가 없다 - 고친 커밋을 다시 배포할 것'; fi;
 exit 1"
 
+# **터널도 확인한다(#528).** 위 헬스체크는 서버 안 8080 만 보므로, cloudflared 가 엣지에 붙지 못해도
+# (토큰 파일 권한 · 다이제스트를 올린 새 버전의 회귀 등) 여기까지 통과해 「배포 완료」가 찍히고 서비스는 바깥에서 끊긴 채 남는다.
+# `cloudflared tunnel ready` 는 메트릭 서버의 `/ready`(엣지 연결 1개 이상이면 200)로 종료 코드를 준다.
+# 포트 20241 : cloudflared 는 20241~20245 중 처음 비어 있는 포트에 메트릭 서버를 띄우고, 컨테이너 안 프로세스가 하나뿐이라 20241 이다
+# (2026.10.5 실측 - 보장은 아니다. 기본 주소가 바뀌거나 compose command 에 `--metrics` 를 넣으면 정상 터널도 여기서 실패하니 실패 출력에 그 가능성을 적는다).
+# 호스트에는 열지 않는다 - 컨테이너 안에서 묻는다. 실패하면 6단계 정리를 하지 않고 멈춘다 - `:previous` 는 남지만,
+# 같은 배포를 다시 돌리면 4단계가 지금 healthy 인 새 app 이미지로 덮는다(터널 실패는 app 탓이 아니라 감수한다).
+# `</dev/null` : `exec -T` 는 stdin 을 연결한 채 두므로 ssh 의 stdin 을 넘겨받지 않게 막는다.
+say "터널 준비 확인 (최대 30초)"
+ssh_run "cd '$REMOTE_DIR';
+for i in \$(seq 1 6); do if sudo docker compose exec -T cloudflared cloudflared tunnel --metrics 127.0.0.1:20241 ready </dev/null >/dev/null 2>&1; then echo \"OK (\$(( (i - 1) * 5 ))초 경과)\"; exit 0; fi; sleep 5; done;
+echo '=== 터널 준비 실패 - app 은 healthy 지만 바깥에서 닿지 않는다 ===';
+sudo docker compose exec -T cloudflared cloudflared tunnel --metrics 127.0.0.1:20241 ready </dev/null || true;
+sudo docker compose ps cloudflared;
+sudo docker compose logs --tail=30 cloudflared;
+echo '';
+echo '로그에 엣지 등록 성공(Registered tunnel connection)이 있는데 실패했다면 메트릭 주소가 20241 이 아닐 수 있다 - 위 메트릭 서버 줄을 볼 것.';
+echo 'cloudflared 다이제스트를 바꾼 배포라면 되돌리는 법 (backend.md 「감수하는 약점」) :';
+echo '  1) 서버 : cd $REMOTE_DIR, docker-compose.yml 의 cloudflared image 를 이전 다이제스트로 고치고 sudo docker compose up -d cloudflared';
+echo '  2) 저장소 : compose 다이제스트를 되돌리는 커밋 - 안 하면 다음 deploy.sh 가 서버 compose 를 덮는다';
+exit 1"
+
 # 6. 옛 이미지 정리 ---------------------------------------------------------
 # **헬스체크가 통과한 뒤에야 옛 이미지를 버린다(#129)** - 레지스트리가 없어 서버의 옛 이미지가 유일한 롤백 자산이다.
 say "옛 이미지 정리"
