@@ -325,6 +325,8 @@ public class OpenAiRealService implements OpenAiService {
 		Integer inputTokens = null;
 		Integer outputTokens = null;
 		boolean completed = false;
+		// 업스트림이 보낸 실패 사유(error · response.failed). 완료 없이 끝났을 때 예외에 실어 로그로 원인을 가름(#536)
+		String failure = null;
 		boolean searchingSent = false;
 		boolean generatingSent = false;
 		// 확인 단계에 실은 자료명 - 검색이 여러 번 돌면 이름을 모아 새 이름이 생길 때만 다시 올림
@@ -395,6 +397,14 @@ public class OpenAiRealService implements OpenAiService {
 					inputTokens = intOrNull(response.path("usage"), "input_tokens");
 					outputTokens = intOrNull(response.path("usage"), "output_tokens");
 					completed = true;
+				} else if ("error".equals(type)) {
+					// 크레딧 소진은 HTTP 200 으로 열린 스트림에 error → response.failed 로 온다(#536).
+					// 사유는 error 안에 실려 왔지만 문서에는 이벤트 맨 위에 두는 모양도 있어 둘 다 읽는다(리뷰 지적)
+					JsonNode error = ev.path("error");
+					failure = failureOf(error.isObject() ? error : ev);
+				} else if ("response.failed".equals(type) && failure == null) {
+					// error 가 먼저 와 사유를 남겼으면 그것을 둔다 - 둘이 같은 사유를 싣는다(10-28 실측)
+					failure = failureOf(ev.path("response").path("error"));
 				}
 			}
 		} catch (RuntimeException e) {
@@ -405,12 +415,28 @@ public class OpenAiRealService implements OpenAiService {
 
 		// 완료 이벤트 없이 스트림이 끝나면 업스트림 실패를 무자료 성공으로 위장하지 않고 오류로 처리.
 		if (!completed) {
-			throw new IllegalStateException("OpenAI 스트림이 완료(response.completed) 없이 종료됨");
+			throw new IllegalStateException(failure == null
+					? "OpenAI 스트림이 완료(response.completed) 없이 종료됨"
+					: "OpenAI 응답이 실패로 끝남 " + failure);
 		}
 
 		// 저장 텍스트 = 스트리밍으로 내보낸 것과 정확히 같음(화면·재조회 불일치 방지)
 		boolean noSource = citations.isEmpty();
 		return new ChatCompletion(buffer.toString(), citations, noSource, inputTokens, outputTokens);
+	}
+
+	/**
+	 * 실패 사유 한 줄(칸이 다 비면 null). 업로드 경로의 {@link #upstreamSummary} 와 같은 모양에 type 을 더함 - 크레딧 소진은 code 가
+	 * credit_balance_exhausted, type 이 insufficient_quota 로 온다. 다시 시도해도 같아 오류로 둔다(#479 와 같은 판단)
+	 */
+	private static String failureOf(JsonNode error) {
+		// 사유 칸이 다 비면 null - 「code= type= message=」 는 예전 문구보다 헷갈린다(리뷰 지적)
+		if (error.path("code").asString("").isEmpty() && error.path("type").asString("").isEmpty()
+				&& error.path("message").asString("").isEmpty()) {
+			return null;
+		}
+		return oneLine("code=" + error.path("code").asString("") + " type=" + error.path("type").asString("")
+				+ " message=" + error.path("message").asString(""));
 	}
 
 	/**
