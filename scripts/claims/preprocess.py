@@ -237,11 +237,11 @@ def claims_to_md(xlsx, terms):
         lines = []
         for y, m in sorted(g.items()):
             q = [sum(m[i] for i in range(s, s + 3)) for s in (1, 4, 7, 10)]
-            lines.append(f"- {label} {y}년 : {sum(m.values())}건 · 상반기(1~6월) {q[0] + q[1]}건 · 하반기(7~12월) {q[2] + q[3]}건 · "
-                         + " · ".join(f"{i + 1}분기 {n}건" for i, n in enumerate(q)) + " · "
+            lines.append(f"- {label} {y}년 : {sum(m.values())}건 · {y}년 상반기(1~6월) {q[0] + q[1]}건 · {y}년 하반기(7~12월) {q[2] + q[3]}건 · "
+                         + " · ".join(f"{y}년 {i + 1}분기 {n}건" for i, n in enumerate(q)) + " · "
                          + " · ".join(f"{y}년 {i}월 {m[i]}건" for i in range(1, 13)))
         undated_n = sum(not isinstance(r[key], dt.datetime) for r in recs)
-        return lines + ([f"- {label}이 날짜가 아닌 클레임 {undated_n}건은 위 줄에서 뺐다"] if undated_n else [])
+        return lines + ([f"- {label} 값이 날짜가 아닌 클레임 {undated_n}건은 위 줄에서 뺐다"] if undated_n else [])
 
     machines = machine_lines()
     out = [
