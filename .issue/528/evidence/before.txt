@@ -1,0 +1,34 @@
+$ grep -n "헬스체크\|localhost:8080\|배포 완료\|tunnel" scripts/deploy.sh
+59:	tunnel_secret
+96:# **터널 토큰 파일을 확인한다(#203).** 토큰은 환경변수가 아니라 `secrets/tunnel_token` 으로 넘긴다 -
+102:tunnel_secret() {
+104:d=\"$REMOTE_DIR/secrets\"; f=\"\$d/tunnel_token\"
+106:  echo '  secrets/tunnel_token 이 없거나 비어 있다 - 터널이 뜨지 않는다. .env.example 의 Cloudflare Tunnel 절 참고' >&2
+164:# 뒤의 헬스체크는 **옛 컨테이너가 돌려주는 200** 을 보고 즉시 성공으로 판정한다 -
+165:# 새 코드가 한 줄도 안 올라갔는데 "배포 완료"가 찍힌다. 헬스체크가 "8080 에서 누가 200 을
+168:# 옛 이미지 정리(prune)는 여기서 하지 않는다 - 헬스체크를 통과한 뒤로 미룬다(6단계 주석 참고).
+172:# 헬스체크 실패 출력(로그 · OOM · `:previous` 되돌리기 안내)을 못 본다. 죽은 컨테이너도 이미지 ID 는 대조되고
+173:# 이후 헬스체크가 실패를 제대로 보고한다.
+176:# 것은 태그를 잃고 dangling 이 된다. 헬스체크 실패 시 되돌릴 유일한 자산인데 이름이 없으면
+200:elif sudo docker image inspect '$PREV' >/dev/null 2>&1; then echo \"  app 헬스체크 상태 \$health - 남아 있는 $PREV(\$(sudo docker image inspect -f '{{.Id}}' '$PREV'))를 그대로 둔다. 실행 중 app 이미지 : \$running\";
+201:elif sudo docker image inspect '$IMAGE' >/dev/null 2>&1; then sudo docker tag '$IMAGE' '$PREV'; echo \"  app 헬스체크 상태 \$health - $IMAGE 를 $PREV 로 남긴다\";
+215:# 5. 헬스체크 ----------------------------------------------------------------
+217:say "헬스체크 (최대 90초)"
+219:for i in \$(seq 1 18); do code=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/health || true); if [ \"\$code\" = '200' ]; then echo \"OK (\$(( (i - 1) * 5 ))초 경과)\"; exit 0; fi; sleep 5; done;
+220:echo '=== 헬스체크 실패 ===';
+233:# **헬스체크가 통과한 뒤에야 옛 이미지를 버린다(#129)** - 레지스트리가 없어 서버의 옛 이미지가 유일한 롤백 자산이다.
+238:say "배포 완료"
+
+# 판정 : 배포 성공 조건은 app 의 localhost:8080/api/health 200 뿐 - 터널 상태를 보지 않는다
+
+# 터널이 못 붙는 상황 재현(로컬, 더미 토큰) - 지금 deploy.sh 라면 이 상태로도 「배포 완료」
+$ docker exec cf528b cloudflared tunnel --metrics 127.0.0.1:20241 ready
+http://127.0.0.1:20241/ready endpoint returned status code 503
+{"status":503,"readyConnections":0,"connectorId":"af9bcdfc-221d-416f-99e2-9eec40088459"}
+exit=1
+2026-10-27T23:59:09Z INF Starting metrics server on [::]:20241/metrics
+2026-10-27T23:59:09Z ERR Register tunnel error from server side error="Failed to get tunnel" connIndex=0 event=0 ip=198.41.192.77
+
+# 운영(정상 터널) 같은 명령
+$ ssh chseong-seoul-01 sudo docker exec deploy-cloudflared-1 cloudflared tunnel --metrics 127.0.0.1:20241 ready
+exit=0
