@@ -10,8 +10,6 @@
 
 ### Docs
 - **문서 사이의 중복 서술을 정본 하나로 줄였다(#539, 「같은 사실은 한 곳에만」).** 명세 · 설계 문서 여섯(`requirements` · `features` · `api` · `erd` · `live-integration` · `design-system`)의 머리표(문서 버전 · 최종 수정일 · 작성자 · 런칭일)를 지웠다 — 어떤 검사 스크립트도 읽지 않고 이력은 git 과 CHANGELOG 가 정본이라, 손으로 고치는 날짜만 남아 있었다. `requirements.md` 는 7절(마일스톤 — CHANGELOG 사본)을 지우고 3절(주요 사용자)을 2절(이해관계자) 표에 합쳐 절 번호를 당겼다. `README.md` 는 구성도 · Maven 이미지 사유 · 배포 세부 · 케이스 하한 · CI 잡 수 문단을 정본(`overview.md` · `backend.md` 「배포」 · `CONVENTIONS.md`) 포인터로 줄였고, `INDEX.md` 의 「CI 7잡」 숫자도 뺐다. `CONVENTIONS.md` 는 같은 `gh api …/rules/branches/main` 을 두 번 설명하던 절을 하나로 합치고 케이스 하한 규칙을 `case-floors.env` 머리 주석 포인터로 바꿨다. `overview.md` 는 업로드 한도(정본 yml · `features.md` · `api.md`) · 백업 세부(`backend.md`) · 빈 「페이지 URL 맵」 절 · 데이터 모델 재서술을 포인터로 줄였다. `INDEX.md` 의 행동 지침 4줄은 루트 `CLAUDE.md` 가 `.gitignore` 대상이라 저장소 안 유일한 사본이므로 그대로 둔다. 동작 변화 없음
-
-### Docs
 - **작업 문서(`current-sprint.md` · `backlog.md`)에 쌓인 낡은 내용과 다른 문서의 사본을 지웠다(#538).** `current-sprint.md` 는 「아직 안 끝난 것만」 이 규칙인데, 배포마다 손으로 고치던 운영 커밋 줄(세 배포 전 `bcb94fb` 로 남아 있었다) · 마지막 업데이트 날짜 · 빈 「블로커」 절 · `frontend.md` 「남은 한계」 와 겹치는 다음 할 일 후보(전송 식별자)가 남아 있었다. 문서에 다른 기록이 없는 첫 토큰 전 heartbeat 후보와 #105(`wontfix` 영구 기록) 한 줄은 「다음 후보」 절로 남겼다. 닫은 이슈의 모델 응답 관찰 4개(#431 · #467 · 인용 표기 누락 · 이력 예산)는 횟수를 그대로 `live-integration.md` 「3-3. 지켜보는 응답 변동」 으로 옮겼고, 모델과 무관한 CI 콜드 실행 지연 · Cloudflare 502 는 `current-sprint.md` 「지켜보는 것」 에 남겼다. `backlog.md` 는 빈 우선순위 절 둘을 지우고, 미구현 항목 표의 「지금 상태」 열(`overview.md` 「알려진 제약」 · `features.md` 범위 밖의 사본)을 빼 권장안만 남겼다. 동작 변화 없음
 
 ## [2026-10-28]

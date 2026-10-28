@@ -90,6 +90,7 @@ CORS 기본값이 5173 하나라 다른 포트로 띄우면 `ALLOWED_ORIGINS` �
 cd backend && ./mvnw verify                   # 테스트 + 빌드 (Testcontainers 라 Docker 필요)
 cd frontend && npm run lint && npm test && npm run build
 bash scripts/check-all.sh                     # CI 가 돌리는 검사를 푸시 전에 로컬에서 예행
+bash scripts/check-all.sh docs                # 문서 검사만
 ```
 
 CI 잡 · 케이스 수 하한 · 게이트 목록은 [CONVENTIONS](docs/CONVENTIONS.md) 「테스트·CI 게이트」가 정본이다.
