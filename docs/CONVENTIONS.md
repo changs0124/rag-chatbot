@@ -106,7 +106,7 @@
 - `scripts/check-merge-markers.sh` 가 줄 맨 앞의 **병합 충돌 표시**(`<<<<<<< ` · `>>>>>>> ` · `||||||| `)를 추적 중인 파일과 추적 전 새 파일에서 찾는다(#210).
 - `scripts/check-doc-refs.sh`가 `docs/`·`README.md`의 참조 실재를 검사한다. **없는 파일 경로를 문서에 적으면 CI가 실패한다.**
 - `scripts/check-doc-sections.sh` 가 **파일 참조가 바로 앞에 붙은** 「섹션」 이름이 대상 파일 헤딩에 있는지 본다(#60).
-- `scripts/check-runtime-versions.sh`가 `.nvmrc`·`backend/pom.xml`의 런타임 버전과 CI 설정이 갈리지 않는지 대조한다.
+- `scripts/check-runtime-versions.sh`가 `.nvmrc`·`backend/pom.xml`의 런타임 버전과 CI 러너에서 실제로 도는 런타임(`node --version` · `java -version`)이 같은지 대조한다.
   node 쪽은 `frontend/package.json` 의 `engines.node` 까지 본다 — **Vercel 은 `.nvmrc` 가 아니라 `engines.node` 로 빌드한다.**
 - `scripts/check-doc-versions.sh` 가 **문서가 주장하는 버전**(README 「기술 스택」 표 · `backend.md` 머리줄 · `overview.md` 등)을
   `pom.xml` · `frontend/package.json` · Spring Boot BOM 의 실제 값과 대조한다(문서 값이 실제의 **접두**면 통과).

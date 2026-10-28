@@ -13,7 +13,8 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 /**
- * JWT 발급/검증 (HS256, java-jwt). subject=userId 뿐이고 개인정보 클레임은 싣지 않음(#328).
+ * JWT 발급/검증 (HS256, java-jwt). 클레임은 subject=userId · aud="auth" · auth_time · 표준 시각(iat · exp)뿐이고
+ * 개인정보 클레임은 싣지 않음(#328).
  * 시크릿은 app.jwt.secret(env 주입). 비어 있으면 기동 시 실패시킴(운영 안전).
  *
  * <p>{@code auth_time} 은 최초 인증(로그인 · 비밀번호 변경) 시각이다. 재발급본은 이 값을 그대로 옮겨, 그로부터

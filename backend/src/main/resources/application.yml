@@ -120,7 +120,8 @@ app:
   file:
     # 파일 저장 루트(로컬/서버 디스크). S3 교체 시 FileStorage 구현만 교체
     storage-root: ${FILE_STORAGE_ROOT:./uploads}
-    # 고아(미연결) 첨부 회수 - 유예 시간과 주기. 유예보다 최근 것은 어떤 cutoff 로도 지우지 않음
+    # 고아(미연결) 첨부 회수 - 유예 시간과 주기. 유예는 10분 아래로 내려가지 않음(FileService.MIN_ORPHAN_AGE_MINUTES) -
+    # 작성 중인 첨부를 지우지 않게, 그보다 최근 것은 어떤 cutoff 로도 지우지 않음
     orphan-ttl-minutes: ${ORPHAN_TTL_MINUTES:60}
     orphan-cleanup-cron: ${ORPHAN_CLEANUP_CRON:0 0 * * * *}
     # 첨부 서빙용 서명 쿼리 토큰의 수명(분). <img src> 가 헤더를 못 실어 URL 에 토큰을 싣는다

@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 /**
  * 새로고침 때 `/api/auth/me` 가 401 이 아닌 이유(네트워크 · 5xx)로 실패하면 다시 묻는 횟수와 간격(#250).
  * 배포 · 재기동 중에는 헬스까지 10초 남짓 걸려 서버가 잠깐 없다 - 그 사이 새로고침한 사람의 토큰을 지우면
- * 유효한 로그인이 풀린다. 합계 약 30초를 넘기면 포기하되 토큰은 남겨 다음 새로고침에서 회복한다.
+ * 유효한 로그인이 풀린다. 첫 시도 포함 10번(사이 대기 3초 × 9 = 27초 + 요청 시간)이면 포기하되 토큰은 남겨 다음 새로고침에서 회복한다.
  */
 export const ME_RETRY_LIMIT = 10
 export const ME_RETRY_DELAY_MS = 3000

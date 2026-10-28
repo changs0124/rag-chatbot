@@ -15,7 +15,7 @@ entity/       DB 행에 대응하는 record
 openai/       외부 LLM 호출 경계 (인터페이스 + Mock/Real)
 security/     JWT 발급·검증 · 파일 서명 토큰 · 현재 사용자
 storage/      파일 저장 추상화 (FileStorage + LocalFileStorage)
-config/       Security · CORS · Executor · 기동 가드
+config/       Security · CORS · Executor · 기동 가드 · 이메일 도메인 정책 · 관리자 역할 동기화
 exception/    ApiExceptions + GlobalExceptionHandler
 ```
 
