@@ -1,0 +1,6 @@
+## before — main 2c... 기준 원문 (wc -l / 글자 수)
+docs/04_tasks/current-sprint.md : 32줄 · 4301자
+docs/04_tasks/backlog.md : 34줄 · 3837자
+
+### current-sprint.md:22
+**운영 주의** : 지금 운영 백엔드는 `bcb94fb`(10-27 배포, #513)이고 롤백 이미지는 `prev-73bb76a` 다. DB 마이그레이션은 없었다. [#447](https://github.com/changs0124/rag-chatbot/issues/447) 때문에 되돌릴 때는 **프론트를 먼저** 되돌린다(정본은 `backend.md` 「배포」).
