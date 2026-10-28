@@ -3,7 +3,6 @@ package com.ragchatbot.openai;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -42,8 +41,7 @@ class OpenAiRealBetaHeaderTest {
 
 	@BeforeEach
 	void startServer() throws IOException {
-		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-		server.createContext("/", exchange -> {
+		server = OpenAiRealTestSupport.startFakeServer("/", exchange -> {
 			String method = exchange.getRequestMethod();
 			String path = exchange.getRequestURI().getPath();
 			seen.add(new Seen(method, path, exchange.getRequestHeaders().getFirst("OpenAI-Beta")));
@@ -66,8 +64,7 @@ class OpenAiRealBetaHeaderTest {
 			}
 			exchange.close();
 		});
-		server.start();
-		baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
+		baseUrl = OpenAiRealTestSupport.baseUrl(server);
 	}
 
 	@AfterEach

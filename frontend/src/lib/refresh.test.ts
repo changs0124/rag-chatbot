@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { adoptRefreshedToken, api, getToken, setToken } from './api'
 import { loadFigure, resetFigureCache } from './docFigures'
 import { streamChat } from './endpoints'
+import { deferred } from '../test/fixtures'
 
 /**
  * 세션 슬라이딩 재발급 수신 (FEAT-OPS-003 · TC-OPS-025).
@@ -90,7 +91,11 @@ describe('다른 세션에서 떠난 요청의 재발급', () => {
     resetFigureCache()
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => new Promise<Response>((resolve) => (respond = resolve))),
+      vi.fn(() => {
+        const res = deferred<Response>()
+        respond = res.resolve
+        return res.promise
+      }),
     )
   })
   afterEach(() => {

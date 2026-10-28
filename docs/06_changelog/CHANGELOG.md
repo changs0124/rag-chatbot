@@ -12,6 +12,7 @@
 - **첨부 업로드 용량 초과(400) 응답 문구가 「용량 초과(image 최대 10MB)」 → 「용량 초과(최대 10MB)」 로 바뀐다(#542).** 「image」 는 형식별 상한 시절 흔적이고, 문서 업로드의 「용량 초과(최대 25MB)」 와 같은 꼴이 됐다. 프론트는 이 문구를 해석하지 않고 그대로 보여 준다. 저장 · 응답의 `fileType`(`image`)은 그대로다.
 
 ### Refactored
+- **테스트 헬퍼 중복과 테스트 클래스끼리의 의존을 정리했다(#543, 테스트만).** 파서만 쓰는 두 테스트는 `OpenAiRealTestSupport.parserOnly()` 로, openai 테스트 6개의 가짜 `HttpServer` 띄우기는 `startFakeServer()` · `baseUrl()` 로 모았다. `ChatSseAcceptRateLimitTest` 가 다른 테스트 클래스(`ChatSseAcceptErrorTest`)의 `sse()` · `assertJsonError()` 를 끌어 쓰던 것은 `SseTestSupport` 로 옮겼다. 프론트의 손수 만든 deferred 7곳은 `test/fixtures.ts` 의 `deferred()` 로, `ErrorBoundary.test` 는 단언이 실패해도 `console.error` mock 이 복원되게(`onTestFinished`) 했다. 케이스 수(424 · 308) · 단언 수 합계(1591) 그대로.
 - **매퍼 XML 의 반복 컬럼 목록 · 같은 insert 를 `<sql>` + `<include>` 로 묶었다(#542).** `User` · `Conversation` 컬럼 목록(각 3회), `Attachment` 컬럼 목록(별칭 없는 2회 — `findByConversation` 은 `a.` 별칭이라 그대로), `RagDocument` 의 행 컬럼 · insert 본문 · 요약 조회(조인 포함)가 대상이다. `<include>` 를 펼친 SQL 이 43문장 모두 수정 전과 같다(공백 정규화 후 대조).
 - **프론트의 쓰이지 않는 분기와 중복을 정리했다(#541).** `Logo.tsx` 의 `variant="mark"` 분기를 지웠다 — 호출부가 0건이고, 파비콘의 벡터 정본은 분기가 아니라 마크 상수(`MARK` · `ORANGE` · `FOLD_STOPS`)라 `design-system.md` 7-2 · 7-3 도 그렇게 고쳤다. `AdminUser` 는 `Me` 와 필드가 같아 `type AdminUser = Me` 로 두고, 관리자 두 화면이 똑같이 들고 있던 오류 배너는 `components/AdminErrorBanners.tsx` 하나로 뺐다. 화면 변화 없음 — 로그인 · 사이드바 · 관리자 두 화면 오류 배너를 변경 전후 빌드로 찍어 픽셀 대조한 결과 차이 0.
 

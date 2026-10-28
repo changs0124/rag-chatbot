@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,8 +39,7 @@ class OpenAiRealStreamingSpikeTest {
 
 	@BeforeEach
 	void startServer() throws IOException {
-		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-		server.createContext("/responses", exchange -> {
+		server = OpenAiRealTestSupport.startFakeServer("/responses", exchange -> {
 			exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
 			exchange.sendResponseHeaders(200, 0); // 0 = chunked, 길이 미리 안 알림
 			try (OutputStream out = exchange.getResponseBody()) {
@@ -57,7 +55,6 @@ class OpenAiRealStreamingSpikeTest {
 				Thread.currentThread().interrupt();
 			}
 		});
-		server.start();
 	}
 
 	@AfterEach
@@ -72,7 +69,7 @@ class OpenAiRealStreamingSpikeTest {
 
 	@Test
 	void rest_client_delivers_sse_incrementally() {
-		String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
+		String baseUrl = OpenAiRealTestSupport.baseUrl(server);
 		var service = OpenAiRealTestSupport.against(baseUrl, "");
 		List<String> tokens = new ArrayList<>();
 

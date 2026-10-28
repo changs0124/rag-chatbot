@@ -5,6 +5,7 @@ import { AuthProvider } from '../auth/AuthContext'
 import { ApiError, setToken } from '../lib/api'
 import AdminUsersPage from './AdminUsersPage'
 import { primaryButtonClass } from '../components/primaryButton'
+import { deferred } from '../test/fixtures'
 
 vi.mock('../lib/endpoints', () => ({
   listDocuments: vi.fn(),
@@ -174,8 +175,8 @@ describe('사용자 관리 화면', () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
       { id: 'u2', email: 'park@b.com', name: '박사원', role: 'user' },
     ])
-    let resolve!: (v: { temporaryPassword: string }) => void
-    vi.mocked(resetUserPassword).mockReturnValue(new Promise((r) => (resolve = r)))
+    const reset = deferred<{ temporaryPassword: string }>()
+    vi.mocked(resetUserPassword).mockReturnValue(reset.promise)
     renderPage()
 
     const rowButton = await screen.findByRole('button', { name: /비밀번호 초기화/ })
@@ -189,7 +190,7 @@ describe('사용자 관리 화면', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(resetUserPassword).toHaveBeenCalledTimes(1)
 
-    resolve({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    reset.resolve({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     expect(await screen.findByText('Xk7m-Qp29-Vr4t')).toBeInTheDocument()
     expect(rowButton).toBeEnabled()
     expect(resetUserPassword).toHaveBeenCalledTimes(1)
@@ -313,8 +314,8 @@ describe('사용자 관리 화면', () => {
   /** 초기화와 같은 패턴 - 요청 중에는 행의 삭제 버튼이 막혀 확인 창을 다시 열 수 없고, 글자로 진행을 알린다 */
   it('삭제 요청 중에는 행 버튼이 비활성이고 다시 눌러도 확인 창이 열리지 않는다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([PARK])
-    let resolve!: () => void
-    vi.mocked(deleteAdminUser).mockReturnValue(new Promise<void>((r) => (resolve = r)))
+    const del = deferred<void>()
+    vi.mocked(deleteAdminUser).mockReturnValue(del.promise)
     renderPage()
 
     const rowButton = await screen.findByRole('button', { name: '박사원 삭제' })
@@ -327,7 +328,7 @@ describe('사용자 관리 화면', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(deleteAdminUser).toHaveBeenCalledTimes(1)
 
-    resolve()
+    del.resolve()
     await waitFor(() => expect(rowButton).toBeEnabled())
     expect(deleteAdminUser).toHaveBeenCalledTimes(1)
   })
@@ -362,9 +363,9 @@ describe('사용자 관리 화면', () => {
 
   // 리뷰 반영 : 늦게 온 옛 목록 응답이 새 응답을 덮지 않는다(문서 화면의 listGen 과 같은 세대 카운터)
   it('늦게 온 목록 응답은 나중에 나간 재조회 결과를 덮지 않는다', async () => {
-    let resolveFirst!: (v: typeof PARK[]) => void
+    const first = deferred<typeof PARK[]>()
     vi.mocked(listAdminUsers)
-      .mockReturnValueOnce(new Promise((r) => (resolveFirst = r)))
+      .mockReturnValueOnce(first.promise)
       .mockResolvedValue([])
     vi.mocked(createAdminUser).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     renderPage()
@@ -374,7 +375,7 @@ describe('사용자 관리 화면', () => {
     fireEvent.click(screen.getByRole('button', { name: '계정 추가' }))
     expect(await screen.findByText('사용자 0명')).toBeInTheDocument()
 
-    await act(async () => resolveFirst([PARK]))
+    await act(async () => first.resolve([PARK]))
 
     expect(screen.queryByText('park@b.com')).not.toBeInTheDocument()
     expect(screen.getByText('사용자 0명')).toBeInTheDocument()

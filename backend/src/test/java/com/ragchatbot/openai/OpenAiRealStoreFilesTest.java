@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -32,8 +31,7 @@ class OpenAiRealStoreFilesTest {
 
 	@BeforeEach
 	void startServer() throws IOException {
-		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-		server.createContext("/", exchange -> {
+		server = OpenAiRealTestSupport.startFakeServer("/", exchange -> {
 			String uri = exchange.getRequestURI().toString();
 			received.add(uri);
 			if (uri.equals("/vector_stores/shared-store/files?limit=100")) {
@@ -58,8 +56,7 @@ class OpenAiRealStoreFilesTest {
 				reply(exchange, 404, "{}");
 			}
 		});
-		server.start();
-		service = OpenAiRealTestSupport.against("http://127.0.0.1:" + server.getAddress().getPort(), "shared-store");
+		service = OpenAiRealTestSupport.against(OpenAiRealTestSupport.baseUrl(server), "shared-store");
 	}
 
 	private static void reply(HttpExchange exchange, int status, String body) throws IOException {

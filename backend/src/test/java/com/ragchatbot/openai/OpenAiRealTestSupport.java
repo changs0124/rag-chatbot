@@ -1,5 +1,11 @@
 package com.ragchatbot.openai;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
 /**
  * 테스트용 {@link OpenAiRealService} 생성을 한 곳에 모은다.
  *
@@ -36,6 +42,18 @@ final class OpenAiRealTestSupport {
 	/** 타임아웃 순서 검사를 보는 테스트용 - 나머지는 {@link #parserOnly()} 와 같다 */
 	static OpenAiRealService withTimeouts(long streamReadMs, long sseMs) {
 		return create(UNREACHABLE, "", streamReadMs, REQUEST_MS, sseMs);
+	}
+
+	/** 루프백 임의 포트에 가짜 서버를 띄운다 - 멈추는 건 호출한 쪽이 {@code stop(0)} 으로 */
+	static HttpServer startFakeServer(String path, HttpHandler handler) throws IOException {
+		HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+		server.createContext(path, handler);
+		server.start();
+		return server;
+	}
+
+	static String baseUrl(HttpServer server) {
+		return "http://127.0.0.1:" + server.getAddress().getPort();
 	}
 
 	private static OpenAiRealService create(String baseUrl, String storeId, long streamReadMs, long requestMs,

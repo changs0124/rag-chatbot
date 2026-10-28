@@ -1,18 +1,15 @@
 package com.ragchatbot.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static com.ragchatbot.support.SseTestSupport.assertJsonError;
+import static com.ragchatbot.support.SseTestSupport.sse;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
@@ -22,18 +19,6 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  * 429 는 상한이 달라야 해서 {@link ChatSseAcceptRateLimitTest} 에 따로 둠.
  */
 class ChatSseAcceptErrorTest extends AbstractPgIntegrationTest {
-
-	static HttpHeaders sse(HttpHeaders h) {
-		h.setAccept(List.of(MediaType.TEXT_EVENT_STREAM));
-		return h;
-	}
-
-	static void assertJsonError(ResponseEntity<String> res, HttpStatus status, String code) {
-		assertThat(res.getStatusCode()).isEqualTo(status);
-		assertThat(res.getHeaders().getContentType()).isNotNull();
-		assertThat(res.getHeaders().getContentType().isCompatibleWith(MediaType.APPLICATION_JSON)).isTrue();
-		assertThat(res.getBody()).contains("\"code\":\"" + code + "\"");
-	}
 
 	@Test
 	void empty_message_with_sse_accept_is_400_json() {
