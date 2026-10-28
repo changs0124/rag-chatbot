@@ -1,0 +1,3 @@
+./mvnw -q verify (base d5b10d3, 수정 전)
+rc=0
+tests=424 failures=0 errors=0 skipped=0
