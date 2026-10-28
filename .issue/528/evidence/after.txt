@@ -1,45 +1,49 @@
 $ git diff origin/main -- scripts/deploy.sh
 diff --git a/scripts/deploy.sh b/scripts/deploy.sh
-index f81c568..8db9a0a 100644
+index f81c568..c622127 100644
 --- a/scripts/deploy.sh
 +++ b/scripts/deploy.sh
-@@ -229,6 +229,22 @@ echo '';
+@@ -229,6 +229,28 @@ echo '';
  if sudo docker image inspect '$PREV' >/dev/null 2>&1; then echo '되돌리려면 (load 전에 $PREV 로 태그한 이미지) :'; echo \"  cd $REMOTE_DIR && sudo docker tag $PREV $IMAGE && sudo docker compose up -d\"; else echo '$PREV 가 없어 되돌릴 이미지가 없다 - 고친 커밋을 다시 배포할 것'; fi;
  exit 1"
  
 +# **터널도 확인한다(#528).** 위 헬스체크는 서버 안 8080 만 보므로, cloudflared 가 엣지에 붙지 못해도
 +# (토큰 파일 권한 · 다이제스트를 올린 새 버전의 회귀 등) 여기까지 통과해 「배포 완료」가 찍히고 서비스는 바깥에서 끊긴 채 남는다.
 +# `cloudflared tunnel ready` 는 메트릭 서버의 `/ready`(엣지 연결 1개 이상이면 200)로 종료 코드를 준다.
-+# 포트 20241 : cloudflared 는 20241~20245 중 처음 비어 있는 포트에 메트릭 서버를 띄우고, 컨테이너 안 프로세스가 하나뿐이라 늘 20241 이다.
-+# 호스트에는 열지 않는다 - 컨테이너 안에서 묻는다. 실패하면 6단계 정리를 하지 않고 멈춘다(app 은 이미 healthy 라 app 롤백 자산은 그대로 둔다).
++# 포트 20241 : cloudflared 는 20241~20245 중 처음 비어 있는 포트에 메트릭 서버를 띄우고, 컨테이너 안 프로세스가 하나뿐이라 20241 이다
++# (2026.10.5 실측 - 보장은 아니다. 기본 주소가 바뀌거나 compose command 에 `--metrics` 를 넣으면 정상 터널도 여기서 실패하니 실패 출력에 그 가능성을 적는다).
++# 호스트에는 열지 않는다 - 컨테이너 안에서 묻는다. 실패하면 6단계 정리를 하지 않고 멈춘다 - `:previous` 는 남지만,
++# 같은 배포를 다시 돌리면 4단계가 지금 healthy 인 새 app 이미지로 덮는다(터널 실패는 app 탓이 아니라 감수한다).
++# `</dev/null` : `exec -T` 는 stdin 을 연결한 채 두므로 ssh 의 stdin 을 넘겨받지 않게 막는다.
 +say "터널 준비 확인 (최대 30초)"
 +ssh_run "cd '$REMOTE_DIR';
-+for i in \$(seq 1 6); do if sudo docker compose exec -T cloudflared cloudflared tunnel --metrics 127.0.0.1:20241 ready >/dev/null 2>&1; then echo \"OK (\$(( (i - 1) * 5 ))초 경과)\"; exit 0; fi; sleep 5; done;
++for i in \$(seq 1 6); do if sudo docker compose exec -T cloudflared cloudflared tunnel --metrics 127.0.0.1:20241 ready </dev/null >/dev/null 2>&1; then echo \"OK (\$(( (i - 1) * 5 ))초 경과)\"; exit 0; fi; sleep 5; done;
 +echo '=== 터널 준비 실패 - app 은 healthy 지만 바깥에서 닿지 않는다 ===';
-+sudo docker compose exec -T cloudflared cloudflared tunnel --metrics 127.0.0.1:20241 ready || true;
++sudo docker compose exec -T cloudflared cloudflared tunnel --metrics 127.0.0.1:20241 ready </dev/null || true;
 +sudo docker compose ps cloudflared;
 +sudo docker compose logs --tail=30 cloudflared;
 +echo '';
-+echo 'cloudflared 다이제스트를 바꾼 배포라면 되돌리는 법은 backend.md 「감수하는 약점」(서버 compose 의 image 를 이전 다이제스트로 - up -d cloudflared).';
++echo '로그에 엣지 등록 성공(Registered tunnel connection)이 있는데 실패했다면 메트릭 주소가 20241 이 아닐 수 있다 - 위 메트릭 서버 줄을 볼 것.';
++echo 'cloudflared 다이제스트를 바꾼 배포라면 되돌리는 법 (backend.md 「감수하는 약점」) :';
++echo '  1) 서버 : cd $REMOTE_DIR, docker-compose.yml 의 cloudflared image 를 이전 다이제스트로 고치고 sudo docker compose up -d cloudflared';
++echo '  2) 저장소 : compose 다이제스트를 되돌리는 커밋 - 안 하면 다음 deploy.sh 가 서버 compose 를 덮는다';
 +exit 1"
 +
  # 6. 옛 이미지 정리 ---------------------------------------------------------
  # **헬스체크가 통과한 뒤에야 옛 이미지를 버린다(#129)** - 레지스트리가 없어 서버의 옛 이미지가 유일한 롤백 자산이다.
  say "옛 이미지 정리"
 
-# 실패 경로 : 로컬 compose(더미 토큰 cloudflared)에 새 블록을 그대로 실행
-
+# 실패 경로 : 로컬 compose(더미 토큰 cloudflared)에 새 블록을 그대로 실행 (REMOTE_DIR 은 시험용 로컬 경로)
 ▶ 터널 준비 확인 (최대 30초)
 === 터널 준비 실패 - app 은 healthy 지만 바깥에서 닿지 않는다 ===
 http://127.0.0.1:20241/ready endpoint returned status code 503
-{"status":503,"readyConnections":0,"connectorId":"812f50bf-45e6-4007-8a1f-1e1010b7d90f"}
+{"status":503,"readyConnections":0,"connectorId":"ade76ad8-3330-4b6f-b646-492e6f962913"}
 NAME                 IMAGE                                                                                            COMMAND                  SERVICE       CREATED          STATUS          PORTS
-t528-cloudflared-1   cloudflare/cloudflared@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53   "cloudflared --no-au…"   cloudflared   32 seconds ago   Up 32 seconds   
-cloudflared-1  | 2026-10-28T00:00:10Z INF precheck complete hard_fail=false run_id=90c7115f-e20b-49cf-ad8c-87ef29bca1c2 suggested_protocol=quic
-cloudflared-1  | 2026-10-28T00:00:11Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveID(65074) CurveP256] connIndex=0 event=0 ip=198.41.192.67
-cloudflared-1  | 2026-10-28T00:00:11Z ERR Register tunnel error from server side error="Failed to get tunnel" connIndex=0 event=0 ip=198.41.192.67
-cloudflared-1  | 2026-10-28T00:00:11Z INF Retrying connection in up to 4s connIndex=0 event=0 ip=198.41.192.67
-cloudflared-1  | 2026-10-28T00:00:15Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveID(65074) CurveP256] connIndex=0 event=0 ip=198.41.192.67
+t528-cloudflared-1   cloudflare/cloudflared@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53   "cloudflared --no-au…"   cloudflared   33 seconds ago   Up 32 seconds   
+로그에 엣지 등록 성공(Registered tunnel connection)이 있는데 실패했다면 메트릭 주소가 20241 이 아닐 수 있다 - 위 메트릭 서버 줄을 볼 것.
+cloudflared 다이제스트를 바꾼 배포라면 되돌리는 법 (backend.md 「감수하는 약점」) :
+  1) 서버 : cd /c/Users/User/AppData/Local/Temp/claude/D--dev-rag-chatbot/03ca9b04-aa9d-49db-8030-95b8167147c0/scratchpad/t528, docker-compose.yml 의 cloudflared image 를 이전 다이제스트로 고치고 sudo docker compose up -d cloudflared
+  2) 저장소 : compose 다이제스트를 되돌리는 커밋 - 안 하면 다음 deploy.sh 가 서버 compose 를 덮는다
 ... (cloudflared 로그 꼬리 생략)
 deploy-step exit=1 (30초 대기 뒤)
 
@@ -51,3 +55,4 @@ deploy-step exit=0
 
 # 정적 검사
 - bash -n · shellcheck(koalaman/shellcheck:stable) 통과 · check-all docs 통과
+- 독립 리뷰 COMMENT(차단 없음) · 반영 4건 : 메트릭 포트 가정 명시 · 저장소 되돌리기 · :previous 재실행 주석 · </dev/null
