@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- **터널이 붙지 않아도 `deploy.sh` 가 「배포 완료」로 끝나던 것을 고쳤다(#528).** 헬스체크가 서버 안 `localhost:8080` 의 app 만 봐서, cloudflared 가 엣지에 못 붙어도(토큰 파일 권한 · 새 버전 회귀 등) 성공으로 끝나고 서비스는 바깥에서 끊긴 채 남았다 — #525 배포 때는 외부 확인을 손으로 따로 했다. app 헬스 통과 뒤 `cloudflared tunnel --metrics 127.0.0.1:20241 ready` 를 최대 30초 기다리고, 실패하면 cloudflared 로그 · 되돌리는 법을 찍고 exit 1(옛 이미지 정리 전이라 롤백 자산이 남는다). 검증 : 운영에 같은 블록을 읽기 전용으로 돌려 「OK (0초 경과)」 · 더미 토큰 로컬 터널에서 503(`readyConnections: 0`) · exit 1 · shellcheck 통과
+
 ### Docs
 - **compose 다이제스트로 뜨는 `cloudflared` · `db` 의 되돌리는 법을 `backend.md` 「감수하는 약점」에 적었다(#527).** 지금까지 롤백 절은 app 의 `:previous` · `prev-<sha>` 태그만 다뤄, #525 배포 때 터널 롤백 절차가 CHANGELOG 에만 있었다. compose 의 cloudflared 「올릴 때」 절차에는 `--version` · `--token-file` 확인 두 줄을 더했다 — `latest` 가 몇 버전인지는 다이제스트로 알 수 없다. 동작 변화 없음(compose 는 주석만)
 
