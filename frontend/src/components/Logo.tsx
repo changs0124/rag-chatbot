@@ -41,8 +41,6 @@ const FOLD_STOPS = [
 ]
 
 interface LogoProps {
-  /** `full` 은 마크 + 텍스트 2줄, `mark` 는 D 마크만. 화면에는 쓰지 않고 파비콘 정본(design-system §7-2) */
-  variant?: 'full' | 'mark'
   /**
    * 필수다. 기본값을 두면 호출부가 넘긴 값이 병합이 아니라 **교체**라,
    * 크기 없는 className 하나에 `h-`/`w-` 가 통째로 사라진다 -
@@ -51,20 +49,19 @@ interface LogoProps {
   className: string
 }
 
-export default function Logo({ variant = 'full', className }: LogoProps) {
+export default function Logo({ className }: LogoProps) {
   // 데스크톱 사이드바와 모바일 드로어의 사이드바가 **동시에 DOM 에 있을 수 있다**(데스크톱 쪽은 CSS 로만 숨김).
   // 그라데이션 id 를 고정하면 문서에 중복 id 가 생기므로 인스턴스마다 다르게 만든다
   const foldId = useId()
-  const mark = variant === 'mark'
 
   return (
     <svg
-      viewBox={mark ? '0 0 69.394 69.394' : '0 0 287.642 69.394'}
+      viewBox="0 0 287.642 69.394"
       className={className}
       // 「(주)」 괄호가 D 아래끝보다 조금 내려간다(머리 주석). 잘리지 않게 상자 밖 그리기를 허용한다
       overflow="visible"
       role="img"
-      aria-label={mark ? '디인사이트' : '디인사이트 대영산전(주) 창원공장'}
+      aria-label="디인사이트 대영산전(주) 창원공장"
     >
       <defs>
         <linearGradient id={foldId} x1="18.779" y1="0" x2="35" y2="0" gradientUnits="userSpaceOnUse">
@@ -76,14 +73,12 @@ export default function Logo({ variant = 'full', className }: LogoProps) {
       <path fill={BRAND_CYAN} d={MARK} />
       <rect x="18.779" y="0" width="16.221" height="16.944" fill={`url(#${foldId})`} />
       <path fill={BRAND_ORANGE} d={ORANGE} />
-      {!mark && (
-        <g fill="currentColor">
-          {/* 모듈 상수라 재정렬·필터·삽입이 없다 - 인덱스가 정확하고 접두 충돌도 없다 */}
-          {TEXT_LINES.map((d, i) => (
-            <path key={i} d={d} />
-          ))}
-        </g>
-      )}
+      <g fill="currentColor">
+        {/* 모듈 상수라 재정렬·필터·삽입이 없다 - 인덱스가 정확하고 접두 충돌도 없다 */}
+        {TEXT_LINES.map((d, i) => (
+          <path key={i} d={d} />
+        ))}
+      </g>
     </svg>
   )
 }

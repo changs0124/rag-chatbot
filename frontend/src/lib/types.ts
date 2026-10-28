@@ -49,13 +49,8 @@ export interface RagDocument {
   createdAt: string
 }
 
-/** 관리 화면의 사용자 목록. 초기화 대상을 고르는 용도라 여기서는 이메일이 필요하다 */
-export interface AdminUser {
-  id: string
-  email: string
-  name: string
-  role: 'user' | 'admin'
-}
+/** 관리 화면의 사용자 목록. 화면이 쓰는 필드가 Me 와 같다(서버가 함께 주는 createdAt 은 쓰지 않는다) */
+export type AdminUser = Me
 
 export interface Attachment {
   id: string

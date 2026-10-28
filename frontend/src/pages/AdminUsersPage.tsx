@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
+import AdminErrorBanners from '../components/AdminErrorBanners'
 import BackLink from '../components/BackLink'
 import ConfirmModal from '../components/ConfirmModal'
 import PageShell from '../components/PageShell'
@@ -59,20 +60,7 @@ export default function AdminUsersPage() {
         스스로 가입하는 경로가 없어 계정은 여기서만 만들어집니다.
       </p>
 
-      {[listError, error].map(
-        (m, i) =>
-          m && (
-            <p key={i} role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
-              {m}
-              {/* 첫 로드 실패는 스스로 회복하지 않는다 - 새로고침 대신 다시 부를 길을 둔다(#483) */}
-              {i === 0 && !loaded && (
-                <button type="button" onClick={() => void refresh()} className="ml-2 font-medium underline">
-                  다시 시도
-                </button>
-              )}
-            </p>
-          ),
-      )}
+      <AdminErrorBanners listError={listError} error={error} loaded={loaded} onRetry={() => void refresh()} />
 
       <UsersSection users={users} loaded={loaded} currentUserId={user?.id} refresh={refresh} setError={setError} />
     </PageShell>
