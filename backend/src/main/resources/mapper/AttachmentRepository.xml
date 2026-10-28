@@ -14,13 +14,15 @@
 		</constructor>
 	</resultMap>
 
+	<sql id="attachmentColumns">id, message_id, user_id, storage_path, file_type, created_at</sql>
+
 	<insert id="insert" parameterType="com.ragchatbot.entity.Attachment">
 		insert into attachments (id, message_id, user_id, storage_path, file_type)
 		values (#{id}, #{messageId}, #{userId}, #{storagePath}, #{fileType})
 	</insert>
 
 	<select id="findByIdAndUser" resultMap="attachmentResult">
-		select id, message_id, user_id, storage_path, file_type, created_at
+		select <include refid="attachmentColumns"/>
 		from attachments
 		where id = #{id} and user_id = #{userId}
 	</select>
@@ -49,7 +51,7 @@
 	</select>
 
 	<select id="findOrphans" resultMap="attachmentResult">
-		select id, message_id, user_id, storage_path, file_type, created_at
+		select <include refid="attachmentColumns"/>
 		from attachments
 		where message_id is null and created_at &lt; #{cutoff}
 	</select>

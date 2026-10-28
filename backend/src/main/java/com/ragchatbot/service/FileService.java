@@ -93,7 +93,7 @@ public class FileService {
 		// 크기는 **힙에 올리기 전에** 본다(#402) - 파트는 디스크 임시 파일이라 getSize() 는 공짜다.
 		// getBytes() 뒤에 재면 멀티파트 한도(26MB)까지의 파일이 거절되기 전에 힙을 잡는다
 		if (file.getSize() > MAX_SIZE) {
-			throw new BadRequestException("용량 초과(" + FILE_TYPE + " 최대 " + (MAX_SIZE / MB) + "MB)");
+			throw new BadRequestException("용량 초과(최대 " + (MAX_SIZE / MB) + "MB)");
 		}
 		// 사용자별 저장 한도(#418) - 디스크에 쓰기 전, 그리고 #402 와 같이 **힙에 올리기 전에** 본다. 분당 · 장수 상한은
 		// 쌓이는 속도만 줄여, 한 사용자가 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다.

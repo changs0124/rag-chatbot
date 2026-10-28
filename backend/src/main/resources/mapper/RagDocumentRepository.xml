@@ -28,19 +28,30 @@
 		</constructor>
 	</resultMap>
 
-	<insert id="insert" parameterType="com.ragchatbot.entity.RagDocument">
+	<sql id="documentColumns">id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by, created_at</sql>
+
+	<sql id="insertDocument">
 		insert into rag_documents
 			(id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by)
 		values
 			(#{id}, #{filename}, #{openaiFileId}, #{vectorStoreId}, #{byteSize}, #{status}, #{uploadedBy})
+	</sql>
+
+	<!-- 올린 사람 이름을 조인으로 함께 가져옴(N+1 방지). inner join 이어도 되는 이유는
+	     uploaded_by 가 on delete restrict 라 참조 대상이 사라지지 않기 때문임 -->
+	<sql id="selectSummary">
+		select d.id, d.filename, d.byte_size, d.status, u.name as uploaded_by_name, d.created_at
+		from rag_documents d
+		join users u on u.id = d.uploaded_by
+	</sql>
+
+	<insert id="insert" parameterType="com.ragchatbot.entity.RagDocument">
+		<include refid="insertDocument"/>
 	</insert>
 
 	<!-- 스토어 동기화(#193). 충돌 대상은 V9 부분 유니크 인덱스 - 조건(where)까지 맞춰 적어야 그 인덱스로 추론된다 -->
 	<insert id="insertIfAbsent" parameterType="com.ragchatbot.entity.RagDocument">
-		insert into rag_documents
-			(id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by)
-		values
-			(#{id}, #{filename}, #{openaiFileId}, #{vectorStoreId}, #{byteSize}, #{status}, #{uploadedBy})
+		<include refid="insertDocument"/>
 		on conflict (openai_file_id) where deleted_at is null do nothing
 	</insert>
 
@@ -48,34 +59,26 @@
 		select openai_file_id from rag_documents where deleted_at is null
 	</select>
 
-	<!-- 올린 사람 이름을 조인으로 함께 가져옴(N+1 방지). inner join 이어도 되는 이유는
-	     uploaded_by 가 on delete restrict 라 참조 대상이 사라지지 않기 때문임 -->
 	<select id="listAlive" resultMap="summaryResult">
-		select d.id, d.filename, d.byte_size, d.status, u.name as uploaded_by_name, d.created_at
-		from rag_documents d
-		join users u on u.id = d.uploaded_by
+		<include refid="selectSummary"/>
 		where d.deleted_at is null
 		order by d.created_at desc
 	</select>
 
 	<select id="findSummaryById" resultMap="summaryResult">
-		select d.id, d.filename, d.byte_size, d.status, u.name as uploaded_by_name, d.created_at
-		from rag_documents d
-		join users u on u.id = d.uploaded_by
+		<include refid="selectSummary"/>
 		where d.id = #{id} and d.deleted_at is null
 	</select>
 
-	<!-- 컬럼은 findAliveById 와 같다. 행을 통째로 받아 id 별 재조회(N+1)를 없앰(#300) -->
+	<!-- 행을 통째로 받아 id 별 재조회(N+1)를 없앰(#300) -->
 	<select id="findInProgress" resultMap="documentResult">
-		select id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by,
-		       created_at
+		select <include refid="documentColumns"/>
 		from rag_documents
 		where deleted_at is null and status = 'in_progress'
 	</select>
 
 	<select id="findAliveById" resultMap="documentResult">
-		select id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by,
-		       created_at
+		select <include refid="documentColumns"/>
 		from rag_documents
 		where id = #{id} and deleted_at is null
 	</select>
