@@ -227,6 +227,22 @@ def claims_to_md(xlsx, terms):
             lines.append(f"- {label} : {len(rs)}건 — {detail}")
         return lines
 
+    def month_lines(key, label):
+        """연도마다 한 줄 - 반기 · 분기 · 월 합계까지 미리 센다. 표에 없는 「2023년 1월 출하」 · 「2023년 4분기 고장」 건수를
+        상세 절을 검색으로 세다 일부만 세고 단정했다(#532). 칸 이름을 줄마다 붙이는 이유는 #531 과 같다"""
+        g = collections.defaultdict(collections.Counter)
+        for r in recs:
+            if isinstance(r[key], dt.datetime):
+                g[r[key].year][r[key].month] += 1
+        lines = []
+        for y, m in sorted(g.items()):
+            q = [sum(m[i] for i in range(s, s + 3)) for s in (1, 4, 7, 10)]
+            lines.append(f"- {label} {y}년 : {sum(m.values())}건 · 상반기(1~6월) {q[0] + q[1]}건 · 하반기(7~12월) {q[2] + q[3]}건 · "
+                         + " · ".join(f"{i + 1}분기 {n}건" for i, n in enumerate(q)) + " · "
+                         + " · ".join(f"{y}년 {i}월 {m[i]}건" for i in range(1, 13)))
+        undated_n = sum(not isinstance(r[key], dt.datetime) for r in recs)
+        return lines + ([f"- {label}이 날짜가 아닌 클레임 {undated_n}건은 위 줄에서 뺐다"] if undated_n else [])
+
     machines = machine_lines()
     out = [
         "# 필드 클레임 현황 (서보 드라이브 불량 분석 통합리스트)",
@@ -274,6 +290,8 @@ def claims_to_md(xlsx, terms):
         *([f"고장일이 날짜가 아닌 클레임 {len(undated)}건(클레임 {nums(undated)})은 이 표에서 뺐다", ""] if undated else []),
         "고객사가 둘로 적힌 호기는 원본에 그렇게 기록된 것이다.", "", *machines, "",
         "### 출하 후 고장까지 사용일 구간별 건수", "", *usage_lines(), "",
+        "### 출하일 · 고장일 · 입고일자 연월별 건수 (연도 · 반기 · 분기 · 월)", "",
+        *month_lines("출하일", "출하일"), *month_lines("고장일", "고장일"), *month_lines("입고일자", "입고일자"), "",
         "### 드라이브 표시 UU (저전압) 언급 건수", "",
         # 분포까지 함께 둔다 - 건수만 있으면 모델이 이 숫자를 들고 최종원인 분포를 지어냈다(#267)
         # AL.2144 만의 줄을 합집합 바로 곁에 둔다 - 이 절만 검색되면 모델이 합집합 건수를 AL.2144 건수로 읽었다(#267)
