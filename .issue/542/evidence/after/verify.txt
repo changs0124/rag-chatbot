@@ -1,0 +1,9 @@
+./mvnw -q verify (구현 03ed169)
+rc=0
+tests=424 failures=0 errors=0 skipped=0
+
+diff before/sql-expanded.tsv after/sql-expanded.tsv → 차이 없음 (43문장)
+sha256 c48985d942b88b09 / c48985d942b88b09
+
+<sql> 정의 수 : backend/src/main/resources/mapper/AttachmentRepository.xml:1 backend/src/main/resources/mapper/CitationRepository.xml:0 backend/src/main/resources/mapper/ConversationRepository.xml:1 backend/src/main/resources/mapper/MessageRepository.xml:0 backend/src/main/resources/mapper/RagDocumentRepository.xml:3 backend/src/main/resources/mapper/UserRepository.xml:1 
+<include> 수 : 14

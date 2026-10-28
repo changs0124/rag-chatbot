@@ -1,0 +1,43 @@
+AttachmentRepository.insert	[insert parameterType="com.ragchatbot.entity.Attachment"]	insert into attachments (id, message_id, user_id, storage_path, file_type) values (#{id}, #{messageId}, #{userId}, #{storagePath}, #{fileType})
+AttachmentRepository.findByIdAndUser	[select resultMap="attachmentResult"]	select id, message_id, user_id, storage_path, file_type, created_at from attachments where id = #{id} and user_id = #{userId}
+AttachmentRepository.linkToMessage	[update ]	update attachments set message_id = #{messageId} where id = #{id} and user_id = #{userId} and message_id is null
+AttachmentRepository.unlinkFromMessage	[update ]	update attachments set message_id = null where message_id = #{messageId}
+AttachmentRepository.deleteDraftByIdAndUser	[delete ]	delete from attachments where id = #{id} and user_id = #{userId} and message_id is null
+AttachmentRepository.findByConversation	[select resultMap="attachmentResult"]	select a.id, a.message_id, a.user_id, a.storage_path, a.file_type, a.created_at from attachments a join messages m on a.message_id = m.id where m.conversation_id = #{conversationId} order by a.created_at, a.id
+AttachmentRepository.findOrphans	[select resultMap="attachmentResult"]	select id, message_id, user_id, storage_path, file_type, created_at from attachments where message_id is null and created_at < #{cutoff}
+AttachmentRepository.findStoragePathsByUser	[select resultType="java.lang.String"]	select storage_path from attachments where user_id = #{userId}
+AttachmentRepository.findAllStoragePaths	[select resultType="java.lang.String"]	select storage_path from attachments
+CitationRepository.insert	[insert parameterType="com.ragchatbot.entity.Citation"]	insert into citations (id, message_id, seq, source_name, snippet) values (#{id}, #{messageId}, #{seq}, #{sourceName}, #{snippet})
+CitationRepository.findByConversation	[select resultMap="citationResult"]	select c.id, c.message_id, c.seq, c.source_name, c.snippet, c.created_at from citations c join messages m on c.message_id = m.id where m.conversation_id = #{conversationId} order by c.message_id, c.seq asc
+ConversationRepository.insert	[insert parameterType="com.ragchatbot.entity.Conversation"]	insert into conversations (id, user_id, title) values (#{id}, #{userId}, #{title})
+ConversationRepository.findByIdAndUser	[select resultMap="conversationResult"]	select id, user_id, title, created_at, updated_at from conversations where id = #{id} and user_id = #{userId}
+ConversationRepository.lockByIdAndUser	[select resultType="java.util.UUID"]	select id from conversations where id = #{id} and user_id = #{userId} for update
+ConversationRepository.lockSharedByIdAndUser	[select resultMap="conversationResult"]	select id, user_id, title, created_at, updated_at from conversations where id = #{id} and user_id = #{userId} for key share
+ConversationRepository.listByUser	[select resultMap="conversationResult"]	select id, user_id, title, created_at, updated_at from conversations where user_id = #{userId} order by updated_at desc
+ConversationRepository.deleteByIdAndUser	[delete ]	delete from conversations where id = #{id} and user_id = #{userId}
+ConversationRepository.updateTitle	[update ]	update conversations set title = #{title} where id = #{id} and user_id = #{userId}
+ConversationRepository.touch	[update ]	update conversations set updated_at = now() where id = #{id} and user_id = #{userId}
+MessageRepository.insert	[insert parameterType="com.ragchatbot.entity.Message"]	insert into messages (id, conversation_id, role, content, status, stopped, timed_out, input_tokens, output_tokens) values (#{id}, #{conversationId}, #{role}, #{content}, #{status}, #{stopped}, #{timedOut}, #{inputTokens}, #{outputTokens})
+MessageRepository.lockUserMessage	[select resultType="java.util.UUID"]	select id from messages where id = #{id} and conversation_id = #{conversationId} and role = 'user' for update
+MessageRepository.deleteUserMessage	[delete ]	delete from messages where id = #{id} and conversation_id = #{conversationId} and role = 'user'
+MessageRepository.existsByConversation	[select resultType="boolean"]	select exists(select 1 from messages where conversation_id = #{conversationId})
+MessageRepository.listByConversation	[select resultMap="messageResult"]	select id, conversation_id, role, content, status, stopped, timed_out, input_tokens, output_tokens, created_at from messages where conversation_id = #{conversationId} order by created_at asc
+RagDocumentRepository.insert	[insert parameterType="com.ragchatbot.entity.RagDocument"]	insert into rag_documents (id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by) values (#{id}, #{filename}, #{openaiFileId}, #{vectorStoreId}, #{byteSize}, #{status}, #{uploadedBy})
+RagDocumentRepository.insertIfAbsent	[insert parameterType="com.ragchatbot.entity.RagDocument"]	insert into rag_documents (id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by) values (#{id}, #{filename}, #{openaiFileId}, #{vectorStoreId}, #{byteSize}, #{status}, #{uploadedBy}) on conflict (openai_file_id) where deleted_at is null do nothing
+RagDocumentRepository.findAliveOpenaiFileIds	[select resultType="java.lang.String"]	select openai_file_id from rag_documents where deleted_at is null
+RagDocumentRepository.listAlive	[select resultMap="summaryResult"]	select d.id, d.filename, d.byte_size, d.status, u.name as uploaded_by_name, d.created_at from rag_documents d join users u on u.id = d.uploaded_by where d.deleted_at is null order by d.created_at desc
+RagDocumentRepository.findSummaryById	[select resultMap="summaryResult"]	select d.id, d.filename, d.byte_size, d.status, u.name as uploaded_by_name, d.created_at from rag_documents d join users u on u.id = d.uploaded_by where d.id = #{id} and d.deleted_at is null
+RagDocumentRepository.findInProgress	[select resultMap="documentResult"]	select id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by, created_at from rag_documents where deleted_at is null and status = 'in_progress'
+RagDocumentRepository.findAliveById	[select resultMap="documentResult"]	select id, filename, openai_file_id, vector_store_id, byte_size, status, uploaded_by, created_at from rag_documents where id = #{id} and deleted_at is null
+RagDocumentRepository.updateStatus	[update ]	update rag_documents set status = #{status} where id = #{id} and deleted_at is null
+RagDocumentRepository.softDelete	[update ]	update rag_documents set deleted_at = #{deletedAt} where id = #{id} and deleted_at is null
+UserRepository.insert	[insert parameterType="com.ragchatbot.entity.User"]	insert into users (id, email, password_hash, name, role) values (#{id}, #{email}, #{passwordHash}, #{name}, #{role})
+UserRepository.findById	[select resultMap="userResult"]	select id, email, password_hash, name, role, created_at, updated_at from users where id = #{id}
+UserRepository.findByEmail	[select resultMap="userResult"]	select id, email, password_hash, name, role, created_at, updated_at from users where email = #{email}
+UserRepository.demoteAdminsNotIn	[update ]	update users set role = 'user' where role = 'admin' <if test="emails != null and emails.size() > 0"> and lower(email) not in <foreach close=")" collection="emails" item="e" open="(" separator=", ">#{e}</foreach> </if>
+UserRepository.promoteAdmins	[update ]	update users set role = 'admin' where role = 'user' and lower(email) in <foreach close=")" collection="emails" item="e" open="(" separator=", ">#{e}</foreach>
+UserRepository.listAll	[select resultMap="userResult"]	select id, email, password_hash, name, role, created_at, updated_at from users order by created_at asc
+UserRepository.deleteById	[delete ]	delete from users where id = #{id}
+UserRepository.updateName	[update ]	update users set name = #{name} where id = #{id}
+UserRepository.updatePasswordHash	[update ]	update users set password_hash = #{passwordHash}, password_changed_at = #{changedAt} where id = #{id}
+UserRepository.findPasswordChangedAt	[select resultType="java.time.OffsetDateTime"]	select password_changed_at from users where id = #{id}
