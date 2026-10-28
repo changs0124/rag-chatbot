@@ -1,0 +1,65 @@
+## after — acd9374 · 항목별 바뀐 줄 (git diff -U0 --word-diff)
+
+### .linkignore
+# 문서 참조 실재 검사 예외 - 저장소에 없는 것이 정상인 참조만 [-둠(가이드 「문서 참조 무결성」)-]{+둠(검사는 scripts/check-doc-refs.sh)+}
+
+### backend/.env.example
+# 고아 첨부 회수 - 유예(분)와 [-주기(cron)-]{+주기(cron). 유예는 10 보다 작게 줘도 10분으로 올라간다(작성 중인 첨부 보호)+}
+
+### backend/src/main/java/com/ragchatbot/security/JwtService.java
+ * JWT 발급/검증 (HS256, java-jwt). {+클레임은+} subject=userId [-뿐이고-]{+· aud="auth" · auth_time · 표준 시각(iat · exp)뿐이고+}
+{+ *+} 개인정보 클레임은 싣지 않음(#328).
+
+### backend/src/main/resources/application.yml
+    # 고아(미연결) 첨부 회수 - 유예 시간과 주기. [-유예보다-]{+유예는 10분 아래로 내려가지 않음(FileService.MIN_ORPHAN_AGE_MINUTES) -+}
+{+    # 작성 중인 첨부를 지우지 않게, 그보다+} 최근 것은 어떤 cutoff 로도 지우지 않음
+
+### docker-compose.yml
+    # 아웃바운드 연결만 건다 - [-리슨도 바인딩도 하지 않으므로-]{+리슨은 컨테이너 안 루프백의 메트릭 서버(127.0.0.1:20241, deploy.sh 터널 확인이 씀)뿐이고+}
+{+    # 1024 이상 포트라 바인딩에도+} capability 가 필요 없다(#130).
+
+### docs/01_specs/erd.md
+| snippet | text | Y | NULL | 발췌. 200자(UTF-16 코드 단위)로 [-자르되-]{+자르고 `…` 을 붙여 최대 201자다. 자를 때+} 서로게이트 쌍은 가르지 않는다(BMP 밖 문자(서로게이트 쌍)가 걸리면 199자. 결합 문자열(ZWJ 이모지 · 국기)은 가를 수 있다) |
+
+### docs/02_architecture/backend.md
+config/       Security · CORS · Executor · 기동 가드 {+· 이메일 도메인 정책 · 관리자 역할 동기화+}
+
+### docs/02_architecture/frontend.md
+| `frontend/src/test/` | Vitest [-셋업-]{+셋업(`setup.ts`) · 테스트 공유 픽스처(`fixtures.ts`)+} |
+| 로그인 사용자 | `frontend/src/auth/AuthContext.tsx` | 기동 시 `/api/auth/me` 로 토큰 유효성 확인. **401 일 때만 토큰 폐기** — 네트워크 · 5xx 면 토큰을 두고 3초 간격으로 {+첫 시도 포함+} 최대 10회[-다시-] 묻는다(#250, 배포 · 재기동 중 새로고침) |
+`streamChat` 이 `\n\n` 경계로 SSE 프레임을 잘라 [-`meta → stage*-]{+`stage*+} → token* → citations → done` 을 콜백으로 흘린다. {+맨 앞 `meta` 는 파싱만 하고 콜백이 없다(쓰는 곳이 없음, #186).+}
+
+### docs/CONVENTIONS.md
+- `scripts/check-runtime-versions.sh`가 `.nvmrc`·`backend/pom.xml`의 런타임 버전과 CI [-설정이 갈리지 않는지-]{+러너에서 실제로 도는 런타임(`node --version` · `java -version`)이 같은지+} 대조한다.
+
+### frontend/src/auth/AuthContext.tsx
+ * 유효한 로그인이 풀린다. [-합계 약 30초를 넘기면-]{+첫 시도 포함 10번(사이 대기 3초 × 9 = 27초 + 요청 시간)이면+} 포기하되 토큰은 남겨 다음 새로고침에서 회복한다.
+
+### frontend/src/components/BackLink.tsx
+ * 모바일 h-11(44px) + 바깥 `pt-2` 가 채팅 헤더 `min-h-14` 의 버튼 줄과 높이를 맞춘다(design-system [-「7.-]{+「7-1.+} 모바일」).
+
+### frontend/src/components/actionButton.ts
+ * 모바일만 44px 로 키운다(design-system [-「7.-]{+「7-1.+} 모바일」). hover 글자색만 호출부가 덧붙인다.
+
+### frontend/src/components/chat/Composer.tsx
+      {/* 스크림은 검정이 아니라 canvas/85 - 글자 [-12.70-]{+12.67+} · 점선 [-4.95.-]{+5.23(design-system 「토큰 밖 겹침 — 실측 (#155)」).+} 85~95 는 사실상 같은 값이라
+
+### frontend/src/components/primaryButton.ts
+ * h-11 = 44px 터치 하한(design-system [-「주요 버튼 44px」).-]{+「5. 컴포넌트 규칙」 · 「7-1. 모바일」).+} 비활성은 `opacity-50` 하나 - 로그인 버튼과 같은 값이다.
+
+### scripts/deploy.sh
+단계     $([ "$SKIP_BUILD" = 1 ] && echo '전송 → 로드 → [-기동'-]{+기동 → 헬스체크 → 터널 확인 → 정리'+} || echo '빌드 → 저장 → 전송 → 로드 → [-기동')-]{+기동 → 헬스체크 → 터널 확인 → 정리')+}
+# 필요한 [-명령과-]{+명령 ·+} 원격 [-디렉터리를-]{+디렉터리 · 서버 .env 권한(600) · 터널 비밀 파일을+} **빌드 전에** 확인한다
+
+## 근거 (코드 대조)
+- design-system.md:77-78 → 12.67 · 5.23
+- design-system 헤딩 : 2/2 존재
+- JwtService.java:83-87 withAudience(auth) · withSubject · withIssuedAt · withExpiresAt · withClaim(auth_time)
+- deploy.sh:242 metrics 127.0.0.1:20241 · preflight 에 env_perms · tunnel_secret
+- AuthContext.tsx load(1) … attempt >= ME_RETRY_LIMIT(10) → 10회, 대기 9 × 3000ms
+- endpoints.ts:152 meta 는 받지 않고 흘려보냄(#186)
+- SnippetPicker.java:98-99 substring(0, 200) + "…" → 최대 201
+- FileService.java:40 MIN_ORPHAN_AGE_MINUTES = 10 · :233-235 clampCutoff
+
+## 검증
+- check-all.sh docs 통과 · frontend oxlint rc=0 · tsc -b rc=0 · vitest 308/308 · backend mvnw compile rc=0 · deploy.sh bash -n · compose/yml YAML 파싱 OK
