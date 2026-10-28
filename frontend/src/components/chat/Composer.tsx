@@ -399,7 +399,7 @@ export default function Composer({
         </p>
       </form>
 
-      {/* 스크림은 검정이 아니라 canvas/85 - 글자 12.70 · 점선 4.95. 85~95 는 사실상 같은 값이라
+      {/* 스크림은 검정이 아니라 canvas/85 - 글자 12.67 · 점선 5.23(design-system 「토큰 밖 겹침 — 실측 (#155)」). 85~95 는 사실상 같은 값이라
           뒤가 비치는 85 를 쓴다 */}
       {dragging && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-canvas/85 p-6 backdrop-blur-sm">

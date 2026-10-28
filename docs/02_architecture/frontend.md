@@ -12,7 +12,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | `frontend/src/hooks/` | 도메인 훅 — `useChat.ts` 와, 그것이 쓰는 진행 단계 표시 큐 `useStageQueue.ts` |
 | `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `limits.ts`(서버 상한과 맞춘 입력 상한 — 이름 · 첨부 수 · 본문 · 제목, 사본은 여기 한 곳, #483) · `docFigures.ts`(그림 표식 파서) |
 | `frontend/src/auth/` | Context Provider |
-| `frontend/src/test/` | Vitest 셋업 |
+| `frontend/src/test/` | Vitest 셋업(`setup.ts`) · 테스트 공유 픽스처(`fixtures.ts`) |
 
 ## 라우팅
 
@@ -40,7 +40,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 | 상태 | 보유자 | 비고 |
 |------|--------|------|
-| 로그인 사용자 | `frontend/src/auth/AuthContext.tsx` | 기동 시 `/api/auth/me` 로 토큰 유효성 확인. **401 일 때만 토큰 폐기** — 네트워크 · 5xx 면 토큰을 두고 3초 간격으로 최대 10회 다시 묻는다(#250, 배포 · 재기동 중 새로고침) |
+| 로그인 사용자 | `frontend/src/auth/AuthContext.tsx` | 기동 시 `/api/auth/me` 로 토큰 유효성 확인. **401 일 때만 토큰 폐기** — 네트워크 · 5xx 면 토큰을 두고 3초 간격으로 첫 시도 포함 최대 10회 묻는다(#250, 배포 · 재기동 중 새로고침) |
 | 대화·메시지·스트리밍 | `frontend/src/hooks/useChat.ts` | 대화 목록, 활성 대화, 메시지 배열, 스트리밍 여부, 진행 단계, 오류를 한 훅이 보유(진행 단계 큐는 `useStageQueue` 에 위임) |
 | 인증 토큰 | `frontend/src/lib/api.ts` 모듈 변수 + `localStorage` | React 상태가 아님 — 렌더링과 무관하게 요청 시점에 읽혀야 함. 저장소 접근이 던지는 브라우저(사이트 데이터 차단)에서는 모듈 변수만 쓴다 — 세션은 새로고침 전까지이고, 모듈 평가에서 터져 백지가 되지 않게 한다(#483). 이때는 storage 이벤트가 없어 다른 탭의 로그아웃이 전파되지 않는다 |
 
@@ -75,7 +75,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 ### 채팅 스트림 수신
 
 `EventSource` 가 아니라 **fetch + ReadableStream** 이다 — `EventSource` 는 `Authorization` 헤더를 실을 수 없다.
-`streamChat` 이 `\n\n` 경계로 SSE 프레임을 잘라 `meta → stage* → token* → citations → done` 을 콜백으로 흘린다.
+`streamChat` 이 `\n\n` 경계로 SSE 프레임을 잘라 `stage* → token* → citations → done` 을 콜백으로 흘린다. 맨 앞 `meta` 는 파싱만 하고 콜백이 없다(쓰는 곳이 없음, #186).
 
 첨부 이미지는 `<img src>` 가 헤더를 못 실으므로 **쿼리 서명 토큰이 붙은 URL**을 쓴다. 이 URL 은 재조회 시점에
 서버가 새로 서명하므로 저장해 두고 재사용하지 않는다.
