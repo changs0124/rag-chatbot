@@ -13,13 +13,15 @@
 		</constructor>
 	</resultMap>
 
+	<sql id="conversationColumns">id, user_id, title, created_at, updated_at</sql>
+
 	<insert id="insert" parameterType="com.ragchatbot.entity.Conversation">
 		insert into conversations (id, user_id, title)
 		values (#{id}, #{userId}, #{title})
 	</insert>
 
 	<select id="findByIdAndUser" resultMap="conversationResult">
-		select id, user_id, title, created_at, updated_at
+		select <include refid="conversationColumns"/>
 		from conversations
 		where id = #{id} and user_id = #{userId}
 	</select>
@@ -33,14 +35,14 @@
 
 	<!-- 채팅 준비의 소유 확인(#447) - 이 대화의 조건부 삭제와 순서를 정한다. 이름 변경 · touch 와는 충돌하지 않는다 -->
 	<select id="lockSharedByIdAndUser" resultMap="conversationResult">
-		select id, user_id, title, created_at, updated_at
+		select <include refid="conversationColumns"/>
 		from conversations
 		where id = #{id} and user_id = #{userId}
 		for key share
 	</select>
 
 	<select id="listByUser" resultMap="conversationResult">
-		select id, user_id, title, created_at, updated_at
+		select <include refid="conversationColumns"/>
 		from conversations
 		where user_id = #{userId}
 		order by updated_at desc

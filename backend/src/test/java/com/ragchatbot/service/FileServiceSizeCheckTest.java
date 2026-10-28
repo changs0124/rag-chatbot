@@ -35,7 +35,7 @@ class FileServiceSizeCheckTest {
 
 		assertThatThrownBy(() -> service.upload(UUID.randomUUID(), file))
 				.isInstanceOf(BadRequestException.class)
-				.hasMessage("용량 초과(image 최대 10MB)");
+				.hasMessage("용량 초과(최대 10MB)");
 		verify(file, never()).getBytes();
 	}
 

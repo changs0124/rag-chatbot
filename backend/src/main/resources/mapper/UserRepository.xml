@@ -16,19 +16,21 @@
 		</constructor>
 	</resultMap>
 
+	<sql id="userColumns">id, email, password_hash, name, role, created_at, updated_at</sql>
+
 	<insert id="insert" parameterType="com.ragchatbot.entity.User">
 		insert into users (id, email, password_hash, name, role)
 		values (#{id}, #{email}, #{passwordHash}, #{name}, #{role})
 	</insert>
 
 	<select id="findById" resultMap="userResult">
-		select id, email, password_hash, name, role, created_at, updated_at
+		select <include refid="userColumns"/>
 		from users
 		where id = #{id}
 	</select>
 
 	<select id="findByEmail" resultMap="userResult">
-		select id, email, password_hash, name, role, created_at, updated_at
+		select <include refid="userColumns"/>
 		from users
 		where email = #{email}
 	</select>
@@ -56,7 +58,7 @@
 	</update>
 
 	<select id="listAll" resultMap="userResult">
-		select id, email, password_hash, name, role, created_at, updated_at
+		select <include refid="userColumns"/>
 		from users
 		order by created_at asc
 	</select>
