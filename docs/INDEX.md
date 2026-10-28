@@ -6,7 +6,7 @@
 
 ## 스택 · 실행 · 배포
 
-- **스택 · 버전** : [README](../README.md) 「기술 스택」. CI 7잡과 주 1회 스케줄은 [CONVENTIONS](./CONVENTIONS.md) 「테스트·CI 게이트」, 체크 장애 대응은 [CONVENTIONS](./CONVENTIONS.md) 「CI 장애 대응」
+- **스택 · 버전** : [README](../README.md) 「기술 스택」. CI 잡과 주 1회 스케줄은 [CONVENTIONS](./CONVENTIONS.md) 「테스트·CI 게이트」, 체크 장애 대응은 [CONVENTIONS](./CONVENTIONS.md) 「CI 장애 대응」
 - **로컬 실행** : [README](../README.md) 「로컬 실행」. 환경변수 정본은 `.env.example` 셋, `APP_MODE` 가드는 [backend](./02_architecture/backend.md) 「실행 모드」
 - **배포** : 2026-10-06 운영 시작. 절차는 [backend](./02_architecture/backend.md) 「배포」 · [frontend](./02_architecture/frontend.md) 「배포 (Vercel)」
 

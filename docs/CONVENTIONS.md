@@ -94,8 +94,7 @@
     (시계 해상도가 거친 OS 에서는 우연히 통과하고 높은 OS 에서는 늘 실패한다).
 - 문서가 인용하는 `TC-<카테고리>-<번호>`(예 : TC-OPS-032)는 테스트 케이스 식별자다. 정의는 테스트 코드의 주석 · 이름에만 있으므로
   `grep -rn TC-OPS-032 backend/src/test frontend/src` 로 찾는다.
-- `scripts/case-floors.env`의 케이스 수 하한(래칫)은 **테스트를 늘린 PR 에서 그 시점 실측값으로 함께 올린다.**
-  올리지 않으면 새로 넣은 케이스가 래칫의 보호를 못 받는다. 내릴 때는 무엇이 줄었는지 `docs/06_changelog/CHANGELOG.md` 에 남긴다.
+- 케이스 수 하한(래칫)을 올리고 내리는 규칙은 `scripts/case-floors.env` 머리 주석이 정본이다(테스트를 늘린 PR 에서 그 시점 실측값으로 함께 올린다).
 - 아래 게이트마다 **무엇을 보는지**만 적는다. 무엇을 못 잡는지와 도입 경위는 각 스크립트 머리 주석과 CHANGELOG 가 정본이다.
 - `scripts/check-case-floor.sh` 가 그 하한을 집행한다 — **실측 케이스 수가 하한 미만이면 실패한다**(수만 세므로 케이스의 내용은 못 본다).
   **측정 입력이 낡으면 조용히 속는다** — 백엔드는 지운 클래스의 surefire XML 이 `target/` 에 남으므로 **`clean` 후 재고**,
@@ -138,14 +137,16 @@
 
 위 「테스트·CI 게이트」의 필수 체크가 merge 를 막을 때의 절차다. 규칙 자체는 그 절에 있다.
 
-- **ruleset 을 복원해야 하면 문서를 보지 말고 정본에서 뽑는다.**
+- **무엇이 필수인지 확인하거나 ruleset 을 복원해야 하면 문서를 보지 말고 정본에서 뽑는다.** 명령은 하나다.
 
   ```bash
   gh api repos/changs0124/rag-chatbot/rules/branches/main \
     --jq '[.[]|select(.type=="required_status_checks").parameters.required_status_checks[].context]'
   ```
 
-  규칙이 사라져 그것조차 못 읽는 상황이면 `ci.yml` 의 잡 `name:` 값을 그대로 쓴다.
+  `--jq` 없이 부르면 레거시 branch protection 과 ruleset 을 **둘 다** 모아 보여준다. `branches/main` 의
+  `.protection.required_status_checks.enforcement_level` 로는 **ruleset 이 안 보인다**(`off` 로 나온다) —
+  그 명령으로 판단하면 걸려 있는데 없다고 읽는다. 규칙이 사라져 그것조차 못 읽는 상황이면 `ci.yml` 의 잡 `name:` 값을 그대로 쓴다.
 - **체크가 「어긋난 것」과 「아예 없는 것」은 증상이 같고 고치는 법이 다르다**(#170).
   둘 다 merge 가 영구 차단된 모습으로 보이므로 먼저 어느 쪽인지 가린다.
 
@@ -169,15 +170,6 @@
   ```
 
   **`gh workflow run` 으로는 풀리지 않는다** — PR 의 required checks 는 `workflow_dispatch` 로 생긴 체크를 세지 않는다.
-- **무엇이 필수인지 확인하는 명령은 하나다.**
-
-  ```bash
-  gh api repos/changs0124/rag-chatbot/rules/branches/main
-  ```
-
-  레거시 branch protection 과 ruleset 을 **둘 다** 모아 보여준다. `branches/main` 의
-  `.protection.required_status_checks.enforcement_level` 로는 **ruleset 이 안 보인다**(`off` 로 나온다) —
-  그 명령으로 판단하면 걸려 있는데 없다고 읽는다.
 
 ## Git 커밋 메시지
 

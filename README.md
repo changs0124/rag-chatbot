@@ -38,22 +38,7 @@ scripts/    품질 게이트 · 배포 스크립트 · 문서 그림 · 클레�
 docs/       명세 · 아키텍처 · 태스크 · 변경 이력 (진입점 docs/INDEX.md)
 ```
 
-```mermaid
-flowchart LR
-  B["브라우저<br/>SPA (Vercel)"]
-  T["Cloudflare Tunnel"]
-  A["Spring Boot 앱"]
-  D[("PostgreSQL")]
-  F[("로컬 디스크<br/>첨부 · 문서 그림")]
-  O["OpenAI<br/>Responses API + Vector Store"]
-
-  B -- "REST + SSE (JWT)" --> T --> A
-  A --> D
-  A --> F
-  A -- "APP_MODE=live 일 때만" --> O
-```
-
-백엔드는 단일 인스턴스 전제다 — 레이트리밋 · 동시 스트림 카운터가 인메모리다.
+구성도와 단일 인스턴스 전제 같은 제약은 `docs/02_architecture/overview.md` 에 있다.
 
 ## 기술 스택
 
@@ -66,9 +51,8 @@ flowchart LR
 | 테스트 | 백엔드 JUnit 6 + Testcontainers 2.0(실 PostgreSQL) · 프론트 Vitest 4.1 + Testing Library |
 | Lint | oxlint 1.75 (프론트) |
 
-툴체인 고정 : Node 는 `.nvmrc`(24) · Maven 은 Wrapper(`backend/mvnw`, 3.9.16)로 로컬과 CI 가 같은 버전을 쓴다.
-**도커 이미지 빌드만 `mvnw` 대신 `maven:3.9.16-eclipse-temurin-17-alpine` 을 쓴다** — wrapper 는 빌드마다 Maven 배포판을
-Maven Central 에서 내려받아, 그 요청이 거절되면 이미지 빌드가 통째로 멎기 때문이다(같은 3.9.16 이라 버전은 갈리지 않는다).
+툴체인 고정 : Node 는 `.nvmrc`(24) · Maven 은 Wrapper(`backend/mvnw`, 3.9.16)로 로컬과 CI 가 같은 버전을 쓴다
+(도커 이미지 빌드만 예외 — 근거는 `docs/02_architecture/backend.md` 「배포」).
 
 ## 로컬 실행
 
@@ -106,26 +90,17 @@ CORS 기본값이 5173 하나라 다른 포트로 띄우면 `ALLOWED_ORIGINS` �
 cd backend && ./mvnw verify                   # 테스트 + 빌드 (Testcontainers 라 Docker 필요)
 cd frontend && npm run lint && npm test && npm run build
 bash scripts/check-all.sh                     # CI 가 돌리는 검사를 푸시 전에 로컬에서 예행
+bash scripts/check-all.sh docs                # 문서 검사만
 ```
 
-케이스 수 하한은 `scripts/case-floors.env` 가 잠그고 `scripts/check-case-floor.sh` 가 검사한다 —
-테스트 수가 하한 아래로 줄면 CI 가 실패한다. `bash scripts/check-all.sh docs` 는 문서 검사만 돌린다.
-
-GitHub Actions(`.github/workflows/ci.yml`)는 PR 과 `main` 푸시마다 7잡을 돌린다(`.issue/**` 만 바꾼 푸시는 건너뛰고,
-주 1회 스케줄은 보안 3잡만 돈다). 잡 목록과 게이트는 [CONVENTIONS](docs/CONVENTIONS.md) 「테스트·CI 게이트」가 정본이다.
+CI 잡 · 케이스 수 하한 · 게이트 목록은 [CONVENTIONS](docs/CONVENTIONS.md) 「테스트·CI 게이트」가 정본이다.
 
 ## 배포 개요
 
-- **프론트** — Vercel(Root Directory `frontend`, `main` 푸시 시 자동 배포). `VITE_API_BASE_URL` 은 빌드 시점에 박히므로
-  값을 바꾸면 재배포해야 한다
-- **백엔드** — 단일 서버 자체 호스팅. `docker-compose.yml` 로 앱 · PostgreSQL · cloudflared 세 컨테이너를 띄운다.
-  Cloudflare Tunnel 이 바깥으로 연결을 걸어 **서비스 포트를 인바운드로 열지 않는다**(TLS 도 Cloudflare 가 종단)
-- **이미지** — 서버는 빌드하지 않는다. `bash scripts/deploy.sh` 가 로컬에서 빌드해 서버로 옮겨 기동 · 헬스체크까지 한다
-  (레지스트리 없음, 접속 대상은 `DEPLOY_HOST` 로 지정하며 기본값이 없다)
-- **운영 가드** — compose 의 `prod` 프로필이 운영에서 목업 기동을 막는다. 백엔드 `ALLOWED_ORIGINS` 에 프론트 도메인을 넣는다
-- **백업** — 서버 디스크 일일 스냅샷. 첨부 · DB · 문서 그림이 같은 디스크에 있다
+- **프론트** — Vercel(`main` 푸시 시 자동 배포)
+- **백엔드** — 단일 서버에 `docker-compose.yml`(앱 · PostgreSQL · cloudflared). 이미지는 `bash scripts/deploy.sh` 가 로컬에서 빌드해 옮긴다
 
-절차와 근거는 `docs/02_architecture/backend.md` 「배포」 · `docs/02_architecture/frontend.md` 「배포 (Vercel)」에 있다.
+절차 · 근거 · 백업은 `docs/02_architecture/backend.md` 「배포」 · `docs/02_architecture/frontend.md` 「배포 (Vercel)」에 있다.
 
 ## 문서
 

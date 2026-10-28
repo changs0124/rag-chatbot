@@ -38,10 +38,6 @@ flowchart LR
 | 화면 상태 | 대화 목록·메시지·스트리밍·진행 단계를 한 훅이 보유(단계 큐는 `useStageQueue`) | `frontend/src/hooks/useChat.ts` |
 | API 클라이언트 | fetch 래퍼 + 엔드포인트 함수 + SSE 파서 | `frontend/src/lib/` |
 
-## 페이지 URL 맵
-
-경로 · 화면 · 보호 조건은 [frontend](./frontend.md) 「라우팅」이 정본이다(`frontend/src/App.tsx` 기준).
-
 ## API 엔드포인트 맵
 
 엔드포인트 **목록과 계약(요청·응답·에러 코드)은 [api.md](../01_specs/api.md) 가 정본**이다.
@@ -95,15 +91,8 @@ sequenceDiagram
 
 ## 데이터 모델
 
-`backend/src/main/resources/db/migration/` (Flyway, PostgreSQL). 여섯 테이블이며 모든 PK 는 `uuid` 다.
-스키마 규칙은 [CONVENTIONS](../CONVENTIONS.md) 「스키마」가 정본이다.
-
-`users` — `conversations` — `messages` — `citations` 가 대화 한 줄기를 이루고, `attachments` 는
-`users`(소유)와 `messages`(연결, nullable)에 걸린다. `rag_documents` 만 대화 줄기 밖에 서서
-`users`(업로더)에만 걸린다.
-
-**ER 다이어그램 · 컬럼 정의 · 인덱스 · 마이그레이션 이력은 [erd.md](../01_specs/erd.md) 가 정본**이다.
-그 스키마를 그렇게 정한 이유(nullable 토큰 · 소프트 삭제 · 재조회 질의)는 [backend](./backend.md) 「DB 스키마」에 있다.
+스키마(ER 다이어그램 · 컬럼 · 인덱스 · 마이그레이션 이력)는 [erd.md](../01_specs/erd.md), 규칙은 [CONVENTIONS](../CONVENTIONS.md) 「스키마」,
+그렇게 정한 이유는 [backend](./backend.md) 「DB 스키마」가 정본이다.
 
 ## 외부 연동
 
@@ -122,9 +111,8 @@ sequenceDiagram
 환경변수 전량의 의미 · 빠뜨렸을 때의 증상은 **`backend/.env.example` 이 정본**이고, 기본값의 정본은
 `backend/src/main/resources/application.yml` 이다. 여기에 표로 옮기면 두 곳이 갈리므로 두지 않는다.
 
-env 로 빠지지 않은 값 하나만 적는다 — **업로드 하드 한도**는 yml 고정값으로 파일 26MB · 요청 31MB(넘으면 413)이고,
-그 413 을 돌려주려고 톰캣이 남은 본문을 읽어 버리는 상한이 32MB(`max-swallow-size`)라 그보다 크면 413 없이 연결이 끊긴다.
-타입별 상한(이미지 10MB · 문서 25MB)은 코드가 400 으로 선검사한다.
+env 로 빠지지 않은 업로드 하드 한도도 yml 고정값이 정본이다. 타입별 상한과 겹치는 순서는 [features](../01_specs/features.md) 「FEAT-ADMIN-002: RAG 문서 업로드 · 목록 · 삭제 · 스토어 동기화」,
+413 이 닿는 한계는 [api](../01_specs/api.md) 「에러 응답 포맷」에 있다.
 
 ## 알려진 제약
 
@@ -156,9 +144,8 @@ env 로 빠지지 않은 값 하나만 적는다 — **업로드 하드 한도**
   계속 된다. 사용자 관리에서 지울 수 있지만(FEAT-ADMIN-004), 문서를 올린 기록이 있는 계정은 감사 기록 때문에 지우지 못한다.
 - **사용량 집계 화면이 없다.** `messages` 에 기록만 하며 조회는 DB 직접 질의뿐이다.
 - **첨부는 로컬 디스크에 있다.** compose 의 `uploads` 볼륨이 받으며, 볼륨을 떼거나 디스크를 잃으면 마지막 스냅샷(아래, 매일) 이후 분은 소실된다.
-- **자체 호스팅이라 전원 · 네트워크 · OS 를 직접 진다.** 서버가 꺼지면 서비스가 멈춘다. 백업은
-  Lightsail 자동 일일 스냅샷(최근 7개)이다(#243). 디스크 통째로만 복구되고 오프사이트가 아니다. 백업 · 복구 절차와 전환 조건은
-  [backend](./backend.md) 「배포」에 있다.
+- **자체 호스팅이라 전원 · 네트워크 · OS 를 직접 진다.** 서버가 꺼지면 서비스가 멈춘다. 백업(디스크 일일 스냅샷)의
+  한계 · 복구 절차 · 전환 조건은 [backend](./backend.md) 「배포」에 있다.
 - **관측 도구가 없다.** 장애 재현 근거가 상관 ID(REQ-OPS-002) 뿐이며 도구 도입은 별건이다.
 - **OpenAI Vector Store 는 저장 용량 비례 과금**이라 문서가 늘면 월 비용이 선형으로 는다.
 - **모델은 `OPENAI_MODEL` 하나로 바뀐다**(값의 정본은 위 「운영 파라미터」). 다른 계열로 바꾸면 인용 표기 처리(#277 · #281)가 전제와
