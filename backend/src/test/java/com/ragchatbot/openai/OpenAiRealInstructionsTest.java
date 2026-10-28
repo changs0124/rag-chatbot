@@ -3,7 +3,6 @@ package com.ragchatbot.openai;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,15 +34,13 @@ class OpenAiRealInstructionsTest {
 
 	@BeforeEach
 	void startServer() throws IOException {
-		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-		server.createContext("/", exchange -> {
+		server = OpenAiRealTestSupport.startFakeServer("/", exchange -> {
 			bodies.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
 			// 스트림을 파싱하기 전에 끊는다 - 이 테스트가 보는 것은 보낸 쪽이다
 			exchange.sendResponseHeaders(500, -1);
 			exchange.close();
 		});
-		server.start();
-		baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
+		baseUrl = OpenAiRealTestSupport.baseUrl(server);
 	}
 
 	@AfterEach

@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -44,8 +43,7 @@ class OpenAiRealUploadDocumentTest {
 
 	@BeforeEach
 	void startServer() throws IOException {
-		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-		server.createContext("/", exchange -> {
+		server = OpenAiRealTestSupport.startFakeServer("/", exchange -> {
 			String line = exchange.getRequestMethod() + " " + exchange.getRequestURI().getPath();
 			received.add(line);
 			int status = 200;
@@ -66,8 +64,7 @@ class OpenAiRealUploadDocumentTest {
 			}
 			exchange.close();
 		});
-		server.start();
-		service = OpenAiRealTestSupport.against("http://127.0.0.1:" + server.getAddress().getPort(), "shared-store");
+		service = OpenAiRealTestSupport.against(OpenAiRealTestSupport.baseUrl(server), "shared-store");
 	}
 
 	@AfterEach

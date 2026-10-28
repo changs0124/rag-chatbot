@@ -14,6 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 import com.ragchatbot.openai.OpenAiService;
 
@@ -52,5 +56,19 @@ public final class SseTestSupport {
 		var res = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
 		assertThat(res.statusCode()).isEqualTo(200);
 		return res.body();
+	}
+
+	/** SSE Accept 헤더를 얹는다 */
+	public static HttpHeaders sse(HttpHeaders h) {
+		h.setAccept(List.of(MediaType.TEXT_EVENT_STREAM));
+		return h;
+	}
+
+	/** 상태 코드 · JSON 본문 · 오류 코드를 한 번에 확인한다 */
+	public static void assertJsonError(ResponseEntity<String> res, HttpStatus status, String code) {
+		assertThat(res.getStatusCode()).isEqualTo(status);
+		assertThat(res.getHeaders().getContentType()).isNotNull();
+		assertThat(res.getHeaders().getContentType().isCompatibleWith(MediaType.APPLICATION_JSON)).isTrue();
+		assertThat(res.getBody()).contains("\"code\":\"" + code + "\"");
 	}
 }

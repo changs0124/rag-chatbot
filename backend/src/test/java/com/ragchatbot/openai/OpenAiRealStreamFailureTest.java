@@ -19,7 +19,7 @@ import com.ragchatbot.openai.OpenAiService.Stage;
 class OpenAiRealStreamFailureTest {
 
 	private static void consume(String body) {
-		OpenAiRealTestSupport.against("https://example.invalid/v1", "")
+		OpenAiRealTestSupport.parserOnly()
 				.consumeStream(new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)), token -> {
 				}, (Stage stage, List<String> sources) -> {
 				});

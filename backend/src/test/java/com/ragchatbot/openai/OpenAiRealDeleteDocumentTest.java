@@ -3,7 +3,6 @@ package com.ragchatbot.openai;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,8 +38,7 @@ class OpenAiRealDeleteDocumentTest {
 
 	@BeforeEach
 	void startServer() throws IOException {
-		server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-		server.createContext("/", exchange -> {
+		server = OpenAiRealTestSupport.startFakeServer("/", exchange -> {
 			String path = exchange.getRequestURI().getPath();
 			String contentType = exchange.getRequestHeaders().getFirst("Content-Type");
 			received.add(exchange.getRequestMethod() + " " + path);
@@ -58,8 +56,7 @@ class OpenAiRealDeleteDocumentTest {
 			exchange.sendResponseHeaders(status, -1);
 			exchange.close();
 		});
-		server.start();
-		service = OpenAiRealTestSupport.against("http://127.0.0.1:" + server.getAddress().getPort(), "shared-store");
+		service = OpenAiRealTestSupport.against(OpenAiRealTestSupport.baseUrl(server), "shared-store");
 	}
 
 	@AfterEach
