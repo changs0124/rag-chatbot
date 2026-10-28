@@ -1,0 +1,18 @@
+## after — 구현 37ebc7c, 캔드 스트림 테스트 (운영에서 받은 이벤트 모양 그대로, 실호출 없음)
+-------------------------------------------------------------------------------
+Test set: com.ragchatbot.openai.OpenAiRealStreamFailureTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.ragchatbot.openai.OpenAiRealStreamFailureTest
+
+고정한 예외 문구 (GlobalExceptionHandler 「처리되지 않은 예외」 ERROR 에 그대로 실린다) :
+.hasMessage("OpenAI 응답이 실패로 끝남 code=credit_balance_exhausted type=insufficient_quota "
++ "message=You have no credits remaining.");
+.hasMessage("OpenAI 응답이 실패로 끝남 code=server_error type=server_error message=line1 line2");
+}
+.hasMessage("OpenAI 스트림이 완료(response.completed) 없이 종료됨");
+}
+
+## 회귀
+mvnw verify (Testcontainers 포함) : run 422 · fail 0 · err 0 · skip 0, EXIT=0
+케이스 수(backend) : 실측 422 / 하한 422 (419 → 422)
+check-all.sh docs : 통과 (shellcheck 만 로컬 미설치로 건너뜀)
