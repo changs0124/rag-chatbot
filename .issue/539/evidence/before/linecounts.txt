@@ -1,0 +1,10 @@
+docs/01_specs/requirements.md 146
+docs/01_specs/features.md 675
+docs/01_specs/api.md 535
+docs/01_specs/erd.md 314
+docs/01_specs/live-integration.md 339
+docs/02_architecture/design-system.md 391
+docs/INDEX.md 59
+README.md 132
+docs/CONVENTIONS.md 188
+docs/02_architecture/overview.md 165

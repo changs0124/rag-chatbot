@@ -1,0 +1,535 @@
+# API 명세서
+
+| 항목 | 내용 |
+|------|------|
+| 프로젝트 | rag-chatbot |
+| 문서 버전 | v2.0 |
+| 최종 수정일 | 2026-10-27 |
+| 작성자 | changs0124 |
+| 상태 | `반영됨` (2026-10-06 런칭) |
+
+---
+
+> **템플릿과 다른 점** — 템플릿 기본값은 `{success, data, message, timestamp}` 래핑 · `/api/v1` ·
+> 권한 없음 403 · 리프레시 토큰이다. 이 저장소는 **래핑 없는 원시 DTO · `/api` · 404 은닉 ·
+> 슬라이딩 재발급**이다. 사유는 각 절에 적는다.
+>
+> 컨트롤러 정본은 `backend/src/main/java/com/ragchatbot/controller/` 다.
+
+## 1. API 공통 규칙
+
+### Base URL
+
+| 환경 | URL |
+|------|-----|
+| 개발 | `http://localhost:8080` |
+| 배포 | 단일 서버 자체 호스팅 + Cloudflare Tunnel(운영 중). 절차는 [backend.md](../02_architecture/backend.md) 「배포」 |
+
+**버전 세그먼트(`/v1`)를 두지 않는다.** 단일 클라이언트가 단일 백엔드를 부르는 사내 도구라
+버전 협상 상대가 없다. 프론트와 백엔드가 같은 저장소에서 함께 배포된다.
+
+### 인증
+
+- 방식 : JWT Bearer Token
+- 헤더 : `Authorization: Bearer {token}`
+- 만료 : 기본 120분 (`JWT_EXPIRATION_MINUTES`)
+- 갱신 : **슬라이딩 재발급** (FEAT-OPS-003). 헤더 계약과 CORS 노출 조건은 아래 「4. 응답 헤더」 참고
+- 절대 수명 : 최초 인증(로그인 · 비밀번호 변경)부터 기본 12시간(`JWT_MAX_SESSION_HOURS`, #403)이 지나면 재발급하지 않는다.
+  그 뒤 토큰이 만료되면 재로그인이다. 인증 시각은 토큰의 `auth_time` 클레임에 실려 재발급본으로 그대로 옮겨진다
+
+**리프레시 토큰이 없다.** 별도 토큰·테이블·회전을 두는 대신 응답 헤더로 교체한다.
+`refresh_tokens` 테이블도 `POST /auth/refresh` 엔드포인트도 존재하지 않는다.
+
+**토큰 무효화** : 비밀번호가 바뀌면 `password_changed_at` 이 올라가고, 그 이전에 발급된 토큰은
+전부 거부된다. stateless JWT라 서버가 회수할 수 없어 요청마다 기준선을 대조한다.
+
+**예외 — 첨부 서빙만 Bearer가 아니다.** `<img src>` 가 Authorization 헤더를 실을 수 없어
+쿼리 문자열의 서명 토큰으로 검증한다 (TTL 은 API-GET-006, 조회 시점마다 재발급).
+
+### 공통 응답 포맷
+
+**래퍼가 없다.** 성공 응답은 DTO를 그대로 돌려준다.
+
+```json
+{ "id": "…", "title": "새 대화", "createdAt": "2026-08-19T…" }
+```
+
+**`{success, data, message}` 로 감싸지 않는 이유** : HTTP 상태 코드가 이미 성공/실패를 말한다.
+`success` 필드는 상태 코드와 중복이고, 둘이 어긋나면 어느 쪽이 참인지 알 수 없게 된다.
+
+### 에러 응답 포맷
+
+```json
+{ "code": "NOT_FOUND", "message": "대화 없음" }
+```
+
+두 필드뿐이다. `timestamp` 는 응답 헤더에 이미 있고, `path` 는 요청한 쪽이 안다.
+**단 `GlobalExceptionHandler` 를 거치지 않는 오류는 이 형태가 아니다** — 미인증 401 은 `SecurityConfig` 의
+진입점이 직접 내므로 Spring 기본 오류 본문이고, `server.error.include-message` 를 설정하지 않아 기본값
+`never` 가 적용되어 `message` 가 없다. CORS 403 은 JSON 이 아닌 평문이다.
+
+**서버가 `message` 를 주면 프론트는 그대로 보여준다**(없으면 `요청 실패 (n)`). 따라서 서버 메시지는 사용자가 읽을 수 있는
+한국어여야 하고, **내부 정보(SQL·클래스명)를 담아서는 안 된다.**
+
+| code | HTTP | 발생 지점 |
+|------|------|----------|
+| `BAD_REQUEST` | 400 | 검증 실패 · 파일 형식/크기 · **요청을 읽을 수 없음**(깨진 JSON · 잘못된 인코딩 · 빈 본문 · 경로 변수 타입 불일치) · **업로드 요청 형식이 틀림**(멀티파트가 아니거나 `file` 파트가 없음) |
+| `UNAUTHORIZED` | 401 | 자격 증명 불일치 |
+| `NOT_FOUND` | 404 | 리소스 없음 **또는 소유권·권한 위반 은닉** · **없는 URL**(인증된 요청 기준. 미인증이면 401 이 먼저) |
+| `METHOD_NOT_ALLOWED` | 405 | 라우트는 있으나 그 메서드를 받지 않음. 응답에 `Allow` 헤더가 함께 나간다 |
+| `CONFLICT` | 409 | 이메일 중복 · **이미 보낸 메시지에 붙은 첨부 삭제**(API-DELETE-002) · **`?ifEmpty=true` 인데 메시지가 있는 대화 삭제**(API-DELETE-001) · **문서를 올린 기록이 있는 사용자 삭제**(API-DELETE-004) |
+| `PAYLOAD_TOO_LARGE` | 413 | 멀티파트 하드 한도 초과. **약 32MB 까지만 이 응답이 도달한다** — 그보다 크면 Tomcat 이 연결을 끊어 클라이언트는 상태 코드 없이 I/O 오류를 받는다(근거는 `application.yml` 멀티파트 주석) |
+| `NOT_ACCEPTABLE` | 406 | `Accept` 가 그 라우트가 내는 형식(JSON)을 받지 않음(#519). 415 의 짝 — 둘 다 요청 헤더를 고치면 된다. 본문은 다른 오류처럼 JSON 이다 |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` 을 그 라우트가 받지 않음. **본문을 읽을 수 없는 것(400)과 다르다** — 이쪽은 본문에 닿기 전 협상 단계에서 거절된다 |
+| `RATE_LIMIT` | 429 | 분당 상한(채팅 · 첨부 업로드 · 비밀번호 변경 · 로그인 실패) · 동시 스트림 상한. 값은 [backend.md](../02_architecture/backend.md) 「유량 제어」 |
+| `INTERNAL_ERROR` | 500 | **예상하지 못한 예외**. 본문에 상관 ID가 실림(FEAT-OPS-002). 요청이 잘못된 경우는 여기로 오지 않는다 — 그쪽은 400 이다 |
+| `SERVICE_UNAVAILABLE` | 503 | **관리자 문서 업로드 중 OpenAI 일시 장애**(5xx · 429 · 연결 실패, #476 · #479) — 「잠시 뒤 다시 시도」 문구가 실린다. 그 밖에는 비동기 요청 타임아웃이 **응답 커밋 전**에 난 경우인데, 채팅 SSE 는 헤더를 먼저 보내 늘 커밋돼 있어 지금은 도달하는 경로가 없다 — 그때는 본문 없이 끝난다(#326) |
+| `STREAM_ERROR` | — | **SSE 전용, HTTP 상태 없음.** 스트림이 열린 뒤의 오류로 `error` 이벤트에 실린다(API-POST-005) |
+
+### HTTP 상태 코드
+
+| 코드 | 의미 | 이 저장소에서 |
+|------|------|--------------|
+| 200 | 성공 | |
+| 201 | 생성 성공 | 문서 업로드와 계정 발급 두 곳. 대화 생성·첨부 업로드를 포함한 나머지 생성 경로는 **200** 이다 |
+| 204 | 본문 없음 | 삭제류 |
+| 400 | 잘못된 요청 | |
+| 401 | 인증 실패 | 토큰 없음·만료·무효 |
+| **403** | — | **애플리케이션은 쓰지 않는다.** CORS 설정(`CorsConfig`)에 걸린 요청만 Spring 이 낸다 |
+| 404 | 리소스 없음 | **권한 없음도 여기로 보낸다** · 없는 URL(인증된 요청 기준. 미인증이면 401 이 먼저) |
+| 405 | 미지원 메서드 | 라우트는 있으나 메서드가 다르다. `Allow` 헤더에 받는 메서드가 실린다(RFC 9110 §15.5.6) |
+| 406 | 응답 형식 불일치 | `Accept` 가 JSON 을 받지 않는다(#519) |
+| 409 | 충돌 | 이메일 중복 · 이미 보낸 첨부 삭제 · `ifEmpty` 삭제인데 메시지가 있음 |
+| 413 | 용량 초과 | |
+| 415 | 미지원 미디어 타입 | `Content-Type` 이 그 라우트와 맞지 않다 |
+| 429 | 요청 과다 | |
+| 500 | 서버 오류 | |
+| 503 | 일시적 불가 | 관리자 문서 업로드 중 OpenAI 일시 장애(#476). 비동기 타임아웃 경우는 위 에러 표의 `SERVICE_UNAVAILABLE` 행 |
+
+**애플리케이션이 403을 쓰지 않는 이유(P-3)** : 403은 "거기 뭔가 있다"를 알려준다. 남의 대화 id를 넣어 403이 오면
+그 대화가 존재한다는 뜻이 된다. 관리자 기능도 마찬가지로 존재 자체를 드러내지 않는다.
+**일반적인 REST 관행과 다르며 의도된 선택이다.** 문서 곳곳의 「P-3」은 이 존재 은닉 원칙을 가리킨다.
+
+**405·406·415 는 P-3 와 충돌하지 않는다.** P-3 가 막는 것은 *리소스가 거기 있다* 는 누설이다. 405·406·415 가
+드러내는 것은 이 표 아래 「API 목록」에 이미 공개된 **라우트 형태와 요청 형식**이지 특정 리소스의 존재가
+아니다. 남의 대화 id 로 잘못된 메서드를 쳐도 라우트 패턴만 매칭되므로 그 대화가 있는지는 여전히 알 수 없다.
+
+## 2. API 목록
+
+`인증` 열의 `-` 는 공개, `USER` 는 로그인, `ADMIN` 은 관리자 권한이다.
+
+| ID | 메서드 | 경로 | 설명 | 인증 | 상태 |
+|----|--------|------|------|------|------|
+| API-GET-001 | GET | `/api/health` | 헬스체크 | - | 구현됨 |
+| API-POST-002 | POST | `/api/auth/login` | 로그인 | - | 구현됨 |
+| API-GET-002 | GET | `/api/auth/me` | 현재 사용자 | USER | 구현됨 |
+| API-GET-003 | GET | `/api/profile` | 프로필 조회 — **제거됨**(#303, 2026-10-15). API-GET-002 와 같은 처리였고 화면이 쓰지 않았다. 지금은 404 | USER | 제거됨 |
+| API-PATCH-001 | PATCH | `/api/profile/name` | 이름 변경 | USER | 구현됨 |
+| API-PATCH-002 | PATCH | `/api/profile/password` | 비밀번호 변경 → **새 토큰** | USER | 구현됨 |
+| API-PATCH-003 | PATCH | `/api/profile/theme` | 테마 변경 — **제거됨**(#191, 2026-10-06). 화면이 라이트 단일이라 저장할 값이 없다. 지금은 404 | USER | 제거됨 |
+| API-GET-004 | GET | `/api/conversations` | 대화 목록 | USER | 구현됨 |
+| API-POST-003 | POST | `/api/conversations` | 대화 생성 | USER | 구현됨 |
+| API-PATCH-004 | PATCH | `/api/conversations/{id}` | 제목 변경 | USER | 구현됨 |
+| API-GET-005 | GET | `/api/conversations/{id}/messages` | 메시지 목록 | USER | 구현됨 |
+| API-DELETE-001 | DELETE | `/api/conversations/{id}` | 대화 삭제 | USER | 구현됨 |
+| API-POST-004 | POST | `/api/files` | 첨부 업로드 (multipart) | USER | 구현됨 |
+| API-DELETE-002 | DELETE | `/api/files/{id}` | 첨부 삭제 | USER | 구현됨 |
+| API-GET-006 | GET | `/api/files/{id}?token=…` | 첨부 서빙 | **서명 토큰** | 구현됨 |
+| API-GET-009 | GET | `/api/doc-figures/{key}` | 문서 그림 서빙 (FEAT-CHAT-004) | USER | 구현됨 |
+| API-POST-005 | POST | `/api/chat` | 채팅 — **SSE 스트림** | USER | 구현됨 |
+| API-GET-007 | GET | `/api/admin/documents` | RAG 문서 목록 | ADMIN | 구현됨 |
+| API-POST-006 | POST | `/api/admin/documents` | RAG 문서 업로드 | ADMIN | 구현됨 |
+| API-DELETE-003 | DELETE | `/api/admin/documents/{id}` | RAG 문서 삭제 | ADMIN | 구현됨 |
+| API-POST-009 | POST | `/api/admin/documents/sync` | **스토어와 동기화** | ADMIN | 구현됨 |
+| API-GET-008 | GET | `/api/admin/users` | 사용자 목록 | ADMIN | 구현됨 |
+| API-POST-007 | POST | `/api/admin/users/{id}/password-reset` | 임시 비밀번호 발급 | ADMIN | 구현됨 |
+| API-POST-008 | POST | `/api/admin/users` | **계정 발급** | ADMIN | 구현됨 |
+| API-DELETE-004 | DELETE | `/api/admin/users/{id}` | **사용자 삭제** (FEAT-ADMIN-004) | ADMIN | 구현됨 |
+
+**페이지네이션이 없다.** 대화 목록·메시지 목록·문서 목록 모두 전량을 돌려준다. 사내 소규모 전제이며,
+양이 늘면 그때 넣는다. 지금 넣으면 쓰이지 않는 파라미터가 계약에 남는다.
+
+## 3. API 상세
+
+### 계정을 만드는 경로
+
+**스스로 가입하는 경로가 없다.** 계정은 관리자가 `POST /api/admin/users` 로 발급하고,
+받은 사람이 임시 비밀번호로 로그인한다. 첫 관리자는 `ADMIN_EMAILS` 명단을 보고 **기동 시 만들어진다.**
+
+### API-POST-002: 로그인
+
+**POST** `/api/auth/login`
+
+**Request Body:**
+```json
+{ "email": "user@company.com", "password": "…" }
+```
+
+**Response 200:**
+```json
+{
+  "token": "eyJhbGc…",
+  "user": { "id": "…", "email": "user@company.com", "name": "홍길동", "role": "user" }
+}
+```
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `UNAUTHORIZED` | 401 | **계정 미존재와 비밀번호 불일치가 같은 응답이다** (존재 은닉) |
+| `RATE_LIMIT` | 429 | 분당 로그인 실패 누적 상한 초과(성공한 로그인은 세지 않는다). 비밀번호를 보기 전에 한 칸을 선점하고 성공하면 돌려주므로 병렬 요청으로도 넘지 못한다(#359). 돌려주는 곳은 **선점한 분의 창**뿐이다 — 분이 바뀐 뒤의 새 창에서 다른 요청의 실패를 지우지 않는다(#365). 키는 정규화된 이메일이며 IP가 아니다 |
+
+**알려진 약점** : 미존재 계정은 BCrypt 검증을 건너뛰어 응답 시간이 갈리는 타이밍 오라클이 남는다.
+응답 본문·상태 코드만 통일돼 있다.
+
+### API-PATCH-001: 이름 변경
+
+**PATCH** `/api/profile/name`
+
+**Request Body:**
+```json
+{ "name": "홍길동" }
+```
+
+**Response 200:** 사용자(`id` · `email` · `name` · `role`).
+
+**이름은 50자까지다**(#413). trim 뒤 코드 포인트로 세며 넘으면 400 이다 — 잘라 저장하지 않는다.
+`/api/auth/me` · 사용자 목록 · 문서 목록(`uploadedByName`)이 이름을 매번 실어 보내므로 상한이 없으면 응답 크기가 이름 크기를 따라간다.
+입력창도 같은 값으로 더 받지 않지만 정본은 서버다. 계정 발급(API-POST-008)의 이름도 같은 규칙이다.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `BAD_REQUEST` | 400 | 이름 빈 값 · **이름 50자 초과**(trim 뒤 코드 포인트, `USER_MAX_NAME_CHARS`, #413) · **NUL(U+0000) · 짝 없는 서로게이트가 든 값**(#434) |
+
+### API-PATCH-002: 비밀번호 변경
+
+**PATCH** `/api/profile/password`
+
+**Request Body:**
+```json
+{ "currentPassword": "…", "newPassword": "…" }
+```
+
+**Response 200:** 로그인과 같은 형태(`token` + `user`).
+
+**반드시 응답의 새 토큰으로 교체해야 한다.** 변경 이전 토큰은 전부 무효화되므로, 교체하지 않으면
+방금 비밀번호를 바꾼 사용자가 즉시 로그아웃된다.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `UNAUTHORIZED` | 401 | **현재 비밀번호 불일치**. 세션 만료가 아니다 |
+| `BAD_REQUEST` | 400 | `currentPassword` 빈 값 · `newPassword` 8자 미만 · 빈 값 · **UTF-8 72바이트 초과**(BCrypt 입력 한도, 한글은 24자까지, #359) |
+| `RATE_LIMIT` | 429 | 사용자별 분당 비밀번호 변경 상한 초과 |
+
+**프론트 주의** : 이 경로의 401은 "세션이 죽었다"가 아니라 "방금 넣은 값이 틀렸다"는 뜻이다.
+여기서 로그아웃시키면 오타 한 번에 멀쩡한 세션이 날아간다. `frontend/src/lib/api.ts` 가
+`CREDENTIAL_PATHS` 로 이 경로들을 예외 처리한다.
+
+### API-POST-003 / API-PATCH-004: 대화 생성 · 제목 변경
+
+**POST** `/api/conversations` · **PATCH** `/api/conversations/{id}`
+
+**Request Body:**
+```json
+{ "title": "취업규칙 문의" }
+```
+
+**Response 200:** 대화(`id` · `title` · `createdAt` · `updatedAt`).
+
+**제목은 100자까지다**(#371). trim 뒤 코드 포인트로 세며 생성 · 변경 모두 넘으면 400 이다 — 잘라 저장하지 않는다.
+생성에서 제목이 비거나 없으면 `새 대화` 로 만든다. 화면의 자동 제목(첫 메시지 앞 30자)과 제목 입력창도 이 상한 안이다.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `BAD_REQUEST` | 400 | **제목 100자 초과**(trim 뒤 코드 포인트, `CHAT_MAX_TITLE_CHARS`) · 변경에서 제목 빈 값 · **NUL(U+0000) · 짝 없는 서로게이트가 든 값**(#434) |
+| `NOT_FOUND` | 404 | 변경 : 남의 대화 · 없는 대화 |
+
+### API-DELETE-001: 대화 삭제
+
+**DELETE** `/api/conversations/{id}` · `?ifEmpty=true`
+
+**Response 204.** 메시지 · 인용 · 첨부 행은 cascade 로 함께 지워지고, 첨부 파일은 그 뒤에 지운다.
+
+**`ifEmpty=true` 면 메시지가 하나도 없을 때만 지운다**(#447). 메시지가 있으면 409 이고 아무것도 지우지 않는다.
+화면이 200 전에 끊긴 새 대화를 치울 때 쓴다(#440). 대화 행을 잠가 진행 중인 채팅 준비(API-POST-005, 질문 저장 · 첨부 연결)와
+순서를 정한다 — 준비가 먼저면 그 커밋을 기다렸다가 409, 삭제가 먼저면 준비가 404 로 끝나 아무것도 저장하지 않는다.
+조건 없이 지우면 그사이 커밋된 질문 · 첨부까지 지웠다.
+
+**배포 순서**(#447) : 옛 서버는 `ifEmpty` 를 무시하고 조건 없이 지우므로 백엔드를 먼저 배포한다 — 정본은 [backend.md](../02_architecture/backend.md) 「배포」.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `NOT_FOUND` | 404 | 남의 대화 · 없는 대화 |
+| `CONFLICT` | 409 | `ifEmpty=true` 인데 메시지가 있음 |
+
+### API-POST-005: 채팅 (SSE)
+
+**POST** `/api/chat`
+
+일반 JSON 응답이 아니라 **`text/event-stream`** 이다. `EventSource` 는 Authorization 헤더를 실을 수
+없어 프론트가 `fetch` + `ReadableStream` 으로 직접 파싱한다.
+
+**스트림을 열기 전의 거절(400 · 404 · 429 · 500)은 JSON 이다.** `Accept: text/event-stream` 으로 불러도
+마찬가지다. 상태 코드와 `{ "code", "message" }` 를 보고 갈라야 한다(#279).
+
+**Request Body:**
+```json
+{ "conversationId": "…", "message": "취업규칙 알려줘", "attachmentIds": ["…"] }
+```
+
+**메시지는 4,000자까지다**(#371). trim 뒤 코드 포인트로 세며, 넘으면 **모델을 부르기 전에** 400 으로 거절하고
+사용자 메시지도 저장하지 않는다. 분당 상한(REQ-OPS-003)은 횟수만, 이력 토큰 예산은 **이전** 메시지만 묶어서
+이 상한이 없으면 큰 입력 한 번의 비용이 묶이지 않는다. 입력창도 같은 값으로 더 받지 않지만 정본은 서버다.
+
+**첨부는 한 번에 5장까지다**(#401). 같은 id 중복을 접은 뒤 세며, 넘으면 **모델을 부르기 전에** 400 으로 거절하고
+사용자 메시지도 저장하지 않는다. 이미지는 전부 base64 로 바뀌어 한꺼번에 메모리에 오르므로 파일당 크기 · 분당 업로드 상한만으로는
+요청 하나의 메모리가 묶이지 않는다. 입력창도 같은 값으로 더 받지 않지만 정본은 서버다.
+
+**첨부는 한 번만 쓸 수 있다**(#99). 이미 다른 메시지에 붙은 id 를 다시 보내면 **모델을 부르기 전에**
+400 으로 거절한다 — 통과시키면 이미지가 base64 로 다시 전송돼 비용은 나가고 저장은 안 된다.
+같은 요청 안의 **중복 id 는 조용히 접는다** — 사용자가 의도한 것이 아니고, 거절하면 화면이 고칠 수
+없는 오류를 보게 된다. 정상 UI 는 전송 후 첨부 카드를 비우므로 이 경로에 닿지 않는다.
+
+**이벤트 순서:** `meta` → `stage`* → `token`* → `citations` → `done` (또는 `error`)
+
+**종료 경로는 셋이다.** 위 둘에 더해 **서버 타임아웃**이 있는데, 그때는 **아무 이벤트도 오지 않고
+연결만 끊긴다**(`app.chat.sse-timeout-ms`, `SSE_TIMEOUT_MS`). emitter 가 닫힌 뒤라 응답은 이미 커밋돼 있고,
+타임아웃 처리기는 `WARN` 로그만 남기고 아무것도 쓰지 않는다(TC-OPS-032) — 종료 이벤트를 실을 수단이 없다. **클라이언트는 `done`·`error` 어느 쪽도 받지
+못한 채 스트림이 끝나는 경우를 처리해야 한다** — 프록시·네트워크 절단도 같은 모양으로 도착한다.
+
+| event | data | 설명 |
+|-------|------|------|
+| `meta` | `{ messageId, conversationId }` | 스트림 개시 |
+| `stage` | `{ stage, label }` | 진행 단계. **실제로 지난 경계에서만 온다**. `stage` 는 `analyzing` → `searching` → `reviewing` → `generating` 순이고 지나지 않은 단계는 빠진다. `reviewing` 은 검색 결과가 실제로 도착했을 때만 오며(0건이면 없음) 라벨에 참조 문서 이름(`<첫 자료명> 외 N건`)을 싣는다. 첨부 이미지가 있는 턴은 `analyzing` 라벨이 이미지까지 밝힌다(#375) |
+| `token` | `{ delta }` | 답변 조각 |
+| `citations` | `{ items: [{ seq, sourceName, snippet }] }` | 출처 |
+| `done` | `{ finishReason, noSource }` | 완료. `finishReason` 은 항상 `stop` 이다. `noSource=true` 면 인용 0건 |
+| `error` | `{ code, message }` | 스트림 도중 오류. `code: "STREAM_ERROR"` · `message: "응답 생성 중 오류"` 로 고정 |
+
+**검증은 동기, 스트리밍은 비동기다.** 400 · 404 · 429는 SSE 안의 `error` 이벤트가 아니라
+**정상 HTTP 응답**으로 나간다. 스트림이 시작됐다는 것은 검증을 통과했다는 뜻이다.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `BAD_REQUEST` | 400 | 메시지도 첨부도 없음 · **메시지가 4,000자 초과**(trim 뒤 코드 포인트, `CHAT_MAX_MESSAGE_CHARS`, #371) · **NUL(U+0000) · 짝 없는 서로게이트가 든 값**(#434) · **첨부가 5장 초과**(중복을 접은 뒤, `CHAT_MAX_ATTACHMENTS`, #401) · **이미 다른 메시지에 붙은 첨부를 다시 보냄**(#99) · 확인 뒤 다른 전송이 먼저 실었거나 고아 회수가 지운 첨부(#359) |
+| `NOT_FOUND` | 404 | 남의 대화 · 없는 첨부 |
+| `RATE_LIMIT` | 429 | 분당 상한 **또는 동시 스트림 상한**. 큐에 쌓지 않고 즉시 거절한다. **동시 스트림 상한을 먼저 본다** — 그쪽에 걸린 요청은 모델을 부르지 않아 분당 카운터를 태우지 않는다(#96). 둘은 `message` 로 구분된다 |
+
+**중단은 오류가 아니다.** 사용자가 끊으면 받은 데까지 `status=complete` + `stopped=true` 로 저장한다.
+부분 텍스트가 비면 아무것도 저장하지 않는다.
+
+**토큰을 하나도 못 보내고 끊긴 턴은 질문도 걷는다**(#489). 질문(사용자 메시지) 행을 지우고, 그 메시지에 붙은 첨부는 연결만 풀어
+(`message_id=null`) 같은 첨부 id 로 다시 보낼 수 있게 둔다 — 한 트랜잭션. 대화는 그대로 둔다(비게 된 새 대화는 화면이 위 API-DELETE-001 의
+「비었을 때만 지우기」로 치운다). 서버는 끊김을 **다음 이벤트(단계 · 토큰) 전송이 실패할 때** 알므로 철회는 끊은 직후가 아니라 그때
+일어난다(#487). 첫 토큰 전 **서버 타임아웃**은 걷지 않고 `error` 답 행으로 남긴다(#359).
+걷힌 첨부의 회수 유예는 업로드 시각(`created_at`) 기준이다 — 올린 지 `ORPHAN_TTL_MINUTES` 가 지난 카드는 다시 보내기 전에 고아 회수가 가져갈 수 있다.
+
+**서버 타임아웃은 `timed_out=true` 로 남는다**(#84). 저장 조합은 `erd.md` 「messages」 표가 정본이다.
+
+### API-POST-004: 첨부 업로드
+
+**POST** `/api/files` (multipart, 필드 `file`) → 200
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `BAD_REQUEST` | 400 | 빈 파일 · 이미지가 아닌 형식(jpg · png · gif · webp 만) · 10MB 초과 · 매직바이트 불일치 · **사용자별 저장 한도 초과**(기본 500MB, `ATTACHMENT_QUOTA_MB`, #418) |
+| `RATE_LIMIT` | 429 | 분당 상한(`RATELIMIT_UPLOAD_PER_MINUTE`) |
+
+**저장 한도는 사용자 폴더에 지금 남아 있는 파일 크기의 합이다**(#418) — 디스크에 쓰기 전에 보고, 넘기면 아무것도 쓰지 않는다.
+지운 첨부 · 대화만큼 다시 올릴 수 있다. 문구 : 「첨부 저장 한도 초과(사용자당 500MB) - 오래된 대화를 지우면 다시 올릴 수 있음」.
+
+### API-DELETE-002: 첨부 삭제
+
+**DELETE** `/api/files/{id}` → 204
+
+**보내기 전(초안) 첨부만 지운다**(#249). 입력창에서 카드를 지울 때 쓰는 API 다 — 이미 보낸 메시지의 첨부를
+지우면 대화 기록의 이미지가 사라지므로 막는다. 행을 먼저, 파일을 나중에 지운다(파일만 남으면 고아 회수가 가져간다).
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `NOT_FOUND` | 404 | 없는 첨부 · 남의 첨부(존재 은닉) |
+| `CONFLICT` | 409 | **이미 보낸 메시지에 붙은 첨부** |
+
+### API-GET-006: 첨부 서빙
+
+**GET** `/api/files/{id}?token={서명토큰}`
+
+**유일하게 Bearer를 쓰지 않는 엔드포인트다.** `<img src>` 가 헤더를 실을 수 없기 때문이다.
+
+| 항목 | 값 |
+|------|-----|
+| 토큰 TTL | 기본 15분(`FILE_ACCESS_TOKEN_TTL_MINUTES`) |
+| 발급 시점 | 업로드 응답 · 메시지 재조회 시마다 **새로 서명** |
+| 검증 실패 | **전부 404** (존재 은닉) |
+
+**알려진 약점** : 페이지를 오래 열어둔 뒤 새로 그려지는 이미지가 만료로 깨질 수 있다.
+백로그 「파일 URL 수명」 항목이다.
+
+### API-GET-009: 문서 그림 서빙
+
+**GET** `/api/doc-figures/{key}` — Bearer 필요
+
+답변 본문의 그림 표식 `[[그림:<key>]]` 이 가리키는 그림을 돌려준다(FEAT-CHAT-004).
+프론트는 `<img src>` 로 직접 걸지 않고 `fetch` 로 받아 `Blob` objectURL 로 그린다 — 그래서 첨부(API-GET-006)와 달리
+서명 쿼리 토큰이 필요 없다.
+
+| 상황 | 응답 |
+|------|------|
+| 성공 | 200 `image/png` · `Cache-Control: private, max-age=86400` |
+| key 가 `^[a-z0-9-]{1,64}$` 가 아님 | 404 — 형식 오류도 「없음」으로 답한다. 키 공간을 더듬어 볼 단서를 주지 않는다 |
+| 그런 그림이 없음 · (live 에서) `DOC_FIGURES_DIR` 미설정 | 404. mock 은 미설정이면 classpath 견본(`mock-figures/`)을 준다 |
+| 비로그인 · 만료 | 401 |
+
+**사용자 단위 권한이 없다.** 그림은 공용 Vector Store 문서에서 나왔고 그 문서는 로그인한 모든 사용자가 검색한다 —
+볼 수 있는 범위가 같다.
+
+### API-GET-007 / API-POST-006 / API-DELETE-003 / API-POST-009: RAG 문서
+
+**GET** `/api/admin/documents`
+
+**Response 200:**
+```json
+[
+  {
+    "id": "…",
+    "filename": "취업규칙.pdf",
+    "byteSize": 2516582,
+    "status": "completed",
+    "uploadedByName": "김운영",
+    "createdAt": "2026-08-19T…"
+  }
+]
+```
+
+**`uploadedByName` 만 싣고 이메일은 싣지 않는다.** 관리 화면에 불필요하게 개인정보를 늘리지 않는다.
+
+**POST** `/api/admin/documents` — `multipart/form-data`, 필드명 `file`
+
+| 항목 | 값 |
+|------|-----|
+| 허용 형식 | PDF · TXT · MD · DOCX |
+| 형식 판정 | content-type 1차. **모를 때만**(`application/octet-stream`·빈 값) 파일 확장자 2차 |
+| 최대 크기 | 25MB |
+| 매직바이트 | **PDF만** 검사(`%PDF`). 확장자로 판정한 경우에도 그대로 검사한다 |
+
+**Response 201:** 문서 DTO 하나.
+
+**DELETE** `/api/admin/documents/{id}` → **204**. soft delete 이며 행은 남는다.
+OpenAI 정리(스토어 연결 해제 · 파일 삭제)의 실패는 응답을 바꾸지 않는다 — 일시 장애는 서버가 몇 번 다시 보내고, 끝내 남은 파일은 ERROR 로그로만 알린다(#476, 규칙은 features.md FEAT-ADMIN-002).
+
+**POST** `/api/admin/documents/sync` — 본문 없음. 공용 스토어에 있는데 살아 있는 행이 없는 파일을 행으로 넣는다(#193).
+파일은 지워지고 스토어 연결만 남은 항목은 연결을 끊는다(#271).
+
+**Response 200:**
+```json
+{ "added": 2, "total": 2 }
+```
+
+`added` 는 이번에 새로 넣은 행 수, `total` 은 스토어의 파일 수에서 이번에 끊은 연결 수를 뺀 값이다. **멱등**이라 다시 부르면 `added` 가 0 이다.
+규칙(soft delete 된 파일의 재등록, `uploaded_by` 등)은 `features.md` FEAT-ADMIN-002 「스토어 동기화」.
+
+**Error Cases (4종 공통):**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `NOT_FOUND` | 404 | **비관리자 접근** · 없는 문서 |
+| `BAD_REQUEST` | 400 | 형식·크기·매직바이트 위반 |
+| `BAD_REQUEST` | 400 | **`OPENAI_VECTOR_STORE_ID` 미설정** — 행을 만들지 않는다 |
+| `BAD_REQUEST` | 400 | **OpenAI 가 파일 내용을 거절**(`POST /files` 가 413 · 415, #479) — 고정 문구이고 업스트림 원문은 싣지 않는다(서버 WARN 로그에만). 행을 만들지 않는다 |
+| `INTERNAL_ERROR` | 500 | 동기화 중 OpenAI 조회 실패 — **행을 하나도 넣지 않는다** |
+| `SERVICE_UNAVAILABLE` | 503 | **업로드 중 OpenAI 일시 장애**(5xx · 429 · 연결 실패, #476 · #479) — 행을 만들지 않는다. 스토어 연결 단계였으면 연결 해제 → 올린 파일 삭제 순으로 정리한 뒤 알린다(#479). 관리자는 그대로 다시 시도한다 |
+| `INTERNAL_ERROR` | 500 | 그 밖의 OpenAI 실패(응답 형식 이상 등). 상관 ID 로 로그를 추적한다 |
+
+### API-GET-008 / API-POST-007: 사용자 관리
+
+**GET** `/api/admin/users`
+
+**Response 200:** `[{ id, email, name, role, createdAt }]`
+초기화 대상을 고르는 용도라 여기서는 이메일이 필요하다.
+
+**POST** `/api/admin/users/{id}/password-reset`
+
+**Response 200:**
+```json
+{ "temporaryPassword": "Xk7m-Qp29-Vr4t" }
+```
+
+**이 값은 한 번만 반환되고 저장되지 않는다.** 발급 즉시 대상 사용자의 `password_changed_at` 이
+올라가 **기존 토큰이 전부 무효**가 된다.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `NOT_FOUND` | 404 | 비관리자 접근 · 없는 사용자 |
+| `BAD_REQUEST` | 400 | 자기 자신 대상 |
+
+**자기 자신은 대상에서 제외한다.** 마이페이지에 비밀번호 변경이 이미 있고, 관리자가 자기 세션을
+스스로 끊는 경로를 만들 이유가 없다.
+
+### API-DELETE-004: 사용자 삭제
+
+**DELETE** `/api/admin/users/{id}` → **204**. 본문 없음.
+
+그 사용자의 대화 · 메시지 · 출처 · 첨부 행이 cascade 로 함께 지워지고, 첨부 파일은 DB 삭제 뒤 디스크에서 지운다.
+**파일 삭제 실패는 응답을 바꾸지 않는다**(WARN 로그, 남은 파일은 저장소 스캔 회수). 그 사용자의 기존 토큰은 다음 요청부터 `401` 이다.
+순서 · 회수 · 막는 이유는 `features.md` FEAT-ADMIN-004.
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `NOT_FOUND` | 404 | 비관리자 접근 · 없는 사용자 |
+| `BAD_REQUEST` | 400 | **관리자 계정**(`role=admin`, 자기 자신 포함) — 관리자는 `ADMIN_EMAILS` 명단으로만 정해진다 |
+| `BAD_REQUEST` | 400 | 형식이 틀린 경로 변수 — 관리자 확인보다 먼저 걸린다(`AdminController` javadoc) |
+| `CONFLICT` | 409 | **문서를 올린 기록이 있는 사용자** — `rag_documents.uploaded_by` restrict. soft delete 된 문서 행도 포함. 아무것도 지워지지 않는다 |
+
+### API-POST-008: 계정 발급
+
+**POST** `/api/admin/users`
+
+**Request Body:**
+```json
+{ "email": "hong@company.com", "name": "홍길동" }
+```
+
+**비밀번호를 받지 않는다.** 관리자가 정한 값을 사람 손으로 옮기면 그 값이 그대로 굳거나 여러 계정에
+재사용된다. 서버가 매번 새로 만든다.
+
+**Response 201:**
+```json
+{ "temporaryPassword": "Xk7m-Qp29-Vr4t" }
+```
+
+초기화와 같은 형태이며 **이 값도 한 번만 반환되고 저장되지 않는다.**
+
+**Error Cases:**
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `BAD_REQUEST` | 400 | 이메일 형식 · 이름 공백 · **이름 50자 초과**(trim 뒤 코드 포인트, `USER_MAX_NAME_CHARS`, #413) · **NUL(U+0000) · 짝 없는 서로게이트가 든 값**(#434) |
+| `BAD_REQUEST` | 400 | **허용 도메인 밖**(FEAT-AUTH-001). 메시지에 허용 도메인을 밝힌다 |
+| `CONFLICT` | 409 | 이미 있는 이메일 |
+| `NOT_FOUND` | 404 | 비관리자 접근 |
+
+도메인 검사가 중복 검사보다 먼저이고 발급된 계정의 역할은 `ADMIN_EMAILS` 명단에 있으면 admin, 아니면 user 다 — 순서 · 권한 규칙은 `features.md` FEAT-AUTH-001.
+
+## 4. 응답 헤더
+
+| 헤더 | 언제 | 설명 |
+|------|------|------|
+| `X-Refresh-Token` | 토큰 만료가 임계 미만일 때 | 새 토큰. **CORS 노출 헤더에 등록해야 브라우저가 읽는다** (FEAT-OPS-003) |
+
+**등록을 빠뜨리면 서버는 정상 발급하는데 프론트가 못 읽어 조용히 아무 일도 일어나지 않는다.**
+실패가 눈에 띄지 않는 형태라 시나리오 케이스로 고정한다.
