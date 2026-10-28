@@ -9,3 +9,9 @@
 
 - **CI 콜드 실행 지연** : 프론트 `AdminPage.test`(#513 뒤 `AdminUsersPage.test`) 「일회용 비밀번호 창은 배경 클릭으로 닫히지 않고 Esc · 닫기로 닫힌다」가 CI 에서 한 번 실패했다(10-26 PR #496, 문서만 바꾼 브랜치 · 재실행 통과 · 1040ms). #482 가 고친 `MessageListLazy` 와 같은 콜드 실행 지연으로 보인다.
 - **Cloudflare 502** : cloudflared `malformed MIME header line ":"` 로 battery 에서 1회 났다 — 7일 로그 중 1건, 재현 0/10(10-23) — #515 와 같은 헤더 경합으로 보인다(같은 Tomcat 헤더 목록이 깨진 모양).
+
+## 다음 후보
+
+- 첫 토큰 전 heartbeat(이슈 미등록) — 채팅 끊김 감지(운영 실측 3.2~5.9초)가 프론트 재확인 창 8초(#501)를 넘는 드문 경우를 없앤다. 그 밖 후보는 [frontend](../02_architecture/frontend.md) 「스트리밍 UI 규칙」 의 남은 한계와 [backlog.md](./backlog.md) 에서 고른다.
+
+[#105](https://github.com/changs0124/rag-chatbot/issues/105) 는 「지금 고치지 않는다」 로 판정한 리뷰 항목의 영구 기록(`wontfix`)이라 열린 이슈 수를 셀 때 묶지 않는다.
