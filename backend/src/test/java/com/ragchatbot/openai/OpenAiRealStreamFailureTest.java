@@ -58,6 +58,30 @@ class OpenAiRealStreamFailureTest {
 				.hasMessage("OpenAI 응답이 실패로 끝남 code=server_error type=server_error message=line1 line2");
 	}
 
+	/** 사유를 이벤트 맨 위에 두는 모양(문서상 모양)도 읽는다. 이 모양엔 오류 종류 칸이 없어 type 은 이벤트 이름이 된다 */
+	@Test
+	void error_event_with_top_level_fields_carries_the_reason() {
+		String body = """
+				data: {"type":"error","code":"rate_limit_exceeded","message":"Slow down.","param":null}
+
+				""";
+
+		assertThatThrownBy(() -> consume(body))
+				.hasMessage("OpenAI 응답이 실패로 끝남 code=rate_limit_exceeded type=error message=Slow down.");
+	}
+
+	/** 사유 칸이 빈 실패 이벤트는 빈 칸을 싣지 않고 예전 문구로 */
+	@Test
+	void failure_without_any_reason_keeps_old_message() {
+		String body = """
+				data: {"type":"response.failed","response":{"status":"failed"}}
+
+				""";
+
+		assertThatThrownBy(() -> consume(body))
+				.hasMessage("OpenAI 스트림이 완료(response.completed) 없이 종료됨");
+	}
+
 	/** 사유 없이 끊긴 스트림은 예전 문구 그대로 */
 	@Test
 	void stream_cut_without_reason_keeps_old_message() {

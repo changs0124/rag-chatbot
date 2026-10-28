@@ -398,9 +398,12 @@ public class OpenAiRealService implements OpenAiService {
 					outputTokens = intOrNull(response.path("usage"), "output_tokens");
 					completed = true;
 				} else if ("error".equals(type)) {
-					// 크레딧 소진은 HTTP 200 으로 열린 스트림에 error → response.failed 로 온다(#536)
-					failure = failureOf(ev.path("error"));
+					// 크레딧 소진은 HTTP 200 으로 열린 스트림에 error → response.failed 로 온다(#536).
+					// 사유는 error 안에 실려 왔지만 문서에는 이벤트 맨 위에 두는 모양도 있어 둘 다 읽는다(리뷰 지적)
+					JsonNode error = ev.path("error");
+					failure = failureOf(error.isObject() ? error : ev);
 				} else if ("response.failed".equals(type) && failure == null) {
+					// error 가 먼저 와 사유를 남겼으면 그것을 둔다 - 둘이 같은 사유를 싣는다(10-28 실측)
 					failure = failureOf(ev.path("response").path("error"));
 				}
 			}
@@ -423,10 +426,15 @@ public class OpenAiRealService implements OpenAiService {
 	}
 
 	/**
-	 * 실패 사유 한 줄. 업로드 경로의 {@link #upstreamSummary} 와 같은 모양에 type 을 더함 - 크레딧 소진은 code 가
+	 * 실패 사유 한 줄(칸이 다 비면 null). 업로드 경로의 {@link #upstreamSummary} 와 같은 모양에 type 을 더함 - 크레딧 소진은 code 가
 	 * credit_balance_exhausted, type 이 insufficient_quota 로 온다. 다시 시도해도 같아 오류로 둔다(#479 와 같은 판단)
 	 */
 	private static String failureOf(JsonNode error) {
+		// 사유 칸이 다 비면 null - 「code= type= message=」 는 예전 문구보다 헷갈린다(리뷰 지적)
+		if (error.path("code").asString("").isEmpty() && error.path("type").asString("").isEmpty()
+				&& error.path("message").asString("").isEmpty()) {
+			return null;
+		}
 		return oneLine("code=" + error.path("code").asString("") + " type=" + error.path("type").asString("")
 				+ " message=" + error.path("message").asString(""));
 	}
