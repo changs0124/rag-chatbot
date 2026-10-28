@@ -1,0 +1,4 @@
+구현 bc290e9
+backend ./mvnw -q verify rc=0 · tests=424 failures=0 errors=0 skipped=0
+frontend npx vitest run : 308 passed (308) · oxlint 통과 · tsc -b rc=0
+단언 수 합계 1591 → 1591 (asserts.tsv diff : ChatSseAcceptErrorTest 4 → 0, SseTestSupport 1 → 5 — assertJsonError 이동분)
