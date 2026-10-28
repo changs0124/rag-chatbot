@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### Docs
+- **작업 문서(`current-sprint.md` · `backlog.md`)에 쌓인 낡은 내용과 다른 문서의 사본을 지웠다(#538).** `current-sprint.md` 는 「아직 안 끝난 것만」 이 규칙인데, 배포마다 손으로 고치던 운영 커밋 줄(세 배포 전 `bcb94fb` 로 남아 있었다) · 마지막 업데이트 날짜 · 빈 「블로커」 절 · #105 설명 · `frontend.md` 「남은 한계」 와 겹치는 다음 할 일 후보가 남아 있었다. 닫은 이슈의 모델 응답 관찰 4개(#431 · #467 · 인용 표기 누락 · 이력 예산)는 횟수를 그대로 `live-integration.md` 「3-3. 지켜보는 응답 변동」 으로 옮겼고, 모델과 무관한 CI 콜드 실행 지연 · Cloudflare 502 는 `current-sprint.md` 「지켜보는 것」 에 남겼다. `backlog.md` 는 빈 우선순위 절 둘을 지우고, 미구현 항목 표의 「지금 상태」 열(`overview.md` 「알려진 제약」 · `features.md` 범위 밖의 사본)을 빼 권장안만 남겼다. 동작 변화 없음
+
 ## [2026-10-28]
 
 운영 배포 2회 + Vector Store 클레임 문서 교체 2회(#531 → #532, 배포 없음) — `1627392`(#525 cloudflared 2026.10.5, 롤백 `prev-2889bfd`) → `9465e0e`(#536 · #528 · #527, 롤백 `prev-2889bfd`=9b56023a — `1627392` 의 앱 이미지가 `2889bfd` 판이라 같다). `9465e0e` 배포는 `deploy.sh` 의 터널 ready 확인(#528) 첫 실전 — 「OK (0초 경과)」. 배포 뒤 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · 크레딧 소진 상태에서 시험 채팅 1회로 로그 문구 `OpenAI 응답이 실패로 끝남 code=credit_balance_exhausted type=insufficient_quota …` 확인(시험 대화 삭제). 백엔드 코드는 `2889bfd` 와 같고 compose 의 cloudflared 다이제스트만 바뀌었다. 배포 뒤 컨테이너 2026.10.5 · 터널 엣지 4 · 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `Config.Env` TUNNEL 0건 · Cloudflare 대시보드 커넥터 버전 2026.10.5. cloudflared 를 되돌릴 이전 다이제스트는 `sha256:9b49eed8…`(2026.10.0) — 절차는 `backend.md` 「감수하는 약점」.
