@@ -1,0 +1,22 @@
+## after — f865b96
+docs/04_tasks/current-sprint.md : 11줄 · 1118자
+docs/04_tasks/backlog.md : 26줄 · 3151자
+
+## 옮긴 관찰 횟수가 그대로인지 (before 원문의 측정 문구가 after 어딘가에 있는지)
+L1 4/8             before:1 after:1
+v1 5/12            before:1 after:1
+운영 앱 1/4     before:1 after:1
+polite             before:1 after:1
+1040ms             before:1 after:1
+10-21 2회 중 1회 before:1 after:1
+28/28              before:1 after:3
+30턴 세션 1회  before:1 after:1
+재현 0/10        before:1 after:1
+
+ docs/01_specs/live-integration.md |  9 +++++++++
+ docs/04_tasks/backlog.md          | 32 ++++++++++++--------------------
+ docs/04_tasks/current-sprint.md   | 31 +++++--------------------------
+ docs/06_changelog/CHANGELOG.md    |  3 +++
+ 4 files changed, 29 insertions(+), 46 deletions(-)
+
+check-all.sh docs : 통과
