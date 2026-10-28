@@ -1,0 +1,263 @@
+# 자체 호스팅(우분투 서버) 배포 구성 - 앱 · DB · 터널 세 컨테이너.
+# 프론트는 Vercel 에 있으므로 여기 없음. 절차는 docs/02_architecture/backend.md 「배포」 참고.
+#
+# 서비스 포트는 인바운드로 열지 않는다 - cloudflared 가 바깥으로 연결을 걸어 터널을 유지하므로
+# 서비스용 포트포워딩 · 방화벽 인바운드 규칙이 필요 없다. 예외는 관리용 SSH(22) 하나다
+# (backend.md 「배포」). TLS 는 Cloudflare 가 종단한다.
+#
+# 환경변수는 두 곳으로 나뉜다 :
+#   backend/.env - 앱 변수(정본은 backend/.env.example)
+#   .env         - compose 전용 변수(DB 자격 · POSTGRES_*). 정본은 .env.example
+#                  터널 토큰은 여기 두지 않는다 - secrets/tunnel_token 파일이다(#203, 아래 cloudflared)
+#
+# **build 키가 없는 것은 의도다(#127)** - 이미지가 없으면 서버에서 조용히 빌드로 빠지지 않고 기동이 실패한다.
+# 로컬 빌드는 docker-compose.build.yml. 이미지는 `scripts/deploy.sh` 가 서버로 옮긴다(docker save → scp → docker load).
+# 로컬에서 빌드해 띄우려면 override 를 겹친다 :
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build db app
+#
+# **mem_limit 을 셋 다 건다(#127).** 상한이 없으면 커널 OOM killer 가 누구를 죽일지 고르는데,
+# db 가 걸리면 pgdata 가 위험하다. 상한은 app 이 먼저 죽게 만들어 DB 를 지키는 장치이기도 하다.
+# app 의 memswap_limit 은 mem_limit 과 같게 둬 스왑을 금지한다(#202, 근거는 app 아래 주석).
+
+services:
+  db:
+    # **다이제스트로 고정한다(#357)** - `16-alpine` 은 pull 할 때마다 바뀌는 태그라, 서버를 새로 만들거나
+    # pull 하면 아무도 고르지 않은 이미지가 들어온다(같은 태그가 로컬과 운영에서 이미 달랐다). 아래 cap_add 넷도
+    # 그 시점 이미지로 실측한 값이다. 태그는 읽는 사람을 위한 표기이고 실제로는 다이제스트만 쓰인다.
+    # 고정값은 2026-10-16 운영 db 가 돌던 이미지(16.15 · alpine 3.24) - 반영 때 이미지가 바뀌지 않게 맞췄다.
+    # 그래도 image 문자열이 달라져 첫 `compose up` 에서 db 컨테이너는 한 번 재생성된다(실측, 데이터는 볼륨에 남는다).
+    #
+    # 올릴 때는 **다이제스트를 바꾸는 커밋**으로 올린다 - 초기화 경로 검증은 아래 cap_add 주석대로 `down -v` 로 한다 :
+    #   docker buildx imagetools inspect postgres:16-alpine     (Digest 줄 - 멀티 아키텍처 인덱스)
+    # 통합 테스트(AbstractPgIntegrationTest)가 **이 줄을 그대로 읽어** 같은 이미지로 돈다(#369) - 테스트 쪽은 따로 고치지 않는다.
+    # 그래서 이 줄은 `image: postgres:<태그>@sha256:<64자>` 한 줄 형태를 유지한다(바꾸면 테스트가 기동을 멈춘다)
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    # 기본값(shared_buffers 128MB · max_connections 100)보다 줄인다. app 쪽 Hikari 풀이 5 라 20 이면 여유다.
+    # 호스트가 넓어져도 일부러 키우지 않았다
+    command: >
+      postgres
+      -c shared_buffers=48MB
+      -c max_connections=20
+      -c work_mem=2MB
+      -c maintenance_work_mem=32MB
+    # 512m(#243). 기동 직후 실측 27MiB
+    mem_limit: 512m
+    security_opt:
+      # app 과 같은 이유로 권한 상승 경로를 닫는다(#130).
+      - no-new-privileges:true
+    # **db 만 cap_drop: ALL 로 끝내지 못한다(#130).** postgres 이미지는 **초기화 중** root 로
+    # `chown -R postgres:postgres` 를 하고 `gosu` 로 강등하므로 네 개가 필요하다 :
+    #   DAC_OVERRIDE · FOWNER  - 데이터 디렉터리 읽기/권한 조정
+    #   SETUID · SETGID        - postgres 사용자로 강등
+    # 나머지는 전부 버린다(기본 14개 중 10개 제거).
+    #
+    # 넷은 하나씩 빼 보며 좁힌 실측이다(#130). CHOWN 은 넣지 않는다 - 신규 named volume 은 이미 postgres
+    # 소유라 chown 이 바꿀 것이 없다. FOWNER 는 빼도 healthy 지만 chmod 가 **조용히 실패해** 넣어 둔다.
+    # named volume 전제다 - bind mount 나 다른 uid 로 옮기면 CHOWN 이 다시 필요할 수 있다.
+    #
+    # **기존 볼륨으로 시험하면 거짓 통과한다** - 초기화가 끝난 pgdata 는 위 경로를 타지 않아 신규 서버의
+    # 첫 배포에서야 깨진다. 바꿀 때는 `down -v` 로 볼륨을 버리고 초기화를 실제로 태워 검증한다.
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+    # **fork 폭주의 안전망이다(#130).** 유휴 시 실측 14개이고, max_connections=20 이므로
+    # 접속당 프로세스 하나를 더해도 35 선이다. 128 은 그 3배 이상이라 정상 운영에서 걸리지 않는다.
+    pids_limit: 128
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ragchatbot}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 를 .env 에 넣을 것}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      # **db 는 backend 에만 둔다(#130)** - 터널 컨테이너는 바깥과 말하는 유일한 컨테이너라
+      # 침해 표면이 가장 넓은데, 그쪽에서 DB 포트가 보일 이유가 없다.
+      - backend
+    healthcheck:
+      # 앱이 Flyway 로 스키마를 잡으므로 DB 가 실제로 받을 준비가 된 뒤에 떠야 한다
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ragchatbot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging:
+      # **회전을 켠다(#130)** - Docker 기본 json-file 은 회전이 없어 계속 쌓이고, 이 서버는
+      # pgdata · uploads 와 **같은 디스크**라 로그가 차면 **DB 가 먼저 멎는다.**
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+  app:
+    # 로컬에서 빌드해 `scripts/deploy.sh` 가 서버로 넣어 둔 이미지다 - 레지스트리를 거치지 않는다.
+    # 태그가 없으면 기동에 실패한다(build 키가 없는 이유는 머리 주석)
+    image: rag-chatbot-backend:latest
+    # 1g(#243). 기동 직후 실측 151MiB
+    mem_limit: 1g
+    # **스왑을 금지한다(#202).** mem_limit 과 같게 두면 Docker 가 스왑을 전혀 내주지 않는다 - 스왑을 허용하면
+    # 유휴 중 밀려난 JVM 힙을 도로 읽느라 첫 요청이 수십 초 늦어진다. 상한을 넘기면 빨리 죽고 재시작한다.
+    # 실측 근거는 backend.md 「업로드 부하에서 스왑을 금지하기로 정했다」
+    memswap_limit: 1g
+    security_opt:
+      # **setuid 바이너리로 권한을 되찾는 길을 막는다(#130).** 컨테이너 안에서 실행되는
+      # 프로세스가 setuid/setgid 비트나 파일 capability 로 **새 권한을 얻는 것**을 커널이 거부한다.
+      # 세 컨테이너 모두 비루트로 돌거나(app) 이미지가 내부에서 강등하므로(db), 일단 강등된 뒤에는
+      # 권한을 올릴 이유가 없다. 침해 후 권한 상승의 가장 흔한 경로 하나를 값싸게 닫는다.
+      - no-new-privileges:true
+    # **app 은 capability 가 하나도 필요 없다(#130).** 이미 비루트(`USER app`)로 돌고,
+    # 8080 은 비특권 포트이며, 쓰는 곳은 `/data/uploads` 볼륨과 JVM 의 `/tmp` 뿐이다.
+    # 특권 포트 바인딩(NET_BIND_SERVICE)도 소유권 변경(CHOWN)도 하지 않는다.
+    cap_drop:
+      - ALL
+    # **루트 파일시스템을 읽기 전용으로 잠근다(#130).** 침해가 일어나도 이미지 안에 도구를 내려받아
+    # 심지 못하고, jar 를 덮어쓰지도 못한다. 이 컨테이너가 쓰는 곳은 둘뿐이다 :
+    #   /data/uploads - 볼륨이라 read_only 와 무관하게 쓰기 가능
+    #   /tmp          - JVM 이 hsperfdata(성능 카운터)를 만든다. 아래 tmpfs 로 덮는다
+    read_only: true
+    # **Tomcat 자체 한도 뒤의 안전망으로 잡는다(#130).** 한도 역할은 Tomcat 과 채팅 풀이 먼저 하고
+    # 이 값은 fork/스레드 폭주만 막는다. 그래서 정상 부하의 최대치보다 커야 한다 :
+    #   Tomcat 200(max-threads 기본값) + 채팅 실행기 CHAT_MAX_CONCURRENT_STREAMS(16) + 그 밖 약 39
+    #   (운영 유휴 49 에서 Tomcat 유휴 10 을 뺀 값, 2026-10-15) ≈ 255 → 288(#301)
+    # 채팅 상한을 올리면 이 값도 같이 올린다
+    pids_limit: 288
+    tmpfs:
+      # **크기를 묶는다.** 상한이 없으면 tmpfs 가 컨테이너 메모리(1g)를 먹어 들어가
+      # mem_limit 으로 DB 를 지키려던 의도가 무너진다. hsperfdata 는 수십 KB 라 64m 면 넉넉하다.
+      - /tmp:size=64m
+    env_file:
+      - backend/.env
+    environment:
+      # 운영 프로필 - AppModeGuard 가 prod + APP_MODE=mock 기동을 막는다(#305). 이 프로필이 바꾸는 것은 그 검사뿐이다.
+      # 로컬에서 compose 로 목업을 띄울 때만 셸이나 루트 .env 에서 SPRING_PROFILES_ACTIVE= 로 비운다
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE-prod}
+      # DB 접속은 여기서 조립한다 - backend/.env 에 DB_URL 이 있어도 이 값이 이긴다.
+      # 접속 정보를 루트 .env 에서만 받으려는 것이고(계정 · 비밀번호는 아래), 동시에 jdbc 스킴을 강제해
+      # 관리형 DB 형식(postgres://…)을 그대로 넣어 기동이 깨지는 사고를 막는다
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-ragchatbot}
+      # **앱은 런타임 계정으로, 마이그레이션만 소유자로 접속한다(#415).** 소유자는 슈퍼유저라, 앱이 그대로 쓰면
+      # SQL 주입 한 곳이 `COPY ... TO PROGRAM` 으로 db 컨테이너 명령 실행까지 간다. APP_DB_USER 를 비우면
+      # 옛 구성(소유자 하나)으로 돈다 - 계정을 만들기 전 · 로컬 compose 용. 계정 만드는 SQL 은 backend.md 「배포」
+      DB_USERNAME: ${APP_DB_USER:-${POSTGRES_USER:-postgres}}
+      DB_PASSWORD: ${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}
+      SPRING_FLYWAY_USER: ${POSTGRES_USER:-postgres}
+      SPRING_FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
+      FILE_STORAGE_ROOT: /data/uploads
+      # 문서 그림(FEAT-CHAT-004). 아래 바인드 마운트와 짝이다
+      DOC_FIGURES_DIR: /data/doc-figures
+      # **SerialGC 를 명시한다.** 2 vCPU · 기준 성능 20% 버스트 사양에서 G1 의 GC 스레드는 CPU 와 메모리를
+      # 함께 낭비한다. 컨테이너 상한이 작아 JVM 이 알아서 고르기도 하지만, 상한을 올리는 날
+      # 조용히 G1 으로 되돌아가는 것을 막으려고 박아 둔다.
+      # MaxRAMPercentage 는 mem_limit(1g) 기준이다 - 힙 밖(메타스페이스 · 스레드 스택 · 코드
+      # 캐시)이 나머지를 쓰므로 100 에 가깝게 두면 힙이 아니라 컨테이너가 먼저 죽는다
+      # ExitOnOutOfMemoryError(#401) - OOM 은 `catch (Exception)` 에 잡히지 않아 그 스레드만 죽고 JVM 은 반쯤
+      # 고장 난 채 응답을 이어 간다. 프로세스를 내려야 restart: unless-stopped 가 깨끗한 상태로 다시 띄운다
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65 -XX:+UseSerialGC -Xss512k -XX:+ExitOnOutOfMemoryError"
+      # application.yml 에 hikari 설정이 없어 기본값이 10 이다. 커넥션은 스트림 앞뒤의 짧은 저장에만 잡혀
+      # 5로 충분하다(동시 16명 실측, backend.md 「유량 제어」)
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+    volumes:
+      # 첨부는 로컬 디스크에 쌓인다. 이 볼륨을 떼면 업로드된 이미지가 사라진다
+      - uploads:/data/uploads
+      # 문서 그림은 배포자가 복사해 두는 파일이라 볼륨이 아니라 배포 디렉터리의 폴더를 붙인다.
+      # 앱은 읽기만 하므로 :ro. 폴더가 없으면 docker 가 빈 폴더를 만들고 그림 없이 텍스트만 나온다
+      - ./doc-figures:/data/doc-figures:ro
+    networks:
+      # app 만 두 네트워크에 걸친다 - db 와 말해야 하고(backend) 터널도 받아야 한다(edge).
+      - backend
+      - edge
+    ports:
+      # 루프백에만 묶는다 - 외부 노출은 터널이 담당하므로 여기서 공개할 이유가 없다.
+      # 서버에서 curl 로 직접 찔러볼 때 쓴다
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    logging:
+      # **회전을 켠다.** Docker 기본 json-file 은 회전이 없어 로그가 무한히 쌓인다 -
+      # 이 앱은 첫 관리자의 임시 비밀번호를 기동 로그에 한 번 찍으므로(AdminRoleSynchronizer),
+      # 회전이 없으면 그 값이 /var/lib/docker/containers/<id>/<id>-json.log 에 **평문으로 영구
+      # 잔류**한다. 서버에 셸이 닿는 사람이면 grep 한 번으로 관리자 계정을 얻는다.
+      # 부수적으로 uploads·pgdata 와 같은 디스크를 쓰므로 로그가 차면 DB 가 먼저 멎는다
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      # JVM + Flyway 기동에 시간이 걸린다. 이 유예 동안의 실패는 재시작으로 세지 않음
+      start_period: 90s
+      retries: 3
+    restart: unless-stopped
+
+  cloudflared:
+    # **다이제스트로 고정한다(#130)** - `--no-autoupdate` 는 바이너리 자동 갱신만 끄고, `latest` 이미지는
+    # pull 할 때마다 바뀌어 다음 배포가 어떤 바이너리로 도는지 알 수 없다. 서드파티 액션을 커밋 SHA 로
+    # 고정하는 것과 같은 공급망 판단이다.
+    #
+    # 올릴 때는 **다이제스트를 바꾸는 커밋**으로 올린다(그 자체가 이력이 된다) :
+    #   docker pull cloudflare/cloudflared:latest
+    #   docker inspect cloudflare/cloudflared:latest --format '{{.RepoDigests}}'
+    #   docker run --rm cloudflare/cloudflared@<다이제스트> --version                       # latest 가 몇 버전인지는 다이제스트로 알 수 없다
+    #   docker run --rm cloudflare/cloudflared@<다이제스트> tunnel run --help | grep token-file   # 아래 command 가 쓴다(#203)
+    # 되돌리는 법은 backend.md 「감수하는 약점」 - app 의 롤백 태그로는 되돌아가지 않는다
+    image: cloudflare/cloudflared@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53
+    # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ http://app:8080 매핑은 Cloudflare 대시보드에 있다.
+    # 터널 설정을 저장소에 두지 않는 대신, 토큰만 있으면 어느 서버에서든 같은 주소로 붙는다
+    #
+    # **토큰은 환경변수가 아니라 파일로 넘긴다(#203).** env 로 넘기면 `docker inspect` 의 `Config.Env` 와
+    # `/var/lib/docker/containers/<id>/config.v2.json` 에 평문으로 굳어, 장애 대응 중 inspect 출력을 붙여 넣는
+    # 순간 도메인 트래픽을 가로챌 수 있는 토큰이 같이 나간다. `--token-file` 지원이 필요하다(2026.10.5 에서 확인)
+    command: tunnel --no-autoupdate run --token-file /run/secrets/tunnel_token
+    secrets:
+      - tunnel_token
+    mem_limit: 64m
+    security_opt:
+      # app 과 같은 이유로 권한 상승 경로를 닫는다(#130).
+      - no-new-privileges:true
+    # 아웃바운드 연결만 건다 - 리슨도 바인딩도 하지 않으므로 capability 가 필요 없다(#130).
+    cap_drop:
+      - ALL
+    # 터널 프로세스 하나와 그 고루틴뿐이다. 64 면 넉넉하다(#130).
+    pids_limit: 64
+    depends_on:
+      - app
+    networks:
+      # edge 에만 둔다 - app:8080 에만 닿으면 되고 db 는 보이지 않아야 한다.
+      - edge
+    logging:
+      # db 와 같은 이유로 회전을 켠다(#130). 터널은 연결이 끊길 때마다 재시도 로그를 남기므로
+      # 네트워크가 불안한 구간에서는 이쪽이 더 빨리 쌓인다.
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+# **두 네트워크로 나눈다(#130).** 이름만 나누는 것이 아니라 실제로 닿지 못하게 하는 것이 목적이다 :
+#   backend : db ↔ app
+#   edge    : app ↔ cloudflared
+# cloudflared 에서 `db` 는 이름 해석조차 되지 않는다.
+#
+# **backend 를 `internal: true` 로 만들지는 않았다** - db 의 아웃바운드까지 끊는 것은 네트워크 분리를
+# 넘어서고 새 실패 모드를 들인다. 더 잠그고 싶으면 별도로 판단할 것.
+networks:
+  backend:
+  edge:
+
+volumes:
+  pgdata:
+  uploads:
+
+# **compose secrets 는 swarm 이 아니면 바인드 마운트다(#203).** `uid`·`mode` 지정이 먹지 않고 호스트 파일의
+# 권한이 그대로 보인다. cloudflared 는 65532 로 돌므로 파일은 **644**(남이 읽을 수 있게) 여야 하고, 대신
+# **디렉터리 `secrets/` 를 700** 으로 막아 호스트의 다른 사용자는 경로부터 들어오지 못하게 한다.
+# 파일이 없으면 compose 가 기동 전에 멈춘다. 서버 쪽 권한은 deploy.sh 프리플라이트가 확인한다
+secrets:
+  tunnel_token:
+    file: ./secrets/tunnel_token
