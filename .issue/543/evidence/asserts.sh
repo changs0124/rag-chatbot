@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # 테스트 파일별 단언 호출 수 · 테스트 케이스 선언 수. 사용 : bash asserts.sh (워크트리 루트에서)
 echo "# backend : 파일<TAB>@Test<TAB>단언(assertThat|assertThatThrownBy|assertEquals|assertTrue|assertFalse|verify\()"
 for f in $(git ls-files 'backend/src/test/**/*.java' | sort); do
