@@ -1,0 +1,17 @@
+## before — 운영 로그 (2026-10-28, 크레딧 소진, 백엔드 1627392)
+2026-10-28T04:51:49.719Z ERROR 1 --- [rag-chatbot-backend] [nio-8080-exec-7] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [403a683d] POST /api/chat
+java.lang.IllegalStateException: OpenAI 스트림이 완료(response.completed) 없이 종료됨
+2026-10-28T04:52:04.586Z ERROR 1 --- [rag-chatbot-backend] [nio-8080-exec-4] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [fcedc4d0] POST /api/chat
+java.lang.IllegalStateException: OpenAI 스트림이 완료(response.completed) 없이 종료됨
+2026-10-28T04:52:06.375Z ERROR 1 --- [rag-chatbot-backend] [nio-8080-exec-5] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [76a0d058] POST /api/chat
+java.lang.IllegalStateException: OpenAI 스트림이 완료(response.completed) 없이 종료됨
+2026-10-28T04:52:07.959Z ERROR 1 --- [rag-chatbot-backend] [nio-8080-exec-9] c.r.exception.GlobalExceptionHandler     : 처리되지 않은 예외 [95cc6fb8] POST /api/chat
+java.lang.IllegalStateException: OpenAI 스트림이 완료(response.completed) 없이 종료됨
+
+## 같은 시각 OpenAI 직접 호출(스트림) 이벤트 모양 — HTTP 200 으로 열린 뒤
+event: error
+data: {"type":"error","error":{"type":"insufficient_quota","code":"credit_balance_exhausted","message":"You have no credits remaining. ..."},"sequence_number":2}
+event: response.failed
+data: {"type":"response.failed","response":{"status":"failed","error":{"type":"insufficient_quota","code":"credit_balance_exhausted", ...}}}
+
+→ 로그에는 「완료(response.completed) 없이 종료됨」만 남고 insufficient_quota · credit_balance_exhausted 는 어디에도 없다
