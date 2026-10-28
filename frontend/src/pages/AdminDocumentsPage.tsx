@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
+import AdminErrorBanners from '../components/AdminErrorBanners'
 import BackLink from '../components/BackLink'
 import ConfirmModal from '../components/ConfirmModal'
 import PageShell from '../components/PageShell'
@@ -117,20 +118,7 @@ export default function AdminDocumentsPage() {
         답변 근거로 쓰이는 사내 문서입니다. 여기 없는 내용은 답변에 출처로 붙지 않습니다.
       </p>
 
-      {[listError, error].map(
-        (m, i) =>
-          m && (
-            <p key={i} role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
-              {m}
-              {/* 첫 로드 실패는 폴링도 돌지 않아 스스로 회복하지 않는다 - 새로고침 대신 다시 부를 길을 둔다(#483) */}
-              {i === 0 && !loaded && (
-                <button type="button" onClick={() => void refresh()} className="ml-2 font-medium underline">
-                  다시 시도
-                </button>
-              )}
-            </p>
-          ),
-      )}
+      <AdminErrorBanners listError={listError} error={error} loaded={loaded} onRetry={() => void refresh()} />
 
       <DocumentsSection documents={documents} loaded={loaded} refresh={refresh} setError={setError} />
     </PageShell>
