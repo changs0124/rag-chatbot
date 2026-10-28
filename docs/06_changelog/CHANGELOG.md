@@ -9,6 +9,7 @@
 ## [Unreleased]
 
 ### Fixed
+- **OpenAI 크레딧이 바닥나 채팅이 실패해도 로그에 원인이 남지 않던 것을 고쳤다(#536).** 크레딧 소진은 HTTP 200 으로 열린 스트림에 `error` → `response.failed`(`insufficient_quota` / `credit_balance_exhausted`)로 오는데, 스트림 파서가 두 이벤트를 읽지 않아 「처리되지 않은 예외」 ERROR 에 「완료(response.completed) 없이 종료됨」만 남았다 — 10-28 운영 배터리 도중 4건, 크레딧 소진 · 서버 오류가 갈리지 않았다. 이제 실패 이벤트의 `code` · `type` · `message`(한 줄)를 예외 문구에 싣는다. 로그 수준 · 스택 · 사용자 SSE `error`(`STREAM_ERROR`) · 저장 동작은 그대로다 — `insufficient_quota` 는 다시 시도해도 같아 운영자가 조치해야 하므로 업로드 경로(#479)처럼 ERROR 로 둔다. 사유 없이 끊긴 스트림은 예전 문구 그대로. 검증 : 운영에서 받은 이벤트 모양 그대로의 캔드 스트림 테스트 3건(실호출 없음)
 - **터널이 붙지 않아도 `deploy.sh` 가 「배포 완료」로 끝나던 것을 고쳤다(#528).** 헬스체크가 서버 안 `localhost:8080` 의 app 만 봐서, cloudflared 가 엣지에 못 붙어도(토큰 파일 권한 · 새 버전 회귀 등) 성공으로 끝나고 서비스는 바깥에서 끊긴 채 남았다 — #525 배포 때는 외부 확인을 손으로 따로 했다. app 헬스 통과 뒤 `cloudflared tunnel --metrics 127.0.0.1:20241 ready` 를 최대 30초 기다리고, 실패하면 cloudflared 로그 · 되돌리는 법을 찍고 exit 1(옛 이미지 정리 전이라 롤백 자산이 남는다). 검증 : 운영에 같은 블록을 읽기 전용으로 돌려 「OK (0초 경과)」 · 더미 토큰 로컬 터널에서 503(`readyConnections: 0`) · exit 1 · shellcheck 통과
 
 ### Docs

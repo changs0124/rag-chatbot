@@ -147,7 +147,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 | ID | 가정 | 어긋나면 나타나는 증상 |
 |----|------|------------------------|
 | A | 검색 시작 이벤트 이름이 `response.file_search_call.in_progress` 또는 `response.file_search_call.searching` | 「참조 문서 검색 중」 단계가 화면에 뜨지 않는다. 답변은 정상 |
-| B | 완료 이벤트 이름이 `response.completed` | **스트림이 완료 없이 끝났다**는 오류로 끝난다. 조용히 무자료로 넘어가지 않도록 일부러 던지게 해 둔 경로다 |
+| B | 완료 이벤트 이름이 `response.completed` | **스트림이 완료 없이 끝났다**는 오류로 끝난다. 조용히 무자료로 넘어가지 않도록 일부러 던지게 해 둔 경로다. 앞서 `error` · `response.failed` 가 왔으면 그 `code` · `type` · `message` 를 오류 문구에 싣는다(#536 — 크레딧 소진은 HTTP 200 으로 열린 스트림에 이 둘로 온다, 2026-10-28 운영 키로 실측 : `insufficient_quota` / `credit_balance_exhausted`) |
 | C | 인용 annotation의 타입이 `file_citation` 이고 파일명 필드가 `filename` | 답변은 정상인데 출처가 늘 0건이라 **모든 답변에 「자료 없음」 배너**가 붙는다 |
 | D | 검색 결과 본문이 `file_search_call` 항목의 `results[].text` 에 실린다 | 출처 각주는 뜨는데 스니펫이 빈칸이다 |
 | E | `include: ["file_search_call.results"]` 로 결과 본문을 받을 수 있다 | D와 같은 증상 |
