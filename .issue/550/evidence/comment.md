@@ -53,7 +53,7 @@ $ curl https://ssh.chseong.fyi/ (로그인 없이)  → 302 Access 로그인
 - [x] 22 의 `cidrs` · `ipv6Cidrs` 비고 `lightsail-connect` 만
 - [x] PC 에서 고정 IP 직접 22 타임아웃
 - [x] `ssh chseong-seoul-01` · scp 가 터널로 성공(실제 배포는 다음 `deploy.sh` 가 첫 실전)
-- [ ] Lightsail 콘솔 브라우저 SSH 접속 — **사용자 확인 대기**
+- [x] Lightsail 콘솔 브라우저 SSH 접속 — 11-02 사용자 확인(비상 경로 동작)
 - [x] 운영 `/api/health` 200 · 터널 유지
 - [x] 문서 동기화 · `check-all.sh docs`
 
