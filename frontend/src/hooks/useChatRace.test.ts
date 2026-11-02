@@ -344,4 +344,42 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
     expect(result.current.activeId).toBe('new-1')
     expect(result.current.messages.map((m) => m.role)).toEqual(['user', 'assistant'])
   })
+
+  /**
+   * 답변 완료 때 나간 목록 GET 이 삭제보다 늦게 돌아오면 옛 목록이 삭제를 덮어 지운 대화가 되살아난다(#557).
+   */
+  it('늦게 온 목록 응답이 그 사이의 삭제를 되돌리지 않는다', async () => {
+    vi.mocked(listConversations).mockResolvedValueOnce([conv('A'), conv('B')])
+    vi.mocked(getMessages).mockResolvedValue([])
+    vi.mocked(deleteConversation).mockResolvedValue(undefined)
+    let onDone: (() => void) | undefined
+    vi.mocked(streamChat).mockImplementation(async (_body, handlers) => {
+      onDone = () => handlers.onDone?.({ finishReason: 'stop', noSource: false })
+    })
+
+    const { result } = renderHook(() => useChat())
+    await waitFor(() => expect(result.current.conversations.map((c) => c.id)).toEqual(['A', 'B']))
+    await act(async () => {
+      await result.current.selectConversation('B')
+    })
+    await act(async () => {
+      await result.current.send('질문', [])
+    })
+
+    // onDone 이 내는 목록 GET 은 아직 오지 않았다
+    const late = deferred<Conversation[]>()
+    vi.mocked(listConversations).mockReturnValueOnce(late.promise)
+    act(() => onDone?.())
+
+    await act(async () => {
+      await result.current.deleteConversation('A')
+    })
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['B'])
+
+    await act(async () => {
+      late.resolve([conv('A'), conv('B')])
+      await late.promise
+    })
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['B'])
+  })
 })
