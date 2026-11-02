@@ -1,0 +1,4 @@
+lint=0
+ Test Files  32 passed (32)
+      Tests  312 passed (312)
+build ok
