@@ -1,0 +1,35 @@
+cmd: cd backend && ./mvnw test -Dtest='*OpenAi*,*Chat*,*RateLimit*,*Concurren*'
+total: Tests run: 141, Failures: 0, Errors: 0, Skipped: 0 / BUILD SUCCESS
+new: OpenAiRealImageStreamingBodyTest 2 cases
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.834 s -- in com.ragchatbot.config.ChatExecutorPoolBindingTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.273 s -- in com.ragchatbot.controller.ChatBackPressureTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.465 s -- in com.ragchatbot.controller.ChatConversationDeletedTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.714 s -- in com.ragchatbot.controller.ChatEarlyDisconnectTest
+Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.631 s -- in com.ragchatbot.controller.ChatFlowTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.440 s -- in com.ragchatbot.controller.ChatPartialSaveFailureLogTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.972 s -- in com.ragchatbot.controller.ChatRejectionCounterTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.674 s -- in com.ragchatbot.controller.ChatSseAcceptErrorTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.346 s -- in com.ragchatbot.controller.ChatSseAcceptRateLimitTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.176 s -- in com.ragchatbot.controller.ChatStageHonestyTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.382 s -- in com.ragchatbot.controller.ChatStreamContractTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.814 s -- in com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.960 s -- in com.ragchatbot.controller.UploadRateLimitTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.ragchatbot.openai.OpenAiMockFigureTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.096 s -- in com.ragchatbot.openai.OpenAiRealBetaHeaderTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.424 s -- in com.ragchatbot.openai.OpenAiRealDeleteDocumentTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in com.ragchatbot.openai.OpenAiRealImageStreamingBodyTest
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s -- in com.ragchatbot.openai.OpenAiRealInstructionsTest
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in com.ragchatbot.openai.OpenAiRealStageMappingTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in com.ragchatbot.openai.OpenAiRealStoreFilesTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.ragchatbot.openai.OpenAiRealStreamFailureTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.ragchatbot.openai.OpenAiRealStreamingSpikeTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.080 s -- in com.ragchatbot.openai.OpenAiRealTimeoutBoundaryTest
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.146 s -- in com.ragchatbot.openai.OpenAiRealUploadDocumentTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.ragchatbot.openai.OpenAiRealUsageTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.ragchatbot.openai.OpenAiServiceBoundaryTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.ragchatbot.openai.OpenAiServiceModeSelectionTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.ragchatbot.service.ChatConcurrencyLimiterTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.012 s -- in com.ragchatbot.service.ChatHistoryTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.ragchatbot.service.ChatStreamAbortTest
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.ragchatbot.service.ChatStreamTimeoutTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.ragchatbot.service.RateLimiterKeyCapTest
