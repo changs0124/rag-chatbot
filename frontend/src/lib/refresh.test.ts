@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { adoptRefreshedToken, api, getToken, setToken } from './api'
+import { adoptRefreshedToken, api, getToken, setToken, setUnauthorizedHandler } from './api'
 import { loadFigure, resetFigureCache } from './docFigures'
 import { streamChat } from './endpoints'
 import { deferred } from '../test/fixtures'
@@ -129,5 +129,70 @@ describe('다른 세션에서 떠난 요청의 재발급', () => {
     switchAccountThenRespond(404)
     await pending
     expect(getToken()).toBe('b-token')
+  })
+})
+
+/**
+ * 다른 세션에서 떠난 요청의 401 (#556).
+ *
+ * 탭 A 가 비밀번호를 바꾸면 탭 B 의 옛 토큰 요청이 401 을 받는다. 그 401 이 지금(새) 세션을 로그아웃시키면 안 된다.
+ * 보낸 토큰이 지금 토큰과 같을 때만 만료 처리한다 - 세 경로 모두.
+ */
+describe('다른 세션에서 떠난 요청의 401', () => {
+  let respond: (res: Response) => void
+  const onUnauthorized = vi.fn()
+
+  beforeEach(() => {
+    onUnauthorized.mockClear()
+    setUnauthorizedHandler(onUnauthorized)
+    setToken('a-token')
+    resetFigureCache()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => {
+        const res = deferred<Response>()
+        respond = res.resolve
+        return res.promise
+      }),
+    )
+  })
+  afterEach(() => {
+    setUnauthorizedHandler(null)
+    setToken(null)
+    vi.unstubAllGlobals()
+  })
+
+  function switchAccountThenRespond401(): void {
+    setToken(null)
+    setToken('b-token')
+    respond(new Response(null, { status: 401 }))
+  }
+
+  it('fetch 래퍼 - 옛 토큰의 401 로 B 세션을 지우지 않는다', async () => {
+    const pending = api.get('/api/conversations')
+    switchAccountThenRespond401()
+    await expect(pending).rejects.toThrow()
+    expect(onUnauthorized).not.toHaveBeenCalled()
+  })
+
+  it('채팅 스트림 - 옛 토큰의 401 로 B 세션을 지우지 않는다', async () => {
+    const pending = streamChat({ conversationId: 'c1', message: '질문', attachmentIds: [] }, {})
+    switchAccountThenRespond401()
+    await expect(pending).rejects.toThrow()
+    expect(onUnauthorized).not.toHaveBeenCalled()
+  })
+
+  it('그림 로드 - 옛 토큰의 401 로 B 세션을 지우지 않는다', async () => {
+    const pending = loadFigure('tm-p001-f1')
+    switchAccountThenRespond401()
+    await expect(pending).rejects.toThrow()
+    expect(onUnauthorized).not.toHaveBeenCalled()
+  })
+
+  it('지금 토큰으로 보낸 요청의 401 은 그대로 로그아웃시킨다', async () => {
+    const pending = api.get('/api/conversations')
+    respond(new Response(null, { status: 401 }))
+    await expect(pending).rejects.toThrow()
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
   })
 })

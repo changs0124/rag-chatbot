@@ -47,6 +47,8 @@ public class ChatService {
 
 	/** 과거 턴의 이미지 자리표시자 - 이미지를 다시 보내지 않아도 "그때 첨부가 있었다"는 사실은 남김 */
 	static final String IMAGE_PLACEHOLDER = "(이미지 첨부)";
+	/** 이력에 잘려 들어간 메시지 끝 표시(#554) - 없으면 모델이 잘린 끝을 원래 끝으로 읽는다 */
+	static final String HISTORY_TRUNCATED_MARK = " …(이하 생략)";
 
 	private final ConversationService conversationService;
 	private final MessageRepository messageRepository;
@@ -153,7 +155,8 @@ public class ChatService {
 	 * 어떤 대화에서는 수만 토큰이 됨.
 	 *
 	 * <p>예산을 넘기면 <b>거기서 멈춤(break)</b> - 중간을 건너뛰고 더 오래된 것을 넣으면 대화가
-	 * 끊긴 채로 전달돼 모델이 없는 맥락을 지어냄.
+	 * 끊긴 채로 전달돼 모델이 없는 맥락을 지어냄. 단, 넘친 것이 <b>직전 메시지</b>면 앞부분을 잘라 넣고
+	 * 멈춤(#554) - 통째로 버리면 이력이 0 이 됨.
 	 *
 	 * <p>{@code status=error} 는 답변이 아니므로 제외함. 반대로 {@code stopped=true}(사용자가 중단)는
 	 * 사용자가 실제로 화면에서 본 내용이라 포함함.
@@ -182,6 +185,15 @@ public class ChatService {
 			}
 			int cost = estimateTokens(text);
 			if (used + cost > tokenBudget) {
+				// 직전 메시지 하나가 예산을 넘으면 버리지 않고 잘라 넣는다(#554) - 버리면 이력이 0 이 돼
+				// 「그 표의 두 번째 건 자세히」 같은 후속 질문이 맥락 없이 간다. **앞부분을 남긴다** - 후속 질문이
+				// 가리키는 것은 대개 답의 첫 표 · 첫 항목이고, 끝은 맺음말이 많다
+				if (newestFirst.isEmpty()) {
+					String cut = truncateToBudget(text, tokenBudget);
+					if (!cut.isEmpty()) {
+						newestFirst.add(new Turn(m.role(), cut));
+					}
+				}
 				break;
 			}
 			used += cost;
@@ -189,6 +201,19 @@ public class ChatService {
 		}
 		Collections.reverse(newestFirst);
 		return List.copyOf(newestFirst);
+	}
+
+	/** 표시까지 합쳐 {@link #estimateTokens} 가 예산 안에 들도록 앞부분만 남김(#554). 남길 자리가 없으면 빈 문자열 */
+	private static String truncateToBudget(String text, int tokenBudget) {
+		int end = (int) Math.floor(tokenBudget * 1.5) - HISTORY_TRUNCATED_MARK.length();
+		if (end <= 0) {
+			return "";
+		}
+		// 자르는 자리에서 서로게이트 쌍이 갈리면 한 칸 줄인다(#485 와 같은 이유) - 반쪽 글자는 모델 요청 직렬화에서 터짐(#434)
+		if (Character.isHighSurrogate(text.charAt(end - 1))) {
+			end--;
+		}
+		return end <= 0 ? "" : text.substring(0, end) + HISTORY_TRUNCATED_MARK;
 	}
 
 	private static String historyText(Message m, boolean hadAttachment) {

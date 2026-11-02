@@ -1,0 +1,19 @@
+     × 깨진 첨부는 이력을 다시 받아 새 서명 URL 로 바꾸고, 같은 첨부는 한 번만 시도한다 20ms
+     × 받는 사이 다른 대화로 옮겼으면 결과를 버린다 7ms
+     × 보낸 첨부 이미지가 깨지면 그 첨부 id 로 새 서명을 요청한다 82ms
+     × 확대를 연 채 giveBack 이 카드를 앞에 끼우면 다른 사진을 보여 주지 않고 닫는다 (#558) 142ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/hooks/useChat.test.ts > useChat 만료된 첨부 썸네일 재서명(#558) > 깨진 첨부는 이력을 다시 받아 새 서명 URL 로 바꾸고, 같은 첨부는 한 번만 시도한다
+TypeError: result.current.refreshAttachment is not a function
+ FAIL  src/hooks/useChat.test.ts > useChat 만료된 첨부 썸네일 재서명(#558) > 받는 사이 다른 대화로 옮겼으면 결과를 버린다
+TypeError: result.current.refreshAttachment is not a function
+ FAIL  src/components/chat/Composer.test.tsx > Composer > 확대를 연 채 giveBack 이 카드를 앞에 끼우면 다른 사진을 보여 주지 않고 닫는다 (#558)
+[31mexpected document not to contain element, found <div
+ FAIL  src/components/chat/MessageList.test.tsx > MessageList 첨부 썸네일 오류(#558) > 보낸 첨부 이미지가 깨지면 그 첨부 id 로 새 서명을 요청한다
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'a1' ]
+ Test Files  3 failed | 1 skipped (4)
+      Tests  4 failed | 129 skipped (133)
+       × https 경로도 a 를 문서에 붙인 채 클릭하고 뗌 (#558) 122ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected [ false ] to deeply equal [ true ]
+      Tests  1 failed | 16 skipped (17)
