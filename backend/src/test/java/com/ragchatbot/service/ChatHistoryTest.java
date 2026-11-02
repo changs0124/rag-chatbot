@@ -173,6 +173,41 @@ class ChatHistoryTest {
 		assertThat(history).extracting(Turn::content).containsExactly("최근 질문");
 	}
 
+	/**
+	 * <b>직전 메시지 하나</b>가 예산을 넘으면 통째로 버리지 않고 앞부분을 잘라 넣는다(#554).
+	 *
+	 * <p>버리면 이력이 0 이 돼 「그 표의 두 번째 건 자세히」 같은 후속 질문이 맥락 없이 모델에 간다.
+	 * 잘린 뒤에도 예산 안이어야 하고, 더 오래된 메시지는 기존 규칙대로 멈춘다.
+	 */
+	@Test
+	void truncates_newest_message_when_it_alone_exceeds_budget() {
+		String long3000 = "가".repeat(3000); // 약 2000 토큰 - 예산 100 을 혼자 넘음
+		List<Message> messages = List.of(
+				msg("user", "표로 정리해 줘"),
+				msg("assistant", long3000));
+
+		List<Turn> history = ChatService.buildHistory(messages, Set.of(), 100);
+
+		assertThat(history).singleElement().satisfies(t -> {
+			assertThat(t.role()).isEqualTo("assistant");
+			assertThat(t.content()).startsWith("가".repeat(100)).endsWith(ChatService.HISTORY_TRUNCATED_MARK);
+			assertThat(t.content().length()).isLessThanOrEqualTo(150); // 100 토큰 × 1.5자
+		});
+	}
+
+	/** 자르는 자리에서 서로게이트 쌍이 갈리면 반쪽 글자가 모델 요청 직렬화에서 터진다(#434 · #554) */
+	@Test
+	void truncation_does_not_split_surrogate_pairs() {
+		String emojis = "😀".repeat(200); // 400 char
+		List<Turn> history = ChatService.buildHistory(List.of(msg("assistant", emojis)), Set.of(), 10);
+
+		String content = history.get(0).content();
+		String kept = content.substring(0, content.length() - ChatService.HISTORY_TRUNCATED_MARK.length());
+		assertThat(kept).isNotEmpty();
+		assertThat(Character.isHighSurrogate(kept.charAt(kept.length() - 1))).isFalse();
+		assertThat(content.length()).isLessThanOrEqualTo(15);
+	}
+
 	@Test
 	void empty_conversation_yields_empty_history() {
 		assertThat(ChatService.buildHistory(new ArrayList<>(), Set.of(), BUDGET)).isEmpty();
