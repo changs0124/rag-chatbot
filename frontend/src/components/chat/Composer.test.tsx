@@ -197,6 +197,30 @@ describe('Composer', () => {
     expect(onSend).toHaveBeenLastCalledWith('이 사진 설명해줘\n추가로', [attachment('a1')], expect.any(Function))
   })
 
+  it('확대를 연 채 giveBack 이 카드를 앞에 끼우면 다른 사진을 보여 주지 않고 닫는다 (#558)', async () => {
+    vi.mocked(uploadFile).mockResolvedValueOnce(attachment('a1')).mockReturnValueOnce(deferred<Attachment>().promise)
+    let giveBack: () => void = () => {}
+    const onSend = vi.fn(async (_t: string, _a: Attachment[], back: () => void) => {
+      giveBack = back
+      return true
+    })
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+
+    pick(image('first.png'))
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    fireEvent.change(screen.getByPlaceholderText('메시지를 입력하세요'), { target: { value: '질문' } })
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('보내기'))
+    })
+    pick(image('second.png'))
+    fireEvent.click(screen.getByLabelText('second.png 확대'))
+    expect(within(screen.getByRole('dialog')).getByAltText('second.png')).toBeInTheDocument()
+
+    act(() => giveBack())
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
   it('글만 되돌리라고 하면 카드는 버리고 글만 돌아온다 (#480)', async () => {
     // 400 · 404 처럼 카드가 거절 원인일 수 있는 실패 - 카드까지 돌리면 다시 보내도 같은 거절이다
     vi.mocked(uploadFile).mockResolvedValueOnce(attachment('a1'))

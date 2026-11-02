@@ -79,6 +79,8 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 첨부 이미지는 `<img src>` 가 헤더를 못 실으므로 **쿼리 서명 토큰이 붙은 URL**을 쓴다. 이 URL 은 재조회 시점에
 서버가 새로 서명하므로 저장해 두고 재사용하지 않는다.
+단, 낙관적 말풍선은 업로드 응답의 서명 URL(TTL 15분)을 쓰므로 첨부 후 오래 있다 보내면 깨진다 — `<img onError>` 가
+`useChat.refreshAttachment` 를 불러 이력을 한 번 다시 받고 첨부 URL 만 id 로 맞바꾼다(#558; 첨부마다 한 번, 대화를 옮겼으면 버림).
 
 ## 스트리밍 UI 규칙
 
@@ -223,6 +225,8 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   카메라 없이 보관함으로 바로 들어가 촬영 길이 사라진다. 허용 밖 형식(HEIC 등)은 서버가 거절하고 카드에 오류로 남는다.
 - **확대 보기는 전송 전·후가 같은 컴포넌트다**(`ImageLightbox.tsx`) — `src` 가 로컬 objectURL 이냐 서명 URL 이냐만 다르다.
   핀치 줌을 받으려면 이미지에 `touch-action: none` 을 준다 — 없으면 브라우저 기본 제스처가 먼저 먹어 핀치 이벤트가 오지 않는다.
+  입력창 카드 확대를 연 채 `giveBack` 이 카드를 앞에 끼우면 열린 보기의 index 가 다른 사진을 가리키므로 `giveBack` 이 보기를 닫는다(#558).
+  내려받기는 `<a>` 를 문서에 붙여서 누른다 — Firefox 는 붙지 않은 a 의 click 을 무시한다(blob/data · 서명 URL 두 경로 모두).
 - **드래그 오버레이는 진입/이탈을 센다.** `dragleave` 만 보고 걷으면 자식 요소를 지날 때마다 깜빡인다.
 
 ## 스타일

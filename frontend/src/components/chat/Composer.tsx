@@ -260,6 +260,8 @@ export default function Composer({
   function giveBack(sentText: string, sent: Draft[]) {
     // 언마운트 뒤(로그아웃 등)에는 되돌릴 곳이 없다 - 만든 미리보기 URL 을 회수할 길도 없다
     if (!mountedRef.current) return
+    // 확대를 연 채 카드가 앞에 끼면 열린 보기의 index 가 다른 사진을 가리키고, 뒤 카드가 걷히면 갑자기 닫힌다(#558) - 닫는다
+    setLightboxIndex(null)
     setText((cur) => [sentText, cur].filter(Boolean).join('\n'))
     const back = sent.map((d) => ({ ...d, key: `d${draftSeq++}`, previewUrl: URL.createObjectURL(d.file) }))
     // 그사이 더한 카드와 합쳐 상한을 넘으면 뒤에 더한 것을 걷는다 - 보낼 수 없는 묶음이 남으면 서버가 400 으로 거절한다(#401)

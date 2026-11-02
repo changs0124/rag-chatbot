@@ -368,3 +368,24 @@ describe('MessageList', () => {
     })
   })
 })
+
+describe('MessageList 첨부 썸네일 오류(#558)', () => {
+  it('보낸 첨부 이미지가 깨지면 그 첨부 id 로 새 서명을 요청한다', () => {
+    const onAttachmentError = vi.fn()
+    const messages: ChatMessage[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        content: '사진',
+        status: 'complete',
+        citations: [],
+        attachments: [{ id: 'a1', fileType: 'image', url: '/api/files/a1?token=old' }],
+      },
+    ]
+    render(<MessageList messages={messages} onAttachmentError={onAttachmentError} />)
+
+    fireEvent.error(screen.getByAltText('첨부 이미지'))
+
+    expect(onAttachmentError).toHaveBeenCalledWith('a1')
+  })
+})
