@@ -21,7 +21,7 @@
 ```
 
 ```
-$ timeout 8 bash -c 'exec 3<>/dev/tcp/13.209.194.28/22 && head -c 40 <&3'
+$ timeout 8 bash -c 'exec 3<>/dev/tcp/<고정 IP>/22 && head -c 40 <&3'
 SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.2 -> 열림(배너 수신)
 ```
 
@@ -33,7 +33,7 @@ SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.2 -> 열림(배너 수신)
 ```
 
 ```
-$ timeout 8 bash -c 'exec 3<>/dev/tcp/13.209.194.28/22 && head -c 40 <&3'
+$ timeout 8 bash -c 'exec 3<>/dev/tcp/<고정 IP>/22 && head -c 40 <&3'
  -> 닫힘/타임아웃
 
 $ ssh chseong-seoul-01 'echo $SSH_CONNECTION'
