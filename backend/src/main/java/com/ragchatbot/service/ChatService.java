@@ -99,8 +99,8 @@ public class ChatService {
 		// **같은 id 를 두 번 넣으면 이미지가 두 번 인코딩돼 나간다**(#99). 중복은 조용히 접는다 -
 		// 사용자가 의도한 것이 아니고, 거절하면 화면이 고칠 수 없는 오류를 보게 된다
 		List<UUID> distinctIds = attachmentIds.stream().distinct().toList();
-		// 개수 상한(#401) - 이미지는 전부 base64 로 바뀌어 **한꺼번에** 힙에 오른다. 파일당 크기 · 분당 업로드 상한은
-		// 이번 요청 하나의 메모리를 묶지 못한다. 중복을 접은 뒤 세고, 저장 · 모델 호출 전에 거른다
+		// 개수 상한(#401) - 파일당 크기 · 분당 업로드 상한은 이번 요청 하나의 본문 크기 · 비용을 묶지 못한다
+		// (이미지는 파일에서 흘려 보내 힙에는 쌓이지 않는다, #552). 중복을 접은 뒤 세고, 저장 · 모델 호출 전에 거른다
 		if (distinctIds.size() > maxAttachments) {
 			throw new BadRequestException("첨부는 한 번에 " + maxAttachments + "장까지 보낼 수 있음");
 		}

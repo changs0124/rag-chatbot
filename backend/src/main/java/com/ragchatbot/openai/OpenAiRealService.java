@@ -1,8 +1,10 @@
 package com.ragchatbot.openai;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.UnknownHostException;
@@ -15,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -24,11 +27,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -238,9 +243,12 @@ public class OpenAiRealService implements OpenAiService {
 
 	@Override
 	public ChatCompletion streamChat(ChatInput input, Consumer<String> onToken, BiConsumer<Stage, List<String>> onStage) {
+		// 이미지 자리에는 표식만 넣고, base64 는 본문을 쓰는 동안 파일에서 바로 흘린다(#552) - writeBody 주석
+		String slotPrefix = "image-slot-" + UUID.randomUUID() + "-";
+		List<Resource> images = openImages(input.attachments());
 		Map<String, Object> body = new HashMap<>();
 		body.put("model", model);
-		body.put("input", buildInput(input));
+		body.put("input", buildInput(input, slotPrefix));
 		body.put("stream", true);
 		// 공용 Store 미설정이면 file_search 없이 일반 응답(출처 빈 리스트 → noSource=true)
 		if (hasSharedVectorStore()) {
@@ -252,13 +260,14 @@ public class OpenAiRealService implements OpenAiService {
 			// 검색 도구가 붙을 때만 지시를 싣는다 - 스토어가 없으면 근거를 찾으라는 말이 거짓이 된다
 			body.put("instructions", RAG_INSTRUCTIONS);
 		}
+		String json = mapper.writeValueAsString(body);
 
 		return streamClient.post()
 				// 상대 경로여야 빌더의 baseUrl 이 적용됨 - 절대 URI 면 app.openai.base-url 이 무시된다
 				.uri("/responses")
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.TEXT_EVENT_STREAM)
-				.body(body)
+				.body(out -> writeBody(out, json, slotPrefix, input.attachments(), images))
 				.exchange((request, response) -> {
 					if (response.getStatusCode().isError()) {
 						String detail = new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
@@ -276,7 +285,7 @@ public class OpenAiRealService implements OpenAiService {
 	 * (턴이 쌓일수록 비용이 폭증함), 자리표시자는 ChatService 가 이미 텍스트에 넣어 둠.
 	 * 구조화 content(비전 입력)는 <b>이번 턴에만</b> 씀.
 	 */
-	private Object buildInput(ChatInput input) {
+	private Object buildInput(ChatInput input, String slotPrefix) {
 		String text = input.userMessage();
 		List<AttachmentRef> images = input.attachments();
 		List<Turn> history = input.history();
@@ -294,23 +303,63 @@ public class OpenAiRealService implements OpenAiService {
 		} else {
 			List<Map<String, Object>> content = new ArrayList<>();
 			content.add(Map.of("type", "input_text", "text", text));
-			for (AttachmentRef img : images) {
-				content.add(Map.of("type", "input_image", "image_url", toDataUrl(img)));
+			for (int i = 0; i < images.size(); i++) {
+				content.add(Map.of("type", "input_image", "image_url", slotPrefix + i));
 			}
 			items.add(Map.of("role", "user", "content", content));
 		}
 		return items;
 	}
 
-	/** 로컬 디스크 이미지를 data URL(base64)로. 문서는 공용 Store에서만 검색되므로 인라인하지 않음 */
-	private String toDataUrl(AttachmentRef img) {
-		try (InputStream is = fileStorage.load(img.storagePath()).getInputStream()) {
-			byte[] bytes = is.readAllBytes();
-			return "data:" + img.mimeType() + ";base64,"
-					+ Base64.getEncoder().encodeToString(bytes);
-		} catch (Exception e) {
-			throw new IllegalStateException("첨부 이미지를 읽지 못함: " + img.storagePath(), e);
+	/**
+	 * 첨부 파일을 연결 전에 확인함 - 없는 파일이면 요청을 보내기 전에 실패한다(본문을 쓰다가 끊기지 않게).
+	 * 문서는 공용 Store에서만 검색되므로 인라인하지 않음
+	 */
+	private List<Resource> openImages(List<AttachmentRef> refs) {
+		List<Resource> images = new ArrayList<>();
+		for (AttachmentRef img : refs) {
+			Resource r;
+			try {
+				r = fileStorage.load(img.storagePath());
+			} catch (Exception e) {
+				throw new IllegalStateException("첨부 이미지를 읽지 못함: " + img.storagePath(), e);
+			}
+			if (!r.isReadable()) {
+				throw new IllegalStateException("첨부 이미지를 읽지 못함: " + img.storagePath());
+			}
+			images.add(r);
 		}
+		return images;
+	}
+
+	/**
+	 * 본문을 쓰면서 이미지 표식 자리에 data URL(base64)을 파일에서 바로 흘려 넣음(#552).
+	 *
+	 * <p><b>왜 문자열로 만들지 않는가</b> — 전에는 data URL 문자열을 본문 map 에 넣어 보냈는데, 그 map 을 스트림이
+	 * 끝날 때까지 쥐고 있었다. 10MB x 5장이면 요청 하나가 66.7MB 를 스트림 내내 들고, 만드는 순간에는 원본 ·
+	 * 인코딩 배열 · 문자열 · 이어 붙인 문자열이 장마다 겹친다. 운영 힙(약 643MB)에서 그런 채팅 8개가 동시에 돌면
+	 * OOM 이었고, ExitOnOutOfMemoryError 라 JVM 이 내려가 다른 스트림까지 끊긴다(실측 .issue/552/evidence).
+	 * 흘려 보내면 요청 하나가 쥐는 것은 첨부 크기와 무관한 버퍼뿐이라, 동시 스트림 상한(16)을 꽉 채워도 힙이
+	 * 첨부 때문에 늘지 않는다 - 그래서 첨부 바이트 총량 상한은 따로 두지 않는다.
+	 *
+	 * <p>표식은 요청마다 무작위라 사용자 텍스트와 겹치지 않는다. 본문은 지금도 chunked 로 나가므로 전송 방식은
+	 * 바뀌지 않는다(Content-Length 없음, 실측).
+	 */
+	private static void writeBody(OutputStream out, String json, String slotPrefix, List<AttachmentRef> refs,
+			List<Resource> images) throws IOException {
+		int from = 0;
+		for (int i = 0; i < refs.size(); i++) {
+			String quotedSlot = "\"" + slotPrefix + i + "\"";
+			int at = json.indexOf(quotedSlot, from) + 1; // 여는 따옴표까지는 json 쪽에서 씀
+			out.write(json.substring(from, at).getBytes(StandardCharsets.UTF_8));
+			out.write(("data:" + refs.get(i).mimeType() + ";base64,").getBytes(StandardCharsets.UTF_8));
+			try (InputStream is = images.get(i).getInputStream();
+					OutputStream b64 = Base64.getEncoder().wrap(StreamUtils.nonClosing(out))) {
+				is.transferTo(b64);
+			}
+			from = at + quotedSlot.length() - 2; // 닫는 따옴표부터 다시 json 쪽
+		}
+		out.write(json.substring(from).getBytes(StandardCharsets.UTF_8));
 	}
 
 	/**
