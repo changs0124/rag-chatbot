@@ -2,8 +2,8 @@
 # 프론트는 Vercel 에 있으므로 여기 없음. 절차는 docs/02_architecture/backend.md 「배포」 참고.
 #
 # 서비스 포트는 인바운드로 열지 않는다 - cloudflared 가 바깥으로 연결을 걸어 터널을 유지하므로
-# 서비스용 포트포워딩 · 방화벽 인바운드 규칙이 필요 없다. 예외는 관리용 SSH(22) 하나다
-# (backend.md 「배포」). TLS 는 Cloudflare 가 종단한다.
+# 서비스용 포트포워딩 · 방화벽 인바운드 규칙이 필요 없다. 관리용 SSH 도 이 터널로 들어오고(#550), 22 는
+# Lightsail 브라우저 SSH 대역에만 비상 경로로 남긴다(backend.md 「배포」). TLS 는 Cloudflare 가 종단한다.
 #
 # 환경변수는 두 곳으로 나뉜다 :
 #   backend/.env - 앱 변수(정본은 backend/.env.example)
@@ -231,6 +231,11 @@ services:
     networks:
       # edge 에만 둔다 - app:8080 에만 닿으면 되고 db 는 보이지 않아야 한다.
       - edge
+    # **SSH 도 이 터널로 들어온다(#550).** 공개 호스트명 ssh.<도메인> → ssh://host.docker.internal:22 (대시보드).
+    # 컨테이너 안의 localhost 는 cloudflared 자신이라 호스트 sshd 에 닿으려면 게이트웨이 이름이 필요하다.
+    # 그 덕에 Lightsail 방화벽 22 를 브라우저 SSH 대역으로만 좁힌다 - 이 컨테이너가 재생성되면 터널 위 SSH 세션도 끊긴다(backend.md 「감수하는 약점」).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     logging:
       # db 와 같은 이유로 회전을 켠다(#130). 터널은 연결이 끊길 때마다 재시도 로그를 남기므로
       # 네트워크가 불안한 구간에서는 이쪽이 더 빨리 쌓인다.
