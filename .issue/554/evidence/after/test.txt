@@ -1,0 +1,8 @@
+# #554 after - ./mvnw -q test -Dtest='*ChatHistory*,*ChatService*,ChatFlowTest,ChatStream*Test' -Dsurefire.failIfNoSpecifiedTests=false → exit 0
+# (*ChatService* 에 맞는 테스트 클래스는 없음 - 호출 경로는 ChatFlowTest · ChatStream* 로 덮음)
+Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 35.09 s -- in com.ragchatbot.controller.ChatFlowTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.494 s -- in com.ragchatbot.controller.ChatStreamContractTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.43 s -- in com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.088 s -- in com.ragchatbot.service.ChatHistoryTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.063 s -- in com.ragchatbot.service.ChatStreamAbortTest
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s -- in com.ragchatbot.service.ChatStreamTimeoutTest

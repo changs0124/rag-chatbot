@@ -8,18 +8,32 @@
 
 ## [Unreleased]
 
-### Security
+### Docs
+- **코드 · 배포와 어긋난 문서 수치 · 서술 6곳과 주석 9곳을 맞췄다(#559, 11-02 전수 리뷰).** `backend.md` 의 `--skip-build`(「전송만」 → 저장부터) · #550 에서 들어간 「20MB 13초」(시험 파일 크기였다 — tarball 은 압축 후 90MB 남짓), `design-system.md` 대비 수치 둘(첨부 실패 패널 `danger` 1.06 → **1.91** — 1.06 은 스크림이 `black/60` 이던 때 값, `border-line/canvas` 1.43 → **1.48**, 결론은 그대로 미달)과 `danger-soft` 사용처(#541 의 `AdminErrorBanners`), `api.md` API-GET-001 의 `HEAD`(#520). 주석은 `SnippetPicker` 의 없는 「UI 2줄 클램프」, #550 이후의 터널 매핑(`.env.example` · compose 2곳 — SSH 도 같은 터널) · compose 의 비루트 목록(cloudflared 65532) · `deploy.sh` 머리 · 4단계(로컬 cloudflared · cloudflared 를 재생성하는 배포는 SSH 가 끊김) · `TextInputs` 의 현재 호출처, 관리자 명단 결정의 정본을 `AdminRoleSynchronizer` 로 명시(`V5__user_role.sql` 의 사라진 문서 참조는 적용된 마이그레이션이라 체크섬 때문에 그대로). 동작 변화 없음
+
+### Tests
+- **채팅 경로에서 남의 대화 · 첨부를 쓰는 경우를 테스트로 잠갔다(#555, 테스트만).** 코드는 `user_id` 조건으로 막고 있었지만 `POST /api/chat` 쪽 케이스가 없었다. 남의 `conversationId` → 404 · 메시지 0 · 모델 호출 없음, 남의 `attachmentIds` → 404 · 첨부 연결 없음. 조건을 지운 변형에서 각각 200 · 400 으로 실패하는 것을 확인했다
+
+### Fixed
+- **출력 상한 · 콘텐츠 필터로 끝난 턴(`response.incomplete`)이 끝까지 받은 답인데도 오류로 저장되던 것을 고쳤다(#553).** 스트림 파서가 `response.completed` 만 완료로 봐서 「완료 없이 종료됨」 예외 → `status=error` 로 저장되고 다음 턴 이력 · 인용 · 사용량이 빠졌다. 이제 같은 `response` 객체에서 인용 · 사용량을 뽑아 정상 완료로 저장하고, 사유(`incomplete_details.reason`)를 WARN 한 줄로 남긴다. 화면의 잘림 표시는 없다(사유는 로그에만). 검증 : API 문서 모양의 캔드 스트림 2건(`max_output_tokens` · `content_filter`) — 수정 전 2건 실패
+- **직전 메시지 하나가 이력 예산(6000 토큰 ≈ 9000자)을 넘으면 대화 맥락이 통째로 빠지던 것을 고쳤다(#554).** 최신부터 담다 넘치는 첫 메시지에서 멈춰, 긴 표 답 뒤의 「그 표의 두 번째 건 자세히」가 맥락 없이 갔다. 넘친 것이 직전 메시지면 **앞부분**(후속 질문이 가리키는 첫 표 · 첫 항목)을 예산만큼 잘라 ` …(이하 생략)` 표시와 함께 넣는다. 더 오래된 메시지는 그대로 멈춤 · 서로게이트 쌍은 가르지 않는다
+
+## [2026-11-02]
+
+운영 배포 1회 — `9465e0e` → `4d5b084`(#550 · #542 · #543 · #541 · #540 · #539 · #538, 롤백 `prev-9465e0e`=4002b4a3). 터널 경유 SSH(#550)로 한 **첫 배포**다 — `deploy.sh` 의 ssh/scp 가 `ssh.chseong.fyi` + Cloudflare Access 를 지났고, compose 가 서버와 같아(#550 의 `extra_hosts` 는 배포 전 11-02 에 서버에 선반영) `up -d` 는 app 만 재생성하고 cloudflared 는 Running 그대로였다 — 배포 중 SSH 끊김 없음. 헬스 10초 · 터널 준비 0초. 배포 뒤 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `/error` 401 · `nosniff`/`DENY` · app 로그 WARN/ERROR 0. 이 배포에 실린 백엔드 코드 변경은 #542 의 첨부 400 문구 한 줄뿐이고(매퍼 `<sql>` 정리는 펼친 SQL 동일), #543 은 테스트 · #541 은 프론트(merge 때 Vercel 로 이미 운영) · #538~#540 은 문서다.
+
+### Security (4d5b084)
 - **운영 SSH 를 Cloudflare Tunnel 로 옮기고 Lightsail 방화벽 22 를 브라우저 SSH 대역(`lightsail-connect`)으로만 좁혔다(#550).** 외부 피드백 — 22/tcp 가 IPv4 `0.0.0.0/0` · IPv6 `::/0` 모두 열려 있었다(#129 이래 배포용으로 남긴 것). 공개 호스트명 `ssh.chseong.fyi` → `ssh://host.docker.internal:22` 에 Cloudflare Access(Allow = 운영자 이메일)를 걸고, compose `cloudflared` 에 `extra_hosts: host.docker.internal:host-gateway` 를 더했다(컨테이너 안 `localhost` 는 cloudflared 자신). 개발 PC 는 `ssh` 별칭에 `ProxyCommand cloudflared access ssh` — `deploy.sh` 는 별칭만 쓰므로 그대로다. 22 를 아예 지우지 않은 것은 터널 · cloudflared 가 죽었을 때의 비상 경로(브라우저 SSH) 때문이다. 대가 : cloudflared 를 재생성하는 배포는 그 위의 SSH 세션을 끊으므로 브라우저 SSH 로 한다(`backend.md` 「감수하는 약점」). compose 는 11-02 에 서버에 먼저 올려 `up -d cloudflared` 로 반영했다(앱 이미지 그대로)
 
-### Changed
+### Changed (4d5b084)
 - **첨부 업로드 용량 초과(400) 응답 문구가 「용량 초과(image 최대 10MB)」 → 「용량 초과(최대 10MB)」 로 바뀐다(#542).** 「image」 는 형식별 상한 시절 흔적이고, 문서 업로드의 「용량 초과(최대 25MB)」 와 같은 꼴이 됐다. 프론트는 이 문구를 해석하지 않고 그대로 보여 준다. 저장 · 응답의 `fileType`(`image`)은 그대로다.
 
-### Refactored
+### Refactored (4d5b084)
 - **테스트 헬퍼 중복과 테스트 클래스끼리의 의존을 정리했다(#543, 테스트만).** 파서만 쓰는 두 테스트는 `OpenAiRealTestSupport.parserOnly()` 로, openai 테스트 6개의 가짜 `HttpServer` 띄우기는 `startFakeServer()` · `baseUrl()` 로 모았다. `ChatSseAcceptRateLimitTest` 가 다른 테스트 클래스(`ChatSseAcceptErrorTest`)의 `sse()` · `assertJsonError()` 를 끌어 쓰던 것은 `SseTestSupport` 로 옮겼다. 프론트의 손수 만든 deferred 7곳은 `test/fixtures.ts` 의 `deferred()` 로, `ErrorBoundary.test` 는 단언이 실패해도 `console.error` mock 이 복원되게(`onTestFinished`) 했다. 케이스 수(424 · 308) · 단언 수 합계(1591) 그대로.
 - **매퍼 XML 의 반복 컬럼 목록 · 같은 insert 를 `<sql>` + `<include>` 로 묶었다(#542).** `User` · `Conversation` 컬럼 목록(각 3회), `Attachment` 컬럼 목록(별칭 없는 2회 — `findByConversation` 은 `a.` 별칭이라 그대로), `RagDocument` 의 행 컬럼 · insert 본문 · 요약 조회(조인 포함)가 대상이다. `<include>` 를 펼친 SQL 이 43문장 모두 수정 전과 같다(공백 정규화 후 대조).
 - **프론트의 쓰이지 않는 분기와 중복을 정리했다(#541).** `Logo.tsx` 의 `variant="mark"` 분기를 지웠다 — 호출부가 0건이고, 파비콘의 벡터 정본은 분기가 아니라 마크 상수(`MARK` · `ORANGE` · `FOLD_STOPS`)라 `design-system.md` 7-2 · 7-3 도 그렇게 고쳤다. `AdminUser` 는 `Me` 와 필드가 같아 `type AdminUser = Me` 로 두고, 관리자 두 화면이 똑같이 들고 있던 오류 배너는 `components/AdminErrorBanners.tsx` 하나로 뺐다. 화면 변화 없음 — 로그인 · 사이드바 · 관리자 두 화면 오류 배너를 변경 전후 빌드로 찍어 픽셀 대조한 결과 차이 0.
 
-### Docs
+### Docs (4d5b084)
 - **코드와 어긋난 주석 · 문서 서술 15곳을 코드에 맞췄다(#540).** 드롭 오버레이 대비 수치(`Composer.tsx` 12.70 · 4.95 → `design-system.md` 실측 12.67 · 5.23), 없는 design-system 절 이름 3곳(「주요 버튼 44px」 · 「7. 모바일」 → 「5. 컴포넌트 규칙」 · 「7-1. 모바일」), `.linkignore` 의 없는 가이드 이름, `CONVENTIONS.md` 의 `check-runtime-versions.sh` 설명(CI 설정이 아니라 러너에서 실제로 도는 런타임과 대조), `JwtService` 머리 주석의 클레임 목록(`aud` · `auth_time` 누락), compose cloudflared 의 「리슨도 바인딩도 하지 않음」(메트릭 서버 127.0.0.1:20241 이 있다), `deploy.sh` 0단계 설명(디렉터리 생성 · .env 권한 고침 · 터널 비밀 확인 누락)과 `--skip-build` 설명(「전송만」 이 아니라 저장부터), `--dry-run` 이 찍는 단계 목록(사전 확인 · 헬스 · 터널 · 정리 누락, `--skip-build` 쪽은 저장도 누락), `frontend.md` 의 `/me` 재시도 횟수(첫 시도 포함 10회 — `AuthContext.tsx` 의 「약 30초」 도 27초 + 요청 시간으로) · `meta` 이벤트(파싱만, 콜백 없음) · `src/test/` 의 공유 픽스처, `backend.md` `config/` 의 `EmailDomainPolicy` · `AdminRoleSynchronizer`, `erd.md` 스니펫 최대 길이(`…` 포함 201자), `application.yml` · `backend/.env.example` 의 고아 첨부 유예 10분 하한(`FileService.MIN_ORPHAN_AGE_MINUTES`). `deploy.sh --dry-run` 이 찍는 단계 문구를 뺀 나머지는 주석과 문서라 동작 변화 없음
 - **문서 사이의 중복 서술을 정본 하나로 줄였다(#539, 「같은 사실은 한 곳에만」).** 명세 · 설계 문서 여섯(`requirements` · `features` · `api` · `erd` · `live-integration` · `design-system`)의 머리표(문서 버전 · 최종 수정일 · 작성자 · 런칭일)를 지웠다 — 어떤 검사 스크립트도 읽지 않고 이력은 git 과 CHANGELOG 가 정본이라, 손으로 고치는 날짜만 남아 있었다. `requirements.md` 는 7절(마일스톤 — CHANGELOG 사본)을 지우고 3절(주요 사용자)을 2절(이해관계자) 표에 합쳐 절 번호를 당겼다. `README.md` 는 구성도 · Maven 이미지 사유 · 배포 세부 · 케이스 하한 · CI 잡 수 문단을 정본(`overview.md` · `backend.md` 「배포」 · `CONVENTIONS.md`) 포인터로 줄였고, `INDEX.md` 의 「CI 7잡」 숫자도 뺐다. `CONVENTIONS.md` 는 같은 `gh api …/rules/branches/main` 을 두 번 설명하던 절을 하나로 합치고 케이스 하한 규칙을 `case-floors.env` 머리 주석 포인터로 바꿨다. `overview.md` 는 업로드 한도(정본 yml · `features.md` · `api.md`) · 백업 세부(`backend.md`) · 빈 「페이지 URL 맵」 절 · 데이터 모델 재서술을 포인터로 줄였다. `INDEX.md` 의 행동 지침 4줄은 루트 `CLAUDE.md` 가 `.gitignore` 대상이라 저장소 안 유일한 사본이므로 그대로 둔다. 동작 변화 없음
 - **작업 문서(`current-sprint.md` · `backlog.md`)에 쌓인 낡은 내용과 다른 문서의 사본을 지웠다(#538).** `current-sprint.md` 는 「아직 안 끝난 것만」 이 규칙인데, 배포마다 손으로 고치던 운영 커밋 줄(세 배포 전 `bcb94fb` 로 남아 있었다) · 마지막 업데이트 날짜 · 빈 「블로커」 절 · `frontend.md` 「남은 한계」 와 겹치는 다음 할 일 후보(전송 식별자)가 남아 있었다. 문서에 다른 기록이 없는 첫 토큰 전 heartbeat 후보와 #105(`wontfix` 영구 기록) 한 줄은 「다음 후보」 절로 남겼다. 닫은 이슈의 모델 응답 관찰 4개(#431 · #467 · 인용 표기 누락 · 이력 예산)는 횟수를 그대로 `live-integration.md` 「3-3. 지켜보는 응답 변동」 으로 옮겼고, 모델과 무관한 CI 콜드 실행 지연 · Cloudflare 502 는 `current-sprint.md` 「지켜보는 것」 에 남겼다. `backlog.md` 는 빈 우선순위 절 둘을 지우고, 미구현 항목 표의 「지금 상태」 열(`overview.md` 「알려진 제약」 · `features.md` 범위 밖의 사본)을 빼 권장안만 남겼다. 동작 변화 없음
