@@ -302,7 +302,7 @@
 | `stage` | `{ stage, label }` | 진행 단계. **실제로 지난 경계에서만 온다**. `stage` 는 `analyzing` → `searching` → `reviewing` → `generating` 순이고 지나지 않은 단계는 빠진다. `reviewing` 은 검색 결과가 실제로 도착했을 때만 오며(0건이면 없음) 라벨에 참조 문서 이름(`<첫 자료명> 외 N건`)을 싣는다. 첨부 이미지가 있는 턴은 `analyzing` 라벨이 이미지까지 밝힌다(#375) |
 | `token` | `{ delta }` | 답변 조각 |
 | `citations` | `{ items: [{ seq, sourceName, snippet }] }` | 출처 |
-| `done` | `{ finishReason, noSource }` | 완료. `finishReason` 은 항상 `stop` 이다. `noSource=true` 면 인용 0건 |
+| `done` | `{ finishReason, noSource }` | 완료. `finishReason` 은 항상 `stop` 이다. `noSource=true` 면 인용 0건. 업스트림이 출력 상한 · `content_filter` 로 잘라 `response.incomplete` 로 끝낸 턴도 받은 데까지 이 경로로 끝나고 정상 저장된다 — 잘림은 서버 `WARN` 한 줄(사유)로만 남는다(#553) |
 | `error` | `{ code, message }` | 스트림 도중 오류. `code: "STREAM_ERROR"` · `message: "응답 생성 중 오류"` 로 고정 |
 
 **검증은 동기, 스트리밍은 비동기다.** 400 · 404 · 429는 SSE 안의 `error` 이벤트가 아니라
