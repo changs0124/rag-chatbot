@@ -1,0 +1,23 @@
+#552 측정 - 변경 후(OpenAiRealService : data URL 문자열 대신 본문을 쓰면서 파일을 base64 로 흘림)
+하네스 : before/harness.java 와 같은 파일, 같은 방법(전원 첫 토큰 수신 후 GC x3, -XX:+UseSerialGC)
+
+[1] -Xmx2g, N=4
+n=4 images=5 x 10MB  allStreamingReached=true outcome=ok
+requestBodyBytes(one request)=69905478 (66.7MB)   <- 업스트림이 받는 본문 크기는 그대로
+heapUsed baseline=32.9MB / while 4 streams open=34.0MB
+retained while streaming = 1.1MB total, 0.3MB per request   (전 : 66.3MB per request)
+
+[2] -Xmx665m(운영과 같은 힙 643MB), N=16 (전역 동시 스트림 상한)   (전 : OOM)
+n=16 allStreamingReached=true outcome=ok
+heapUsed baseline=23.7MB / while 16 streams open=27.1MB  -> 3.3MB total, 0.2MB per request
+
+[3] -Xmx665m, N=32 (상한의 두 배)
+n=32 allStreamingReached=true outcome=ok
+heapUsed baseline=23.7MB / while 32 streams open=28.1MB  -> 4.3MB total
+
+[4] -Xmx128m(힙 123MB), N=16
+n=16 allStreamingReached=true outcome=ok
+heapUsed baseline=22.2MB / while 16 streams open=25.3MB
+
+결론 : 요청 하나가 쥐는 메모리가 첨부 크기와 무관해졌다(버퍼 수준). 운영 힙의 1/5 로도 상한 16 을 채운다.
+첨부 바이트 총량 상한(429)은 막을 것이 남지 않아 두지 않았다.

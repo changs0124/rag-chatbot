@@ -1,0 +1,32 @@
+#552 측정 - 변경 전 코드(main 4d5b084 기준 워크트리, OpenAiRealService 무수정)
+하네스 : backend/src/test/java/com/ragchatbot/openai/AttachmentHeapMeasureHarness.java (커밋하지 않음, 사본은 이 폴더의 harness.java)
+방법 : 가짜 /responses 서버가 요청 본문을 끝까지 읽은 뒤 첫 delta 를 흘리고 스트림을 열어 둔다.
+       N 개 스레드가 동시에 streamChat(이미지 5장 x 10MB 무작위 바이트)을 부르고, 전원이 첫 토큰을 받은 시점에
+       System.gc() x3 후 (totalMemory - freeMemory) 를 잰다. -XX:+UseSerialGC (운영 compose 와 같은 GC)
+요청 헤더 : Content-Length 없음 · Transfer-Encoding: chunked (본문은 이미 스트리밍으로 나감 - 본문 전체 바이트 버퍼는 없다)
+
+[1] -Xmx2g, N=4 (보유량 측정)
+n=4 images=5 x 10MB  allStreamingReached=true outcome=ok
+requestBodyBytes(one request)=69905478 (66.7MB)
+heapUsed baseline(after GC)=27.4MB
+heapUsed while all 4 streams open (after GC)=292.7MB
+retained while streaming = 265.3MB total, 66.3MB per request
+heapUsed after streams finished (after GC)=24.1MB
+=> 스트림이 열려 있는 동안 요청 하나가 base64 data URL 문자열 5개(= 본문 크기 66.7MB)를 그대로 쥐고 있다.
+   계산 : 10MB -> base64 13.98MB(LATIN1 compact string 1 byte/char) x 5 = 69.9MB = 66.7MiB. 측정과 일치.
+   만드는 순간에는 장당 원본 10MB + encode byte[] 13.3MB + String 13.3MB + concat 13.3MB 가 잠깐 겹친다.
+
+[2] -Xmx665m (운영 1g x MaxRAMPercentage 65 와 같은 힙), N=16 (전역 동시 스트림 상한)
+n=16 allStreamingReached=false outcome=FAILED: java.lang.OutOfMemoryError: Java heap space
+
+[3] -Xmx665m, N=10
+n=10 allStreamingReached=false outcome=FAILED: java.lang.OutOfMemoryError: Java heap space
+heapUsed at timeout (after GC)=556.8MB
+
+[4] -Xmx665m, N=8
+n=8 allStreamingReached=false outcome=FAILED: java.lang.OutOfMemoryError: Java heap space
+heapUsed at timeout (after GC)=490.0MB
+
+결론 : 위험은 실재한다. 운영 힙에서 이미지 5장 x 10MB 채팅 8개 동시면 OOM(운영은 ExitOnOutOfMemoryError 라 JVM 종료).
+보유분(스트림 내내 66.7MB/요청)만이 아니라 만드는 순간의 일시 복사본도 크다 - "본문을 일찍 놓기"만으로는
+동시에 만드는 구간의 OOM 을 못 막는다(8 x (보유 67 + 일시 ~40) > 643MB).
