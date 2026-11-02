@@ -85,7 +85,7 @@ final class SnippetPicker {
 		return grams;
 	}
 
-	/** 출처 스니펫을 버블 분량으로 제한(UI 2줄 클램프보다 조금 넉넉하게) */
+	/** 출처 스니펫의 저장 · 표시 길이 제한(최대 201자 - 「…」 포함, erd.md snippet). 화면은 줄 수를 자르지 않고 이 길이 그대로 그린다 */
 	static String truncate(String s) {
 		if (s == null) {
 			return "";

@@ -155,6 +155,22 @@ describe('ImageLightbox', () => {
       await waitFor(() => expect(click).toHaveBeenCalled())
       expect(fetch).toHaveBeenCalledWith('https://api/x')
     })
+
+    /** #558 : Firefox 는 문서에 붙지 않은 a 의 click 을 무시한다 - 서명 URL 경로도 붙인 채 클릭한다 */
+    it('https 경로도 a 를 문서에 붙인 채 클릭하고 뗌 (#558)', async () => {
+      setup({ ok: true, status: 200, type: 'image/png' })
+      const attached: boolean[] = []
+      click.mockImplementation(function (this: HTMLAnchorElement) {
+        attached.push(this.isConnected)
+      })
+      render(<ImageLightbox items={[{ src: 'https://api/x', name: 'p.png' }]} startIndex={0} onClose={vi.fn()} />)
+
+      fireEvent.click(screen.getByLabelText('내려받기'))
+
+      await waitFor(() => expect(click).toHaveBeenCalled())
+      expect(attached).toEqual([true])
+      expect(document.querySelector('a[download]')).toBeNull()
+    })
   })
 })
 

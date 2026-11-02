@@ -431,7 +431,15 @@ public class OpenAiRealService implements OpenAiService {
 					if (added) {
 						onStage.accept(Stage.REVIEWING, List.copyOf(reviewedSources));
 					}
-				} else if ("response.completed".equals(type)) {
+				} else if ("response.completed".equals(type) || "response.incomplete".equals(type)) {
+					// incomplete 는 출력 상한(max_output_tokens) · content_filter 로 잘렸지만 끝난 턴이다(#553). 같은 response
+					// 객체를 싣고 오므로 완료와 같은 길로 인용 · 사용량을 뽑아 정상 저장한다 - 오류로 두면 사용자는 답을 끝까지 받고도
+					// 오류 배너를 보고, 다음 턴 이력에서 빠지고, 인용 · 사용량이 사라진다. 잘림 표시 칸은 따로 두지 않고(stopped 는
+					// 「출처 판정을 못 마침」이라 뜻이 다르다) 사유만 WARN 한 줄로 남긴다
+					if ("response.incomplete".equals(type)) {
+						log.warn("openai response incomplete reason={}",
+								ev.path("response").path("incomplete_details").path("reason").asString(""));
+					}
 					String rest = markup.flush(); // 마지막 표기 뒤에 보류해 둔 공백
 					if (!rest.isEmpty()) {
 						if (!generatingSent) {
@@ -462,7 +470,7 @@ public class OpenAiRealService implements OpenAiService {
 			throw new IllegalStateException("OpenAI 스트림 읽기 오류", e);
 		}
 
-		// 완료 이벤트 없이 스트림이 끝나면 업스트림 실패를 무자료 성공으로 위장하지 않고 오류로 처리.
+		// 완료 이벤트(completed · incomplete) 없이 스트림이 끝나면 업스트림 실패를 무자료 성공으로 위장하지 않고 오류로 처리.
 		if (!completed) {
 			throw new IllegalStateException(failure == null
 					? "OpenAI 스트림이 완료(response.completed) 없이 종료됨"

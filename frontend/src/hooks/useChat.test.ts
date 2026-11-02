@@ -1170,3 +1170,60 @@ describe('useChat 새 대화 제목(#434)', () => {
     expect(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(title)).toBe(false)
   })
 })
+
+describe('useChat 만료된 첨부 썸네일 재서명(#558)', () => {
+  afterEach(() => {
+    vi.mocked(getMessages).mockReset().mockResolvedValue([])
+    vi.clearAllMocks()
+  })
+
+  const withAttachment = (url: string): ChatMessage[] => [
+    {
+      id: 'm1',
+      role: 'user',
+      content: '사진',
+      status: 'complete',
+      citations: [],
+      attachments: [{ id: 'a1', fileType: 'image', url }],
+    },
+  ]
+
+  it('깨진 첨부는 이력을 다시 받아 새 서명 URL 로 바꾸고, 같은 첨부는 한 번만 시도한다', async () => {
+    vi.mocked(getMessages).mockResolvedValueOnce(withAttachment('/old'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {
+      await result.current.selectConversation('c1')
+    })
+    vi.mocked(getMessages).mockResolvedValue(withAttachment('/fresh'))
+
+    await act(async () => {
+      await result.current.refreshAttachment('a1')
+    })
+    expect(result.current.messages[0].attachments?.[0].url).toBe('/fresh')
+
+    await act(async () => {
+      await result.current.refreshAttachment('a1')
+    })
+    expect(getMessages).toHaveBeenCalledTimes(2) // 선택 1 + 재서명 1
+  })
+
+  it('받는 사이 다른 대화로 옮겼으면 결과를 버린다', async () => {
+    vi.mocked(getMessages).mockResolvedValueOnce(withAttachment('/old'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {
+      await result.current.selectConversation('c1')
+    })
+    const slow = deferred<ChatMessage[]>()
+    vi.mocked(getMessages).mockReturnValueOnce(slow.promise)
+    let pending: Promise<void> = Promise.resolve()
+    act(() => {
+      pending = result.current.refreshAttachment('a1')
+    })
+    act(() => result.current.newConversation())
+    await act(async () => {
+      slow.resolve(withAttachment('/fresh'))
+      await pending
+    })
+    expect(result.current.messages).toEqual([])
+  })
+})

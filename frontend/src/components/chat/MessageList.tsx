@@ -29,9 +29,12 @@ function findScrollParent(el: HTMLElement | null): HTMLElement | null {
 export default function MessageList({
   messages,
   stage,
+  onAttachmentError,
 }: {
   messages: ChatMessage[]
   stage?: string | null
+  /** 보낸 첨부 이미지가 깨졌을 때(서명 URL 만료, #558) - 새 서명을 받아 다시 그리게 한다 */
+  onAttachmentError?: (attachmentId: string) => void
 }) {
   const rootRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -116,7 +119,7 @@ export default function MessageList({
         aria-relevant="additions text"
       >
         {messages.map((m) =>
-          pending && m.id === last.id ? null : <MessageBubble key={m.id} message={m} />,
+          pending && m.id === last.id ? null : <MessageBubble key={m.id} message={m} onAttachmentError={onAttachmentError} />,
         )}
       </div>
       {pending && (
@@ -136,7 +139,13 @@ export default function MessageList({
 
 // memo(#405) - 스트리밍 중 patch 는 진행 중인 답변만 새 객체로 만든다. 경계가 없으면 토큰마다 지난 답변까지
 // 마크다운을 다시 파싱한다(답변 20개면 토큰 하나에 21번)
-const MessageBubble = memo(function MessageBubble({ message }: { message: ChatMessage }) {
+const MessageBubble = memo(function MessageBubble({
+  message,
+  onAttachmentError,
+}: {
+  message: ChatMessage
+  onAttachmentError?: (attachmentId: string) => void
+}) {
   const isUser = message.role === 'user'
   // 확대 보기는 그 말풍선의 이미지들을 한 묶음으로 넘김(좌우 이동 대상). 첨부는 이미지뿐이다(#391)
   const images = message.attachments ?? []
@@ -180,6 +189,7 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: ChatMe
                 <img
                   src={API_BASE + a.url}
                   alt="첨부 이미지"
+                  onError={() => onAttachmentError?.(a.id)}
                   className="h-full w-full object-cover"
                 />
               </button>
