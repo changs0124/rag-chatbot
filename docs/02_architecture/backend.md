@@ -262,7 +262,7 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 | `ChatService.prepare` · `ConversationService` | 입력 **길이**(메시지 · 대화 제목, trim 뒤 코드 포인트, #371) | `CHAT_MAX_*_CHARS` |
 | `ProfileService` · `AdminUserService` | 표시 이름 **길이**(이름 변경 · 계정 발급, trim 뒤 코드 포인트, #413). `/api/auth/me` · 사용자 목록 · 문서 목록이 이름을 매번 싣는다 | `USER_MAX_NAME_CHARS` |
 | `FileService.upload` | 사용자별 **첨부 저장 총량**(사용자 폴더의 실제 파일 크기 합, 디스크에 쓰기 전, #418). 분당 · 장수 상한은 쌓이는 속도만 줄여, 한 계정이 uploads 볼륨을 채우면 같은 디스크의 Postgres 가 먼저 멎는다 | `ATTACHMENT_QUOTA_MB` |
-| `ChatService.prepare` | 메시지 1건의 **첨부 개수**(중복 id 를 접은 뒤, #401). 이미지는 전부 base64 로 한꺼번에 힙에 오르므로 이 값이 요청 하나의 메모리를 묶는다 | `CHAT_MAX_ATTACHMENTS` |
+| `ChatService.prepare` | 메시지 1건의 **첨부 개수**(중복 id 를 접은 뒤, #401). 이미지는 본문을 쓰는 동안 파일에서 base64 로 흘려 힙에 쌓이지 않으므로(#552) 이 값이 묶는 것은 요청 하나의 본문 크기와 비용이다 | `CHAT_MAX_ATTACHMENTS` |
 
 기본값의 정본은 `application.yml`, 각 항목의 의미와 빠뜨렸을 때의 증상은 `backend/.env.example` 이다.
 
@@ -274,7 +274,11 @@ Mock/Real 파리티가 깨지고 이력의 정본이 두 군데로 갈린다.
 
 운영 실측(2026-10-15, 상한 16 · 측정표는 [CHANGELOG](../06_changelog/CHANGELOG.md) 10-15 #278)에서
 섞임 · 저장 불일치 · 스트림 오류 · OpenAI 쪽 거절 · 커넥션 대기 모두 0 — Hikari 풀 5(compose)로 충분하다(커넥션은 스트림 앞뒤의
-짧은 저장에만 잡힌다). 측정 중 늘어난 메모리가 50MiB 남짓이라, 한도를 정하는 것은 메모리가 아니라 모델 호출 비용과 OpenAI 계정 한도다.
+짧은 저장에만 잡힌다). 측정 중 늘어난 메모리는 50MiB 남짓이었는데 **텍스트만 잰 값이다**. 이미지는 전에 data URL 문자열로
+본문에 실려 스트림 내내 힙에 남았다 — 10MB × 5장이면 요청당 66.7MB 라, 운영과 같은 힙(643MB)에서 8개 동시에 OOM 이 재현됐다(#552,
+`ExitOnOutOfMemoryError` 라 JVM 이 내려가 다른 스트림까지 끊긴다). 지금은 본문을 쓰면서 파일을 base64 로 흘려 보내 요청 하나가 쥐는
+메모리가 첨부 크기와 무관하다 — 같은 조건 16개 동시(상한)가 요청당 0.2MB, 32개도 OOM 없이 끝났다(실측 `.issue/552/evidence`).
+그래서 첨부 바이트 총량 상한은 따로 두지 않고, 첨부가 있어도 한도를 정하는 것은 메모리가 아니라 모델 호출 비용과 OpenAI 계정 한도다.
 되돌리려면 서버 `.env` 에 `CHAT_MAX_CONCURRENT_STREAMS=8` 을 넣고 app 만 재시작한다.
 
 **검사 순서는 동시성 → 레이트리밋이다**(#96). 레이트리밋은 비용 통제가 목적인데, 동시성 상한에 걸려
