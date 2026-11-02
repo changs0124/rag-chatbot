@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### Security
+- **운영 SSH 를 Cloudflare Tunnel 로 옮기고 Lightsail 방화벽 22 를 브라우저 SSH 대역(`lightsail-connect`)으로만 좁혔다(#550).** 외부 피드백 — 22/tcp 가 IPv4 `0.0.0.0/0` · IPv6 `::/0` 모두 열려 있었다(#129 이래 배포용으로 남긴 것). 공개 호스트명 `ssh.chseong.fyi` → `ssh://host.docker.internal:22` 에 Cloudflare Access(Allow = 운영자 이메일)를 걸고, compose `cloudflared` 에 `extra_hosts: host.docker.internal:host-gateway` 를 더했다(컨테이너 안 `localhost` 는 cloudflared 자신). 개발 PC 는 `ssh` 별칭에 `ProxyCommand cloudflared access ssh` — `deploy.sh` 는 별칭만 쓰므로 그대로다. 22 를 아예 지우지 않은 것은 터널 · cloudflared 가 죽었을 때의 비상 경로(브라우저 SSH) 때문이다. 대가 : cloudflared 를 재생성하는 배포는 그 위의 SSH 세션을 끊으므로 브라우저 SSH 로 한다(`backend.md` 「감수하는 약점」). compose 는 11-02 에 서버에 먼저 올려 `up -d cloudflared` 로 반영했다(앱 이미지 그대로)
+
 ### Changed
 - **첨부 업로드 용량 초과(400) 응답 문구가 「용량 초과(image 최대 10MB)」 → 「용량 초과(최대 10MB)」 로 바뀐다(#542).** 「image」 는 형식별 상한 시절 흔적이고, 문서 업로드의 「용량 초과(최대 25MB)」 와 같은 꼴이 됐다. 프론트는 이 문구를 해석하지 않고 그대로 보여 준다. 저장 · 응답의 `fileType`(`image`)은 그대로다.
 
