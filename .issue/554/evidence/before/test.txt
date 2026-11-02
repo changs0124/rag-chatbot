@@ -1,0 +1,9 @@
+# #554 before - buildHistory 미수정(표시 상수만 추가) · ./mvnw -q test -Dtest=ChatHistoryTest
+[ERROR] Tests run: 13, Failures: 1, Errors: 1, Skipped: 0, Time elapsed: 0.592 s <<< FAILURE! -- in com.ragchatbot.service.ChatHistoryTest
+[ERROR] com.ragchatbot.service.ChatHistoryTest.truncates_newest_message_when_it_alone_exceeds_budget -- Time elapsed: 0.470 s <<< FAILURE!
+Expected size: 1 but was: 0 in:
+[ERROR] com.ragchatbot.service.ChatHistoryTest.truncation_does_not_split_surrogate_pairs -- Time elapsed: 0.004 s <<< ERROR!
+[ERROR]   ChatHistoryTest.truncates_newest_message_when_it_alone_exceeds_budget:191 
+Expected size: 1 but was: 0 in:
+[ERROR]   ChatHistoryTest.truncation_does_not_split_surrogate_pairs:204 ? ArrayIndexOutOfBounds Index 0 out of bounds for length 0
+[ERROR] Tests run: 13, Failures: 1, Errors: 1, Skipped: 0
