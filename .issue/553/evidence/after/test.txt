@@ -1,0 +1,35 @@
+# 변경 후 — cd backend && ./mvnw test -Dtest='*OpenAi*,*Chat*'
+2026-11-02T10:04:48.962+09:00  WARN 31748 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai response incomplete reason=max_output_tokens
+2026-11-02T10:04:48.969+09:00  WARN 31748 --- [rag-chatbot-backend] [           main] c.ragchatbot.openai.OpenAiRealService    : openai response incomplete reason=content_filter
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.181 s -- in com.ragchatbot.config.ChatExecutorPoolBindingTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 22.95 s -- in com.ragchatbot.controller.ChatBackPressureTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.368 s -- in com.ragchatbot.controller.ChatConversationDeletedTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.532 s -- in com.ragchatbot.controller.ChatEarlyDisconnectTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.03 s -- in com.ragchatbot.controller.ChatFlowTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.537 s -- in com.ragchatbot.controller.ChatPartialSaveFailureLogTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.384 s -- in com.ragchatbot.controller.ChatRejectionCounterTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.056 s -- in com.ragchatbot.controller.ChatSseAcceptErrorTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.419 s -- in com.ragchatbot.controller.ChatSseAcceptRateLimitTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.520 s -- in com.ragchatbot.controller.ChatStageHonestyTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.428 s -- in com.ragchatbot.controller.ChatStreamContractTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.366 s -- in com.ragchatbot.controller.ChatStreamExceptionHandlerTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in com.ragchatbot.openai.OpenAiMockFigureTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.169 s -- in com.ragchatbot.openai.OpenAiRealBetaHeaderTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.430 s -- in com.ragchatbot.openai.OpenAiRealDeleteDocumentTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in com.ragchatbot.openai.OpenAiRealInstructionsTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s -- in com.ragchatbot.openai.OpenAiRealStageMappingTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.052 s -- in com.ragchatbot.openai.OpenAiRealStoreFilesTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.ragchatbot.openai.OpenAiRealStreamFailureTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.ragchatbot.openai.OpenAiRealStreamIncompleteTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.013 s -- in com.ragchatbot.openai.OpenAiRealStreamingSpikeTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.144 s -- in com.ragchatbot.openai.OpenAiRealTimeoutBoundaryTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.361 s -- in com.ragchatbot.openai.OpenAiRealUploadDocumentTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.ragchatbot.openai.OpenAiRealUsageTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in com.ragchatbot.openai.OpenAiServiceBoundaryTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.ragchatbot.openai.OpenAiServiceModeSelectionTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.ragchatbot.service.ChatConcurrencyLimiterTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.017 s -- in com.ragchatbot.service.ChatHistoryTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in com.ragchatbot.service.ChatStreamAbortTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in com.ragchatbot.service.ChatStreamTimeoutTest
+[INFO] Tests run: 133, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

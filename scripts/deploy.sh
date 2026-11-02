@@ -10,7 +10,8 @@
 #   bash scripts/deploy.sh --skip-build    # 빌드만 건너뛰고 이미 빌드된 이미지로 저장부터
 #   bash scripts/deploy.sh --dry-run       # 무엇을 할지만 출력
 #
-# 서버 접속은 일반 ssh/scp 를 쓴다(#243).
+# 서버 접속은 일반 ssh/scp 를 쓴다(#243). 운영 별칭은 Cloudflare Tunnel + Access 를 지난다 - `~/.ssh/config` 의
+# `ProxyCommand cloudflared access ssh` 가 개발 PC 의 cloudflared 를 쓴다(#550, backend.md 「배포」).
 # 접속 대상은 **환경변수로 반드시 지정한다**(#133) :
 #   DEPLOY_HOST (필수 - `~/.ssh/config` 의 Host 별칭) · DEPLOY_DIR (선택)
 # IP · 사용자 · 키 경로는 별칭 쪽(`~/.ssh/config`)에만 둔다 - 저장소에도 명령줄에도 남기지 않는다.
@@ -166,6 +167,9 @@ scp -q "$TMP/$TARBALL" docker-compose.yml "$HOST:$REMOTE_DIR/"
 # 주는가"만 보기 때문이다. 이미지 ID 를 대조해 그 구멍을 막는다.
 #
 # 옛 이미지 정리(prune)는 여기서 하지 않는다 - 헬스체크를 통과한 뒤로 미룬다(6단계 주석 참고).
+#
+# **compose 의 cloudflared 블록(다이제스트 · 설정)이 바뀐 배포는 이 `up -d` 가 cloudflared 를 재생성해 터널 위의
+# 이 SSH 세션을 끊는다(#550).** 그런 배포는 backend.md 「감수하는 약점」대로 브라우저 SSH 로 한다. app 만 바뀌면 cloudflared 는 그대로다.
 #
 # **컨테이너 ID 는 `ps -a` 로 찾는다(#252).** `ps -q` 는 실행 중인 것만 보여 주므로 새 app 이 기동 직후
 # 죽으면 빈 값이 되고, `docker inspect` 가 인자 없음으로 실패해 `set -e` 로 여기서 멈춘다 - 정작 필요한

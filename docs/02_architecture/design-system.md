@@ -79,7 +79,7 @@
 | 첨부 실패 아이콘 | `text-highlight` / `bg-black/75` + 이미지 | 8.34 | 3.0 |
 
 첨부 실패 패널은 **화면 색과 무관한 고정 어두운 면**이다. 그래서 **여기에는 밝은 면 기준 토큰을 쓸 수 없다** —
-`danger` 를 쓰면 `#C0392B` 가 어두운 패널에 얹혀 **1.06** 이 된다.
+`danger` 를 쓰면 `#C0392B` 가 어두운 패널에 얹혀 **1.91** 이 된다(흰 이미지 위 `black/75` 기준 — 1.06 은 스크림이 `black/60` 이던 때 값).
 
 스크림은 `bg-black/75` 다 — 아이콘이 비텍스트 기준 3.0 을 넘어야 한다(스크림 농도별 실측은 CHANGELOG #155).
 
@@ -90,7 +90,7 @@
 
 | 자리 | 값 | 기준 | 비고 |
 |------|-----|------|------|
-| `border-line` / `canvas` (입력 테두리) | 1.43 | WCAG 1.4.11 은 3.0 | **미달**. 3.0 을 맞추면 테두리가 눈에 띄게 진해져 색 범위를 넘는 디자인 변경이 된다 |
+| `border-line` / `canvas` (입력 테두리) | 1.48 | WCAG 1.4.11 은 3.0 | **미달**. 3.0 을 맞추면 테두리가 눈에 띄게 진해져 색 범위를 넘는 디자인 변경이 된다 |
 
 **대비 주장을 검사하는 게이트는 없다.** `check-doc-versions.sh` 가 버전 주장을 지키는 것과 달리
 대비 주장은 아무도 안 본다 — 색을 건드리면 이 표를 손으로 다시 재야 한다.
@@ -133,7 +133,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | `highlight` · `highlight-ink` | `chat/MessageList.tsx` 「자료 없음」 배지 | 각 1회 (같은 줄) |
 | `highlight` | `chat/Composer.tsx` 첨부 실패 아이콘 | 1회. 어두운 고정 스크림 위라 밝은 면 기준 토큰을 못 쓴다 |
 | `danger-ink` | `ConfirmModal.tsx` 확인 버튼(삭제 · 비밀번호 초기화) | 1회 — `bg-danger` 가 있는 유일한 자리다 |
-| `danger-soft` | `pages/AdminDocumentsPage.tsx` · `pages/AdminUsersPage.tsx` 관리자 오류 배너 | 화면마다 1회(같은 모양, #513 에서 둘로 나뉨) |
+| `danger-soft` | `components/AdminErrorBanners.tsx` 관리자 오류 배너 | 1회 — 관리자 두 화면이 공용으로 쓴다(#541) |
 | `danger-soft` | `pages/MyPage.tsx` 오류 배너 | 1회. 관리자 쪽과 같은 색 조합(모서리 · 여백은 다르다) |
 
 쓰이지 않는 토큰은 다음 사람이 아무 데나 갖다 쓰는 근거가 된다.
