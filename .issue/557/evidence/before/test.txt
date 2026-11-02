@@ -1,0 +1,30 @@
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/hooks/useChatRace.test.ts > useChat 대화 컨텍스트 경쟁 > 늦게 온 목록 응답이 그 사이의 삭제를 되돌리지 않는다
+AssertionError: expected [ 'A', 'B' ] to deeply equal [ 'B' ]
+
+- Expected
++ Received
+
+  [
++   "A",
+    "B",
+  ]
+
+ ❯ src/hooks/useChatRace.test.ts:383:59
+    381|       await late.promise
+    382|     })
+    383|     expect(result.current.conversations.map((c) => c.id)).toEqual(['B'…
+       |                                                           ^
+    384|   })
+    385| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  10:02:27
+   Duration  1.75s (transform 171ms, setup 272ms, import 230ms, tests 195ms, environment 694ms)
+

@@ -1,0 +1,3 @@
+ Test Files  32 passed (32)
+      Tests  309 passed (309)
+[32m✓ built in 1.03s[39m
