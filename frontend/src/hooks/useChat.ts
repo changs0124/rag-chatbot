@@ -248,6 +248,38 @@ export function useChat() {
     [activeId, abortActiveStream],
   )
 
+  /** 첨부 id 별로 재서명을 이미 시도했는지(#558). 새 URL 마저 깨져도 한 번만 받아 무한 요청을 막는다 */
+  const refreshedAttachments = useRef(new Set<string>())
+
+  /**
+   * 보낸 말풍선의 첨부가 깨지면(#558) 이력을 다시 받아 새 서명 URL 로 바꾼다. 낙관적 말풍선은 업로드 응답의
+   * 서명 URL(TTL 15분)을 그대로 써서, 첨부 후 오래 있다 보내면 깨진다. 이력 전체로 교체하지 않고 첨부 URL 만
+   * id 로 맞바꾼다 - 스트리밍 중인 답변을 덮어쓰지 않으려고. 받는 사이 대화를 옮겼으면 버린다
+   */
+  const refreshAttachment = useCallback(
+    async (attachmentId: string) => {
+      if (!activeId || refreshedAttachments.current.has(attachmentId)) return
+      refreshedAttachments.current.add(attachmentId)
+      const mine = generation.current
+      let server: ChatMessage[]
+      try {
+        server = await getMessages(activeId)
+      } catch {
+        return
+      }
+      if (generation.current !== mine) return
+      const fresh = new Map(server.flatMap((m) => m.attachments ?? []).map((a) => [a.id, a.url]))
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.attachments?.some((a) => fresh.has(a.id))
+            ? { ...m, attachments: m.attachments.map((a) => ({ ...a, url: fresh.get(a.id) ?? a.url })) }
+            : m,
+        ),
+      )
+    },
+    [activeId],
+  )
+
   const newConversation = useCallback(() => {
     abortActiveStream()
     generation.current++
@@ -560,6 +592,7 @@ export function useChat() {
     send,
     stop,
     selectConversation,
+    refreshAttachment,
     newConversation,
     deleteConversation,
     renameConversation,

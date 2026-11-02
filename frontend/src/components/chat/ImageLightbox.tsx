@@ -131,7 +131,10 @@ export default function ImageLightbox({
       // 첨부는 원래 파일명을 모른다. 확장자가 없으면 OS 가 열 프로그램을 못 고르므로 받은 형식에서 붙임
       const ext = blob.type.startsWith('image/') ? '.' + blob.type.slice(6).split('+')[0] : ''
       a.download = current.name ?? `image${ext}`
+      // 위 blob:/data: 경로와 같은 이유로 붙여서 누른다(#558) - Firefox 는 붙지 않은 a 의 click 을 무시함
+      document.body.appendChild(a)
       a.click()
+      a.remove()
       URL.revokeObjectURL(url)
     } catch {
       // 만료·네트워크 실패. 저장만 못 한 것이므로 모달은 그대로 둠
