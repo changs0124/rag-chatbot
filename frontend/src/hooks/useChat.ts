@@ -165,9 +165,23 @@ export function useChat() {
   // 입력창이 전송 버튼을 막을 수 있게 같은 사실을 상태로도 드러낸다(#323)
   const [creating, setCreating] = useState(false)
 
+  /**
+   * 목록 응답의 세대(#557, 관리 화면 listGen 과 같은 방식 - #483 F13). 요청을 낼 때와 목록을 직접 고칠 때
+   * (삭제 · 이름 변경 · 새 대화 추가) 올리고, 응답은 낼 때 잡은 세대가 그대로일 때만 반영한다.
+   * 늦게 온 응답은 그 사이의 고침을 모르는 옛 목록이라, 반영하면 지운 대화가 되살아난다.
+   * 고침도 올리는 이유: 고침 앞에 나간 요청이 고침 뒤에 돌아와도 막아야 하기 때문이다.
+   * 막힌 응답이 담았을 다른 변화는 다음 갱신이 받는다.
+   */
+  const listGen = useRef(0)
+
   // 답변 뒤 갱신 실패는 목록이 그대로 남으니 조용히 넘긴다
   const refreshConversations = useCallback(() => {
-    listConversations().then(setConversations).catch(() => {})
+    const mine = ++listGen.current
+    listConversations()
+      .then((list) => {
+        if (listGen.current === mine) setConversations(list)
+      })
+      .catch(() => {})
   }, [])
 
   // 첫 로드 실패를 삼키면 「대화가 없습니다」로 보인다 - 없는 것과 못 불러온 것을 가른다(#385, #77 · #359 와 같은 이유)
@@ -292,6 +306,7 @@ export function useChat() {
         setError(errorMessage(e, '대화를 삭제하지 못했습니다'))
         return
       }
+      listGen.current++
       setConversations((prev) => prev.filter((c) => c.id !== id))
       if (activeId === id && generation.current === mine) {
         // 지운 대화를 떠나는 것도 전환임 - 안 끊으면 사라진 대화에 대고 스트림이 계속 돎
@@ -309,6 +324,7 @@ export function useChat() {
     if (!trimmed) return
     try {
       const updated = await apiRename(id, trimmed)
+      listGen.current++
       setConversations((prev) => prev.map((c) => (c.id === id ? updated : c)))
     } catch (e) {
       setError(errorMessage(e, '대화 이름을 바꾸지 못했습니다'))
@@ -348,6 +364,7 @@ export function useChat() {
           // 생성을 기다리는 동안 사용자가 다른 대화를 골랐으면 이 턴을 버린다. 그냥 진행하면 방금
           // 고른 대화의 이력 위에 이 메시지가 얹히고, 사이드바는 새 대화를 가리키는데 본문은 남의
           // 것이 된다. 만들어진 대화는 목록에는 남긴다 - 서버에 실재하기 때문이다
+          listGen.current++
           setConversations((prev) => [conv, ...prev])
           if (generation.current !== mine) {
             settle(false)
@@ -521,6 +538,7 @@ export function useChat() {
               setActiveId(null)
               setMessages([])
             }
+            listGen.current++
             setConversations((prev) => prev.filter((c) => c.id !== id))
           }
           // 지운 뒤에 목록을 받아야 되살아나 보이지 않는다. 401 은 목록도 401 이라 받지 않는다

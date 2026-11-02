@@ -137,7 +137,7 @@ curl -s -o /dev/null -w "%{http_code}\n" https://api.openai.com/v1/vector_stores
 | ID | 가정 | 어긋나면 나타나는 증상 |
 |----|------|------------------------|
 | A | 검색 시작 이벤트 이름이 `response.file_search_call.in_progress` 또는 `response.file_search_call.searching` | 「참조 문서 검색 중」 단계가 화면에 뜨지 않는다. 답변은 정상 |
-| B | 완료 이벤트 이름이 `response.completed` | **스트림이 완료 없이 끝났다**는 오류로 끝난다. 조용히 무자료로 넘어가지 않도록 일부러 던지게 해 둔 경로다. 앞서 `error` · `response.failed` 가 왔으면 그 `code` · `type` · `message` 를 오류 문구에 싣는다(#536 — 크레딧 소진은 HTTP 200 으로 열린 스트림에 이 둘로 온다, 2026-10-28 운영 키로 실측 : `insufficient_quota` / `credit_balance_exhausted`) |
+| B | 완료 이벤트 이름이 `response.completed`. 출력 상한(`max_output_tokens`) · `content_filter` 로 잘린 턴은 같은 `response` 객체를 실은 `response.incomplete` 로 끝나며, 이것도 완료로 읽어 받은 본문 · 인용 · 사용량을 저장하고 `openai response incomplete reason=…` 를 `WARN` 한 줄로 남긴다(#553 — 캔드 스트림으로만 확인, 운영 관측 없음) | **스트림이 완료 없이 끝났다**는 오류로 끝난다. 조용히 무자료로 넘어가지 않도록 일부러 던지게 해 둔 경로다. 앞서 `error` · `response.failed` 가 왔으면 그 `code` · `type` · `message` 를 오류 문구에 싣는다(#536 — 크레딧 소진은 HTTP 200 으로 열린 스트림에 이 둘로 온다, 2026-10-28 운영 키로 실측 : `insufficient_quota` / `credit_balance_exhausted`) |
 | C | 인용 annotation의 타입이 `file_citation` 이고 파일명 필드가 `filename` | 답변은 정상인데 출처가 늘 0건이라 **모든 답변에 「자료 없음」 배너**가 붙는다 |
 | D | 검색 결과 본문이 `file_search_call` 항목의 `results[].text` 에 실린다 | 출처 각주는 뜨는데 스니펫이 빈칸이다 |
 | E | `include: ["file_search_call.results"]` 로 결과 본문을 받을 수 있다 | D와 같은 증상 |
@@ -236,7 +236,7 @@ cd ~/deploy && sudo docker compose logs app | grep -iE "openai|vector|관리자"
 - **묶음 질문의 세부 누락(#431)** : 세 주제를 한 질문에 묶으면 한 절에서 「N건」 중 일부 건의 세부를 「확인하지 못했다」로 남긴다 — [#431](https://github.com/changs0124/rag-chatbot/issues/431) 측정(10-23, OpenAI 직접) 묶음 L1 4/8 · 단독 질문 4/4. 원인은 묶음 질문의 검색 누락이고, 「빠진 건을 다시 검색」 지시문은 v1 5/12 · v2 3/8 로 효과가 없어 넣지 않았다(검색은 이미 턴당 7~20회 돈다). 모델은 지어내지 않는다.
 - **긴 잡담 뒤 매뉴얼 누락(#467)** : 매뉴얼 · 클레임 복합 질문 앞에 긴 잡담을 붙이면 매뉴얼 내용이 자주 빠진다 — [#467](https://github.com/changs0124/rag-chatbot/issues/467) 클레임 문서 교체 뒤에도 F1-noise 운영 앱 1/4(10-26) · OpenAI 직접 1/5, 정중한 앞말(polite)은 운영 3/4. 빠질 때는 「매뉴얼에서 찾지 못했다」고 밝힌다. 남은 방향(문서 종류별 검색 분리)은 증상에 비해 커서 하지 않았다(#467 코멘트).
 - **인용 표기 누락** : 모델이 답에 쓴 문서를 출처에서 빼는 인용 표기 누락 변동이 있다. F2(알람 + 과거 사례)는 매뉴얼을 빼는 경우 — 운영 battery 10-21 2회 중 1회 · 10-23 2회 중 0회, 원 API 6회 중 0회(인용 표기 0건 1회 · 클레임만 1회는 답에도 매뉴얼 내용 없음). H3(알람 번호 오타 질문)은 클레임 문서만 인용하고 매뉴얼을 빼는 경우 — 10-23 운영 battery 회차 중 2회(각 28문항 중 1, #438 배포 전 · 후 1회씩), 같은 지시문의 원 API 측정(10-23 #438, 2회)은 28/28. 코드 결함은 아니다.
-- **이력 예산 밖의 앞 턴** : 이력 예산(`CHAT_HISTORY_TOKEN_BUDGET`) 밖으로 밀린 앞 턴은 모델이 「대화에서 확인되지 않는다」고 답한다 — 지어내지는 않지만 사용자는 말한 것을 잊었다고 느낄 수 있다(10-23 30턴 세션 1회).
+- **이력 예산 밖의 앞 턴** : 이력 예산(`CHAT_HISTORY_TOKEN_BUDGET`) 밖으로 밀린 앞 턴은 모델이 「대화에서 확인되지 않는다」고 답한다 — 지어내지는 않지만 사용자는 말한 것을 잊었다고 느낄 수 있다(10-23 30턴 세션 1회). 직전 메시지 하나는 예산을 넘어도 앞부분이 잘려 들어간다(#554, 규칙은 backend.md 「대화 이력」).
 
 ## 4. 비용이 발생하는 지점
 

@@ -6,7 +6,7 @@ import com.ragchatbot.exception.ApiExceptions.BadRequestException;
  * 사용자 텍스트 입력의 문자 검사(#434). 길이 검사(#371 · #413)와 같은 자리에서 저장 · 모델 호출 전에 부른다.
  *
  * <p><b>NUL(U+0000)</b> — PostgreSQL 은 text 에 0x00 을 저장하지 못해 INSERT/UPDATE 가 500 으로 터졌다. {@code trim()} 은
- * 끝의 NUL 만 지워 가운데 NUL 은 그대로 DB 까지 갔다(채팅 · 대화 제목 · 이름 다섯 경로, 10-23 운영 QA).
+ * 끝의 NUL 만 지워 가운데 NUL 은 그대로 DB 까지 갔다(채팅 · 대화 제목 · 이름 다섯 경로, 10-23 운영 QA). 지금 호출처는 메시지 · 제목 · 이름(변경과 계정 발급 공용) · 파일 이름 네 곳이다.
  *
  * <p><b>짝 없는 서로게이트</b> — JSON 이스케이프로 온 반쪽 서로게이트(예 : D800 하나)는 Jackson 이 그대로 받아들이지만, 모델 요청 본문으로 다시 직렬화하면
  * OpenAI 가 {@code invalid_json} 으로 거절해 그 턴이 스트림 오류로 끝났다. 사용자가 고칠 수 있게 미리 거절한다.
