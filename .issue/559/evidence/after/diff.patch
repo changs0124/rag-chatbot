@@ -1,0 +1,86 @@
+diff --git a/.env.example b/.env.example
+index 85c2d18..633937f 100644
+--- a/.env.example
++++ b/.env.example
+@@ -30 +30 @@ APP_DB_PASSWORD=
+-# 공개 호스트명 ↔ 내부 주소 매핑도 거기서 하며, 내부 주소는 **http://app:8080** 이다
++# 공개 호스트명 ↔ 내부 주소 매핑도 거기서 하며, 서비스(api.<도메인>)의 내부 주소는 **http://app:8080** 이다
+@@ -31,0 +32 @@ APP_DB_PASSWORD=
++# 같은 터널에 SSH(ssh.<도메인>) → ssh://host.docker.internal:22 도 있다(#550, Access 로 보호).
+diff --git a/backend/src/main/java/com/ragchatbot/config/AdminRoleSynchronizer.java b/backend/src/main/java/com/ragchatbot/config/AdminRoleSynchronizer.java
+index 39a8b28..e02117f 100644
+--- a/backend/src/main/java/com/ragchatbot/config/AdminRoleSynchronizer.java
++++ b/backend/src/main/java/com/ragchatbot/config/AdminRoleSynchronizer.java
+@@ -27 +27,2 @@ import com.ragchatbot.service.TemporaryPasswordGenerator;
+- * 관리자 교체는 드물어 감수한다.
++ * 관리자 교체는 드물어 감수한다. <b>이 결정의 정본은 이 주석이다</b> - {@code V5__user_role.sql} 머리의 같은 설명과
++ * 그 안의 사라진 {@code docs/99_inbox/03-roles.md} 참조는 적용된 마이그레이션이라 체크섬 때문에 고치지 않는다.
+diff --git a/backend/src/main/java/com/ragchatbot/openai/SnippetPicker.java b/backend/src/main/java/com/ragchatbot/openai/SnippetPicker.java
+index cac8f64..346325e 100644
+--- a/backend/src/main/java/com/ragchatbot/openai/SnippetPicker.java
++++ b/backend/src/main/java/com/ragchatbot/openai/SnippetPicker.java
+@@ -88 +88 @@ final class SnippetPicker {
+-	/** 출처 스니펫을 버블 분량으로 제한(UI 2줄 클램프보다 조금 넉넉하게) */
++	/** 출처 스니펫의 저장 · 표시 길이 제한(최대 201자 - 「…」 포함, erd.md snippet). 화면은 줄 수를 자르지 않고 이 길이 그대로 그린다 */
+diff --git a/backend/src/main/java/com/ragchatbot/service/TextInputs.java b/backend/src/main/java/com/ragchatbot/service/TextInputs.java
+index 32eae7f..93765fc 100644
+--- a/backend/src/main/java/com/ragchatbot/service/TextInputs.java
++++ b/backend/src/main/java/com/ragchatbot/service/TextInputs.java
+@@ -9 +9 @@ import com.ragchatbot.exception.ApiExceptions.BadRequestException;
+- * 끝의 NUL 만 지워 가운데 NUL 은 그대로 DB 까지 갔다(채팅 · 대화 제목 · 이름 다섯 경로, 10-23 운영 QA).
++ * 끝의 NUL 만 지워 가운데 NUL 은 그대로 DB 까지 갔다(채팅 · 대화 제목 · 이름 다섯 경로, 10-23 운영 QA). 지금 호출처는 메시지 · 제목 · 이름(변경과 계정 발급 공용) · 파일 이름 네 곳이다.
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 7859d36..062c0c8 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -108 +108 @@ services:
+-      # 세 컨테이너 모두 비루트로 돌거나(app) 이미지가 내부에서 강등하므로(db), 일단 강등된 뒤에는
++      # 세 컨테이너 모두 비루트로 돌거나(app · cloudflared 65532) 이미지가 내부에서 강등하므로(db), 일단 강등된 뒤에는
+@@ -210 +210 @@ services:
+-    # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ http://app:8080 매핑은 Cloudflare 대시보드에 있다.
++    # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ 내부 주소 매핑(서비스 http://app:8080 · SSH 는 아래 #550)은 Cloudflare 대시보드에 있다.
+@@ -232 +232 @@ services:
+-      # edge 에만 둔다 - app:8080 에만 닿으면 되고 db 는 보이지 않아야 한다.
++      # edge 에만 둔다 - 서비스는 app:8080 에 닿으면 되고(SSH 는 아래 host-gateway, #550) db 는 보이지 않아야 한다.
+diff --git a/docs/01_specs/api.md b/docs/01_specs/api.md
+index 777d683..32c2acd 100644
+--- a/docs/01_specs/api.md
++++ b/docs/01_specs/api.md
+@@ -113 +113 @@
+-| API-GET-001 | GET | `/api/health` | 헬스체크 | - | 구현됨 |
++| API-GET-001 | GET · HEAD | `/api/health` | 헬스체크 — `HEAD` 도 200(#520, 업타임 감시용) | - | 구현됨 |
+diff --git a/docs/02_architecture/backend.md b/docs/02_architecture/backend.md
+index 53b18e3..8b1b253 100644
+--- a/docs/02_architecture/backend.md
++++ b/docs/02_architecture/backend.md
+@@ -499 +499 @@ sshd 에 닿고, 그 뒤에 키 인증이 한 번 더 있다. 개발 PC 에는 `
+-   이어서 묻지 않고 지나간다. 배포 tarball 도 이 경로로 간다(11-02 실측 20MB 13초 — 직접 22 보다 느리다).
++   이어서 묻지 않고 지나간다. 배포 tarball(압축 후 90MB 남짓)도 이 경로로 간다 — 직접 22 보다 느리다(11-02 시험 파일 20MB 를 scp 로 보내 13초, 약 1.5MB/s).
+@@ -501 +501 @@ sshd 에 닿고, 그 뒤에 키 인증이 한 번 더 있다. 개발 PC 에는 `
+-   플래그는 둘이다 — `--dry-run`(무엇을 할지만 출력) · `--skip-build`(이미 빌드된 이미지로 전송만).
++   플래그는 둘이다 — `--dry-run`(무엇을 할지만 출력) · `--skip-build`(빌드만 건너뛰고 이미 빌드된 이미지로 저장부터).
+diff --git a/docs/02_architecture/design-system.md b/docs/02_architecture/design-system.md
+index b11dd1a..de28406 100644
+--- a/docs/02_architecture/design-system.md
++++ b/docs/02_architecture/design-system.md
+@@ -82 +82 @@
+-`danger` 를 쓰면 `#C0392B` 가 어두운 패널에 얹혀 **1.06** 이 된다.
++`danger` 를 쓰면 `#C0392B` 가 어두운 패널에 얹혀 **1.91** 이 된다(흰 이미지 위 `black/75` 기준 — 1.06 은 스크림이 `black/60` 이던 때 값).
+@@ -93 +93 @@
+-| `border-line` / `canvas` (입력 테두리) | 1.43 | WCAG 1.4.11 은 3.0 | **미달**. 3.0 을 맞추면 테두리가 눈에 띄게 진해져 색 범위를 넘는 디자인 변경이 된다 |
++| `border-line` / `canvas` (입력 테두리) | 1.48 | WCAG 1.4.11 은 3.0 | **미달**. 3.0 을 맞추면 테두리가 눈에 띄게 진해져 색 범위를 넘는 디자인 변경이 된다 |
+@@ -136 +136 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
+-| `danger-soft` | `pages/AdminDocumentsPage.tsx` · `pages/AdminUsersPage.tsx` 관리자 오류 배너 | 화면마다 1회(같은 모양, #513 에서 둘로 나뉨) |
++| `danger-soft` | `components/AdminErrorBanners.tsx` 관리자 오류 배너 | 1회 — 관리자 두 화면이 공용으로 쓴다(#541) |
+diff --git a/scripts/deploy.sh b/scripts/deploy.sh
+index c3c6540..64baa2f 100644
+--- a/scripts/deploy.sh
++++ b/scripts/deploy.sh
+@@ -13 +13,2 @@
+-# 서버 접속은 일반 ssh/scp 를 쓴다(#243).
++# 서버 접속은 일반 ssh/scp 를 쓴다(#243). 운영 별칭은 Cloudflare Tunnel + Access 를 지난다 - `~/.ssh/config` 의
++# `ProxyCommand cloudflared access ssh` 가 개발 PC 의 cloudflared 를 쓴다(#550, backend.md 「배포」).
+@@ -169,0 +171,3 @@ scp -q "$TMP/$TARBALL" docker-compose.yml "$HOST:$REMOTE_DIR/"
++# **compose 의 cloudflared 블록(다이제스트 · 설정)이 바뀐 배포는 이 `up -d` 가 cloudflared 를 재생성해 터널 위의
++# 이 SSH 세션을 끊는다(#550).** 그런 배포는 backend.md 「감수하는 약점」대로 브라우저 SSH 로 한다. app 만 바뀌면 cloudflared 는 그대로다.
++#

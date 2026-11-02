@@ -1,0 +1,40 @@
+ ❯ src/lib/refresh.test.ts:175:32
+    173|     switchAccountThenRespond401()
+    174|     await expect(pending).rejects.toThrow()
+    175|     expect(onUnauthorized).not.toHaveBeenCalled()
+       |                                ^
+    176|   })
+    177|
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+ FAIL  src/lib/refresh.test.ts > 다른 세션에서 떠난 요청의 401 > 채팅 스트림 - 옛 토큰의 401 로 B 세션을 지우지 않는다
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+Received:
+  1st vi.fn() call:
+    Array []
+Number of calls: 1
+ ❯ src/lib/refresh.test.ts:182:32
+    180|     switchAccountThenRespond401()
+    181|     await expect(pending).rejects.toThrow()
+    182|     expect(onUnauthorized).not.toHaveBeenCalled()
+       |                                ^
+    183|   })
+    184|
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+ FAIL  src/lib/refresh.test.ts > 다른 세션에서 떠난 요청의 401 > 그림 로드 - 옛 토큰의 401 로 B 세션을 지우지 않는다
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+Received:
+  1st vi.fn() call:
+    Array []
+Number of calls: 1
+ ❯ src/lib/refresh.test.ts:189:32
+    187|     switchAccountThenRespond401()
+    188|     await expect(pending).rejects.toThrow()
+    189|     expect(onUnauthorized).not.toHaveBeenCalled()
+       |                                ^
+    190|   })
+    191|
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+ Test Files  1 failed (1)
+      Tests  3 failed | 9 passed (12)
+   Start at  10:01:51
+   Duration  1.32s (transform 118ms, setup 222ms, import 148ms, tests 20ms, environment 581ms)
