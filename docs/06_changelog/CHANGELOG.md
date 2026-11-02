@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### Docs
+- **코드 · 배포와 어긋난 문서 수치 · 서술 6곳과 주석 9곳을 맞췄다(#559, 11-02 전수 리뷰).** `backend.md` 의 `--skip-build`(「전송만」 → 저장부터) · #550 에서 들어간 「20MB 13초」(시험 파일 크기였다 — tarball 은 압축 후 90MB 남짓), `design-system.md` 대비 수치 둘(첨부 실패 패널 `danger` 1.06 → **1.91** — 1.06 은 스크림이 `black/60` 이던 때 값, `border-line/canvas` 1.43 → **1.48**, 결론은 그대로 미달)과 `danger-soft` 사용처(#541 의 `AdminErrorBanners`), `api.md` API-GET-001 의 `HEAD`(#520). 주석은 `SnippetPicker` 의 없는 「UI 2줄 클램프」, #550 이후의 터널 매핑(`.env.example` · compose 2곳 — SSH 도 같은 터널) · compose 의 비루트 목록(cloudflared 65532) · `deploy.sh` 머리 · 4단계(로컬 cloudflared · cloudflared 를 재생성하는 배포는 SSH 가 끊김) · `TextInputs` 의 현재 호출처, 관리자 명단 결정의 정본을 `AdminRoleSynchronizer` 로 명시(`V5__user_role.sql` 의 사라진 문서 참조는 적용된 마이그레이션이라 체크섬 때문에 그대로). 동작 변화 없음
+
 ## [2026-11-02]
 
 운영 배포 1회 — `9465e0e` → `4d5b084`(#550 · #542 · #543 · #541 · #540 · #539 · #538, 롤백 `prev-9465e0e`=4002b4a3). 터널 경유 SSH(#550)로 한 **첫 배포**다 — `deploy.sh` 의 ssh/scp 가 `ssh.chseong.fyi` + Cloudflare Access 를 지났고, compose 가 서버와 같아(#550 의 `extra_hosts` 는 배포 전 11-02 에 서버에 선반영) `up -d` 는 app 만 재생성하고 cloudflared 는 Running 그대로였다 — 배포 중 SSH 끊김 없음. 헬스 10초 · 터널 준비 0초. 배포 뒤 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `/error` 401 · `nosniff`/`DENY` · app 로그 WARN/ERROR 0. 이 배포에 실린 백엔드 코드 변경은 #542 의 첨부 400 문구 한 줄뿐이고(매퍼 `<sql>` 정리는 펼친 SQL 동일), #543 은 테스트 · #541 은 프론트(merge 때 Vercel 로 이미 운영) · #538~#540 은 문서다.
