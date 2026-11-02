@@ -110,7 +110,7 @@
 
 | ID | 메서드 | 경로 | 설명 | 인증 | 상태 |
 |----|--------|------|------|------|------|
-| API-GET-001 | GET | `/api/health` | 헬스체크 | - | 구현됨 |
+| API-GET-001 | GET · HEAD | `/api/health` | 헬스체크 — `HEAD` 도 200(#520, 업타임 감시용) | - | 구현됨 |
 | API-POST-002 | POST | `/api/auth/login` | 로그인 | - | 구현됨 |
 | API-GET-002 | GET | `/api/auth/me` | 현재 사용자 | USER | 구현됨 |
 | API-GET-003 | GET | `/api/profile` | 프로필 조회 — **제거됨**(#303, 2026-10-15). API-GET-002 와 같은 처리였고 화면이 쓰지 않았다. 지금은 404 | USER | 제거됨 |
