@@ -1,0 +1,11 @@
+# 변경 전 코드(main 4d5b084)에서 새 테스트 실행 — ./mvnw -q test -Dtest='OpenAiRealStreamIncompleteTest'
+-------------------------------------------------------------------------------
+Test set: com.ragchatbot.openai.OpenAiRealStreamIncompleteTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.781 s <<< FAILURE! -- in com.ragchatbot.openai.OpenAiRealStreamIncompleteTest
+com.ragchatbot.openai.OpenAiRealStreamIncompleteTest.max_output_tokens_is_saved_as_truncated_completion(CapturedOutput) -- Time elapsed: 0.697 s <<< ERROR!
+java.lang.IllegalStateException: OpenAI 스트림이 완료(response.completed) 없이 종료됨
+
+com.ragchatbot.openai.OpenAiRealStreamIncompleteTest.content_filter_is_saved_as_truncated_completion(CapturedOutput) -- Time elapsed: 0.008 s <<< ERROR!
+java.lang.IllegalStateException: OpenAI 스트림이 완료(response.completed) 없이 종료됨
+
