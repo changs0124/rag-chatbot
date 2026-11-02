@@ -1,0 +1,15 @@
+2026-11-02T00:26:55Z
+$ timeout 8 bash -c 'exec 3<>/dev/tcp/13.209.194.28/22 && head -c 40 <&3'
+ -> 닫힘/타임아웃
+
+$ ssh chseong-seoul-01 'echo $SSH_CONNECTION'   (별칭 = ssh.chseong.fyi + ProxyCommand cloudflared access ssh)
+172.19.0.3 51188 172.17.0.1 22
+  -> 출발지 172.19.0.3 = cloudflared 컨테이너(edge 네트워크), 도착 172.17.0.1:22 = host-gateway
+
+$ scp 20MB 왕복 sha256 대조
+  local=659a794a7551a60e remote=659a794a7551a60e 13초
+
+$ curl https://api.chseong.fyi/api/health
+  200
+$ curl https://ssh.chseong.fyi/ (로그인 없이)
+  302 -> Access 로그인

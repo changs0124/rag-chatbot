@@ -1,0 +1,17 @@
+{
+    "portStates": [
+        {
+            "fromPort": 22,
+            "toPort": 22,
+            "protocol": "tcp",
+            "state": "open",
+            "cidrs": [
+                "0.0.0.0/0"
+            ],
+            "ipv6Cidrs": [
+                "::/0"
+            ],
+            "cidrListAliases": []
+        }
+    ]
+}

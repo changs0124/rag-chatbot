@@ -1,0 +1,15 @@
+{
+    "portStates": [
+        {
+            "fromPort": 22,
+            "toPort": 22,
+            "protocol": "tcp",
+            "state": "open",
+            "cidrs": [],
+            "ipv6Cidrs": [],
+            "cidrListAliases": [
+                "lightsail-connect"
+            ]
+        }
+    ]
+}
