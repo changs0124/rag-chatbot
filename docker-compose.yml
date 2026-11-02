@@ -105,7 +105,7 @@ services:
     security_opt:
       # **setuid 바이너리로 권한을 되찾는 길을 막는다(#130).** 컨테이너 안에서 실행되는
       # 프로세스가 setuid/setgid 비트나 파일 capability 로 **새 권한을 얻는 것**을 커널이 거부한다.
-      # 세 컨테이너 모두 비루트로 돌거나(app) 이미지가 내부에서 강등하므로(db), 일단 강등된 뒤에는
+      # 세 컨테이너 모두 비루트로 돌거나(app · cloudflared 65532) 이미지가 내부에서 강등하므로(db), 일단 강등된 뒤에는
       # 권한을 올릴 이유가 없다. 침해 후 권한 상승의 가장 흔한 경로 하나를 값싸게 닫는다.
       - no-new-privileges:true
     # **app 은 capability 가 하나도 필요 없다(#130).** 이미 비루트(`USER app`)로 돌고,
@@ -207,7 +207,7 @@ services:
     #   docker run --rm cloudflare/cloudflared@<다이제스트> tunnel run --help | grep token-file   # 아래 command 가 쓴다(#203)
     # 되돌리는 법은 backend.md 「감수하는 약점」 - app 의 롤백 태그로는 되돌아가지 않는다
     image: cloudflare/cloudflared@sha256:1b1d34d0a9c0bfca9de72db8460d328db3f19edd2b96169114e3e893a97bbe53
-    # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ http://app:8080 매핑은 Cloudflare 대시보드에 있다.
+    # 토큰 방식(원격 관리형) - 공개 호스트명 ↔ 내부 주소 매핑(서비스 http://app:8080 · SSH 는 아래 #550)은 Cloudflare 대시보드에 있다.
     # 터널 설정을 저장소에 두지 않는 대신, 토큰만 있으면 어느 서버에서든 같은 주소로 붙는다
     #
     # **토큰은 환경변수가 아니라 파일로 넘긴다(#203).** env 로 넘기면 `docker inspect` 의 `Config.Env` 와
@@ -229,7 +229,7 @@ services:
     depends_on:
       - app
     networks:
-      # edge 에만 둔다 - app:8080 에만 닿으면 되고 db 는 보이지 않아야 한다.
+      # edge 에만 둔다 - 서비스는 app:8080 에 닿으면 되고(SSH 는 아래 host-gateway, #550) db 는 보이지 않아야 한다.
       - edge
     # **SSH 도 이 터널로 들어온다(#550).** 공개 호스트명 ssh.<도메인> → ssh://host.docker.internal:22 (대시보드).
     # 컨테이너 안의 localhost 는 cloudflared 자신이라 호스트 sshd 에 닿으려면 게이트웨이 이름이 필요하다.
