@@ -14,6 +14,9 @@
 ### Tests
 - **채팅 경로에서 남의 대화 · 첨부를 쓰는 경우를 테스트로 잠갔다(#555, 테스트만).** 코드는 `user_id` 조건으로 막고 있었지만 `POST /api/chat` 쪽 케이스가 없었다. 남의 `conversationId` → 404 · 메시지 0 · 모델 호출 없음, 남의 `attachmentIds` → 404 · 첨부 연결 없음. 조건을 지운 변형에서 각각 200 · 400 으로 실패하는 것을 확인했다
 
+### Fixed
+- **출력 상한 · 콘텐츠 필터로 끝난 턴(`response.incomplete`)이 끝까지 받은 답인데도 오류로 저장되던 것을 고쳤다(#553).** 스트림 파서가 `response.completed` 만 완료로 봐서 「완료 없이 종료됨」 예외 → `status=error` 로 저장되고 다음 턴 이력 · 인용 · 사용량이 빠졌다. 이제 같은 `response` 객체에서 인용 · 사용량을 뽑아 정상 완료로 저장하고, 사유(`incomplete_details.reason`)를 WARN 한 줄로 남긴다. 화면의 잘림 표시는 없다(사유는 로그에만). 검증 : API 문서 모양의 캔드 스트림 2건(`max_output_tokens` · `content_filter`) — 수정 전 2건 실패
+
 ## [2026-11-02]
 
 운영 배포 1회 — `9465e0e` → `4d5b084`(#550 · #542 · #543 · #541 · #540 · #539 · #538, 롤백 `prev-9465e0e`=4002b4a3). 터널 경유 SSH(#550)로 한 **첫 배포**다 — `deploy.sh` 의 ssh/scp 가 `ssh.chseong.fyi` + Cloudflare Access 를 지났고, compose 가 서버와 같아(#550 의 `extra_hosts` 는 배포 전 11-02 에 서버에 선반영) `up -d` 는 app 만 재생성하고 cloudflared 는 Running 그대로였다 — 배포 중 SSH 끊김 없음. 헬스 10초 · 터널 준비 0초. 배포 뒤 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `/error` 401 · `nosniff`/`DENY` · app 로그 WARN/ERROR 0. 이 배포에 실린 백엔드 코드 변경은 #542 의 첨부 400 문구 한 줄뿐이고(매퍼 `<sql>` 정리는 펼친 SQL 동일), #543 은 테스트 · #541 은 프론트(merge 때 Vercel 로 이미 운영) · #538~#540 은 문서다.
