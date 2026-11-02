@@ -93,8 +93,11 @@ window.addEventListener('storage', (e) => {
  */
 const CREDENTIAL_PATHS = ['/api/auth/login', '/api/profile/password']
 
-export function handleUnauthorized(path: string): void {
+export function handleUnauthorized(path: string, sentWith: string | null = token): void {
   if (CREDENTIAL_PATHS.some((p) => path.startsWith(p))) return
+  // 옛 토큰으로 나간 요청의 늦은 401 이 지금(새) 세션을 지우면 안 된다(#556). 재발급 헤더(#363)와 같은 비교.
+  // 토큰 없이 나간 요청(null)은 지금도 null 일 때만 - 그사이 로그인했다면 그 401 은 새 세션 것이 아니다.
+  if (sentWith !== token) return
   onUnauthorized?.()
 }
 
@@ -125,7 +128,8 @@ export function adoptRefreshedToken(res: Response, sentWith: string | null): voi
  * 조용히 갈린다(#219).
  */
 export async function toApiError(res: Response, path: string): Promise<ApiError> {
-  if (res.status === 401) handleUnauthorized(path)
+  // authFetch 가 기록해 둔 송신 시점 토큰(#556). 거치지 않은 Response 는 지금 토큰으로 본다(옛 동작)
+  if (res.status === 401) handleUnauthorized(path, sentTokens.has(res) ? sentTokens.get(res) : token)
   let message = `요청 실패 (${res.status})`
   try {
     const data = await res.json()
@@ -163,6 +167,9 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
+/** 응답 → 그 요청을 보낼 때의 토큰. `toApiError` 가 401 을 지금 세션과 견주는 데 쓴다(#556) */
+const sentTokens = new WeakMap<Response, string | null>()
+
 /**
  * 인증 fetch(#390). 보낼 때의 토큰을 잡아 두고 Bearer 를 실어 보낸 뒤 재발급 헤더를 반영한다.
  * 에러 변환은 하지 않는다 - 호출부마다 다르다(404 를 null 로 보는 그림, onError 를 부르는 스트림).
@@ -176,6 +183,7 @@ export async function authFetch(
 ): Promise<Response> {
   const sentWith = token
   const res = await fetch(BASE + path, { ...init, headers: { ...init.headers, ...authHeaders() } })
+  sentTokens.set(res, sentWith)
   adoptRefreshedToken(res, sentWith)
   return res
 }
