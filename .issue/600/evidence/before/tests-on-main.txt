@@ -1,0 +1,8 @@
+# 새 테스트 2개를 현행 코드에 돌린 결과 — 둘 다 실패(결함 재현)
+# (현행 코드에는 RESIGN_RETRY_MS 가 없어 시계 이동은 무의미 — 실패는 TTL 이 지나도 다시 받지 않는 가드 때문)
+     × 재서명한 첨부도 서명 TTL 이 지난 뒤 다시 깨지면 한 번 더 받는다 6ms
+       × 내려받기 실패가 늦게 오면 넘겨 간 장에는 알림이 뜨지 않는다 25ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected '/fresh' to be '/fresh2' // Object.is equality
+Error: expect(element).not.toBeInTheDocument()
+      Tests  2 failed | 71 passed (73)
