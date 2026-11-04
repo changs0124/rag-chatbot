@@ -1,0 +1,7 @@
+# 새 테스트 2개를 현행 AdminDocumentsPage 에 돌린 결과 — 둘 다 실패(결함 재현)
+     × 첫 로드가 끝나기 전이나 실패하면 건수를 보이지 않는다 72ms
+     × 삭제가 도는 동안은 다시 지우지 않고, 새 시도는 이전 오류를 지운다 39ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+TestingLibraryElementError: Unable to find an accessible element with the role "heading" and name "문서"
+Error: expect(element).not.toBeInTheDocument()
+      Tests  2 failed | 16 passed (18)
