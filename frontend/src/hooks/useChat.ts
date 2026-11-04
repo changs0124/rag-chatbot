@@ -252,8 +252,13 @@ export function useChat() {
     [activeId, abortActiveStream],
   )
 
-  /** 첨부 id 별로 재서명을 이미 시도했는지(#558). 새 URL 마저 깨져도 한 번만 받아 무한 요청을 막는다 */
+  /**
+   * 첨부 id 별로 새 URL 을 이미 받아 바꿨는지(#558). 새 URL 마저 깨져도 한 번만 받아 무한 요청을 막는다.
+   * 받지 못했으면(요청 실패 · 서버 이력에 아직 없음) 남겨 둔다 - 다음에 깨질 때 다시 시도한다(#587)
+   */
   const refreshedAttachments = useRef(new Set<string>())
+  /** 진행 중인 재서명 요청(#587) - 한 대화의 썸네일 여러 장이 한꺼번에 깨져도 이력은 한 번만 받는다 */
+  const resigning = useRef<{ id: string; promise: Promise<ChatMessage[]> } | null>(null)
 
   /**
    * 보낸 말풍선의 첨부가 깨지면(#558) 이력을 다시 받아 새 서명 URL 로 바꾼다. 낙관적 말풍선은 업로드 응답의
@@ -263,16 +268,27 @@ export function useChat() {
   const refreshAttachment = useCallback(
     async (attachmentId: string) => {
       if (!activeId || refreshedAttachments.current.has(attachmentId)) return
-      refreshedAttachments.current.add(attachmentId)
       const mine = generation.current
+      let shared = resigning.current
+      if (!shared || shared.id !== activeId) {
+        const started = { id: activeId, promise: getMessages(activeId) }
+        resigning.current = started
+        const clear = () => {
+          if (resigning.current === started) resigning.current = null
+        }
+        started.promise.then(clear, clear)
+        shared = started
+      }
       let server: ChatMessage[]
       try {
-        server = await getMessages(activeId)
+        server = await shared.promise
       } catch {
         return
       }
       if (generation.current !== mine) return
       const fresh = new Map(server.flatMap((m) => m.attachments ?? []).map((a) => [a.id, a.url]))
+      if (!fresh.has(attachmentId)) return
+      refreshedAttachments.current.add(attachmentId)
       setMessages((prev) =>
         prev.map((m) =>
           m.attachments?.some((a) => fresh.has(a.id))
