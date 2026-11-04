@@ -233,6 +233,27 @@ class ChatHistoryTest {
 	}
 
 	/**
+	 * 조각 하한(#575)의 경계 - 남은 예산이 하한과 <b>같으면</b> 잘라 넣고, 하나 모자라면 멈춘다(#585).
+	 * 하한 값 자체도 고정한다 - 문서(backend.md 「대화 이력」)가 「200 토큰」이라 적으므로 바꿀 때 함께 고친다.
+	 */
+	@Test
+	void fragment_floor_is_inclusive_at_the_boundary() {
+		assertThat(ChatService.HISTORY_MIN_FRAGMENT_TOKENS).isEqualTo(200);
+		String newest = "나".repeat(300); // 정확히 200 토큰
+		List<Message> messages = List.of(msg("assistant", "가".repeat(3000)), msg("user", newest));
+		int newestCost = (int) Math.ceil(newest.length() / 1.5);
+
+		List<Turn> atFloor = ChatService.buildHistory(messages, Set.of(),
+				newestCost + ChatService.HISTORY_MIN_FRAGMENT_TOKENS);
+		List<Turn> belowFloor = ChatService.buildHistory(messages, Set.of(),
+				newestCost + ChatService.HISTORY_MIN_FRAGMENT_TOKENS - 1);
+
+		assertThat(atFloor).extracting(Turn::role).containsExactly("assistant", "user");
+		assertThat(atFloor.get(0).content()).endsWith(ChatService.HISTORY_TRUNCATED_MARK);
+		assertThat(belowFloor).extracting(Turn::content).containsExactly(newest);
+	}
+
+	/**
 	 * 첨부가 있는 메시지가 잘려도 이미지 표식은 남는다(#584). 표식은 본문 끝에 붙는데 자르기는 앞부분을 남기므로,
 	 * 본문만 자르고 표식을 다시 붙이지 않으면 뒤 턴의 「그 사진」이 무엇을 가리키는지 모델이 모른다.
 	 */
