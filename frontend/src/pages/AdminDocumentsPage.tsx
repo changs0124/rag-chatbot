@@ -140,6 +140,7 @@ function DocumentsSection({
   const [syncing, setSyncing] = useState(false)
   const [syncNotice, setSyncNotice] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<RagDocument | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -177,16 +178,21 @@ function DocumentsSection({
     }
   }
 
+  // 사용자 관리(#483)와 같은 꼴(#589) - 도는 동안 다시 지우지 않고, 새 시도는 이전 오류를 걷는다.
+  // 실패해도 목록은 다시 읽는다 - 다른 관리자가 먼저 지운 404 면 화면에만 남은 행을 걷어야 한다(refresh 는 던지지 않는다)
   async function confirmDelete() {
     const target = pendingDelete
     setPendingDelete(null)
-    if (!target) return
+    if (!target || deletingId) return
+    setError(null)
+    setDeletingId(target.id)
     try {
       await deleteDocument(target.id)
-      await refresh()
     } catch (e) {
       setError(errorMessage(e, '삭제하지 못했습니다'))
     }
+    await refresh()
+    setDeletingId(null)
   }
 
   return (
@@ -209,7 +215,10 @@ function DocumentsSection({
 
       <section className="mt-8">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-medium text-ink-muted">문서 {documents.length}건</h2>
+          <h2 className="text-sm font-medium text-ink-muted">
+            {/* 다 읽기 전 · 못 읽었을 때 「0건」은 다 지워졌다고 읽힌다(#589, #483 F4 와 같은 오독) */}
+            문서{loaded && ` ${documents.length}건`}
+          </h2>
           <button
             onClick={() => void onSync()}
             disabled={syncing}
@@ -255,9 +264,10 @@ function DocumentsSection({
                 </div>
                 <button
                   onClick={() => setPendingDelete(doc)}
+                  disabled={deletingId !== null}
                   className={actionButtonClass + ' hover:text-danger'}
                 >
-                  삭제
+                  {deletingId === doc.id ? '삭제 중…' : '삭제'}
                 </button>
               </li>
             ))}
