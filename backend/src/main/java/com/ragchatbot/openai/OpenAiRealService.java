@@ -110,7 +110,8 @@ public class OpenAiRealService implements OpenAiService {
 	private final Clock clock;
 
 	/**
-	 * 검색 도구가 붙은 턴에 함께 보내는 지시(#39). 줄마다 실측한 전후 수치는
+	 * 검색 도구가 붙은 턴에 함께 보내는 고정 지시(#39). 요청마다 끝에 날짜 줄({@link #DATE_LINE}, #533)이 더 붙는다.
+	 * 줄마다 실측한 전후 수치는
 	 * {@code docs/01_specs/live-integration.md} 3-2 「지시문 줄별 실측」 표에 있다. 줄을 바꾸면 그 표의 수치가 무효다.
 	 *
 	 * <p><b>왜 필요한가</b> — {@code tool_choice} 를 주지 않으면 기본값이 {@code auto} 라 file_search 호출
@@ -188,6 +189,9 @@ public class OpenAiRealService implements OpenAiService {
 	 * 이 한 줄뿐이다. 사용자 입력 앞머리에 넣으면 사용자 문장이 바뀌어 검색어에 날짜가 섞일 수 있다.
 	 *
 	 * <p><b>왜 KST 인가</b> — 사용자가 한국에 있다. 서버 시계(UTC)의 날짜를 쓰면 KST 00~09시가 전날이 된다.
+	 *
+	 * <p><b>범위</b> — 검색 도구가 붙는 턴(스토어가 설정된 경우)에만 실린다. 스토어가 없으면 지시문 자체를 싣지 않으므로
+	 * 날짜도 없다. 운영은 늘 스토어가 붙어 있어 일부러 넓히지 않았다(11-04 리뷰 판정, #105 · #591)
 	 */
 	static final String DATE_LINE = "- 오늘은 %s(%s, 한국 시간)이다. 「이번 달 · 지난달 · 최근 N개월 · 올해」 같은 상대 시점은 "
 			+ "이 날짜를 기준으로 풀고, 어느 기간으로 풀었는지 답에 밝힌다.\n";
