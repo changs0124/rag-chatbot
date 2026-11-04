@@ -113,7 +113,9 @@ class OpenAiRealImageStreamingBodyTest {
 		JsonNode body = mapper.readTree(received.get());
 		assertThat(body.path("model").asString("")).isEqualTo("gpt-6-sol");
 		assertThat(body.path("stream").asBoolean(false)).isTrue();
-		assertThat(body.path("instructions").asString("")).isEqualTo(OpenAiRealService.RAG_INSTRUCTIONS);
+		// 고정 지시문 뒤에 날짜 줄이 붙는다(#533) - 날짜 값은 OpenAiRealInstructionsTest 가 고정 시계로 본다
+		assertThat(body.path("instructions").asString("")).startsWith(OpenAiRealService.RAG_INSTRUCTIONS)
+				.contains("- 오늘은 ");
 		JsonNode input = body.path("input");
 		assertThat(input.size()).isEqualTo(3);
 		assertThat(input.get(0).path("content").asString("")).isEqualTo("앞 질문");

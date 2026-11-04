@@ -9,12 +9,17 @@ import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -24,6 +29,7 @@ import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.core.io.ByteArrayResource;
@@ -100,6 +106,8 @@ public class OpenAiRealService implements OpenAiService {
 	private final FileStorage fileStorage;
 	private final String model;
 	private final String sharedVectorStoreId;
+	/** 지시문 끝의 날짜 줄(#533)을 만드는 시계. 운영은 KST 시스템 시계, 테스트는 고정 시계 */
+	private final Clock clock;
 
 	/**
 	 * 검색 도구가 붙은 턴에 함께 보내는 지시(#39). 줄마다 실측한 전후 수치는
@@ -172,6 +180,26 @@ public class OpenAiRealService implements OpenAiService {
 			파라미터 번호 · S/N 같은 표기는 원문 그대로 둔다.
 			""";
 
+	/**
+	 * 요청 시점 날짜를 알리는 줄(#533). 모델은 오늘이 언제인지 모르므로, 없으면 「이번 달 · 지난달 · 최근 3개월」을
+	 * 회차마다 다른 달로 풀고 근거 없이 달을 단정하기도 했다(10-28 QA).
+	 *
+	 * <p><b>왜 지시문 끝인가</b> — 프롬프트 캐시는 앞부분이 같아야 잡힌다. 고정 지시문 뒤에 붙이면 날마다 바뀌는 것은
+	 * 이 한 줄뿐이다. 사용자 입력 앞머리에 넣으면 사용자 문장이 바뀌어 검색어에 날짜가 섞일 수 있다.
+	 *
+	 * <p><b>왜 KST 인가</b> — 사용자가 한국에 있다. 서버 시계(UTC)의 날짜를 쓰면 KST 00~09시가 전날이 된다.
+	 */
+	static final String DATE_LINE = "- 오늘은 %s(%s, 한국 시간)이다. 「이번 달 · 지난달 · 최근 N개월 · 올해」 같은 상대 시점은 "
+			+ "이 날짜를 기준으로 풀고, 어느 기간으로 풀었는지 답에 밝힌다.\n";
+
+	static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
+	/** 검색 도구가 붙은 턴의 지시문 = 고정 지시문 + 날짜 줄(#533) */
+	static String instructions(LocalDate today) {
+		return RAG_INSTRUCTIONS + DATE_LINE.formatted(today, today.format(DateTimeFormatter.ofPattern("E", Locale.KOREAN)));
+	}
+
+	@Autowired
 	public OpenAiRealService(
 			@Value("${app.openai.api-key}") String apiKey,
 			@Value("${app.openai.model}") String model,
@@ -181,6 +209,13 @@ public class OpenAiRealService implements OpenAiService {
 			@Value("${app.openai.request-timeout-ms}") long requestTimeoutMs,
 			@Value("${app.chat.sse-timeout-ms}") long sseTimeoutMs,
 			FileStorage fileStorage) {
+		this(apiKey, model, vectorStoreId, baseUrl, streamReadTimeoutMs, requestTimeoutMs, sseTimeoutMs, fileStorage,
+				Clock.system(KST));
+	}
+
+	/** 테스트용 - 날짜 줄(#533)을 결정적으로 보려고 시계를 주입함 */
+	OpenAiRealService(String apiKey, String model, String vectorStoreId, String baseUrl, long streamReadTimeoutMs,
+			long requestTimeoutMs, long sseTimeoutMs, FileStorage fileStorage, Clock clock) {
 		// live 모드인데 키가 비면 부팅 즉시 실패(per-request 401 대신 fail-fast). 이 빈은 app.mode=live에서만 로드됨
 		if (apiKey == null || apiKey.isBlank()) {
 			throw new IllegalStateException(
@@ -198,6 +233,7 @@ public class OpenAiRealService implements OpenAiService {
 		this.model = model;
 		this.sharedVectorStoreId = vectorStoreId;
 		this.fileStorage = fileStorage;
+		this.clock = clock;
 		// **클라이언트를 둘로 나눈다**(#92) - 스트리밍용 긴 읽기 타임아웃은 스트리밍으로만 정당화되고,
 		// 문서 조회 · 업로드 · 삭제에 걸리면 그만큼 톰캣 스레드를 잡는다
 		this.streamClient = restClient(baseUrl, apiKey, Duration.ofMillis(streamReadTimeoutMs));
@@ -258,7 +294,7 @@ public class OpenAiRealService implements OpenAiService {
 			// 스니펫 노출을 위해 검색 결과 본문까지 받음
 			body.put("include", List.of("file_search_call.results"));
 			// 검색 도구가 붙을 때만 지시를 싣는다 - 스토어가 없으면 근거를 찾으라는 말이 거짓이 된다
-			body.put("instructions", RAG_INSTRUCTIONS);
+			body.put("instructions", instructions(LocalDate.now(clock.withZone(KST))));
 		}
 		String json = mapper.writeValueAsString(body);
 

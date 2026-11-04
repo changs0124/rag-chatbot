@@ -2,6 +2,7 @@ package com.ragchatbot.openai;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Clock;
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -32,6 +33,12 @@ final class OpenAiRealTestSupport {
 	/** 가짜 서버 등 {@code baseUrl} 로 실제 요청을 보내는 테스트용 */
 	static OpenAiRealService against(String baseUrl, String storeId) {
 		return create(baseUrl, storeId, STREAM_READ_MS, REQUEST_MS, SSE_MS);
+	}
+
+	/** 날짜 줄(#533)을 보는 테스트용 - 시계를 고정한다 */
+	static OpenAiRealService againstAt(String baseUrl, String storeId, Clock clock) {
+		return new OpenAiRealService("test-key", "gpt-6-sol", storeId, baseUrl, STREAM_READ_MS, REQUEST_MS, SSE_MS, null,
+				clock);
 	}
 
 	/** 읽기 타임아웃 경로를 보는 테스트용 - 기본 30초를 기다리지 않게 짧게 줄인다(#476) */
