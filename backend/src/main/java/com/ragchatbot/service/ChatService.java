@@ -49,6 +49,11 @@ public class ChatService {
 	static final String IMAGE_PLACEHOLDER = "(이미지 첨부)";
 	/** 이력에 잘려 들어간 메시지 끝 표시(#554) - 없으면 모델이 잘린 끝을 원래 끝으로 읽는다 */
 	static final String HISTORY_TRUNCATED_MARK = " …(이하 생략)";
+	/**
+	 * 직전이 아닌 메시지를 잘라 넣을 때 남은 예산의 하한(#575, 약 300자). 그보다 작으면 머리 몇 글자뿐이라 맥락이 아니라
+	 * 잡음이다 - 표라면 머리줄과 첫 행 정도가 들어가는 크기. 직전 메시지(#554)에는 적용하지 않는다(버리면 이력이 0)
+	 */
+	static final int HISTORY_MIN_FRAGMENT_TOKENS = 200;
 
 	private final ConversationService conversationService;
 	private final MessageRepository messageRepository;
@@ -155,8 +160,10 @@ public class ChatService {
 	 * 어떤 대화에서는 수만 토큰이 됨.
 	 *
 	 * <p>예산을 넘기면 <b>거기서 멈춤(break)</b> - 중간을 건너뛰고 더 오래된 것을 넣으면 대화가
-	 * 끊긴 채로 전달돼 모델이 없는 맥락을 지어냄. 단, 넘친 것이 <b>직전 메시지</b>면 앞부분을 잘라 넣고
-	 * 멈춤(#554) - 통째로 버리면 이력이 0 이 됨.
+	 * 끊긴 채로 전달돼 모델이 없는 맥락을 지어냄. 단, 넘친 메시지는 통째로 버리지 않고 <b>남은 예산만큼 앞부분을
+	 * 잘라 넣고</b> 멈춤 - 직전 메시지면 늘(#554, 버리면 이력이 0), 더 오래된 것이면 남은 예산이
+	 * {@link #HISTORY_MIN_FRAGMENT_TOKENS} 이상일 때(#575, 긴 표 답 뒤 두 번째 후속 질문에서도 표가 남게).
+	 * 중간을 건너뛰지 않으므로 대화는 끊기지 않는다.
 	 *
 	 * <p>{@code status=error} 는 답변이 아니므로 제외함. 반대로 {@code stopped=true}(사용자가 중단)는
 	 * 사용자가 실제로 화면에서 본 내용이라 포함함.
@@ -185,11 +192,12 @@ public class ChatService {
 			}
 			int cost = estimateTokens(text);
 			if (used + cost > tokenBudget) {
-				// 직전 메시지 하나가 예산을 넘으면 버리지 않고 잘라 넣는다(#554) - 버리면 이력이 0 이 돼
-				// 「그 표의 두 번째 건 자세히」 같은 후속 질문이 맥락 없이 간다. **앞부분을 남긴다** - 후속 질문이
+				// 넘친 메시지는 남은 예산만큼 잘라 넣고 멈춘다 - 직전이면 늘(#554), 더 오래된 것이면 조각이 하한 이상일 때(#575).
+				// 버리면 「그 표의 두 번째 건 자세히」 같은 후속 질문이 맥락 없이 간다. **앞부분을 남긴다** - 후속 질문이
 				// 가리키는 것은 대개 답의 첫 표 · 첫 항목이고, 끝은 맺음말이 많다
-				if (newestFirst.isEmpty()) {
-					String cut = truncateToBudget(text, tokenBudget);
+				int remaining = tokenBudget - used;
+				if (newestFirst.isEmpty() || remaining >= HISTORY_MIN_FRAGMENT_TOKENS) {
+					String cut = truncateToBudget(text, remaining);
 					if (!cut.isEmpty()) {
 						newestFirst.add(new Turn(m.role(), cut));
 					}
