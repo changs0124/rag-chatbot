@@ -327,6 +327,41 @@
 
 **서버 타임아웃은 `timed_out=true` 로 남는다**(#84). 저장 조합은 `erd.md` 「messages」 표가 정본이다.
 
+### API-GET-005: 메시지 목록
+
+**GET** `/api/conversations/{id}/messages` → 200
+
+**Response 200:** 오래된 것부터(`created_at` 오름차순)
+```json
+[
+  {
+    "id": "…",
+    "role": "assistant",
+    "content": "…",
+    "status": "complete",
+    "stopped": false,
+    "timedOut": false,
+    "createdAt": "2026-11-04T…",
+    "citations": [{ "seq": 1, "sourceName": "필드클레임현황.md", "snippet": "…" }],
+    "attachments": [{ "id": "…", "fileType": "image", "url": "/api/files/…?token=…" }]
+  }
+]
+```
+
+| 필드 | 뜻 |
+|------|-----|
+| `role` | `user` · `assistant` |
+| `status` | `complete` · `error`. 스트리밍 중인 답은 아직 행이 없다(`streaming` 은 프론트 로컬 상태) |
+| `stopped` | 받은 데까지만 저장된 답(사용자 중단 · 서버 타임아웃). 출처 판정을 끝내지 못했으므로 화면은 무자료 표시를 하지 않는다 |
+| `timedOut` | 서버가 스트림을 타임아웃으로 닫았다(#84). `status` · `stopped` 와의 조합은 `erd.md` 「messages」 표가 정본이다 |
+| `citations` | 저장된 출처(재조회해도 유지, REQ-RAG-002). 없으면 빈 배열 |
+| `attachments` | 그 메시지에 보낸 첨부. `fileType` 은 지금 늘 `image` 다. **`url` 은 조회할 때마다 새로 서명한다** — 저장된 주소를 그대로 내리면 서명 TTL(`FILE_ACCESS_TOKEN_TTL_MINUTES`) 뒤 404 가 된다 |
+
+| code | HTTP | 상황 |
+|------|------|------|
+| `NOT_FOUND` | 404 | 없는 대화 · 남의 대화(존재 은닉) |
+| — | 401 | 비로그인 · 만료 |
+
 ### API-POST-004: 첨부 업로드
 
 **POST** `/api/files` (multipart, 필드 `file`) → 200
