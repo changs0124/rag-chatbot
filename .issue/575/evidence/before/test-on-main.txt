@@ -1,0 +1,11 @@
+com.ragchatbot.service.ChatHistoryTest.truncates_older_overflowing_message_to_remaining_budget -- Time elapsed: 0.012 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+Expecting actual:
+  ["user", "assistant"]
+to contain exactly (and in same order):
+  ["assistant", "user", "assistant"]
+but could not find the following elements:
+  ["assistant"]
+
+	at com.ragchatbot.service.ChatHistoryTest.truncates_older_overflowing_message_to_remaining_budget(ChatHistoryTest.java:215)
