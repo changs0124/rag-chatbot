@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -12,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.sun.net.httpserver.HttpServer;
+
+import tools.jackson.databind.ObjectMapper;
 
 import com.ragchatbot.openai.OpenAiService.ChatInput;
 
@@ -49,7 +54,10 @@ class OpenAiRealInstructionsTest {
 	}
 
 	private void chat(String storeId) {
-		var service = OpenAiRealTestSupport.against(baseUrl, storeId);
+		send(OpenAiRealTestSupport.against(baseUrl, storeId));
+	}
+
+	private void send(OpenAiRealService service) {
 		try {
 			service.streamChat(new ChatInput("연차는 언제 소멸하나요?", List.of(), List.of()),
 					token -> {
@@ -131,6 +139,29 @@ class OpenAiRealInstructionsTest {
 				.contains("다른 언어로 답해 달라고 명시적으로 요청하면")
 				.contains("같은 대화에서 사용자가 다른 언어를 다시 요청할 때까지 이어진다")
 				.contains("질문이 다른 언어로 쓰였다는 것만으로는 요청이 아니므로 한국어로 답한다");
+	}
+
+	/**
+	 * 지시문 끝에 요청 시점의 <b>KST</b> 날짜 · 요일이 실린다(#533).
+	 *
+	 * <p>없으면 모델이 오늘을 몰라 「이번 달」을 근거 없이 7월로 단정한 답이 나왔다(10-28 QA). 서버 시계는 UTC 라
+	 * UTC 15:00 을 넘으면 KST 로는 다음 날이다 - 그 경계 양쪽을 본다. 고정 지시문은 앞부분 그대로 둔다(프롬프트 캐시).
+	 */
+	@Test
+	void appends_today_in_kst_after_the_fixed_instructions() {
+		send(OpenAiRealTestSupport.againstAt(baseUrl, "shared-store",
+				Clock.fixed(Instant.parse("2026-11-03T15:30:00Z"), ZoneOffset.UTC)));
+		send(OpenAiRealTestSupport.againstAt(baseUrl, "shared-store",
+				Clock.fixed(Instant.parse("2026-11-03T14:59:00Z"), ZoneOffset.UTC)));
+
+		ObjectMapper mapper = new ObjectMapper();
+		String afterMidnightKst = mapper.readTree(bodies.get(0)).path("instructions").asString("");
+		String beforeMidnightKst = mapper.readTree(bodies.get(1)).path("instructions").asString("");
+		assertThat(afterMidnightKst)
+				.startsWith(OpenAiRealService.RAG_INSTRUCTIONS)
+				.endsWith("- 오늘은 2026-11-04(수, 한국 시간)이다. 「이번 달 · 지난달 · 최근 N개월 · 올해」 같은 상대 시점은 "
+						+ "이 날짜를 기준으로 풀고, 어느 기간으로 풀었는지 답에 밝힌다.\n");
+		assertThat(beforeMidnightKst).contains("- 오늘은 2026-11-03(화, 한국 시간)이다.");
 	}
 
 	/**
