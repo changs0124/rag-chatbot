@@ -288,6 +288,40 @@ describe('문서 관리 화면', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('이미 스토어와 맞습니다')
   })
 
+  // #589 : 못 불러온 목록의 건수를 「0건」으로 보이면 다 지워졌다고 읽는다(#483 F4 와 같은 오독)
+  it('첫 로드가 끝나기 전이나 실패하면 건수를 보이지 않는다', async () => {
+    const slow = deferred<RagDocument[]>()
+    vi.mocked(listDocuments).mockReturnValueOnce(slow.promise)
+    renderPage()
+    await waitFor(() => expect(listDocuments).toHaveBeenCalled()) // 로그인 확인 뒤에야 목록을 부른다
+    expect(screen.getByRole('heading', { name: '문서' })).toBeInTheDocument()
+
+    await act(async () => slow.reject(new Error('503')))
+    expect(await screen.findByText('목록을 불러오지 못했습니다')).toBeInTheDocument()
+    expect(screen.queryByText(/문서 0건/)).not.toBeInTheDocument()
+  })
+
+  // #589 : 사용자 관리(#483)와 같이 - 삭제가 도는 동안 다시 지우지 않고, 새 시도는 이전 오류를 걷는다
+  it('삭제가 도는 동안은 다시 지우지 않고, 새 시도는 이전 오류를 지운다', async () => {
+    vi.mocked(listDocuments).mockResolvedValue([doc(), doc({ id: 'd2', filename: '복무규정.pdf' })])
+    vi.mocked(deleteDocument).mockRejectedValueOnce(new Error('boom'))
+    renderPage()
+    const [first] = await screen.findAllByRole('button', { name: '삭제' })
+    fireEvent.click(first)
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+    expect(await screen.findByText('삭제하지 못했습니다')).toBeInTheDocument()
+
+    const slow = deferred<void>()
+    vi.mocked(deleteDocument).mockReturnValueOnce(slow.promise)
+    fireEvent.click(screen.getAllByRole('button', { name: '삭제' })[0])
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+    expect(screen.queryByText('삭제하지 못했습니다')).not.toBeInTheDocument()
+    for (const b of screen.getAllByRole('button', { name: /삭제/ })) expect(b).toBeDisabled()
+
+    await act(async () => slow.resolve())
+    expect(deleteDocument).toHaveBeenCalledTimes(2)
+  })
+
   // #513 : 사용자 목록 · 발급 · 초기화 · 삭제는 사용자 관리 화면에만 있다
   it('문서 관리 화면에는 사용자 구역이 없다', async () => {
     renderPage()
