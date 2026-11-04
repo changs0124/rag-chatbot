@@ -1,0 +1,5 @@
+# 새 테스트를 현행 MessageList 에 돌린 결과 — 빈 화면에 status 그릇이 없음
+     × 빈 화면에서 첫 턴으로 바뀌어도 같은 status 그릇에 단계 글이 들어간다 13ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+TestingLibraryElementError: Unable to find an accessible element with the role "status"
+      Tests  1 failed | 27 passed (28)
