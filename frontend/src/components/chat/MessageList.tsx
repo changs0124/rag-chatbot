@@ -91,47 +91,63 @@ export default function MessageList({
     endRef.current?.scrollIntoView?.({ behavior: 'smooth' })
   }, [messages, stage])
 
+  // 진행 단계를 보여주는 동안에는 답변 버블을 내지 않음(REQ-CHAT-005, 한 줄 교체형).
+  // 단계가 최소 표시 시간을 마치면 stage가 null이 되고 그때 답변 텍스트로 교체됨
+  const last = messages.at(-1)
+  const pending =
+    !!last && last.role === 'assistant' && (!!stage || (last.status === 'streaming' && !last.content))
+
+  // log 영역과 분리한 별도 라이브 영역 - 원자적으로 교체해 낭독이 누적되지 않게 함.
+  // 그릇은 늘 두고 글만 넣는다(#484 규칙 · #590). 빈 화면 · 목록 어느 쪽이든 같은 자리(조각의 두 번째 자식)라
+  // 새 대화 첫 턴에도 그릇이 이미 있다(#601). 보이는 단계 줄은 목록 안에 따로 두고 낭독은 이쪽이 맡는다
+  const status = (
+    <p role="status" aria-atomic="true" className="sr-only">
+      {pending ? (stage ?? '…') : ''}
+    </p>
+  )
+
   if (messages.length === 0) {
     return (
-      <div className="grid h-full place-items-center px-6 text-center">
-        <div>
-          <p className="text-xl font-semibold text-ink">무엇을 도와드릴까요?</p>
-          <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-            답변에는 근거 출처가 함께 붙습니다. 찾은 자료가 없으면 없다고 먼저 밝힙니다.
-          </p>
+      <>
+        <div className="grid h-full place-items-center px-6 text-center">
+          <div>
+            <p className="text-xl font-semibold text-ink">무엇을 도와드릴까요?</p>
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+              답변에는 근거 출처가 함께 붙습니다. 찾은 자료가 없으면 없다고 먼저 밝힙니다.
+            </p>
+          </div>
         </div>
-      </div>
+        {status}
+      </>
     )
   }
 
-  // 진행 단계를 보여주는 동안에는 답변 버블을 내지 않음(REQ-CHAT-005, 한 줄 교체형).
-  // 단계가 최소 표시 시간을 마치면 stage가 null이 되고 그때 답변 텍스트로 교체됨
-  const last = messages[messages.length - 1]
-  const pending =
-    last.role === 'assistant' && (!!stage || (last.status === 'streaming' && !last.content))
-
   return (
-    <div ref={rootRef} className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
-      <div
-        className="flex flex-col gap-6"
-        role="log"
-        aria-live="polite"
-        aria-relevant="additions text"
-      >
-        {messages.map((m) =>
-          pending && m.id === last.id ? null : <MessageBubble key={m.id} message={m} onAttachmentError={onAttachmentError} />,
-        )}
-      </div>
-      {/* log 영역과 분리한 별도 라이브 영역 - 원자적으로 교체해 낭독이 누적되지 않게 함.
-          그릇은 늘 두고 글만 넣는다(#484 규칙 · #590) - 내용과 함께 끼우면 낭독기가 놓친다.
-          끝 표식과 한 묶음으로 두어 단계 줄이 없을 때 flex 간격이 하나 더 생기지 않게 하고, 있을 때는 mt-6 로 전과 같은 간격 */}
-      <div>
-        <div role="status" aria-atomic="true">
-          {pending && <p className="px-1 text-sm text-ink-muted">{stage ?? '…'}</p>}
+    <>
+      <div ref={rootRef} className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
+        <div
+          className="flex flex-col gap-6"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions text"
+        >
+          {messages.map((m) =>
+            pending && m.id === last?.id ? null : <MessageBubble key={m.id} message={m} onAttachmentError={onAttachmentError} />,
+          )}
         </div>
-        <div ref={endRef} className={pending ? 'mt-6' : undefined} />
+        {/* 보이는 단계 줄 - 낭독은 아래 status 그릇이 맡는다(두 번 읽히지 않게 aria-hidden).
+            끝 표식과 한 묶음으로 두어 단계 줄이 없을 때 flex 간격이 하나 더 생기지 않게 하고, 있을 때는 mt-6 로 전과 같은 간격 */}
+        <div>
+          {pending && (
+            <p aria-hidden="true" className="px-1 text-sm text-ink-muted">
+              {stage ?? '…'}
+            </p>
+          )}
+          <div ref={endRef} className={pending ? 'mt-6' : undefined} />
+        </div>
       </div>
-    </div>
+      {status}
+    </>
   )
 }
 

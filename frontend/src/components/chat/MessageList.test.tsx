@@ -170,6 +170,18 @@ describe('MessageList', () => {
     expect(status).toBeEmptyDOMElement()
   })
 
+  // #601 : 빈 화면(새 대화)에도 같은 그릇이 있어야 첫 턴의 첫 안내가 낭독된다 - 첫 전송 때 그릇이 글과 함께 끼워지면 놓친다
+  it('빈 화면에서 첫 턴으로 바뀌어도 같은 status 그릇에 단계 글이 들어간다', () => {
+    const { rerender } = render(<MessageList messages={[]} />)
+    const status = screen.getByRole('status')
+    expect(status).toBeEmptyDOMElement()
+
+    rerender(<MessageList messages={pending} stage="검색 중" />)
+
+    expect(screen.getByRole('status')).toBe(status)
+    expect(status).toHaveTextContent('검색 중')
+  })
+
   it('holds the stage line while it is still within its minimum display time', () => {
     // 토큰이 이미 도착했어도 단계가 살아 있는 동안은 단계 줄을 유지함(최소 표시 시간)
     const streamedWithStage: ChatMessage[] = [
