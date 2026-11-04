@@ -1,0 +1,7 @@
+# 새 경계 테스트를 넣은 ChatHistoryTest 에 같은 변이 — 둘 다 실패해야 한다
+## 변이 1 : >= → >
+[ERROR]   ChatHistoryTest.fragment_floor_is_inclusive_at_the_boundary:251 
+[ERROR] Tests run: 17, Failures: 1, Errors: 0, Skipped: 0
+## 변이 2 : 200 → 500
+[ERROR]   ChatHistoryTest.fragment_floor_is_inclusive_at_the_boundary:241 
+[ERROR] Tests run: 17, Failures: 1, Errors: 0, Skipped: 0

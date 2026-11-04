@@ -1,0 +1,7 @@
+# 현행 ChatHistoryTest 에 하한 변이 두 개를 넣고 돌린 결과 — 둘 다 통과하면 경계가 잠겨 있지 않다
+## 변이 1 : remaining >= HISTORY_MIN_FRAGMENT_TOKENS → >
+1
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0
+## 변이 2 : HISTORY_MIN_FRAGMENT_TOKENS = 200 → 500
+1
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0
