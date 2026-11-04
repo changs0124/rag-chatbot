@@ -39,10 +39,10 @@ function openStream({ opened = true } = {}) {
     control.handlers = handlers
     control.signal = signal
     if (opened) handlers.onOpen?.()
-    return new Promise<void>((resolve, reject) => {
-      control.finish = resolve
-      control.fail = reject
-    })
+    const done = deferred<void>()
+    control.finish = done.resolve
+    control.fail = done.reject
+    return done.promise
   })
   return control
 }

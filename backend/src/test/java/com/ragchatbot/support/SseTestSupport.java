@@ -59,7 +59,7 @@ public final class SseTestSupport {
 	}
 
 	/** SSE Accept 헤더를 얹는다 */
-	public static HttpHeaders sse(HttpHeaders h) {
+	public static HttpHeaders acceptSse(HttpHeaders h) {
 		h.setAccept(List.of(MediaType.TEXT_EVENT_STREAM));
 		return h;
 	}

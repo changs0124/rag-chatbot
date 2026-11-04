@@ -1,7 +1,7 @@
 package com.ragchatbot.controller;
 
 import static com.ragchatbot.support.SseTestSupport.assertJsonError;
-import static com.ragchatbot.support.SseTestSupport.sse;
+import static com.ragchatbot.support.SseTestSupport.acceptSse;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ class ChatSseAcceptRateLimitTest extends AbstractPgIntegrationTest {
 
 		var res = rest.exchange("/api/chat", HttpMethod.POST,
 				new HttpEntity<>(Map.of("conversationId", convId, "message", "안녕"),
-						sse(bearer(token))),
+						acceptSse(bearer(token))),
 				String.class);
 
 		assertJsonError(res, HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMIT");
