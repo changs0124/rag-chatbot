@@ -1,0 +1,7 @@
+# 새 테스트 + 같은 변이(가드 제거) — 실패해야 한다
+     × 받는 사이 다른 대화로 옮겼으면 결과를 버린다 17ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected '/fresh' to be '/c2' // Object.is equality
+Expected: "/c2"
+Received: "/fresh"
+      Tests  1 failed | 48 skipped (49)

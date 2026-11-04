@@ -1,0 +1,4 @@
+# 현행 테스트 + useChat.ts:270 세대 가드를 지운 코드 (vitest -t '재서명|다른 대화로 옮겼으면')
+# 가드가 없어도 두 테스트가 통과 = 테스트가 가드를 지키지 못함
+ Test Files  1 passed (1)
+      Tests  2 passed | 47 skipped (49)
