@@ -1,0 +1,6 @@
+# 새 테스트(#588 판정 잠금)를 현행 useChat 에 돌린 결과 — 다시 옮겨도 streaming 이 남아 보내기가 막힘
+     × 앞 턴의 판정이 끝나도 뒤 턴의 판정 표시를 지우지 않아 다시 옮기면 곧바로 보낼 수 있다 (#588) 26ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected true to be false // Object.is equality
+ ❯ src/hooks/useChat.test.ts:698:38
+      Tests  1 failed | 49 skipped (50)

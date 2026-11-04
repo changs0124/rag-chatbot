@@ -1,0 +1,6 @@
+# 새 테스트(#588 첫 목록 로드)를 현행 useChat 에 돌린 결과 — 늦은 첫 응답이 새 대화 N 을 덮음
+     × 늦게 온 첫 목록 응답이 그 사이 만든 새 대화를 덮지 않는다 17ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected [ 'A' ] to include 'N'
+ ❯ src/hooks/useChatRace.test.ts:403:59
+      Tests  1 failed | 14 skipped (15)
