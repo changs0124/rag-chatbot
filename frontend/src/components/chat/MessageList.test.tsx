@@ -106,7 +106,8 @@ describe('MessageList', () => {
 
   it('여러 장이면 좌우로 넘기고 끝에서는 순환하지 않음', () => {
     render(<MessageList messages={withAttachments(3)} />)
-    fireEvent.click(screen.getAllByLabelText('첨부 이미지 확대')[1])
+    // 여러 장이면 몇 번째인지 이름에 붙는다(#590) - 같은 이름 버튼이 줄지어 있으면 낭독기로 고를 수 없다
+    fireEvent.click(screen.getByLabelText('첨부 이미지 2/3 확대'))
 
     expect(screen.getByText('2 / 3')).toBeInTheDocument()
     fireEvent.click(screen.getByLabelText('다음 이미지'))
@@ -157,6 +158,18 @@ describe('MessageList', () => {
     expect(screen.queryByText('응답 생성 중…')).not.toBeInTheDocument()
   })
 
+  // #590 : 라이브 영역은 늘 있는 그릇에 글만 넣는다(#484 규칙) - 내용과 함께 새로 끼우면 낭독기가 놓친다
+  it('단계 줄이 없을 때도 status 그릇은 비어 있는 채로 남는다', () => {
+    const done: ChatMessage[] = [pending[0], { ...pending[1], content: '답변', status: 'complete' }]
+    const { rerender } = render(<MessageList messages={pending} stage="검색 중" />)
+    const status = screen.getByRole('status')
+
+    rerender(<MessageList messages={done} stage={null} />)
+
+    expect(screen.getByRole('status')).toBe(status)
+    expect(status).toBeEmptyDOMElement()
+  })
+
   it('holds the stage line while it is still within its minimum display time', () => {
     // 토큰이 이미 도착했어도 단계가 살아 있는 동안은 단계 줄을 유지함(최소 표시 시간)
     const streamedWithStage: ChatMessage[] = [
@@ -175,7 +188,7 @@ describe('MessageList', () => {
     ]
     render(<MessageList messages={streamed} stage={null} />)
     expect(screen.getByText('문의하신 내용에 대한 안내는')).toBeInTheDocument()
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toBeEmptyDOMElement() // 그릇은 늘 있다(#590)
   })
 
   it('keeps no stage line when the turn ended by abort or error', () => {
@@ -184,7 +197,7 @@ describe('MessageList', () => {
       { ...pending[1], status: 'error' },
     ]
     render(<MessageList messages={ended} stage={null} />)
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toBeEmptyDOMElement() // 그릇은 늘 있다(#590)
     // 같은 오류를 ChatPage 배너(role=alert)가 읽으므로 말풍선 줄은 낭독에서 뺀다(#484)
     expect(screen.getByText(/응답 중 오류가 발생했습니다/)).toHaveAttribute('aria-hidden', 'true')
   })
@@ -406,7 +419,7 @@ describe('MessageList 첨부 썸네일 오류(#558)', () => {
       },
     ]
     render(<MessageList messages={messages} onAttachmentError={onAttachmentError} />)
-    fireEvent.click(screen.getAllByRole('button', { name: '첨부 이미지 확대' })[1])
+    fireEvent.click(screen.getByRole('button', { name: '첨부 이미지 2/2 확대' }))
 
     fireEvent.error(within(screen.getByRole('dialog')).getByRole('img'))
 

@@ -157,14 +157,18 @@ describe('ChatPage 대화 불러오는 중 (#291)', () => {
     chatState.loadingMessages = true
     renderChatPage()
 
-    expect(screen.getByRole('status', { name: '대화 불러오는 중' })).toHaveTextContent('불러오는 중')
+    expect(screen.getByText('불러오는 중…')).toBeInTheDocument()
+    expect(screen.getByTestId('loading-status')).toHaveTextContent('대화 불러오는 중')
     expect(screen.queryByText('무엇을 도와드릴까요?')).toBeNull()
   })
 
-  it('불러오기가 끝나면 로딩 표시가 없다', () => {
+  // #590 : 라이브 영역은 늘 있는 그릇에 글만 넣는다(#484 규칙) - 로딩 표시와 함께 끼웠다 빼면 낭독기가 놓친다
+  it('불러오기가 끝나면 로딩 표시가 없고 status 그릇은 빈 채로 남는다', () => {
     renderChatPage()
 
-    expect(screen.queryByRole('status', { name: '대화 불러오는 중' })).toBeNull()
+    expect(screen.queryByText('불러오는 중…')).toBeNull()
+    expect(screen.getByTestId('loading-status')).toHaveAttribute('role', 'status')
+    expect(screen.getByTestId('loading-status')).toBeEmptyDOMElement()
     expect(screen.getByText('무엇을 도와드릴까요?')).toBeInTheDocument()
   })
 })
@@ -185,6 +189,7 @@ describe('ChatPage 제목 수정 (#371)', () => {
     fireEvent.click(screen.getByTitle('제목 변경'))
 
     expect(screen.getByDisplayValue('대화')).toHaveAttribute('maxLength', '100')
+    expect(screen.getByRole('textbox', { name: '대화 제목' })).toBe(screen.getByDisplayValue('대화')) // #590
   })
 
   // 조합을 끝내려고 누른 Enter 로 제목 편집이 닫히면 마지막 글자가 빠진 제목이 저장된다(#385)
