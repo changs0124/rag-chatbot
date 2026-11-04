@@ -1250,6 +1250,59 @@ describe('useChat 만료된 첨부 썸네일 재서명(#558)', () => {
     expect(getMessages).toHaveBeenCalledTimes(2) // 선택 1 + 재서명 1
   })
 
+  // #587 : 실패하거나 서버 이력에 아직 그 첨부가 없을 때 시도를 써 버리면, 다시 깨져도 복구하지 않는다
+  it('재서명이 실패하거나 아직 서버에 없으면 시도를 남겨 다음에 다시 시도한다', async () => {
+    vi.mocked(getMessages).mockResolvedValueOnce(withAttachment('/old'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {
+      await result.current.selectConversation('c1')
+    })
+    vi.mocked(getMessages).mockRejectedValueOnce(new Error('down')).mockResolvedValueOnce([])
+    await act(async () => {
+      await result.current.refreshAttachment('a1')
+    })
+    await act(async () => {
+      await result.current.refreshAttachment('a1')
+    })
+    expect(result.current.messages[0].attachments?.[0].url).toBe('/old')
+
+    vi.mocked(getMessages).mockResolvedValueOnce(withAttachment('/fresh'))
+    await act(async () => {
+      await result.current.refreshAttachment('a1')
+    })
+    expect(result.current.messages[0].attachments?.[0].url).toBe('/fresh')
+  })
+
+  // #587 : 한 대화의 썸네일 여러 장이 한꺼번에 깨지면 같은 이력을 장 수만큼 받았다
+  it('여러 장이 한꺼번에 깨져도 이력은 한 번만 받아 모두 바꾼다', async () => {
+    const two = (suffix: string): ChatMessage[] => [
+      {
+        ...withAttachment('')[0],
+        attachments: [
+          { id: 'a1', fileType: 'image', url: `/a1${suffix}` },
+          { id: 'a2', fileType: 'image', url: `/a2${suffix}` },
+        ],
+      },
+    ]
+    vi.mocked(getMessages).mockResolvedValueOnce(two('-old'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {
+      await result.current.selectConversation('c1')
+    })
+    const slow = deferred<ChatMessage[]>()
+    vi.mocked(getMessages).mockReturnValueOnce(slow.promise)
+    let pending: Promise<unknown> = Promise.resolve()
+    act(() => {
+      pending = Promise.all([result.current.refreshAttachment('a1'), result.current.refreshAttachment('a2')])
+    })
+    await act(async () => {
+      slow.resolve(two('-fresh'))
+      await pending
+    })
+    expect(getMessages).toHaveBeenCalledTimes(2) // 선택 1 + 재서명 1
+    expect(result.current.messages[0].attachments?.map((a) => a.url)).toEqual(['/a1-fresh', '/a2-fresh'])
+  })
+
   it('받는 사이 다른 대화로 옮겼으면 결과를 버린다', async () => {
     vi.mocked(getMessages).mockResolvedValueOnce(withAttachment('/old'))
     const { result } = renderHook(() => useChat())

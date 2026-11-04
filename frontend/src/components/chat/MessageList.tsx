@@ -233,6 +233,8 @@ const MessageBubble = memo(function MessageBubble({
           items={images.map((a) => ({ src: API_BASE + a.url }))}
           startIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
+          // 확대 화면 · 내려받기도 썸네일과 같은 재서명으로 복구한다(#587) - 새 URL 이 오면 items 가 바뀐다
+          onImageError={(i) => onAttachmentError?.(images[i].id)}
         />
       )}
       {openFigure !== null && figureKeys.includes(openFigure) && (

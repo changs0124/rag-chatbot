@@ -98,6 +98,20 @@ describe('ImageLightbox', () => {
       expect(click).not.toHaveBeenCalled()
     })
 
+    /** #587 : 만료로 실패하면 조용히 끝내지 않는다 - 알리고, 새 서명을 청해 다시 누르면 받게 한다 */
+    it('내려받기가 실패하면 알리고 그 장의 새 서명을 청한다', async () => {
+      setup({ ok: false, status: 404 })
+      const onImageError = vi.fn()
+      render(
+        <ImageLightbox items={[{ src: 'https://api/x' }]} startIndex={0} onClose={vi.fn()} onImageError={onImageError} />,
+      )
+
+      fireEvent.click(screen.getByLabelText('내려받기'))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('내려받지 못했습니다')
+      expect(onImageError).toHaveBeenCalledWith(0)
+    })
+
     /** #324 F3 : 이름 없이 넘어온 첨부도 확장자가 붙어 저장된다(blob.type 기준) */
     it('이름이 없으면 받은 형식의 확장자를 붙여 저장함', async () => {
       setup({ ok: true, status: 200, type: 'image/png' })
@@ -176,6 +190,16 @@ describe('ImageLightbox', () => {
 
 // #484 F10
 describe('ImageLightbox 대화상자 이름 (#484)', () => {
+  /** #587 : 확대한 이미지가 깨지면(서명 만료) 그 장을 알려 새 서명을 받게 한다 - 썸네일만 걸면 확대 화면은 깨진 채 남는다 */
+  it('확대한 이미지가 깨지면 그 장의 순서로 알린다', () => {
+    const onImageError = vi.fn()
+    render(<ImageLightbox items={items} startIndex={1} onClose={vi.fn()} onImageError={onImageError} />)
+
+    fireEvent.error(screen.getByAltText('b.png'))
+
+    expect(onImageError).toHaveBeenCalledWith(1)
+  })
+
   it('role=dialog 에 이름이 있다', () => {
     render(<ImageLightbox items={items} startIndex={0} onClose={vi.fn()} />)
 

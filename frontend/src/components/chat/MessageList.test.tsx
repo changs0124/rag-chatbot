@@ -388,4 +388,28 @@ describe('MessageList 첨부 썸네일 오류(#558)', () => {
 
     expect(onAttachmentError).toHaveBeenCalledWith('a1')
   })
+
+  /** #587 : 확대 화면의 이미지도 같은 재서명으로 복구한다 */
+  it('확대 화면의 이미지가 깨져도 그 첨부 id 로 새 서명을 요청한다', () => {
+    const onAttachmentError = vi.fn()
+    const messages: ChatMessage[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        content: '사진',
+        status: 'complete',
+        citations: [],
+        attachments: [
+          { id: 'a1', fileType: 'image', url: '/api/files/a1?token=old' },
+          { id: 'a2', fileType: 'image', url: '/api/files/a2?token=old' },
+        ],
+      },
+    ]
+    render(<MessageList messages={messages} onAttachmentError={onAttachmentError} />)
+    fireEvent.click(screen.getAllByRole('button', { name: '첨부 이미지 확대' })[1])
+
+    fireEvent.error(within(screen.getByRole('dialog')).getByRole('img'))
+
+    expect(onAttachmentError).toHaveBeenCalledWith('a2')
+  })
 })
