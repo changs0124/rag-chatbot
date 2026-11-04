@@ -1,0 +1,17 @@
+# 새 · 고친 테스트를 현행 코드에 돌린 결과 — 접근성 결함 재현
+     × 지금 대화 항목에 aria-current 가 붙는다 13ms
+     × 여러 장이면 좌우로 넘기고 끝에서는 순환하지 않음 9ms
+     × 단계 줄이 없을 때도 status 그릇은 비어 있는 채로 남는다 19ms
+     × 이력이 오는 동안 본문에 로딩 표시를 보이고 빈 화면 안내는 숨긴다 17ms
+     × 불러오기가 끝나면 로딩 표시가 없고 status 그릇은 빈 채로 남는다 15ms
+     × 제목 입력은 100자까지만 받는다 102ms
+     × 입력창은 4000자까지만 받는다 (#371) 27ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+TestingLibraryElementError: Unable to find an element by: [data-testid="loading-status"]
+TestingLibraryElementError: Unable to find an element by: [data-testid="loading-status"]
+TestingLibraryElementError: Unable to find an accessible element with the role "textbox" and name "대화 제목"
+TestingLibraryElementError: Unable to find an accessible element with the role "textbox" and name "메시지 입력"
+TestingLibraryElementError: Unable to find a label with the text of: 첨부 이미지 2/3 확대
+TestingLibraryElementError: Unable to find an accessible element with the role "status"
+Error: expect(element).toHaveAttribute("aria-current", "page") // element.getAttribute("aria-current") === "page"
+      Tests  7 failed | 89 passed (96)
