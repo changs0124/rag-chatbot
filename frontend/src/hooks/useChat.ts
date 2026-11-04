@@ -30,6 +30,11 @@ type EarlyAbortOutcome =
  */
 export const RECHECK_INTERVAL_MS = 400
 export const RECHECK_WINDOW_MS = 8000
+/**
+ * 재서명한 첨부를 다시 받지 않는 시간(#600) - 서버 서명 URL 의 TTL(`FILE_ACCESS_TOKEN_TTL_MINUTES`, 기본 15분)과 같다. 그 안에 다시 깨지면
+ * 새 URL 마저 깨진 것이라 막고(무한 요청 방지, #558), 지나서 깨지면 받은 URL 이 만료된 것이라 한 번 더 받는다
+ */
+export const RESIGN_RETRY_MS = 15 * 60_000
 /** 재확인 요청 하나의 시간 제한 - 매달린 요청이 판정을 붙들지 않게 한다 */
 const RECHECK_REQUEST_TIMEOUT_MS = 3000
 
@@ -253,10 +258,10 @@ export function useChat() {
   )
 
   /**
-   * 첨부 id 별로 새 URL 을 이미 받아 바꿨는지(#558). 새 URL 마저 깨져도 한 번만 받아 무한 요청을 막는다.
-   * 받지 못했으면(요청 실패 · 서버 이력에 아직 없음) 남겨 둔다 - 다음에 깨질 때 다시 시도한다(#587)
+   * 첨부 id 별로 새 URL 을 받아 바꾼 때(#558). {@link RESIGN_RETRY_MS} 안에 다시 깨지면 받지 않아 무한 요청을 막고,
+   * 지나면 그 URL 이 만료된 것이라 다시 받는다(#600). 받지 못했으면(요청 실패 · 서버 이력에 아직 없음) 남기지 않는다(#587)
    */
-  const refreshedAttachments = useRef(new Set<string>())
+  const refreshedAttachments = useRef(new Map<string, number>())
   /** 진행 중인 재서명 요청(#587) - 한 대화의 썸네일 여러 장이 한꺼번에 깨져도 이력은 한 번만 받는다 */
   const resigning = useRef<{ id: string; promise: Promise<ChatMessage[]> } | null>(null)
 
@@ -267,7 +272,8 @@ export function useChat() {
    */
   const refreshAttachment = useCallback(
     async (attachmentId: string) => {
-      if (!activeId || refreshedAttachments.current.has(attachmentId)) return
+      const resignedAt = refreshedAttachments.current.get(attachmentId)
+      if (!activeId || (resignedAt !== undefined && Date.now() - resignedAt < RESIGN_RETRY_MS)) return
       const mine = generation.current
       let shared = resigning.current
       if (!shared || shared.id !== activeId) {
@@ -288,7 +294,7 @@ export function useChat() {
       if (generation.current !== mine) return
       const fresh = new Map(server.flatMap((m) => m.attachments ?? []).map((a) => [a.id, a.url]))
       if (!fresh.has(attachmentId)) return
-      refreshedAttachments.current.add(attachmentId)
+      refreshedAttachments.current.set(attachmentId, Date.now())
       setMessages((prev) =>
         prev.map((m) =>
           m.attachments?.some((a) => fresh.has(a.id))

@@ -35,7 +35,8 @@ export default function ImageLightbox({
   const titleId = useId()
   const [index, setIndex] = useState(startIndex)
   const current = items[index]
-  const [downloadFailed, setDownloadFailed] = useState(false)
+  // 내려받지 못한 장의 순서(#587) - 장 번호로 두어 결과가 늦게 와도 누른 장에서만 보인다(#600)
+  const [downloadFailed, setDownloadFailed] = useState<number | null>(null)
 
   // 핀치 줌 - 모바일에서 확대는 화면 맞춤만으로 부족함(글자가 든 캡처가 대부분 안 읽힘)
   const [scale, setScale] = useState(1)
@@ -50,8 +51,6 @@ export default function ImageLightbox({
 
   // 이미지를 넘기면 확대 상태를 들고 가지 않음 - 다음 장이 엉뚱한 위치에서 잘려 보임
   useEffect(resetZoom, [index, resetZoom])
-  // 실패 알림은 그 장의 것이다 - 넘기면 내린다
-  useEffect(() => setDownloadFailed(false), [index])
 
   function onPointerDown(e: React.PointerEvent) {
     // 포인터가 이미지 밖으로 나가도 이동이 이어지게 함 - 확대한 상태에서는 손가락이 쉽게 벗어남
@@ -114,7 +113,8 @@ export default function ImageLightbox({
    * 그 주소는 소유자가 따로 있으므로 회수하지 않음.
    */
   async function download() {
-    setDownloadFailed(false)
+    const at = index
+    setDownloadFailed(null)
     if (/^(blob|data):/.test(current.src)) {
       const a = document.createElement('a')
       a.href = current.src
@@ -132,8 +132,8 @@ export default function ImageLightbox({
       // 서명 URL 이 만료되면 404 JSON 이 온다. 상태를 안 보면 그 JSON 이 그림 파일로 저장됨(#324).
       // 조용히 끝내면 버튼이 고장처럼 보인다 - 알리고 새 서명을 청해 다시 누르면 받게 한다(#587)
       if (!res.ok) {
-        setDownloadFailed(true)
-        onImageError?.(index)
+        setDownloadFailed(at)
+        onImageError?.(at)
         return
       }
       const blob = await res.blob()
@@ -150,7 +150,7 @@ export default function ImageLightbox({
       URL.revokeObjectURL(url)
     } catch {
       // 네트워크 실패. 저장만 못 한 것이므로 모달은 그대로 두고 알린다(#587)
-      setDownloadFailed(true)
+      setDownloadFailed(at)
     }
   }
 
@@ -216,7 +216,7 @@ export default function ImageLightbox({
         className="relative max-h-[85vh] max-w-full touch-none rounded-lg object-contain"
       />
 
-      {downloadFailed && (
+      {downloadFailed === index && (
         <p role="alert" className="absolute top-14 right-3 z-10 rounded-lg bg-black/70 px-3 py-1.5 text-xs text-white">
           내려받지 못했습니다. 잠시 뒤 다시 눌러 주세요
         </p>

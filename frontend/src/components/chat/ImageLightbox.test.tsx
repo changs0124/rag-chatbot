@@ -112,6 +112,31 @@ describe('ImageLightbox', () => {
       expect(onImageError).toHaveBeenCalledWith(0)
     })
 
+    /** #600 : 결과가 늦게 와도 실패 알림은 누른 장의 것이다 - 넘겨 간 다른 장 위에 뜨면 그 장이 실패한 것으로 읽힌다 */
+    it('내려받기 실패가 늦게 오면 넘겨 간 장에는 알림이 뜨지 않는다', async () => {
+      setup({ ok: false, status: 404 })
+      let respond!: (r: Response) => void
+      vi.mocked(fetch).mockImplementationOnce(() => new Promise((r) => (respond = r)))
+      const onImageError = vi.fn()
+      render(
+        <ImageLightbox
+          items={[{ src: 'https://api/a' }, { src: 'https://api/b' }]}
+          startIndex={0}
+          onClose={vi.fn()}
+          onImageError={onImageError}
+        />,
+      )
+      fireEvent.click(screen.getByLabelText('내려받기'))
+      fireEvent.click(screen.getByLabelText('다음 이미지'))
+
+      respond({ ok: false, status: 404 } as Response)
+      await waitFor(() => expect(onImageError).toHaveBeenCalledWith(0))
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByLabelText('이전 이미지'))
+      expect(screen.getByRole('alert')).toHaveTextContent('내려받지 못했습니다')
+    })
+
     /** #324 F3 : 이름 없이 넘어온 첨부도 확장자가 붙어 저장된다(blob.type 기준) */
     it('이름이 없으면 받은 형식의 확장자를 붙여 저장함', async () => {
       setup({ ok: true, status: 200, type: 'image/png' })

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { useChat, RECHECK_INTERVAL_MS, RECHECK_WINDOW_MS } from './useChat'
+import { useChat, RECHECK_INTERVAL_MS, RECHECK_WINDOW_MS, RESIGN_RETRY_MS } from './useChat'
 import type { ChatStreamHandlers } from '../lib/endpoints'
 import type { ChatMessage } from '../lib/types'
 import { deferred } from '../test/fixtures'
@@ -1301,6 +1301,37 @@ describe('useChat 만료된 첨부 썸네일 재서명(#558)', () => {
     })
     expect(getMessages).toHaveBeenCalledTimes(2) // 선택 1 + 재서명 1
     expect(result.current.messages[0].attachments?.map((a) => a.url)).toEqual(['/a1-fresh', '/a2-fresh'])
+  })
+
+  // #600 : 재서명으로 받은 URL 도 TTL(15분)이 지나면 만료된다 - 그때 다시 깨지면 다시 받는다. 그 안에 깨지면 진짜 깨진 것이라 막는다
+  it('재서명한 첨부도 서명 TTL 이 지난 뒤 다시 깨지면 한 번 더 받는다', async () => {
+    let now = 1_000_000
+    const clock = vi.spyOn(Date, 'now').mockImplementation(() => now)
+    try {
+      vi.mocked(getMessages).mockResolvedValueOnce(withAttachment('/old'))
+      const { result } = renderHook(() => useChat())
+      await act(async () => {
+        await result.current.selectConversation('c1')
+      })
+      vi.mocked(getMessages).mockResolvedValueOnce(withAttachment('/fresh'))
+      await act(async () => {
+        await result.current.refreshAttachment('a1')
+      })
+      now += RESIGN_RETRY_MS - 1
+      await act(async () => {
+        await result.current.refreshAttachment('a1')
+      })
+      expect(getMessages).toHaveBeenCalledTimes(2) // TTL 안 - 다시 받지 않는다
+
+      now += 1
+      vi.mocked(getMessages).mockResolvedValueOnce(withAttachment('/fresh2'))
+      await act(async () => {
+        await result.current.refreshAttachment('a1')
+      })
+      expect(result.current.messages[0].attachments?.[0].url).toBe('/fresh2')
+    } finally {
+      clock.mockRestore()
+    }
   })
 
   it('받는 사이 다른 대화로 옮겼으면 결과를 버린다', async () => {
