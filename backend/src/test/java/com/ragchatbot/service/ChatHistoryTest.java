@@ -195,6 +195,43 @@ class ChatHistoryTest {
 		});
 	}
 
+	/**
+	 * 예산을 넘친 메시지가 <b>직전이 아니어도</b> 남은 예산만큼 앞부분을 잘라 넣고 멈춘다(#575).
+	 *
+	 * <p>직전만 자르면 긴 표 답 뒤 「두 번째 건」 → 「세 번째 건」처럼 이어 물을 때 두 번째 후속부터 표가 통째로
+	 * 빠졌다(11-04 QA). 중간을 건너뛰지 않으므로 대화는 끊기지 않고, 그보다 오래된 것은 기존대로 멈춘다.
+	 */
+	@Test
+	void truncates_older_overflowing_message_to_remaining_budget() {
+		String table = "가".repeat(3000); // 약 2000 토큰
+		List<Message> messages = List.of(
+				msg("user", "표로 정리해 줘"),
+				msg("assistant", table),
+				msg("user", "두 번째 건 자세히"),
+				msg("assistant", "나".repeat(30)));
+
+		List<Turn> history = ChatService.buildHistory(messages, Set.of(), 1000);
+
+		assertThat(history).extracting(Turn::role).containsExactly("assistant", "user", "assistant");
+		String cut = history.get(0).content();
+		assertThat(cut).startsWith("가".repeat(100)).endsWith(ChatService.HISTORY_TRUNCATED_MARK);
+		// 잘린 것까지 합쳐 예산 안(1.5자 = 1토큰 근사)
+		int total = history.stream().mapToInt(t -> (int) Math.ceil(t.content().length() / 1.5)).sum();
+		assertThat(total).isLessThanOrEqualTo(1000);
+	}
+
+	/** 남은 예산이 조각 하한보다 작으면 자르지 않고 멈춘다(#575) - 머리 몇 글자뿐인 조각은 맥락이 아니라 잡음이다 */
+	@Test
+	void stops_without_fragment_when_remaining_budget_is_too_small() {
+		List<Message> messages = List.of(
+				msg("assistant", "가".repeat(3000)),
+				msg("user", "나".repeat(400))); // 약 267 토큰 - 예산 300 에서 남는 것은 33 토큰
+
+		List<Turn> history = ChatService.buildHistory(messages, Set.of(), 300);
+
+		assertThat(history).extracting(Turn::content).containsExactly("나".repeat(400));
+	}
+
 	/** 자르는 자리에서 서로게이트 쌍이 갈리면 반쪽 글자가 모델 요청 직렬화에서 터진다(#434 · #554) */
 	@Test
 	void truncation_does_not_split_surrogate_pairs() {
