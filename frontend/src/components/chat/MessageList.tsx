@@ -122,17 +122,15 @@ export default function MessageList({
           pending && m.id === last.id ? null : <MessageBubble key={m.id} message={m} onAttachmentError={onAttachmentError} />,
         )}
       </div>
-      {pending && (
-        // log 영역과 분리한 별도 라이브 영역 - 원자적으로 교체해 낭독이 누적되지 않게 함
-        <p
-          role="status"
-          aria-atomic="true"
-          className="px-1 text-sm text-ink-muted"
-        >
-          {stage ?? '…'}
-        </p>
-      )}
-      <div ref={endRef} />
+      {/* log 영역과 분리한 별도 라이브 영역 - 원자적으로 교체해 낭독이 누적되지 않게 함.
+          그릇은 늘 두고 글만 넣는다(#484 규칙 · #590) - 내용과 함께 끼우면 낭독기가 놓친다.
+          끝 표식과 한 묶음으로 두어 단계 줄이 없을 때 flex 간격이 하나 더 생기지 않게 하고, 있을 때는 mt-6 로 전과 같은 간격 */}
+      <div>
+        <div role="status" aria-atomic="true">
+          {pending && <p className="px-1 text-sm text-ink-muted">{stage ?? '…'}</p>}
+        </div>
+        <div ref={endRef} className={pending ? 'mt-6' : undefined} />
+      </div>
     </div>
   )
 }
@@ -183,7 +181,8 @@ const MessageBubble = memo(function MessageBubble({
                 key={a.id}
                 type="button"
                 onClick={() => setLightboxIndex(images.findIndex((i) => i.id === a.id))}
-                aria-label="첨부 이미지 확대"
+                // 여러 장이면 몇 번째인지 붙인다(#590) - 같은 이름 버튼이 줄지어 있으면 낭독기로 고를 수 없다
+                aria-label={images.length > 1 ? `첨부 이미지 ${images.indexOf(a) + 1}/${images.length} 확대` : '첨부 이미지 확대'}
                 className="block h-24 w-24 overflow-hidden rounded-lg"
               >
                 <img

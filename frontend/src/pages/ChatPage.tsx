@@ -171,6 +171,7 @@ export default function ChatPage() {
               editingTitle ? (
                 <input
                   autoFocus
+                  aria-label="대화 제목"
                   value={titleDraft}
                   maxLength={MAX_TITLE_CHARS}
                   onChange={(e) => setTitleDraft(e.target.value)}
@@ -220,10 +221,14 @@ export default function ChatPage() {
 
         {/* 스크롤 페이드 - 입력창 뒤로 글이 잘리지 않고 사라지게 함 */}
         <div className="relative min-h-0 flex-1">
+          {/* 로딩 안내는 늘 있는 그릇에 글만 넣는다(#484 규칙 · #590) - 로딩 표시와 함께 끼웠다 빼면 낭독기가 놓친다 */}
+          <p role="status" data-testid="loading-status" className="sr-only">
+            {chat.loadingMessages ? '대화 불러오는 중' : ''}
+          </p>
           <div className="h-full overflow-y-auto">
             {chat.loadingMessages ? (
               // 이력이 오는 동안 직전 대화나 빈 화면 안내 대신 로딩 표시(#291) - 모바일 · 데스크탑 같은 자리
-              <div role="status" aria-label="대화 불러오는 중" className="grid h-full place-items-center">
+              <div className="grid h-full place-items-center">
                 <div className="flex flex-col items-center gap-3 text-sm text-ink-muted">
                   <span className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-accent motion-reduce:animate-none" />
                   불러오는 중…

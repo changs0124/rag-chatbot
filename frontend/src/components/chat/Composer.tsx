@@ -351,6 +351,8 @@ export default function Composer({
               }
             }}
             rows={1}
+            // placeholder 는 입력을 시작하면 사라지는 힌트라 이름으로 쓰지 않는다(#590)
+            aria-label="메시지 입력"
             placeholder="메시지를 입력하세요"
             maxLength={MAX_MESSAGE_CHARS}
             // 한 줄 높이를 버튼과 정확히 맞춤 : 24 + 20 = 44(모바일 h-11), 24 + 16 = 40(md h-10).

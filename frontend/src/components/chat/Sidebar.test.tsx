@@ -51,12 +51,12 @@ describe('Sidebar 시간 묶음', () => {
 
 // #484 F8 : 삭제 버튼은 데스크톱에서 투명(opacity-0)이므로 키보드 포커스·행 안 포커스에서 드러나야 하고, 이름에 대화 제목이 있어야 한다
 describe('Sidebar 삭제 버튼 (#484)', () => {
-  function renderSidebar() {
+  function renderSidebar(activeId: string | null = null) {
     render(
       <BrowserRouter>
         <Sidebar
           conversations={[conv('c1', new Date())]}
-          activeId={null}
+          activeId={activeId}
           onSelect={vi.fn()}
           onNew={vi.fn()}
           onDelete={vi.fn()}
@@ -71,6 +71,13 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
     renderSidebar()
 
     expect(screen.getByRole('button', { name: "'c1' 대화 삭제" })).toBeInTheDocument()
+  })
+
+  // #590 : 색으로만 드러난 현재 대화를 낭독기에도 알린다
+  it('지금 대화 항목에 aria-current 가 붙는다', () => {
+    renderSidebar('c1')
+
+    expect(screen.getByRole('button', { name: 'c1' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('키보드 포커스 때 투명하지 않도록 클래스가 걸려 있다', () => {

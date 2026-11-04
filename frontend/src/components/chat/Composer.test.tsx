@@ -677,6 +677,8 @@ describe('Composer', () => {
     render(<Composer onSend={accept} streaming={false} onStop={noop} />)
 
     expect(screen.getByPlaceholderText('메시지를 입력하세요')).toHaveAttribute('maxLength', '4000')
+    // placeholder 는 입력을 시작하면 사라지는 힌트라 이름이 아니다(#590)
+    expect(screen.getByRole('textbox', { name: '메시지 입력' })).toBe(screen.getByPlaceholderText('메시지를 입력하세요'))
   })
 
   // 서버 상한(app.chat.max-attachments 기본값)과 같은 값 - 넘기면 서버가 400 으로 거절한다(#401)

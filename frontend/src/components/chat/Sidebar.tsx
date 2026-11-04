@@ -84,7 +84,12 @@ export default memo(function Sidebar({
                       : 'text-ink-muted hover:bg-raised hover:text-ink')
                   }
                 >
-                  <button onClick={() => onSelect(c.id)} className="min-w-0 flex-1 truncate px-3 py-3 text-left md:py-2">
+                  <button
+                    onClick={() => onSelect(c.id)}
+                    // 색으로만 드러난 현재 대화를 낭독기에도 알린다(#590)
+                    aria-current={c.id === activeId ? 'page' : undefined}
+                    className="min-w-0 flex-1 truncate px-3 py-3 text-left md:py-2"
+                  >
                     {c.title}
                   </button>
                   <button
