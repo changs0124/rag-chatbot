@@ -1,7 +1,7 @@
 package com.ragchatbot.controller;
 
 import static com.ragchatbot.support.SseTestSupport.assertJsonError;
-import static com.ragchatbot.support.SseTestSupport.sse;
+import static com.ragchatbot.support.SseTestSupport.acceptSse;
 
 import java.util.Map;
 import java.util.UUID;
@@ -26,7 +26,7 @@ class ChatSseAcceptErrorTest extends AbstractPgIntegrationTest {
 		String convId = createConversation(token);
 
 		var res = rest.exchange("/api/chat", HttpMethod.POST,
-				new HttpEntity<>(Map.of("conversationId", convId, "message", ""), sse(bearer(token))), String.class);
+				new HttpEntity<>(Map.of("conversationId", convId, "message", ""), acceptSse(bearer(token))), String.class);
 
 		assertJsonError(res, HttpStatus.BAD_REQUEST, "BAD_REQUEST");
 	}
@@ -37,7 +37,7 @@ class ChatSseAcceptErrorTest extends AbstractPgIntegrationTest {
 
 		var res = rest.exchange("/api/chat", HttpMethod.POST,
 				new HttpEntity<>(Map.of("conversationId", UUID.randomUUID().toString(), "message", "안녕"),
-						sse(bearer(token))),
+						acceptSse(bearer(token))),
 				String.class);
 
 		assertJsonError(res, HttpStatus.NOT_FOUND, "NOT_FOUND");
