@@ -1219,11 +1219,15 @@ describe('useChat 만료된 첨부 썸네일 재서명(#558)', () => {
     act(() => {
       pending = result.current.refreshAttachment('a1')
     })
-    act(() => result.current.newConversation())
+    // 옮겨 간 대화에도 같은 첨부 id 를 둔다 - 비어 있는 화면이면 가드가 없어도 바꿀 것이 없어 통과해 버린다(#586)
+    vi.mocked(getMessages).mockResolvedValueOnce(withAttachment('/c2'))
+    await act(async () => {
+      await result.current.selectConversation('c2')
+    })
     await act(async () => {
       slow.resolve(withAttachment('/fresh'))
       await pending
     })
-    expect(result.current.messages).toEqual([])
+    expect(result.current.messages[0].attachments?.[0].url).toBe('/c2')
   })
 })
