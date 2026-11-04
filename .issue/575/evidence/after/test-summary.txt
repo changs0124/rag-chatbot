@@ -1,0 +1,2 @@
+Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in com.ragchatbot.service.ChatHistoryTest
+./mvnw verify : run 435 fail 0 err 0 skip 0
