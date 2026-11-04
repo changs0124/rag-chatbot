@@ -8,6 +8,12 @@
 
 ## [Unreleased]
 
+### Docs
+- **메시지 목록(API-GET-005)의 응답 필드를 `api.md` 에 적었다(#579, 10-28 전수 리뷰 보류 항목).** 목록 표 한 줄뿐이라 `status` · `stopped` · `timedOut` · 출처 · 첨부(조회 때 새로 서명하는 `url`)의 뜻이 계약 문서에 없었다. 저장 조합은 `erd.md` 「messages」를 가리킨다. 같은 리뷰의 나머지 보류 4건(`fileType` · Tailwind 임의값 · 테스트 전용 진입점 · `stageLabel` 같은 꼴)은 그대로 두기로 하고 #105 에 근거를 남겼다
+
+### Tests
+- **테스트 헬퍼 2건을 정리했다(#581, 테스트만).** `useChat.test.ts` 의 `openStream` 이 손으로 만든 `new Promise` 대신 `deferred()` 를 쓰고, Accept 헤더만 얹는 `SseTestSupport.sse` 를 `acceptSse` 로 바꿨다. 케이스 수 변화 없음
+
 ## [2026-11-04]
 
 운영 배포 2회 — **2차** `dc2ed51` → `6548fc3`(#575, 롤백 `prev-dc2ed51`=818e2ce4). 새 마이그레이션 없음 · compose 변화 없음이라 app 만 재생성. 헬스 10초 · 터널 0초. 배포 뒤 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `/error` 401 · `nosniff`/`DENY` · app 로그 WARN/ERROR 0.
