@@ -186,7 +186,8 @@ public class ChatService {
 			if (m.timedOut() && m.stopped()) {
 				continue;
 			}
-			String text = historyText(m, withAttachments.contains(m.id()));
+			boolean hadAttachment = withAttachments.contains(m.id());
+			String text = historyText(m, hadAttachment);
 			if (text.isEmpty()) {
 				continue;
 			}
@@ -197,7 +198,7 @@ public class ChatService {
 				// 가리키는 것은 대개 답의 첫 표 · 첫 항목이고, 끝은 맺음말이 많다
 				int remaining = tokenBudget - used;
 				if (newestFirst.isEmpty() || remaining >= HISTORY_MIN_FRAGMENT_TOKENS) {
-					String cut = truncateToBudget(text, remaining);
+					String cut = truncateToBudget(text, hadAttachment ? " " + IMAGE_PLACEHOLDER : "", remaining);
 					if (!cut.isEmpty()) {
 						newestFirst.add(new Turn(m.role(), cut));
 					}
@@ -211,9 +212,12 @@ public class ChatService {
 		return List.copyOf(newestFirst);
 	}
 
-	/** 표시까지 합쳐 {@link #estimateTokens} 가 예산 안에 들도록 앞부분만 남김(#554). 남길 자리가 없으면 빈 문자열 */
-	private static String truncateToBudget(String text, int tokenBudget) {
-		int end = (int) Math.floor(tokenBudget * 1.5) - HISTORY_TRUNCATED_MARK.length();
+	/**
+	 * 표시까지 합쳐 {@link #estimateTokens} 가 예산 안에 들도록 앞부분만 남김(#554 · #575). 남길 자리가 없으면 빈 문자열.
+	 * {@code suffix}(이미지 표식)는 본문 끝에 붙어 있어 앞부분만 남기면 함께 잘리므로, 그 몫을 빼고 자른 뒤 다시 붙인다(#584)
+	 */
+	private static String truncateToBudget(String text, String suffix, int tokenBudget) {
+		int end = (int) Math.floor(tokenBudget * 1.5) - HISTORY_TRUNCATED_MARK.length() - suffix.length();
 		if (end <= 0) {
 			return "";
 		}
@@ -221,7 +225,7 @@ public class ChatService {
 		if (Character.isHighSurrogate(text.charAt(end - 1))) {
 			end--;
 		}
-		return end <= 0 ? "" : text.substring(0, end) + HISTORY_TRUNCATED_MARK;
+		return end <= 0 ? "" : text.substring(0, end) + HISTORY_TRUNCATED_MARK + suffix;
 	}
 
 	private static String historyText(Message m, boolean hadAttachment) {

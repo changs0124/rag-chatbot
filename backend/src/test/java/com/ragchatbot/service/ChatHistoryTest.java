@@ -232,6 +232,24 @@ class ChatHistoryTest {
 		assertThat(history).extracting(Turn::content).containsExactly("나".repeat(400));
 	}
 
+	/**
+	 * 첨부가 있는 메시지가 잘려도 이미지 표식은 남는다(#584). 표식은 본문 끝에 붙는데 자르기는 앞부분을 남기므로,
+	 * 본문만 자르고 표식을 다시 붙이지 않으면 뒤 턴의 「그 사진」이 무엇을 가리키는지 모델이 모른다.
+	 */
+	@Test
+	void truncated_message_keeps_image_placeholder() {
+		Message withImage = msg("user", "가".repeat(3000) + " 이 사진의 표를 읽어 줘");
+		List<Message> messages = List.of(withImage, msg("assistant", "나".repeat(30)));
+
+		List<Turn> history = ChatService.buildHistory(messages, Set.of(withImage.id()), 1000);
+
+		assertThat(history).extracting(Turn::role).containsExactly("user", "assistant");
+		assertThat(history.get(0).content()).startsWith("가".repeat(100))
+				.endsWith(ChatService.HISTORY_TRUNCATED_MARK + " " + ChatService.IMAGE_PLACEHOLDER);
+		int total = history.stream().mapToInt(t -> (int) Math.ceil(t.content().length() / 1.5)).sum();
+		assertThat(total).isLessThanOrEqualTo(1000);
+	}
+
 	/** 자르는 자리에서 서로게이트 쌍이 갈리면 반쪽 글자가 모델 요청 직렬화에서 터진다(#434 · #554) */
 	@Test
 	void truncation_does_not_split_surrogate_pairs() {
