@@ -1,0 +1,13 @@
+# 새 테스트 5개를 현행 코드에 돌린 결과 — 전부 실패(결함 재현)
+     × 재서명이 실패하거나 아직 서버에 없으면 시도를 남겨 다음에 다시 시도한다 8ms
+     × 여러 장이 한꺼번에 깨져도 이력은 한 번만 받아 모두 바꾼다 2ms
+     × 확대 화면의 이미지가 깨져도 그 첨부 id 로 새 서명을 요청한다 14ms
+       × 내려받기가 실패하면 알리고 그 장의 새 서명을 청한다 1022ms
+     × 확대한 이미지가 깨지면 그 장의 순서로 알린다 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected '/old' to be '/fresh' // Object.is equality
+AssertionError: expected "vi.fn()" to be called 2 times, but got 3 times
+TestingLibraryElementError: Unable to find role="alert"
+AssertionError: expected "vi.fn()" to be called with arguments: [ 1 ]
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'a2' ]
+      Tests  5 failed | 91 passed (96)
