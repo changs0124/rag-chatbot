@@ -382,4 +382,24 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
     })
     expect(result.current.conversations.map((c) => c.id)).toEqual(['B'])
   })
+
+  /** 첫 목록 로드도 세대를 잡는다(#588) - 아주 느린 첫 응답이 그 사이 만든 새 대화를 옛 목록으로 덮지 않게 */
+  it('늦게 온 첫 목록 응답이 그 사이 만든 새 대화를 덮지 않는다', async () => {
+    const first = deferred<Conversation[]>()
+    vi.mocked(listConversations).mockReturnValueOnce(first.promise)
+    vi.mocked(createConversation).mockResolvedValueOnce(conv('N'))
+    vi.mocked(streamChat).mockReturnValueOnce(new Promise(() => {})) // 답은 끝나지 않는다 - 완료 때의 목록 GET 이 끼지 않게
+
+    const { result } = renderHook(() => useChat())
+    await act(async () => {
+      await result.current.send('새 질문', [])
+    })
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['N'])
+
+    await act(async () => {
+      first.resolve([conv('A')])
+      await first.promise
+    })
+    expect(result.current.conversations.map((c) => c.id)).toContain('N')
+  })
 })

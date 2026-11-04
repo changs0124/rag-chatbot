@@ -185,9 +185,13 @@ export function useChat() {
   }, [])
 
   // 첫 로드 실패를 삼키면 「대화가 없습니다」로 보인다 - 없는 것과 못 불러온 것을 가른다(#385, #77 · #359 와 같은 이유)
+  // 첫 로드도 세대를 잡는다(#588) - 아주 느린 첫 응답이 그 사이 만든 새 대화를 옛 목록으로 덮지 않게
   useEffect(() => {
+    const mine = ++listGen.current
     listConversations()
-      .then(setConversations)
+      .then((list) => {
+        if (listGen.current === mine) setConversations(list)
+      })
       .catch(() => setError('대화 목록을 불러오지 못했습니다'))
   }, [])
 
@@ -546,8 +550,9 @@ export function useChat() {
         } else if (isNew) refreshConversations()
       } finally {
         // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(useStageQueue).
-        // 판정 중에 대화를 옮겨 이미 놓아 줬으면(#489 리뷰) 옮겨 간 화면의 새 스트림 · settling 상태를 덮지 않는다
-        judgingRef.current = null
+        // 판정 중에 대화를 옮겨 이미 놓아 줬으면(#489 리뷰) 옮겨 간 화면의 새 스트림 · settling 상태를 덮지 않는다.
+        // 판정 표시도 자기 것일 때만 지운다(#588) - 그사이 판정에 들어간 뒤 턴의 표시를 지우면 다시 옮겨도 그 잠금이 안 풀린다
+        if (judgingRef.current === controller) judgingRef.current = null
         if (abortRef.current === controller) {
           setStreaming(false)
           setSettling(false)

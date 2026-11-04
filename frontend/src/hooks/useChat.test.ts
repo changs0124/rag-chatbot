@@ -656,6 +656,49 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(next.handlers).toBeDefined()
   })
 
+  // #588 : 앞 턴의 판정이 끝나며 뒤 턴의 판정 표시까지 지우면, 다시 옮겨도 뒤 턴의 잠금을 풀지 못해 보내기가 막힌다
+  it('앞 턴의 판정이 끝나도 뒤 턴의 판정 표시를 지우지 않아 다시 옮기면 곧바로 보낼 수 있다 (#588)', async () => {
+    const first = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', []))
+    // 두 턴 다 답 없는 질문이 서버에 남아 재확인 구간 내내 판정이 이어진다 - 앞 턴은 새 대화, 둘째 턴은 c9
+    holdStored([{ id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] }], true)
+    vi.mocked(getMessages).mockImplementation(async (id) =>
+      id === 'c9'
+        ? [{ id: 'm2', role: 'user', content: '다른 질문', status: 'complete', citations: [] }]
+        : [{ id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] }],
+    )
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(first)
+    await act(async () => {
+      await result.current.selectConversation('c9')
+    })
+
+    // 앞 턴 판정 구간의 절반이 지난 뒤 둘째 턴도 판정에 들어간다
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS / 2)
+    })
+    const second = openStream()
+    await startStream(() => result.current.send('다른 질문', []))
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(second)
+    expect(result.current.streaming).toBe(true)
+
+    // 앞 턴 판정만 끝난다 - 둘째 턴은 아직 판정 중
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS / 2 + RECHECK_INTERVAL_MS)
+    })
+    await act(async () => {
+      await result.current.selectConversation('c10')
+    })
+    expect(result.current.streaming).toBe(false)
+    expect(result.current.settling).toBe(false)
+  })
+
   it('기존 대화의 재확인 중에 대화를 옮기면 재확인을 곧바로 멈춘다 (#489 리뷰)', async () => {
     const { result } = await existingConversation()
     const stream = openStream({ opened: false })
