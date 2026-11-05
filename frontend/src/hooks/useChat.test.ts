@@ -22,7 +22,7 @@ vi.mock('../lib/endpoints', () => ({
 const { streamChat, deleteConversation, deleteConversationIfEmpty, listConversations, getMessages } = await import(
   '../lib/endpoints'
 )
-const { ApiError } = await import('../lib/api')
+const { ApiError, setToken } = await import('../lib/api')
 
 /**
  * 스트림을 열어 둔 채 핸들러를 직접 호출할 수 있게 함.
@@ -448,9 +448,13 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(result.current.streaming).toBe(false)
   })
 
-  // #617 : 판정은 화면을 떠나도 뒤에서 이어 가는데, 로그아웃(언마운트) 뒤에 곧바로 다른 계정으로 들어오면 남은 요청이
+  // #617 : 판정은 화면을 떠나도 뒤에서 이어 가는데, 로그아웃 뒤 곧바로 다른 계정으로 들어오면 남은 요청이
   // 새 계정 토큰으로 나갔다 - 새 계정에는 그 대화가 없어 404 를 「지워짐」으로 읽고, 이전 계정의 빈 대화는 남았다
-  it('언마운트(로그아웃) 뒤에는 남은 판정 요청을 보내지 않는다 (#617)', async () => {
+  const jwtOf = (sub: string) => `h.${btoa(JSON.stringify({ sub }))}.s`
+
+  it('계정이 바뀌면 남은 판정 요청을 보내지 않는다 (#617)', async () => {
+    setToken(jwtOf('user-a'))
+    onTestFinished(() => setToken(null))
     const stream = openStream({ opened: false })
     const { result, unmount } = renderHook(() => useChat())
     await startStream(() => result.current.send('환불 정책', [], vi.fn()))
@@ -464,11 +468,36 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     const sent = vi.mocked(getMessages).mock.calls.length + vi.mocked(deleteConversationIfEmpty).mock.calls.length
 
     unmount()
+    setToken(jwtOf('user-b'))
     await act(async () => {
       await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
     })
 
     expect(vi.mocked(getMessages).mock.calls.length + vi.mocked(deleteConversationIfEmpty).mock.calls.length).toBe(sent)
+  })
+
+  // 같은 계정이 환경설정 · 관리 화면으로 옮기면 채팅 화면은 언마운트되지만, 새 대화의 판정은 빈 대화를 치우려고 이어 간다(#617 리뷰)
+  it('같은 계정으로 화면을 떠나면(언마운트) 새 대화의 판정은 계속 확인한다 (#617 대조)', async () => {
+    setToken(jwtOf('user-a'))
+    onTestFinished(() => setToken(null))
+    const stream = openStream({ opened: false })
+    const { result, unmount } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], vi.fn()))
+    vi.mocked(deleteConversationIfEmpty).mockRejectedValueOnce(new ApiError(409, '메시지가 있는 대화는 지우지 않음'))
+    holdStored([{ id: 'm1', role: 'user', content: '환불 정책', status: 'complete', citations: [] }])
+
+    await act(async () => {
+      result.current.stop()
+    })
+    await abort(stream)
+    const sent = vi.mocked(getMessages).mock.calls.length
+
+    unmount()
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_INTERVAL_MS * 2)
+    })
+
+    expect(vi.mocked(getMessages).mock.calls.length).toBeGreaterThan(sent)
   })
 
   // 같은 계정에서 대화만 옮긴 경우는 지금처럼 새 대화의 판정을 끝까지 이어 간다(#489 리뷰 결정)

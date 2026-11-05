@@ -8,7 +8,7 @@ import {
   renameConversation as apiRename,
   streamChat,
 } from '../lib/endpoints'
-import { ApiError, errorMessage } from '../lib/api'
+import { ApiError, errorMessage, tokenSubject } from '../lib/api'
 import type { Attachment, ChatMessage, Conversation } from '../lib/types'
 import { useStageQueue } from './useStageQueue'
 
@@ -103,7 +103,7 @@ async function recheckUnanswered(
  * 계약 : 409 = 저장됨, 404 = 이미 지움, 그 밖 = 모름. 저장됨인데 답이 없으면 걷히는지 다시 본다(#489, `recheckUnanswered`).
  * `opened` 면 질문은 저장됐던 것이 확실하다 - 기존 대화에서 질문 뒤에 답 행(서버 타임아웃의 error 행 등)이 붙어 있으면 저장됨이다.
  *
- * `alive` 가 거짓이면(훅이 언마운트됨 = 로그아웃 등) 다음 요청을 보내지 않고 모름으로 끝낸다(#617) - 대화를 옮긴 것과 달리
+ * `alive` 가 거짓이면(계정이 바뀜 = 로그아웃 · 다른 계정) 다음 요청을 보내지 않고 모름으로 끝낸다(#617) - 대화 · 화면을 옮긴 것과 달리
  * 곧바로 다른 계정으로 들어오면 남은 요청이 새 계정 토큰으로 나가, 남의 대화에 404 를 받고 「지워짐」으로 읽는다
  */
 async function judgeEarlyAbort(
@@ -232,14 +232,6 @@ export function useChat() {
    */
   useEffect(() => abortActiveStream, [abortActiveStream])
 
-  /** 마운트 중이면 참 - 언마운트(로그아웃) 뒤 남은 판정 요청을 막는다(#617, judgeEarlyAbort 의 alive) */
-  const mountedRef = useRef(false)
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
 
   const selectConversation = useCallback(
     async (id: string) => {
@@ -447,6 +439,10 @@ export function useChat() {
       clearStages() // 이전 턴의 단계가 남아 넘어오지 않게 함
       const controller = new AbortController()
       abortRef.current = controller
+      // 이 턴의 계정(#617). 판정은 화면을 떠나도 이어 가지만(#489) 계정이 바뀌면 멈춘다 - 남은 요청이 새 계정 토큰으로 나간다.
+      // 언마운트로 가르지 않는다 - 같은 계정이 환경설정 · 관리 화면으로 옮겨도 언마운트되고, 그때는 빈 대화를 치워야 한다
+      const owner = tokenSubject()
+      const sameAccount = () => tokenSubject() === owner
 
       const patch = (updater: (m: ChatMessage) => ChatMessage) =>
         setMessages((prev) => prev.map((m) => (m.id === assistantId ? updater(m) : m)))
@@ -558,7 +554,7 @@ export function useChat() {
               text,
               opened,
               () => generation.current === mine,
-              () => mountedRef.current,
+              sameAccount,
             )
           }
           // 세대는 판정을 기다린 **뒤에** 본다 - 그사이 대화를 옮겼으면 화면 · 입력창을 건드리지 않는다
@@ -590,8 +586,8 @@ export function useChat() {
             setConversations((prev) => prev.filter((c) => c.id !== id))
           }
           // 지운 뒤에 목록을 받아야 되살아나 보이지 않는다. 401 은 목록도 401 이라 받지 않는다
-          // 언마운트 뒤(로그아웃 등)에는 받지 않는다 - 다음 계정 토큰으로 나간다(#617)
-          if (isNew && !unauthorized && mountedRef.current) refreshConversations()
+          // 계정이 바뀌었으면 받지 않는다 - 다음 계정 토큰으로 나간다(#617)
+          if (isNew && !unauthorized && sameAccount()) refreshConversations()
         } else if (isNew) refreshConversations()
       } finally {
         // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(useStageQueue).
