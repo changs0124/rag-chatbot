@@ -437,7 +437,7 @@ public class OpenAiRealService implements OpenAiService {
 				String type = ev.path("type").asString("");
 				if ("response.output_text.delta".equals(type)) {
 					// 인용 표기 원문은 화면·저장본 어디에도 남기지 않음(#277)
-					String delta = markup.accept(ev.path("delta").asString(""));
+					String delta = markup.accept(withoutNul(ev.path("delta").asString("")));
 					if (delta.isEmpty()) {
 						continue;
 					}
@@ -570,7 +570,7 @@ public class OpenAiRealService implements OpenAiService {
 					String name = resultFilename(r);
 					files.add(name);
 					if (!name.isEmpty()) {
-						chunksByFile.computeIfAbsent(name, k -> new ArrayList<>()).add(r.path("text").asString(""));
+						chunksByFile.computeIfAbsent(name, k -> new ArrayList<>()).add(withoutNul(r.path("text").asString("")));
 					}
 				}
 				filesBySearch.add(files);
@@ -578,7 +578,7 @@ public class OpenAiRealService implements OpenAiService {
 			for (JsonNode content : item.path("content")) {
 				for (JsonNode ann : content.path("annotations")) {
 					if ("file_citation".equals(ann.path("type").asString(""))) {
-						String name = ann.path("filename").asString("");
+						String name = withoutNul(ann.path("filename").asString(""));
 						if (!name.isEmpty()) {
 							citedFiles.add(name);
 						}
@@ -611,7 +611,16 @@ public class OpenAiRealService implements OpenAiService {
 
 	/** 검색 결과 하나의 자료명. 출처(CitationData.sourceName)와 확인 단계 라벨이 같은 값을 쓰도록 한 곳에 둠(#375) */
 	private static String resultFilename(JsonNode result) {
-		return result.path("filename").asString("");
+		return withoutNul(result.path("filename").asString(""));
+	}
+
+	/**
+	 * 업스트림 텍스트에서 NUL(U+0000)을 지움(#610). PostgreSQL text 는 0x00 을 저장하지 못해, 남으면 답을 다 보낸 뒤
+	 * 저장이 실패한다(같은 청크를 인용할 때마다 반복). 사용자 입력은 거절하지만(#434 TextInputs) 이쪽은 사용자가 고칠 수 없어 지운다.
+	 * 화면 토큰과 저장본이 같은 값이 되도록 파싱 경계에서 지운다
+	 */
+	private static String withoutNul(String s) {
+		return s.indexOf(0) < 0 ? s : s.replace("\0", "");
 	}
 
 	// ── RAG 문서 관리(FEAT-ADMIN-002) ────────────────────────────────────────────
