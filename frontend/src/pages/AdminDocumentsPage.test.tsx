@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthContext'
@@ -281,6 +281,30 @@ describe('문서 관리 화면', () => {
 
     await act(async () => slow.resolve([doc({ status: 'in_progress' })]))
     await vi.advanceTimersByTimeAsync(5000)
+    expect(vi.mocked(listDocuments).mock.calls.length).toBe(sent + 1)
+  })
+
+  // #624 : 요청 타임아웃이 없어, 응답도 실패도 없는 폴링 요청 하나가 #615 의 진행 중 표시를 붙잡아 폴링이 멈췄다
+  it('응답이 없는 폴링 요청은 타임아웃으로 끊고 다음 틱에 다시 보낸다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.mocked(listDocuments).mockResolvedValue([doc({ status: 'in_progress' })])
+    renderPage()
+    await screen.findByText('처리중')
+
+    // 타임아웃 신호를 직접 쥐고, 신호가 끊기면 요청도 실패하게 한다(fetch 와 같은 모양)
+    const timeout = new AbortController()
+    const spy = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(timeout.signal)
+    onTestFinished(() => spy.mockRestore())
+    vi.mocked(listDocuments).mockImplementationOnce(
+      (signal?: AbortSignal) =>
+        new Promise((_, reject) => signal?.addEventListener('abort', () => reject(new Error('timeout')))),
+    )
+    await vi.advanceTimersByTimeAsync(5000)
+    const sent = vi.mocked(listDocuments).mock.calls.length
+
+    await act(async () => timeout.abort())
+    await vi.advanceTimersByTimeAsync(5000)
+
     expect(vi.mocked(listDocuments).mock.calls.length).toBe(sent + 1)
   })
 
