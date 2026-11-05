@@ -51,8 +51,10 @@ public class AdminDocumentService {
 
 	/**
 	 * 동기화가 막 지운 파일을 건너뛰는 유예(#612). 삭제의 원격 정리(연결 해제 · 파일 삭제, 각 최대 3번 · 요청 타임아웃 30초)가
-	 * 넉넉히 끝나는 길이로 잡는다(최악 약 3분). 지나면 정리가 실패한 파일로 보고 동기화가 다시 넣는다.
-	 * {@code OPENAI_REQUEST_TIMEOUT_MS} 를 약 95초 넘게 올리면 정리 최악이 10분을 넘을 수 있다 - 그때는 이 값도 함께 올린다
+	 * 넉넉히 끝나는 길이로 잡는다(기본 타임아웃 30초에서 최악 약 3분 = 6번 × 30초). 지나면 정리가 실패한 파일로 보고 동기화가 다시 넣는다.
+	 * 최악은 5xx · 429 가 응답 타임아웃 직전에 오는 경우다 - 연결 해제 · 파일 삭제 각 최대 3번이라 6 × (T + 연결 5초) + 재시도 간격 약 1.8초
+	 * (0.3 + 0.6초씩 두 호출, 읽기 · 연결 타임아웃은 다시 보내지 않는다). {@code OPENAI_REQUEST_TIMEOUT_MS}(T)를 약 95초 넘게 올리면
+	 * 10분을 넘을 수 있다. 그때는 이 값도 함께 올린다
 	 */
 	private static final Duration DELETE_IN_FLIGHT_GRACE = Duration.ofMinutes(10);
 
@@ -247,7 +249,7 @@ public class AdminDocumentService {
 		Set<String> alive = new HashSet<>(documentRepository.findAliveOpenaiFileIds());
 		// 막 지운 파일은 삭제가 아직 스토어를 정리하는 중일 수 있다(#612) - DB 를 먼저 지우므로(delete 주석) 그 사이에는 행은 없고
 		// 파일은 스토어에 남아 보인다. 여기서 넣으면 원격 정리가 끝난 뒤 스토어에 없는 행이 목록에 남는다. 유예가 지나면 정리가
-		// 실패한 파일로 보고 다시 넣는다(아래 Javadoc 의 복구 경로)
+		// 실패한 파일로 보고 다시 넣는다(위 Javadoc 의 복구 경로)
 		Set<String> deleting = new HashSet<>(
 				documentRepository.findOpenaiFileIdsDeletedSince(OffsetDateTime.now().minus(DELETE_IN_FLIGHT_GRACE)));
 		List<StoreFile> files = openAiService.listStoreFiles(fileId -> !alive.contains(fileId) && !deleting.contains(fileId));
