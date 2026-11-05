@@ -56,12 +56,22 @@ class OpenAiRealNulTest {
 		assertThat(r.completion().citations()).extracting(CitationData::snippet).containsExactly("발췌");
 	}
 
+	/** annotation 파일명의 NUL - 지우지 않으면 출처 이름에 NUL 이 남고 스니펫도 이름이 어긋나 비는 쪽으로 간다 */
 	@Test
-	void nul_in_filenames_is_dropped_from_source_names_and_stage_labels() {
-		Run r = run("답", "{\"filename\":\"매뉴\\u0000얼.md\",\"text\":\"발췌\"}",
+	void nul_in_annotation_filename_is_dropped_from_source_name() {
+		Run r = run("답", "{\"filename\":\"매뉴얼.md\",\"text\":\"발췌\"}",
 				"{\"type\":\"file_citation\",\"filename\":\"매뉴\\u0000얼.md\"}");
 
 		assertThat(r.completion().citations()).extracting(CitationData::sourceName).containsExactly("매뉴얼.md");
-		assertThat(r.stageSources()).allSatisfy(sources -> assertThat(sources).noneMatch(s -> s.contains(NUL)));
+	}
+
+	/** 검색 결과 파일명(resultFilename)의 NUL - 확인 단계 라벨과, 출처 이름으로 스니펫을 찾는 열쇠가 함께 걸린다 */
+	@Test
+	void nul_in_search_result_filename_is_dropped_from_stage_labels_and_snippet_lookup() {
+		Run r = run("답", "{\"filename\":\"매뉴\\u0000얼.md\",\"text\":\"발췌\"}",
+				"{\"type\":\"file_citation\",\"filename\":\"매뉴얼.md\"}");
+
+		assertThat(r.stageSources()).allSatisfy(sources -> assertThat(sources).noneMatch(x -> x.contains(NUL)));
+		assertThat(r.completion().citations()).extracting(CitationData::snippet).containsExactly("발췌");
 	}
 }
