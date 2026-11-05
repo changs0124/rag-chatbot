@@ -476,6 +476,25 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(vi.mocked(getMessages).mock.calls.length + vi.mocked(deleteConversationIfEmpty).mock.calls.length).toBe(sent)
   })
 
+  // #626 : 로그아웃 버튼은 토큰을 먼저 지우고 그 뒤 화면이 언마운트되며 스트림이 끊긴다 - 판정의 첫 요청이 토큰 없이 나가 401 을 받았다
+  it('끊기 전에 로그아웃했으면 판정의 첫 요청도 보내지 않는다 (#626)', async () => {
+    setToken(jwtOf('user-a'))
+    onTestFinished(() => setToken(null))
+    const stream = openStream({ opened: false })
+    const { result, unmount } = renderHook(() => useChat())
+    await startStream(() => result.current.send('환불 정책', [], vi.fn()))
+    const sent = vi.mocked(getMessages).mock.calls.length + vi.mocked(deleteConversationIfEmpty).mock.calls.length
+
+    setToken(null)
+    unmount()
+    await abort(stream)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RECHECK_WINDOW_MS)
+    })
+
+    expect(vi.mocked(getMessages).mock.calls.length + vi.mocked(deleteConversationIfEmpty).mock.calls.length).toBe(sent)
+  })
+
   // 같은 계정이 환경설정 · 관리 화면으로 옮기면 채팅 화면은 언마운트되지만, 새 대화의 판정은 빈 대화를 치우려고 이어 간다(#617 리뷰)
   it('같은 계정으로 화면을 떠나면(언마운트) 새 대화의 판정은 계속 확인한다 (#617 대조)', async () => {
     setToken(jwtOf('user-a'))
