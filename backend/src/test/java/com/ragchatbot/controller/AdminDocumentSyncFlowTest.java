@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -107,8 +108,10 @@ class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 	void soft_deleted_row_with_file_still_in_store_is_reregistered() {
 		String token = createAdminUser("sync-resurrect@b.com");
 		String fileId = upload(token, "정리실패.pdf");
-		jdbc.update("update rag_documents set deleted_at = now() - interval '11 minutes' where openai_file_id = ?",
-				fileId);
+		// 지운 시각은 JVM 시계로 넣는다(#627) - 운영 코드의 삭제 · 동기화 기준이 모두 JVM 시계라, DB(컨테이너 VM) 시계를 쓰면
+		// 둘이 어긋날 때 거짓 실패가 난다. 유예(10분)보다 넉넉히 앞으로 둔다
+		jdbc.update("update rag_documents set deleted_at = ? where openai_file_id = ?",
+				OffsetDateTime.now().minusHours(1), fileId);
 
 		sync(token);
 
@@ -126,7 +129,7 @@ class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 	void just_deleted_document_is_not_reregistered_while_remote_cleanup_runs() {
 		String token = createAdminUser("sync-deleting@b.com");
 		String fileId = upload(token, "삭제중.pdf");
-		jdbc.update("update rag_documents set deleted_at = now() where openai_file_id = ?", fileId);
+		jdbc.update("update rag_documents set deleted_at = ? where openai_file_id = ?", OffsetDateTime.now(), fileId);
 
 		sync(token);
 
