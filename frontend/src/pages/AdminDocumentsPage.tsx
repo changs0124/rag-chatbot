@@ -13,6 +13,8 @@ import type { RagDocument } from '../lib/types'
 
 /** 인덱싱 중인 문서가 있을 때만 도는 폴링 간격. 완료를 알려줄 푸시 경로가 없어 폴링으로 한다 */
 const POLL_MS = 5000
+/** 폴링 요청 하나의 상한(#624) - 넘으면 끊어 진행 중 표시(#615)를 풀고 다음 틱이 다시 보낸다 */
+const POLL_TIMEOUT_MS = 15_000
 
 // 상태 표시는 무채색 라인 아이콘(#192). 뜻은 글자가 전하고 아이콘은 보조다(aria-hidden). 색은 아래 STATUS_CLASS 를 그대로 따른다
 const STATUS_LABEL: Record<RagDocument['status'], string> = {
@@ -85,7 +87,8 @@ export default function AdminDocumentsPage() {
 
   /**
    * 폴링 요청이 나가 있는 동안 참(#615). 응답이 POLL_MS 보다 늦으면 다음 틱이 또 보내 요청이 겹치고, 먼저 나간 요청이
-   * 늦게 오면 뒤 요청의 새 상태를 옛 상태로 덮었다 - 같은 세대라 listGen 으로는 못 가른다. 나가 있으면 이번 틱은 건너뛴다
+   * 늦게 오면 뒤 요청의 새 상태를 옛 상태로 덮었다 - 같은 세대라 listGen 으로는 못 가른다. 나가 있으면 이번 틱은 건너뛴다.
+   * 요청은 POLL_TIMEOUT_MS 로 끊는다(#624) - 안 끊으면 응답도 실패도 없는 요청 하나가 이 표시를 붙잡아 폴링이 멈춘다
    */
   const pollingRef = useRef(false)
 
@@ -95,7 +98,7 @@ export default function AdminDocumentsPage() {
     pollingRef.current = true
     const mine = listGen.current
     try {
-      const docs = await listDocuments()
+      const docs = await listDocuments(AbortSignal.timeout(POLL_TIMEOUT_MS))
       if (listGen.current !== mine) return
       setDocuments(docs)
       setListError(null)
