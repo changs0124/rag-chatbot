@@ -1,0 +1,23 @@
+== withoutNul 제거 : delta
+[ERROR]   OpenAiRealNulPersistTest.stream_with_nul_everywhere_is_saved_without_nul
+[ERROR]   OpenAiRealNulTest.nul_in_delta_is_dropped_from_tokens_and_full_text
+[ERROR] Tests run
+== withoutNul 제거 : text
+[ERROR]   OpenAiRealNulPersistTest.stream_with_nul_everywhere_is_saved_without_nul
+[ERROR]   OpenAiRealNulTest.nul_in_search_result_text_is_dropped_from_snippet
+[ERROR] Tests run
+== withoutNul 제거 : annotation
+[ERROR]   OpenAiRealNulPersistTest.stream_with_nul_everywhere_is_saved_without_nul
+[ERROR]   OpenAiRealNulTest.nul_in_annotation_filename_is_dropped_from_source_name
+[ERROR] Tests run
+== withoutNul 제거 : result
+[ERROR]   OpenAiRealNulPersistTest.stream_with_nul_everywhere_is_saved_without_nul
+[ERROR]   OpenAiRealNulTest.nul_in_search_result_filename_is_dropped_from_stage_labels_and_snippet_lookup
+[ERROR] Tests run
+== withoutNul 제거 : all
+[ERROR]   OpenAiRealNulPersistTest.stream_with_nul_everywhere_is_saved_without_nul
+[ERROR]   OpenAiRealNulTest.nul_in_annotation_filename_is_dropped_from_source_name
+[ERROR]   OpenAiRealNulTest.nul_in_delta_is_dropped_from_tokens_and_full_text
+[ERROR]   OpenAiRealNulTest.nul_in_search_result_filename_is_dropped_from_stage_labels_and_snippet_lookup
+[ERROR]   OpenAiRealNulTest.nul_in_search_result_text_is_dropped_from_snippet
+[ERROR] Tests run
