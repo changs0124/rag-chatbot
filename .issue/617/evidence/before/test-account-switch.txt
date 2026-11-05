@@ -1,0 +1,4 @@
+     × 계정이 바뀌면 남은 판정 요청을 보내지 않는다 (#617) 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected 22 to be 2 // Object.is equality
+      Tests  1 failed | 55 passed (56)
