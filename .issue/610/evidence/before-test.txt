@@ -1,0 +1,20 @@
+[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 0.477 s <<< FAILURE! -- in com.ragchatbot.openai.OpenAiRealNulTest
+[ERROR] com.ragchatbot.openai.OpenAiRealNulTest.nul_in_search_result_text_is_dropped_from_snippet -- Time elapsed: 0.424 s <<< FAILURE!
+Expecting actual:
+and others were not expected:
+[ERROR] com.ragchatbot.openai.OpenAiRealNulTest.nul_in_filenames_is_dropped_from_source_names_and_stage_labels -- Time elapsed: 0.003 s <<< FAILURE!
+Expecting actual:
+and others were not expected:
+[ERROR] com.ragchatbot.openai.OpenAiRealNulTest.nul_in_delta_is_dropped_from_tokens_and_full_text -- Time elapsed: 0.017 s <<< FAILURE!
+expected: "답입니다"
+ but was: "답입니다"
+[ERROR]   OpenAiRealNulTest.nul_in_delta_is_dropped_from_tokens_and_full_text:47 
+expected: "답입니다"
+ but was: "답입니다"
+[ERROR]   OpenAiRealNulTest.nul_in_filenames_is_dropped_from_source_names_and_stage_labels:64 
+Expecting actual:
+and others were not expected:
+[ERROR]   OpenAiRealNulTest.nul_in_search_result_text_is_dropped_from_snippet:56 
+Expecting actual:
+and others were not expected:
+[ERROR] Tests run: 3, Failures: 3, Errors: 0, Skipped: 0
