@@ -1,0 +1,4 @@
+     × 지우는 순간 업로드 완료가 끼어들어도 서버 첨부를 지움 1015ms
+     × giveBack 이 넘친 카드를 걷은 직후 그 카드의 업로드가 끝나도 서버 첨부를 지운다 (#616) 1034ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'a1' ]
