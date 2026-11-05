@@ -1,6 +1,7 @@
 package com.ragchatbot.service;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +48,13 @@ public class AdminDocumentService {
 	 * <p><b>{@code application.yml} 의 {@code max-file-size} 보다 낮아야 한다</b> - 근거는 그쪽 주석(#35).
 	 */
 	private static final long MAX_SIZE = 25 * MB;
+
+	/**
+	 * 동기화가 막 지운 파일을 건너뛰는 유예(#612). 삭제의 원격 정리(연결 해제 · 파일 삭제, 각 최대 3번 · 요청 타임아웃 30초)가
+	 * 넉넉히 끝나는 길이로 잡는다(최악 약 3분). 지나면 정리가 실패한 파일로 보고 동기화가 다시 넣는다.
+	 * {@code OPENAI_REQUEST_TIMEOUT_MS} 를 약 95초 넘게 올리면 정리 최악이 10분을 넘을 수 있다 - 그때는 이 값도 함께 올린다
+	 */
+	private static final Duration DELETE_IN_FLIGHT_GRACE = Duration.ofMinutes(10);
 
 	/** PDF 매직바이트. txt·md 는 매직바이트가 없고 docx 는 zip 이라 `PK` 만으로는 다른 zip 과 구분되지 않는다 */
 	private static final byte[] PDF_MAGIC = { 0x25, 0x50, 0x44, 0x46 }; // %PDF
@@ -230,13 +238,19 @@ public class AdminDocumentService {
 	 *
 	 * <p>soft delete 된 행만 있는 파일은 살아 있는 행이 없으므로 다시 들어온다. 삭제 때 OpenAI 정리가
 	 * 조용히 실패한 파일이며 여전히 검색에 잡힌다 - 목록에 보여야 다시 지울 수 있다.
+	 * 단 지운 지 {@link #DELETE_IN_FLIGHT_GRACE} 안인 파일은 정리가 아직 도는 중일 수 있어 건너뛴다(#612).
 	 */
 	public SyncResponse sync(UUID adminId) {
 		if (!openAiService.hasSharedVectorStore()) {
 			throw new BadRequestException("Vector Store 가 설정되지 않아 동기화할 수 없음 (OPENAI_VECTOR_STORE_ID)");
 		}
 		Set<String> alive = new HashSet<>(documentRepository.findAliveOpenaiFileIds());
-		List<StoreFile> files = openAiService.listStoreFiles(fileId -> !alive.contains(fileId));
+		// 막 지운 파일은 삭제가 아직 스토어를 정리하는 중일 수 있다(#612) - DB 를 먼저 지우므로(delete 주석) 그 사이에는 행은 없고
+		// 파일은 스토어에 남아 보인다. 여기서 넣으면 원격 정리가 끝난 뒤 스토어에 없는 행이 목록에 남는다. 유예가 지나면 정리가
+		// 실패한 파일로 보고 다시 넣는다(아래 Javadoc 의 복구 경로)
+		Set<String> deleting = new HashSet<>(
+				documentRepository.findOpenaiFileIdsDeletedSince(OffsetDateTime.now().minus(DELETE_IN_FLIGHT_GRACE)));
+		List<StoreFile> files = openAiService.listStoreFiles(fileId -> !alive.contains(fileId) && !deleting.contains(fileId));
 
 		int added = 0;
 		int orphans = 0;
@@ -248,7 +262,7 @@ public class AdminDocumentService {
 				orphans++;
 				continue;
 			}
-			if (alive.contains(file.openaiFileId())) {
+			if (alive.contains(file.openaiFileId()) || deleting.contains(file.openaiFileId())) {
 				continue;
 			}
 			added += documentRepository.insertIfAbsent(new RagDocument(UUID.randomUUID(), file.filename(),
