@@ -1,0 +1,4 @@
+     × 응답이 없는 폴링 요청은 타임아웃으로 끊고 다음 틱에 다시 보낸다 34ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected 2 to be 3 // Object.is equality
+      Tests  1 failed | 19 passed (20)
