@@ -794,6 +794,7 @@ describe('Composer', () => {
     await act(async () => {})
 
     // act 밖에서 부른다 - 실제처럼 목록 갱신이 다시 그리기 전에 머문 사이 n3 의 업로드가 끝난다
+    // 전제 : act 밖 갱신은 다시 그리기가 뒤(매크로태스크)로 밀리고 업로드 완료(마이크로태스크)가 먼저 돈다. React 가 이 갱신을 바로 그리게 바뀌면 이 케이스는 틈을 못 만든다
     giveBack()
     late.resolve(attachment('late'))
     await act(async () => {})
