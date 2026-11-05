@@ -109,6 +109,30 @@ describe('Composer', () => {
     expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
   })
 
+  // #616 : 버리는 쪽은 abort 를 먼저 부르고 목록은 뒤에 비운다 - 그 사이(다시 그리기 전)에 업로드 완료가 끼면 목록 사본(draftsRef)에
+  // 카드가 아직 있어 지운 카드로 보지 못하고 서버 첨부를 남겼다. 실제로 틈이 생기는 곳은 giveBack 이 넘친 카드를 걷을 때다(비동기 콜백이라
+  // 다시 그리기가 뒤로 미뤄지고 그 사이 네트워크 완료가 낄 수 있다). 클릭(X)은 이산 이벤트라 곧바로 다시 그려 틈이 사실상 없다.
+  // 여기서는 abort 순간 완료를 흘려 같은 순서를 만든다
+  it('지우는 순간 업로드 완료가 끼어들어도 서버 첨부를 지움', async () => {
+    vi.mocked(uploadFile).mockImplementation((_file, signal) => {
+      let done: ((a: Attachment) => void) | undefined
+      signal?.addEventListener('abort', () => done?.(attachment('a1')))
+      return {
+        then(ok: (a: Attachment) => void) {
+          done = ok
+          return { catch: () => {} }
+        },
+      } as unknown as Promise<Attachment>
+    })
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+
+    pick(image())
+    fireEvent.click(screen.getByLabelText('첨부 제거'))
+
+    await waitFor(() => expect(deleteAttachment).toHaveBeenCalledWith('a1'))
+    expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
+  })
+
   it('업로드가 실패하면 재시도가 보이고 그 동안 보내기가 막힘', async () => {
     vi.mocked(uploadFile).mockRejectedValueOnce(new ApiError(413, '파일이 너무 큽니다'))
     render(<Composer onSend={accept} streaming={false} onStop={noop} />)
