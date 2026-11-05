@@ -100,19 +100,37 @@ class AdminDocumentSyncFlowTest extends AbstractPgIntegrationTest {
 
 	/**
 	 * TC-ADMIN-049 : 지운 행만 있고 스토어에는 남은 파일은 새 행으로 다시 들어온다.
-	 * 삭제 때 OpenAI 정리가 실패한 상태를 DB 만 지워 만든다. 옛 행은 이력으로 남는다
+	 * 삭제 때 OpenAI 정리가 실패한 상태를 DB 만 지워 만든다. 옛 행은 이력으로 남는다.
+	 * 지운 시각은 삭제 진행 중 유예(#612)보다 앞으로 둔다 - 그 안이면 아래 TC-ADMIN-094 처럼 건너뛴다
 	 */
 	@Test
 	void soft_deleted_row_with_file_still_in_store_is_reregistered() {
 		String token = createAdminUser("sync-resurrect@b.com");
 		String fileId = upload(token, "정리실패.pdf");
-		jdbc.update("update rag_documents set deleted_at = now() where openai_file_id = ?", fileId);
+		jdbc.update("update rag_documents set deleted_at = now() - interval '11 minutes' where openai_file_id = ?",
+				fileId);
 
 		sync(token);
 
 		assertThat(aliveRows(fileId)).isEqualTo(1);
 		assertThat(jdbc.queryForObject("select count(*) from rag_documents where openai_file_id = ?", Integer.class,
 				fileId)).isEqualTo(2);
+	}
+
+	/**
+	 * TC-ADMIN-094 (#612) : 막 지운 문서(원격 정리가 아직 진행 중)는 동기화가 되살리지 않는다.
+	 * 삭제는 DB 를 먼저 지우고 그 뒤 스토어를 정리하므로(#98), 그 사이의 동기화에는 행은 지워졌는데 파일은 스토어에 남은
+	 * 상태로 보인다 - 여기서 다시 넣으면 원격 정리가 끝난 뒤 스토어에 없는 행이 목록에 남는다. 그 상태를 DB 만 지워 만든다
+	 */
+	@Test
+	void just_deleted_document_is_not_reregistered_while_remote_cleanup_runs() {
+		String token = createAdminUser("sync-deleting@b.com");
+		String fileId = upload(token, "삭제중.pdf");
+		jdbc.update("update rag_documents set deleted_at = now() where openai_file_id = ?", fileId);
+
+		sync(token);
+
+		assertThat(aliveRows(fileId)).isZero();
 	}
 
 	/** TC-ADMIN-050 : 동기화로 들어온 문서를 지우면 스토어에서도 빠져, 다시 동기화해도 돌아오지 않는다 */
