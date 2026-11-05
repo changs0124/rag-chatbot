@@ -462,7 +462,7 @@ OpenAI 정리(스토어 연결 해제 · 파일 삭제)의 실패는 응답을 �
 ```
 
 `added` 는 이번에 새로 넣은 행 수, `total` 은 스토어의 파일 수에서 이번에 끊은 연결 수를 뺀 값이다. **멱등**이라 다시 부르면 `added` 가 0 이다.
-규칙(soft delete 된 파일의 재등록, `uploaded_by` 등)은 `features.md` FEAT-ADMIN-002 「스토어 동기화」.
+규칙(soft delete 된 파일의 재등록 · 지운 지 10분 안인 파일 건너뜀(#612) · 파일명의 NUL(U+0000) 제거(#613), `uploaded_by` 등)은 `features.md` FEAT-ADMIN-002 「스토어 동기화」.
 
 **Error Cases (4종 공통):**
 
