@@ -20,6 +20,9 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
  * <p>NUL(U+0000)이 답 조각 · 검색 결과 본문 · 두 파일명에 모두 든 스트림을 실서비스 파서로 읽고, 그 결과를 채팅 저장과 같은
  * {@code saveAssistant} 로 넣는다. 지우지 않으면 PostgreSQL 이 text 의 0x00 을 거절해 저장이 던진다.
  * 페이로드의 파일명 · 본문은 JSON 이스케이프(백슬래시 u0000)라 Jackson 이 실제 NUL 로 푼다.
+ *
+ * <p>한계 : HTTP 채팅 경로(ChatService)는 타지 않는다 - 파서 → 저장 서비스 구간만 본다. 가짜 OpenAI 서버를 띄운 채팅 통합 지지대가 아직 없다.
+ * {@code status} 는 이 테스트가 넘기는 값이라 단언은 저장 성공 확인 용도다.
  */
 class OpenAiRealNulPersistTest extends AbstractPgIntegrationTest {
 
