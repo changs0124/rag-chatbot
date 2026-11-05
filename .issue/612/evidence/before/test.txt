@@ -1,0 +1,6 @@
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 17.57 s <<< FAILURE! -- in com.ragchatbot.controller.AdminDocumentSyncFlowTest
+[ERROR] com.ragchatbot.controller.AdminDocumentSyncFlowTest.just_deleted_document_is_not_reregistered_while_remote_cleanup_runs -- Time elapsed: 0.291 s <<< FAILURE!
+expected: 0
+expected: 0
+[ERROR] Tests run: 8, Failures: 1, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE

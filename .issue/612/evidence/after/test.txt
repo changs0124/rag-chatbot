@@ -1,0 +1,6 @@
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in com.ragchatbot.service.AdminDocumentStatusRefreshTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in com.ragchatbot.service.AdminDocumentUploadCompensationTest
+[INFO] Tests run: 38, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+exit=0
+tests=441 errors=0 skipped=0 failures=0
