@@ -28,6 +28,8 @@ class OpenAiRealStoreFilesTest {
 	private OpenAiRealService service;
 	private volatile boolean failFileLookup;
 	private volatile String missingFile;
+	/** 설정하면 /files/{id} 응답의 filename 을 이 JSON 문자열 본문으로 바꾼다(이스케이프 그대로 실음) */
+	private volatile String filenameJson;
 
 	@BeforeEach
 	void startServer() throws IOException {
@@ -51,7 +53,8 @@ class OpenAiRealStoreFilesTest {
 					reply(exchange, 404, "{\"error\":{\"message\":\"No such File object: " + id + "\"}}");
 					return;
 				}
-				reply(exchange, 200, "{\"id\":\"" + id + "\",\"filename\":\"" + id + ".md\",\"bytes\":1234}");
+				String name = filenameJson != null ? filenameJson : id + ".md";
+				reply(exchange, 200, "{\"id\":\"" + id + "\",\"filename\":\"" + name + "\",\"bytes\":1234}");
 			} else {
 				reply(exchange, 404, "{}");
 			}
@@ -96,6 +99,28 @@ class OpenAiRealStoreFilesTest {
 
 		assertThat(files).contains(new StoreFile("file-b", "shared-store", null, 0, "missing"));
 		assertThat(files).extracting(StoreFile::openaiFileId).containsExactly("file-a", "file-b", "file-c");
+	}
+
+	/**
+	 * #613 : 파일명에 NUL(U+0000)이 있으면 지운 이름을 돌려준다 - 그대로 두면 동기화의 INSERT 를 PostgreSQL 이 거절해
+	 * 그 파일이 스토어에 있는 한 동기화가 매번 실패한다(#610 과 같은 계열). 파일명은 JSON 이스케이프(백슬래시 u0000)로 실어 Jackson 이 실제 NUL 로 푼다
+	 */
+	@Test
+	void nul_in_store_filename_is_dropped() {
+		filenameJson = "매뉴\\u0000얼.md";
+
+		List<StoreFile> files = service.listStoreFiles(id -> id.equals("file-b"));
+
+		assertThat(files).contains(new StoreFile("file-b", "shared-store", "매뉴얼.md", 1234, "in_progress"));
+	}
+
+	/** #613 : NUL 만 있는 이름은 지우면 빈 이름이라 「파일명 없음」과 같게 던진다 - 빈 이름 행을 만들지 않는다 */
+	@Test
+	void nul_only_store_filename_is_treated_as_missing_name() {
+		filenameJson = "\\u0000";
+
+		assertThatThrownBy(() -> service.listStoreFiles(id -> id.equals("file-b")))
+				.isInstanceOf(IllegalStateException.class).hasMessageContaining("파일명이 없음");
 	}
 
 	/** 404 가 아닌 실패는 여전히 던진다 - 일부만 돌려주면 동기화가 그것을 전부로 읽는다 */

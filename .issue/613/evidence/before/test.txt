@@ -1,0 +1,5 @@
+[ERROR] Tests run: 5, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 0.636 s <<< FAILURE! -- in com.ragchatbot.openai.OpenAiRealStoreFilesTest
+[ERROR] com.ragchatbot.openai.OpenAiRealStoreFilesTest.nul_in_store_filename_is_dropped -- Time elapsed: 0.024 s <<< FAILURE!
+[ERROR] com.ragchatbot.openai.OpenAiRealStoreFilesTest.nul_only_store_filename_is_treated_as_missing_name -- Time elapsed: 0.009 s <<< FAILURE!
+[ERROR] Tests run: 5, Failures: 2, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE

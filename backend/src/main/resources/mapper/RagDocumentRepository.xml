@@ -59,6 +59,10 @@
 		select openai_file_id from rag_documents where deleted_at is null
 	</select>
 
+	<select id="findOpenaiFileIdsDeletedSince" resultType="java.lang.String">
+		select openai_file_id from rag_documents where deleted_at > #{since}
+	</select>
+
 	<select id="listAlive" resultMap="summaryResult">
 		<include refid="selectSummary"/>
 		where d.deleted_at is null
