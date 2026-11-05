@@ -1,0 +1,5 @@
+     × 앞 폴링이 끝나기 전에는 다음 폴링을 보내지 않는다 35ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/pages/AdminDocumentsPage.test.tsx > 문서 관리 화면 > 앞 폴링이 끝나기 전에는 다음 폴링을 보내지 않는다
+AssertionError: expected 5 to be 2 // Object.is equality
+      Tests  1 failed | 18 passed (19)
