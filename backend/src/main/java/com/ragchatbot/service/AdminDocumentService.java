@@ -51,7 +51,8 @@ public class AdminDocumentService {
 
 	/**
 	 * 동기화가 막 지운 파일을 건너뛰는 유예(#612). 삭제의 원격 정리(연결 해제 · 파일 삭제, 각 최대 3번 · 요청 타임아웃 30초)가
-	 * 넉넉히 끝나는 길이로 잡는다. 지나면 정리가 실패한 파일로 보고 동기화가 다시 넣는다
+	 * 넉넉히 끝나는 길이로 잡는다(최악 약 3분). 지나면 정리가 실패한 파일로 보고 동기화가 다시 넣는다.
+	 * {@code OPENAI_REQUEST_TIMEOUT_MS} 를 약 95초 넘게 올리면 정리 최악이 10분을 넘을 수 있다 - 그때는 이 값도 함께 올린다
 	 */
 	private static final Duration DELETE_IN_FLIGHT_GRACE = Duration.ofMinutes(10);
 
