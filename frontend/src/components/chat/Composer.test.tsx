@@ -109,6 +109,28 @@ describe('Composer', () => {
     expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
   })
 
+  // #616 : 서버 응답이 이미 와 있던 업로드는 카드를 지울 때(abort 시점) 완료 처리가 돌 수 있다 - 그때 목록 사본(draftsRef)은
+  // 다시 그리기 전이라 카드가 아직 있어, 지운 카드로 보지 못하고 서버 첨부를 남겼다. abort 순간 완료를 흘려 그 틈을 만든다
+  it('지우는 순간 업로드 완료가 끼어들어도 서버 첨부를 지움', async () => {
+    vi.mocked(uploadFile).mockImplementation((_file, signal) => {
+      let done: ((a: Attachment) => void) | undefined
+      signal?.addEventListener('abort', () => done?.(attachment('a1')))
+      return {
+        then(ok: (a: Attachment) => void) {
+          done = ok
+          return { catch: () => {} }
+        },
+      } as unknown as Promise<Attachment>
+    })
+    render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+
+    pick(image())
+    fireEvent.click(screen.getByLabelText('첨부 제거'))
+
+    await waitFor(() => expect(deleteAttachment).toHaveBeenCalledWith('a1'))
+    expect(screen.queryByAltText('photo_0001.png')).not.toBeInTheDocument()
+  })
+
   it('업로드가 실패하면 재시도가 보이고 그 동안 보내기가 막힘', async () => {
     vi.mocked(uploadFile).mockRejectedValueOnce(new ApiError(413, '파일이 너무 큽니다'))
     render(<Composer onSend={accept} streaming={false} onStop={noop} />)

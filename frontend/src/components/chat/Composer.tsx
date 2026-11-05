@@ -82,8 +82,10 @@ export default function Composer({
     uploadFile(draft.file, draft.controller.signal)
       .then((attachment) => {
         // 지운 카드의 업로드가 뒤늦게 성공하는 경우 - abort 는 요청을 끊을 뿐 서버가 이미 받은 것을
-        // 되돌리지 않는다. 여기서 지우지 않으면 회수 크론을 기다리는 고아가 됨
-        if (!draftsRef.current.some((d) => d.key === draft.key)) {
+        // 되돌리지 않는다. 여기서 지우지 않으면 회수 크론을 기다리는 고아가 됨.
+        // abort 도 함께 본다(#616) - 버리는 쪽은 abort 를 먼저 부르고 목록은 뒤에 비우므로, 그 사이(다시 그리기 전)에 완료가
+        // 끼면 draftsRef 에 카드가 아직 있다. 끊긴 카드의 완료는 언제나 버린 카드다(보내는 중인 카드는 업로드가 이미 끝나 있다)
+        if (draft.controller.signal.aborted || !draftsRef.current.some((d) => d.key === draft.key)) {
           deleteAttachment(attachment.id).catch(() => {})
           return
         }
