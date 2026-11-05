@@ -1,0 +1,8 @@
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.ragchatbot.service.DocFigureServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.ragchatbot.service.FileServiceSizeCheckTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.090 s -- in com.ragchatbot.service.OrphanCleanupSchedulerTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in com.ragchatbot.service.RateLimiterKeyCapTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.ragchatbot.storage.LocalFileStorageUsedBytesTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.030 s -- in com.ragchatbot.support.RuntimeRolePrivilegeTest
+[INFO] Tests run: 440, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
