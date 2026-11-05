@@ -768,7 +768,9 @@ public class OpenAiRealService implements OpenAiService {
 					files.add(new StoreFile(fileId, sharedVectorStoreId, null, 0, StoreFile.MISSING));
 					continue;
 				}
+				// 업스트림 이름의 NUL 은 지운다(#613, #610 과 같은 이유) - 남으면 동기화의 INSERT 가 거절된다. NUL 만 있던 이름은 아래에서 「없음」이 된다
 				String filename = file == null ? null : file.path("filename").asString(null);
+				filename = filename == null ? null : withoutNul(filename);
 				if (filename == null || filename.isBlank()) {
 					throw new IllegalStateException("OpenAI 파일 응답에 파일명이 없음: " + fileId);
 				}
