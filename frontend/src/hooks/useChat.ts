@@ -63,12 +63,13 @@ async function recheckUnanswered(
   text: string,
   saved: ChatMessage[],
   stillHere: () => boolean,
+  alive: () => boolean,
 ): Promise<EarlyAbortOutcome> {
   const deadline = Date.now() + RECHECK_WINDOW_MS
   while (Date.now() + RECHECK_INTERVAL_MS <= deadline) {
-    if (!isNew && !stillHere()) return { kind: 'unknown' }
+    if (!alive() || (!isNew && !stillHere())) return { kind: 'unknown' }
     await new Promise((resolve) => setTimeout(resolve, RECHECK_INTERVAL_MS))
-    if (!isNew && !stillHere()) return { kind: 'unknown' }
+    if (!alive() || (!isNew && !stillHere())) return { kind: 'unknown' }
     let server: ChatMessage[]
     try {
       server = await getMessages(id, AbortSignal.timeout(RECHECK_REQUEST_TIMEOUT_MS))
@@ -100,7 +101,10 @@ async function recheckUnanswered(
  * **200 이 없었다고 서버에 없는 것은 아니다**(#440 리뷰) - 서버는 질문 저장 · 첨부 연결을 커밋한 뒤에
  * 200 을 돌려주므로, 그 사이에 끊으면 질문은 저장돼 있고 첨부는 이미 쓰였다.
  * 계약 : 409 = 저장됨, 404 = 이미 지움, 그 밖 = 모름. 저장됨인데 답이 없으면 걷히는지 다시 본다(#489, `recheckUnanswered`).
- * `opened` 면 질문은 저장됐던 것이 확실하다 - 기존 대화에서 질문 뒤에 답 행(서버 타임아웃의 error 행 등)이 붙어 있으면 저장됨이다
+ * `opened` 면 질문은 저장됐던 것이 확실하다 - 기존 대화에서 질문 뒤에 답 행(서버 타임아웃의 error 행 등)이 붙어 있으면 저장됨이다.
+ *
+ * `alive` 가 거짓이면(훅이 언마운트됨 = 로그아웃 등) 다음 요청을 보내지 않고 모름으로 끝낸다(#617) - 대화를 옮긴 것과 달리
+ * 곧바로 다른 계정으로 들어오면 남은 요청이 새 계정 토큰으로 나가, 남의 대화에 404 를 받고 「지워짐」으로 읽는다
  */
 async function judgeEarlyAbort(
   id: string,
@@ -108,6 +112,7 @@ async function judgeEarlyAbort(
   text: string,
   opened: boolean,
   stillHere: () => boolean,
+  alive: () => boolean,
 ): Promise<EarlyAbortOutcome> {
   if (isNew) {
     // 새 대화는 「비었을 때만 지우기」로 묻는다(#447) - 확인과 삭제를 따로 하면 그 사이에 커밋된 질문 · 첨부까지
@@ -117,8 +122,9 @@ async function judgeEarlyAbort(
       return { kind: 'deleted' }
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
+        if (!alive()) return { kind: 'unknown' }
         const saved = await getMessages(id).catch(() => null)
-        if (saved && endsWithQuestion(saved, text)) return recheckUnanswered(id, isNew, text, saved, stillHere)
+        if (saved && endsWithQuestion(saved, text)) return recheckUnanswered(id, isNew, text, saved, stillHere, alive)
         return { kind: 'stored', saved }
       }
       if (e instanceof ApiError && e.status === 404) {
@@ -131,7 +137,7 @@ async function judgeEarlyAbort(
   }
   try {
     const server = await getMessages(id)
-    if (endsWithQuestion(server, text)) return recheckUnanswered(id, isNew, text, server, stillHere)
+    if (endsWithQuestion(server, text)) return recheckUnanswered(id, isNew, text, server, stillHere, alive)
     if (opened && endsWithAnswer(server, text)) return { kind: 'stored', saved: server }
   } catch {
     // 모르면 되돌린다 - 기존 대화는 지우지 않으므로 잃는 것은 없다
@@ -225,6 +231,15 @@ export function useChat() {
    * 언마운트 정리 - 단계 타이머와 **진행 중인 스트림**을 함께 끊는다(#94). 안 끊으면 로그아웃 뒤에도 SSE 가 살아 있다.
    */
   useEffect(() => abortActiveStream, [abortActiveStream])
+
+  /** 마운트 중이면 참 - 언마운트(로그아웃) 뒤 남은 판정 요청을 막는다(#617, judgeEarlyAbort 의 alive) */
+  const mountedRef = useRef(false)
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const selectConversation = useCallback(
     async (id: string) => {
@@ -537,7 +552,14 @@ export function useChat() {
               if (gone) outcome = { kind: 'deleted' }
             }
           } else if (!unauthorized) {
-            outcome = await judgeEarlyAbort(id, isNew, text, opened, () => generation.current === mine)
+            outcome = await judgeEarlyAbort(
+              id,
+              isNew,
+              text,
+              opened,
+              () => generation.current === mine,
+              () => mountedRef.current,
+            )
           }
           // 세대는 판정을 기다린 **뒤에** 본다 - 그사이 대화를 옮겼으면 화면 · 입력창을 건드리지 않는다
           const here = generation.current === mine
@@ -568,7 +590,8 @@ export function useChat() {
             setConversations((prev) => prev.filter((c) => c.id !== id))
           }
           // 지운 뒤에 목록을 받아야 되살아나 보이지 않는다. 401 은 목록도 401 이라 받지 않는다
-          if (isNew && !unauthorized) refreshConversations()
+          // 언마운트 뒤(로그아웃 등)에는 받지 않는다 - 다음 계정 토큰으로 나간다(#617)
+          if (isNew && !unauthorized && mountedRef.current) refreshConversations()
         } else if (isNew) refreshConversations()
       } finally {
         // 정상 종료는 남은 단계가 최소 표시 시간을 마치며 스스로 비워짐(useStageQueue).
