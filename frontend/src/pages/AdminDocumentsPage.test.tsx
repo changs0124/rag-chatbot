@@ -264,6 +264,26 @@ describe('문서 관리 화면', () => {
     expect(screen.getByText('아직 문서가 없습니다')).toBeInTheDocument()
   })
 
+  // #615 : 목록 응답이 폴링 주기보다 늦으면 요청이 겹쳐, 먼저 나간 요청이 늦게 와서 뒤 요청의 새 상태를 옛 상태로 덮었다
+  it('앞 폴링이 끝나기 전에는 다음 폴링을 보내지 않는다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.mocked(listDocuments).mockResolvedValue([doc({ status: 'in_progress' })])
+    renderPage()
+    await screen.findByText('처리중')
+
+    const slow = deferred<RagDocument[]>()
+    vi.mocked(listDocuments).mockReturnValueOnce(slow.promise)
+    await vi.advanceTimersByTimeAsync(5000)
+    const sent = vi.mocked(listDocuments).mock.calls.length
+
+    await vi.advanceTimersByTimeAsync(15000)
+    expect(vi.mocked(listDocuments).mock.calls.length).toBe(sent)
+
+    await act(async () => slow.resolve([doc({ status: 'in_progress' })]))
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(vi.mocked(listDocuments).mock.calls.length).toBe(sent + 1)
+  })
+
   /** TC-ADMIN-041 : 일반 사용자는 되돌려진다 */
   it('일반 사용자는 관리 화면을 보지 못한다', async () => {
     currentRole = 'user'

@@ -83,8 +83,16 @@ export default function AdminDocumentsPage() {
     if (isAdmin) void refresh()
   }, [isAdmin, refresh])
 
+  /**
+   * 폴링 요청이 나가 있는 동안 참(#615). 응답이 POLL_MS 보다 늦으면 다음 틱이 또 보내 요청이 겹치고, 먼저 나간 요청이
+   * 늦게 오면 뒤 요청의 새 상태를 옛 상태로 덮었다 - 같은 세대라 listGen 으로는 못 가른다. 나가 있으면 이번 틱은 건너뛴다
+   */
+  const pollingRef = useRef(false)
+
   // 폴링은 인덱싱 상태를 지켜본다. refresh 와 달리 세대를 올리지 않고 loaded 도 건드리지 않는다
   const pollDocuments = useCallback(async () => {
+    if (pollingRef.current) return
+    pollingRef.current = true
     const mine = listGen.current
     try {
       const docs = await listDocuments()
@@ -94,6 +102,8 @@ export default function AdminDocumentsPage() {
     } catch (e) {
       if (listGen.current !== mine) return
       setListError(errorMessage(e, '목록을 불러오지 못했습니다'))
+    } finally {
+      pollingRef.current = false
     }
   }, [])
 
