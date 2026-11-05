@@ -31,6 +31,9 @@ public interface RagDocumentRepository {
 	/** 살아 있는 행의 OpenAI 파일 ID 전부. 동기화가 어느 스토어 파일에 행이 없는지 가리는 데 씀 */
 	List<String> findAliveOpenaiFileIds();
 
+	/** {@code since} 뒤에 soft delete 된 행의 OpenAI 파일 ID. 동기화가 삭제 진행 중인 파일을 되살리지 않게 거르는 데 씀(#612) */
+	List<String> findOpenaiFileIdsDeletedSince(@Param("since") OffsetDateTime since);
+
 	/**
 	 * 살아 있는 문서만 최신순. 지워진 것(deleted_at not null)은 목록에 넣지 않음.
 	 *
