@@ -1,0 +1,4 @@
+     × 지우는 순간 업로드 완료가 끼어들어도 서버 첨부를 지움 1021ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'a1' ]
+      Tests  1 failed | 42 passed (43)
