@@ -61,6 +61,11 @@ function subjectOf(jwt: string | null): string | null {
   }
 }
 
+/** 지금 토큰의 주인(JWT `sub`). 로그아웃 · 다른 계정이면 달라진다 - 같은 계정의 재발급은 같다(#617). 토큰이 없으면 null */
+export function tokenSubject(): string | null {
+  return subjectOf(token)
+}
+
 /** 테스트가 바꿔 끼우는 자리 - jsdom 은 location.reload 를 구현하지 않는다 */
 export const page = { reload: () => window.location.reload() }
 
