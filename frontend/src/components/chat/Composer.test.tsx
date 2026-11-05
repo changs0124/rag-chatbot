@@ -768,6 +768,41 @@ describe('Composer', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('나중에 추가한 사진을 뺐습니다')
   })
 
+  // #625 : #616 의 실제 틈. giveBack 은 비동기 콜백이라 넘친 카드를 걷는 목록 갱신이 다시 그리기를 미룬다 - 그 사이 걷힌 카드의
+  // 업로드가 끝나면 목록 사본(draftsRef)에 카드가 아직 있다. 걷힌 카드의 서버 첨부는 그래도 지워야 한다
+  it('giveBack 이 넘친 카드를 걷은 직후 그 카드의 업로드가 끝나도 서버 첨부를 지운다 (#616)', async () => {
+    let seq = 0
+    const late = deferred<Attachment>()
+    vi.mocked(uploadFile).mockImplementation((file) =>
+      file.name === 'n3.png' ? late.promise : Promise.resolve(attachment(`a${++seq}`)),
+    )
+    let giveBack: () => void = () => {}
+    const onSend = vi.fn(async (_t: string, _a: Attachment[], back: () => void) => {
+      giveBack = back
+      return true
+    })
+    render(<Composer onSend={onSend} streaming={false} onStop={noop} />)
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+
+    fireEvent.change(input, { target: { files: ['s1', 's2', 's3'].map((n) => image(`${n}.png`)) } })
+    await waitFor(() => expect(screen.getByLabelText('보내기')).toBeEnabled())
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText('보내기'))
+    })
+    fireEvent.change(input, { target: { files: ['n1', 'n2', 'n3'].map((n) => image(`${n}.png`)) } })
+    await waitFor(() => expect(uploadFile).toHaveBeenCalledTimes(6))
+    await act(async () => {})
+
+    // act 밖에서 부른다 - 실제처럼 목록 갱신이 다시 그리기 전에 머문 사이 n3 의 업로드가 끝난다
+    // 전제 : act 밖 갱신은 다시 그리기가 뒤(매크로태스크)로 밀리고 업로드 완료(마이크로태스크)가 먼저 돈다. React 가 이 갱신을 바로 그리게 바뀌면 이 케이스는 틈을 못 만든다
+    giveBack()
+    late.resolve(attachment('late'))
+    await act(async () => {})
+
+    await waitFor(() => expect(deleteAttachment).toHaveBeenCalledWith('late'))
+    expect(screen.queryByAltText('n3.png')).not.toBeInTheDocument()
+  })
+
   it('언마운트 뒤에 온 되돌리기는 무시한다 (#440)', async () => {
     vi.mocked(uploadFile).mockResolvedValue(attachment('a1'))
     let giveBack: () => void = () => {}
