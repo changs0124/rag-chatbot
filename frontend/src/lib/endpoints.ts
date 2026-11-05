@@ -41,7 +41,8 @@ export function uploadFile(file: File, signal?: AbortSignal): Promise<Attachment
 export const deleteAttachment = (id: string) => api.del<void>(`/api/files/${id}`)
 
 // 관리자 (FEAT-ADMIN-002 · 003 · 004). 관리자가 아니면 서버가 404 를 준다 - 403 이 아니다
-export const listDocuments = () => api.get<RagDocument[]>('/api/admin/documents')
+// signal 은 폴링이 매달린 요청을 끊는 데 쓴다(#624)
+export const listDocuments = (signal?: AbortSignal) => api.get<RagDocument[]>('/api/admin/documents', signal)
 export const deleteDocument = (id: string) => api.del<void>(`/api/admin/documents/${id}`)
 /** 스토어와 동기화(#193). added · total 의 뜻은 api.md API-POST-009 */
 export const syncDocuments = () =>

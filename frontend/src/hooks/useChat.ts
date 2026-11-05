@@ -114,6 +114,8 @@ async function judgeEarlyAbort(
   stillHere: () => boolean,
   alive: () => boolean,
 ): Promise<EarlyAbortOutcome> {
+  // 첫 요청 전에도 본다(#626) - 로그아웃 버튼은 토큰을 먼저 지우고 그 뒤 끊으므로, 안 보면 첫 요청이 토큰 없이 나가 401 을 받는다
+  if (!alive()) return { kind: 'unknown' }
   if (isNew) {
     // 새 대화는 「비었을 때만 지우기」로 묻는다(#447) - 확인과 삭제를 따로 하면 그 사이에 커밋된 질문 · 첨부까지
     // 지웠다. 서버가 한 잠금 안에서 가른다 : 지워졌으면 저장 전이었고(뒤늦은 채팅은 404), 409 면 저장된 것이다
@@ -539,7 +541,7 @@ export function useChat() {
           // 단 기존 대화의 404 는 대화가 지워졌을 수 있어(다른 탭) 이력으로 확인한다 - 「첨부 없음」도 404 라 코드만으로는 못 가른다
           let outcome: EarlyAbortOutcome = { kind: 'unknown' }
           if (rejected && !isNew) {
-            if (status === 404) {
+            if (status === 404 && sameAccount()) {
               const gone = await getMessages(id).then(
                 () => false,
                 (err) => err instanceof ApiError && err.status === 404,
