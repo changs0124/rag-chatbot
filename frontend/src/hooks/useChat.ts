@@ -232,7 +232,6 @@ export function useChat() {
    */
   useEffect(() => abortActiveStream, [abortActiveStream])
 
-
   const selectConversation = useCallback(
     async (id: string) => {
       // 답을 받는 중인 지금 대화를 다시 누르면 아무것도 하지 않는다(#359) - 모바일에서 서랍을 열었다가
