@@ -10,8 +10,8 @@ OpenAI 스트림을 파싱하는 경계 네 곳에서 NUL(U+0000)을 지운다. 
 | 검색 결과 text 에 NUL → snippet 에 NUL 없음 | **실패** | 통과 |
 | 파일명(결과 · annotation)에 NUL → sourceName · 단계 라벨에 NUL 없음 | **실패** | 통과 |
 
-- 원본 출력 : `.issue/610/evidence/before-test.txt`(3/3 실패) · `after-test.txt`(3/3 통과) · `full-verify.txt`
-- before-test.txt 의 한글이 깨진 것은 콘솔 인코딩 탓이다. 판정은 `Tests run: 3, Failures: 3` 줄로 한다
+- 원본 출력 : `.issue/610/evidence/before/test.txt`(3/3 실패) · `after/test.txt`(3/3 통과) · `after/full-verify.txt`
+- before/test.txt 의 한글이 깨진 것은 콘솔 인코딩 탓이다. 판정은 `Tests run: 3, Failures: 3` 줄로 한다
 
 ## 변경 파일
 
