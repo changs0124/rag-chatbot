@@ -148,8 +148,9 @@ jobs:
         run: |
           set -euo pipefail
           # 릴리스 다운로드가 일시 5xx 를 낸다(11-09 하루 504 로 8회 실패, #640) - 짧은 장애는 여기서 흡수한다.
-          # --retry 는 408 · 429 · 5xx · 타임아웃만 다시 시도하고, 받은 파일은 아래 체크섬 검증을 그대로 거친다
-          curl -fsSLo gitleaks.tar.gz --retry 5 --retry-delay 10 --retry-connrefused \
+          # --retry 는 408 · 429 · 500 · 502 · 503 · 504 · 타임아웃만 다시 시도하고(404 등은 바로 실패), 연결 30초 · 재시도 합계 2분으로
+          # 끝을 정한다. 받은 파일은 아래 체크섬 검증을 그대로 거친다
+          curl -fsSLo gitleaks.tar.gz --retry 5 --retry-delay 10 --retry-connrefused --connect-timeout 30 --retry-max-time 120 \
             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
           tar -xzf gitleaks.tar.gz gitleaks
