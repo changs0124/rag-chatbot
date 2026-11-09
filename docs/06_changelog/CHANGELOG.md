@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### Changed
+- **CI 의 `checkout` · `setup-java` · `setup-node` 를 Node 24 판으로 올렸다(#635, CI #908 경고).** v4 판은 액션 런타임이 Node 20 이라 잡마다 「Node.js 20 is deprecated … forced to run on Node.js 24」와 「setup-java v4 is deprecated」가 찍혔다. `checkout` v4.4.0 → v7.0.1 · `setup-java` v4.9.1 → v6.1.0(v6.2.0 은 11-04 공개라 한 판 아래) · `setup-node` v4.4.0 → v7.1.0, 40자 SHA + `# vX.Y.Z` 고정(#416)은 그대로. 릴리스 노트상 입력 변화는 이 설정에 해당 없음(setup-node 자동 캐시는 `packageManager` 필드가 있을 때만 · checkout 자격 증명 저장 위치 변경은 push 하지 않아 무관). 앱 동작 변화 없음
+
 ## [2026-11-09]
 
 운영 배포 `48cc22f` → `084caaa`(#610 · #612 · #613 백엔드 · #614 · #627 테스트 · #628 주석 · 문서, 롤백 `prev-48cc22f`=232c2547, 새 이미지 5c23d8f5). 11-05 전체 리뷰 후속 #610 · #612~#617 과 그 수정분 재리뷰 후속 #624~#628, 11-05 QA 관측 문서 #606 · #608 을 담았다 — 프론트(#615 · #616 · #617 · #624 · #625 · #626)는 merge 때 Vercel 이 이미 반영했다. 새 마이그레이션 없음 · compose 변화 없음이라 app 만 재생성. 헬스 10초 · 터널 0초. 배포 전 옛 컨테이너 로그(5일치) `incomplete` 0 · WARN/ERROR 0. 배포 뒤 외부 `GET`/`HEAD /api/health` 200 · 미인증 `POST /api/chat` 401 · `/error` 401 · `nosniff`/`DENY` · app 로그 WARN/ERROR 0 · Flyway 10개 검증 · 적용할 마이그레이션 없음.
