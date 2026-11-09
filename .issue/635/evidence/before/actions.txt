@@ -1,0 +1,14 @@
+48:      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+50:        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3   # v4.9.1
+75:      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+77:        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020   # v4.4.0
+101:      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+116:      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+143:      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+162:      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+164:        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25   # v0.36.0
+183:      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+185:        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020   # v4.4.0
+--- CI #908(run 41986268607) 경고 줄 수
+Node.js 20 is deprecated : 7
+setup-java v4 is deprecated : 1
