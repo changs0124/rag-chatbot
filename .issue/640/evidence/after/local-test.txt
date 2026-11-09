@@ -1,0 +1,11 @@
+== 정상 주소
+exit=0 1s
+/tmp/tmp.iMtTsl5TdU/g.tgz: OK
+== 없는 주소(404 는 재시도하지 않고 바로 실패해야 함)
+curl: (22) The requested URL returned error: 404
+exit=22 0s
+== 503 응답(재시도해야 함, httpbin)
+curl: (22) The requested URL returned error: 503
+curl: (22) The requested URL returned error: 503
+curl: (22) The requested URL returned error: 503
+exit=22 4s
