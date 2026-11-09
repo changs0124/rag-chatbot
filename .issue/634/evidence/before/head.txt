@@ -1,0 +1,12 @@
+9:## [Unreleased]
+11:### Fixed
+21:### Docs
+26:### Tests
+31:## [2026-11-04]
+39:### Fixed (48cc22f)
+48:### Docs (48cc22f)
+52:### Tests (48cc22f)
+57:### Fixed (6548fc3)
+60:### Fixed (dc2ed51)
+63:## [2026-11-02]
+69:### Docs (1b88930)
