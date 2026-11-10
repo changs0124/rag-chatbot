@@ -7,6 +7,7 @@ import MessageList from '../components/chat/MessageList'
 import Composer from '../components/chat/Composer'
 import ConfirmModal from '../components/ConfirmModal'
 import { IconEdit, IconMenu } from '../components/icons'
+import { useModalFocus } from '../hooks/useModalFocus'
 import { MAX_TITLE_CHARS } from '../lib/limits'
 
 // 헤더 양끝의 모바일 전용 아이콘 버튼(목록 열기 · 새 채팅)(#390)
@@ -143,17 +144,7 @@ export default function ChatPage() {
         <ResizableSidebar>{sidebar}</ResizableSidebar>
       </div>
 
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div className="absolute inset-y-0 left-0 w-[min(84vw,320px)] shadow-[var(--shadow-lifted)]">
-            {sidebar}
-          </div>
-        </div>
-      )}
+      {sidebarOpen && <MobileDrawer onClose={() => setSidebarOpen(false)}>{sidebar}</MobileDrawer>}
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex min-h-14 items-center gap-1 px-3 py-2">
@@ -266,6 +257,29 @@ export default function ChatPage() {
           onCancel={() => setPendingLeave(null)}
         />
       )}
+    </div>
+  )
+}
+
+// 모바일 대화 목록 드로어(#644, #105 F9) - 대화창으로 읽히고, Esc 로 닫히고, 열리면 포커스가 안으로 · 닫히면 햄버거로 돌아간다.
+// 배경 탭 닫기는 그대로 둔다. Esc 는 드로어 안의 확인 창(대화 삭제)이 받은 것이면 넘긴다 - 확인 창만 닫혀야 한다
+function MobileDrawer({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  const ref = useModalFocus<HTMLDivElement>()
+  return (
+    <div
+      ref={ref}
+      className="fixed inset-0 z-40 md:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="대화 목록"
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return
+        if ((e.target as Element).closest('[aria-modal="true"]') !== e.currentTarget) return
+        onClose()
+      }}
+    >
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-y-0 left-0 w-[min(84vw,320px)] shadow-[var(--shadow-lifted)]">{children}</div>
     </div>
   )
 }

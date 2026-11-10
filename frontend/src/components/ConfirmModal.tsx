@@ -1,4 +1,5 @@
 import { useEffect, useId } from 'react'
+import { useModalFocus } from '../hooks/useModalFocus'
 
 export default function ConfirmModal({
   title,
@@ -14,6 +15,7 @@ export default function ConfirmModal({
   onCancel: () => void
 }) {
   const titleId = useId()
+  const dialogRef = useModalFocus<HTMLDivElement>()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -23,7 +25,7 @@ export default function ConfirmModal({
   }, [onCancel])
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className="absolute inset-0" onClick={onCancel} aria-hidden="true" />
       {/* 이중 테두리 - 바깥 트레이 안에 본체가 앉은 모양 */}
       <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">

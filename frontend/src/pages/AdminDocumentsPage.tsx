@@ -211,7 +211,9 @@ function DocumentsSection({
   return (
     <>
       <section className="mt-6">
-        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-surface px-6 py-8 text-center transition duration-150 ease-[var(--ease-out-quint)] hover:border-accent">
+        {/* 파일 칸은 숨기되 Tab 으로 닿게 sr-only(display:none 이면 키보드로 못 올린다 - #644). 포커스 표시는 칸 대신 상자 전체에 -
+            전역 :focus-visible 과 같은 2px accent 외곽선. sr-only 는 absolute 라 상자를 기준(relative)으로 둔다 */}
+        <label className="relative flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-surface px-6 py-8 text-center transition duration-150 ease-[var(--ease-out-quint)] hover:border-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
           <span className="text-sm text-ink">
             {uploading ? '올리는 중…' : '파일을 선택해 올립니다'}
           </span>
@@ -219,7 +221,7 @@ function DocumentsSection({
           <input
             type="file"
             accept={ACCEPT}
-            className="hidden"
+            className="sr-only"
             disabled={uploading}
             onChange={onPick}
           />
@@ -275,9 +277,11 @@ function DocumentsSection({
                     </p>
                   )}
                 </div>
+                {/* 「삭제」가 문서 수만큼 같은 이름으로 읽히지 않게 파일 이름을 붙인다(#644, 사용자 관리와 같은 방식) */}
                 <button
                   onClick={() => setPendingDelete(doc)}
                   disabled={deletingId !== null}
+                  aria-label={`${doc.filename} ${deletingId === doc.id ? '삭제 중' : '삭제'}`}
                   className={actionButtonClass + ' hover:text-danger'}
                 >
                   {deletingId === doc.id ? '삭제 중…' : '삭제'}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
+import { useModalFocus } from '../hooks/useModalFocus'
 import AdminErrorBanners from '../components/AdminErrorBanners'
 import BackLink from '../components/BackLink'
 import ConfirmModal from '../components/ConfirmModal'
@@ -89,7 +90,6 @@ function UsersSection({
   const [pendingDelete, setPendingDelete] = useState<AdminUser | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   // kind 로 갈리는 것은 안내 문구뿐이다 — 발급은 "새 계정"이고 초기화는 "기존 세션이 끊긴다"
-  const issuedTitleId = useId()
   const [issued, setIssued] = useState<{
     kind: 'created' | 'reset'
     name: string
@@ -98,6 +98,8 @@ function UsersSection({
   const [newEmail, setNewEmail] = useState('')
   const [newName, setNewName] = useState('')
   const [creating, setCreating] = useState(false)
+  // 발급 창을 닫으면 포커스를 돌려줄 버튼(#644) - 요청 중에는 막혀 있어 연 요소로 돌아갈 수 없다
+  const issuedReturnRef = useRef<HTMLElement | null>(null)
 
   // 일회용 비밀번호 창은 Esc 와 「닫기」로만 닫는다(#253). 배경 클릭으로 닫히면 「지금만 볼 수 있는」 값이
   // 한 번의 헛클릭에 사라져 비밀번호를 다시 초기화해야 한다 - 그래서 이 창만 배경 닫기를 두지 않는다
@@ -143,8 +145,9 @@ function UsersSection({
     setDeletingId(null)
   }
 
-  async function onCreate(e: FormEvent) {
+  async function onCreate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    issuedReturnRef.current = e.currentTarget.querySelector('button[type="submit"]')
     setError(null)
     setCreating(true)
     try {
@@ -213,7 +216,10 @@ function UsersSection({
               {/* 자기 자신은 대상이 아니다 — 마이페이지에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
               {person.id !== currentUserId && (
                 <button
-                  onClick={() => setPendingReset(person)}
+                  onClick={(e) => {
+                    issuedReturnRef.current = e.currentTarget
+                    setPendingReset(person)
+                  }}
                   disabled={resettingId !== null}
                   aria-label={`${person.name} 비밀번호 초기화`}
                   className={actionButtonClass + ' hover:text-ink'}
@@ -258,36 +264,54 @@ function UsersSection({
       )}
 
       {issued && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={issuedTitleId}>
-          <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
-            <div className="rounded-[1.375rem] bg-raised p-6">
-              <h2 id={issuedTitleId} className="text-base font-semibold text-ink">
-                {issued.kind === 'created' ? '계정이 발급되었습니다' : '임시 비밀번호가 발급되었습니다'}
-              </h2>
-              <p className="mt-4 rounded-xl bg-surface px-4 py-3 text-center font-mono text-base text-ink">
-                {issued.password}
-              </p>
-              {/* 두 문장 모두 필요하다 : 다시 못 본다는 사실과, 이 발급이 상대에게 무엇을 뜻하는지 */}
-              <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-                이 값은 지금만 볼 수 있습니다. 닫으면 다시 확인할 수 없습니다.
-                <br />
-                {issued.kind === 'created'
-                  ? `${issued.name} 님에게 이메일과 함께 전달하세요.`
-                  : `${issued.name} 님의 기존 로그인은 모두 해제되었습니다.`}
-              </p>
-              <div className="mt-6 flex justify-end">
-                <button
-                  autoFocus
-                  onClick={() => setIssued(null)}
-                  className={primaryButtonClass}
-                >
-                  닫기
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <IssuedDialog issued={issued} onClose={() => setIssued(null)} returnTo={() => issuedReturnRef.current} />
       )}
     </>
+  )
+}
+
+// 일회용 비밀번호 창. 뜰 때 · 닫힐 때의 포커스는 useModalFocus 가 맡는다(#644) - 요청 중 연 버튼이 막혀 포커스를 잃으므로
+// 닫으면 발급을 시작한 버튼(초기화 · 계정 추가)으로 돌아간다
+function IssuedDialog({
+  issued,
+  onClose,
+  returnTo,
+}: {
+  issued: { kind: 'created' | 'reset'; name: string; password: string }
+  onClose: () => void
+  returnTo: () => HTMLElement | null
+}) {
+  const titleId = useId()
+  const dialogRef = useModalFocus<HTMLDivElement>(returnTo)
+  return (
+    <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
+        <div className="rounded-[1.375rem] bg-raised p-6">
+          <h2 id={titleId} className="text-base font-semibold text-ink">
+            {issued.kind === 'created' ? '계정이 발급되었습니다' : '임시 비밀번호가 발급되었습니다'}
+          </h2>
+          <p className="mt-4 rounded-xl bg-surface px-4 py-3 text-center font-mono text-base text-ink">
+            {issued.password}
+          </p>
+          {/* 두 문장 모두 필요하다 : 다시 못 본다는 사실과, 이 발급이 상대에게 무엇을 뜻하는지 */}
+          <p className="mt-4 text-sm leading-relaxed text-ink-muted">
+            이 값은 지금만 볼 수 있습니다. 닫으면 다시 확인할 수 없습니다.
+            <br />
+            {issued.kind === 'created'
+              ? `${issued.name} 님에게 이메일과 함께 전달하세요.`
+              : `${issued.name} 님의 기존 로그인은 모두 해제되었습니다.`}
+          </p>
+          <div className="mt-6 flex justify-end">
+            <button
+              autoFocus
+              onClick={onClose}
+              className={primaryButtonClass}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

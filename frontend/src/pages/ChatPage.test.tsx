@@ -431,3 +431,25 @@ describe('ChatPage 답변 중 이동 확인 (#503)', () => {
     expect(chatState.selectConversation).toHaveBeenCalledWith('c1')
   })
 })
+
+// #644 (#105 F9) : 모바일 드로어는 대화창으로 읽히고, Esc 로 닫히고, 포커스가 안으로 들어갔다 햄버거로 돌아온다
+describe('ChatPage 모바일 드로어 (#644)', () => {
+  it('열면 이름 있는 대화창 · 포커스가 안으로, Esc 로 닫으면 햄버거로 돌아온다', () => {
+    renderChatPage()
+    const menu = screen.getByRole('button', { name: '대화 목록 열기' })
+    menu.focus()
+    fireEvent.click(menu)
+
+    const drawer = screen.getByRole('dialog', { name: '대화 목록' })
+    expect(drawer).toHaveAttribute('aria-modal', 'true')
+    expect(drawer).toContainElement(document.activeElement as HTMLElement)
+    // 헤더는 드로어 바깥 갈래(본문 칼럼)에 있다 - 그 갈래에 inert 가 걸린다
+    expect(screen.getByRole('banner').closest('[inert]')).not.toBeNull()
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog', { name: '대화 목록' })).toBeNull()
+    expect(menu).toHaveFocus()
+    expect(screen.getByRole('banner').closest('[inert]')).toBeNull()
+  })
+})
