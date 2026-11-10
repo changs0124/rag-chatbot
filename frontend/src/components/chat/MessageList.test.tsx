@@ -438,3 +438,34 @@ describe('MessageList 첨부 썸네일 오류(#558)', () => {
     expect(onAttachmentError).toHaveBeenCalledWith('a2')
   })
 })
+
+// #644 : 답이 흐르는 동안 log 는 aria-busy - 낭독기가 토큰 조각마다 읽어 쌓지 않게. 움직임 줄이기면 부드럽게 굴리지 않는다
+describe('MessageList 낭독 · 움직임 (#644)', () => {
+  const user: ChatMessage = { id: 'u1', role: 'user', content: '질문', status: 'complete', citations: [] }
+
+  it('스트리밍 중에는 log 가 바쁨이고 끝나면 풀린다', () => {
+    const streaming: ChatMessage = { id: 'a1', role: 'assistant', content: '답의 앞', status: 'streaming', citations: [] }
+    const { rerender } = render(<MessageList messages={[user, streaming]} />)
+    expect(screen.getByRole('log')).toHaveAttribute('aria-busy', 'true')
+
+    rerender(<MessageList messages={[user, { ...streaming, content: '답 전체', status: 'complete' }]} />)
+    expect(screen.getByRole('log')).toHaveAttribute('aria-busy', 'false')
+  })
+
+  it('움직임 줄이기 설정이면 끝으로 굴릴 때 smooth 를 쓰지 않는다', () => {
+    const calls: ScrollIntoViewOptions[] = []
+    const original = Element.prototype.scrollIntoView
+    Element.prototype.scrollIntoView = function (o?: boolean | ScrollIntoViewOptions) {
+      calls.push(o as ScrollIntoViewOptions)
+    }
+    const mm = window.matchMedia
+    window.matchMedia = ((q: string) => ({ matches: q.includes('reduce'), media: q })) as unknown as typeof window.matchMedia
+    try {
+      render(<MessageList messages={[user]} />)
+      expect(calls.at(-1)).toEqual({ behavior: 'auto' })
+    } finally {
+      Element.prototype.scrollIntoView = original
+      window.matchMedia = mm
+    }
+  })
+})

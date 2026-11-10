@@ -133,7 +133,7 @@ FEAT-OPS-* 3종은 서로 독립이다. FEAT-OPS-003 은 대응 요구사항이 
 **설계 제약 (왜 이렇게 하는가):**
 
 - **새 모달 패턴을 만들지 않는다.** 키 처리·배경 클릭·`role="dialog"` · `aria-modal="true"` 는
-  `frontend/src/components/ConfirmModal.tsx` 패턴을 그대로 따른다.
+  `frontend/src/components/ConfirmModal.tsx` 패턴을 그대로 따른다. 포커스 가두기 · 복귀는 같은 훅(`useModalFocus`, #644)을 부른다.
 - **내려받기는 `<a download>` 만으로 안 된다.** 백엔드가 다른 오리진이라 브라우저가 `download` 를 무시하고
   새 탭으로 열어 버린다. 이미지를 `fetch` 로 받아 `Blob` objectURL 을 만들어 저장하고, 저장 후 회수한다.
 - **이미지를 미리 다시 요청하지 않는다.** 확대에 쓰는 URL 은 화면에 이미 뜬 것과 같아 캐시에 있다.

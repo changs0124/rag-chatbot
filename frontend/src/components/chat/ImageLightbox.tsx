@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type React from 'react'
 import { IconChevronLeft, IconChevronRight, IconClose, IconDownload } from '../icons'
+import { useModalFocus } from '../../hooks/useModalFocus'
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
@@ -33,6 +34,7 @@ export default function ImageLightbox({
   onImageError?: (index: number) => void
 }) {
   const titleId = useId()
+  const dialogRef = useModalFocus<HTMLDivElement>()
   const [index, setIndex] = useState(startIndex)
   const current = items[index]
   // 내려받지 못한 장의 순서(#587) - 장 번호로 두어 결과가 늦게 와도 누른 장에서만 보인다(#600)
@@ -155,7 +157,7 @@ export default function ImageLightbox({
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
       <h2 id={titleId} className="sr-only">이미지 보기</h2>
 
