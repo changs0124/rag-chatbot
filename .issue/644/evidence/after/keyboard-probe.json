@@ -1,0 +1,140 @@
+{
+ "desktop": {
+  "docsTabOrder": [
+   "a「마이페이지」",
+   "input「file」",
+   "button「스토어와 동기화」",
+   "button「클레임처리지침.pdf 삭제」",
+   "button「설계변경관리규정.docx 삭제」",
+   "button「스캔본.pdf 삭제」",
+   "BODY",
+   "a「마이페이지」"
+  ],
+  "uploadReachable": true,
+  "deleteNames": [
+   "클레임처리지침.pdf 삭제",
+   "설계변경관리규정.docx 삭제",
+   "스캔본.pdf 삭제"
+  ],
+  "uploadFocusOutline": {
+   "focused": true,
+   "labelOutline": "solid 2px"
+  },
+  "confirm": {
+   "opener": "button「클레임처리지침.pdf 삭제」",
+   "tabs": [
+    "button「삭제」 ∈dialog(named)",
+    "BODY",
+    "button「취소」 ∈dialog(named)",
+    "button「삭제」 ∈dialog(named)",
+    "BODY",
+    "button「취소」 ∈dialog(named)"
+   ],
+   "tabsInsideDialog": "4/6",
+   "afterClose": "button「클레임처리지침.pdf 삭제」"
+  },
+  "issued": {
+   "opener": "button「김철수 비밀번호 초기화」",
+   "tabs": [
+    "BODY",
+    "button「닫기」 ∈dialog(named)",
+    "BODY",
+    "button「닫기」 ∈dialog(named)"
+   ],
+   "tabsInsideDialog": "2/4",
+   "afterClose": "button「김철수 비밀번호 초기화」"
+  },
+  "logAriaBusy": "false",
+  "lightbox": {
+   "opener": "button「첨부 이미지 1/2 확대」",
+   "tabs": [
+    "button「다음 이미지」 ∈dialog(named)",
+    "BODY",
+    "button「내려받기」 ∈dialog(named)",
+    "button「닫기」 ∈dialog(named)",
+    "button「다음 이미지」 ∈dialog(named)",
+    "BODY"
+   ],
+   "tabsInsideDialog": "4/6",
+   "afterClose": "button「첨부 이미지 1/2 확대」"
+  }
+ },
+ "mobile": {
+  "docsTabOrder": [
+   "a「마이페이지」",
+   "input「file」",
+   "button「스토어와 동기화」",
+   "button「클레임처리지침.pdf 삭제」",
+   "button「설계변경관리규정.docx 삭제」",
+   "button「스캔본.pdf 삭제」",
+   "BODY",
+   "a「마이페이지」"
+  ],
+  "uploadReachable": true,
+  "deleteNames": [
+   "클레임처리지침.pdf 삭제",
+   "설계변경관리규정.docx 삭제",
+   "스캔본.pdf 삭제"
+  ],
+  "uploadFocusOutline": {
+   "focused": true,
+   "labelOutline": "solid 2px"
+  },
+  "confirm": {
+   "opener": "button「클레임처리지침.pdf 삭제」",
+   "tabs": [
+    "button「삭제」 ∈dialog(named)",
+    "BODY",
+    "button「취소」 ∈dialog(named)",
+    "button「삭제」 ∈dialog(named)",
+    "BODY",
+    "button「취소」 ∈dialog(named)"
+   ],
+   "tabsInsideDialog": "4/6",
+   "afterClose": "button「클레임처리지침.pdf 삭제」"
+  },
+  "issued": {
+   "opener": "button「김철수 비밀번호 초기화」",
+   "tabs": [
+    "BODY",
+    "button「닫기」 ∈dialog(named)",
+    "BODY",
+    "button「닫기」 ∈dialog(named)"
+   ],
+   "tabsInsideDialog": "2/4",
+   "afterClose": "button「김철수 비밀번호 초기화」"
+  },
+  "drawer": {
+   "dialogs": [
+    {
+     "label": "대화 목록",
+     "modal": "true"
+    }
+   ],
+   "focusAfterOpen": "button「새 대화」 ∈dialog(named)",
+   "tabs": [
+    "button「클레임 처리 절차」 ∈dialog(named)",
+    "button「'클레임 처리 절차' 대화 삭제」 ∈dialog(named)",
+    "button「품질 보증 기간 문의」 ∈dialog(named)",
+    "button「'품질 보증 기간 문의' 대화 삭제」 ∈dialog(named)",
+    "button「관관리자홍길동」 ∈dialog(named)"
+   ],
+   "openAfterEsc": 0,
+   "focusAfterEsc": "button「대화 목록 열기」"
+  },
+  "logAriaBusy": "false",
+  "lightbox": {
+   "opener": "button「첨부 이미지 1/2 확대」",
+   "tabs": [
+    "button「다음 이미지」 ∈dialog(named)",
+    "BODY",
+    "button「내려받기」 ∈dialog(named)",
+    "button「닫기」 ∈dialog(named)",
+    "button「다음 이미지」 ∈dialog(named)",
+    "BODY"
+   ],
+   "tabsInsideDialog": "4/6",
+   "afterClose": "button「첨부 이미지 1/2 확대」"
+  }
+ }
+}
