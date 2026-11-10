@@ -83,6 +83,21 @@ describe('사용자 관리 화면', () => {
     expect(screen.queryByText(/사용자 0명/)).not.toBeInTheDocument()
   })
 
+  // #657 : 첫 로드 동안은 스켈레톤, 실패하면 스켈레톤을 걷고 빈 목록 상자(테두리 · 그림자만 남던)도 그리지 않는다
+  it('첫 로드 중에는 스켈레톤, 실패하면 스켈레톤과 빈 목록을 걷고 오류만 남는다', async () => {
+    const first = deferred<never>()
+    vi.mocked(listAdminUsers).mockReturnValueOnce(first.promise)
+    renderPage()
+    await waitFor(() => expect(listAdminUsers).toHaveBeenCalled())
+    expect(screen.getByTestId('admin-list-skeleton')).toBeInTheDocument()
+
+    await act(async () => first.reject(new Error('503')))
+
+    expect(await screen.findByText('목록을 불러오지 못했습니다')).toBeInTheDocument()
+    expect(screen.queryByTestId('admin-list-skeleton')).toBeNull()
+    expect(screen.queryByRole('list')).toBeNull()
+  })
+
   /** 임시 비밀번호는 "다시 못 본다"와 "대상이 로그아웃된다"를 함께 알려야 한다 */
   it('임시 비밀번호 발급이 두 가지 사실을 함께 알린다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([

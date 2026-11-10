@@ -14,13 +14,21 @@ describe('Markdown 표', () => {
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(clientWidth)
   }
 
-  it('스크롤 상자는 이름 있는 region 이고 Tab 으로 닿는다 · 셀에 폭 상한', () => {
-    sizes(700, 700)
+  it('넘치는 표의 스크롤 상자는 이름 있는 region 이고 Tab 으로 닿는다 · 셀에 폭 상한', () => {
+    sizes(900, 358)
     render(<Markdown text={TABLE} />)
     const region = screen.getByRole('region', { name: '표' })
     expect(region.tabIndex).toBe(0)
     expect(region.querySelector('table')).not.toBeNull()
     for (const cell of region.querySelectorAll('th, td')) expect(cell.className).toContain('max-w-[20rem]')
+  })
+
+  // #657 : 넘치지 않는 표마다 붙이면 답변의 표 수만큼 「표」 랜드마크 · Tab 정지점이 늘었다
+  it('상자 안에 들어오는 표는 region · Tab 정지점이 없다', () => {
+    sizes(700, 700)
+    const { container } = render(<Markdown text={TABLE} />)
+    expect(screen.queryByRole('region')).toBeNull()
+    expect(container.querySelector('table')!.parentElement).not.toHaveAttribute('tabindex')
   })
 
   it('표가 상자 안에 들어오면 페이드가 없다', () => {

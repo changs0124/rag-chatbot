@@ -91,6 +91,21 @@ describe('문서 관리 화면', () => {
     expect(screen.queryByText('아직 문서가 없습니다')).not.toBeInTheDocument()
   })
 
+  // #657 : 첫 로드 동안은 스켈레톤, 실패하면 스켈레톤을 걷고 빈 목록 상자(테두리 · 그림자만 남던)도 그리지 않는다
+  it('첫 로드 중에는 스켈레톤, 실패하면 스켈레톤과 빈 목록을 걷고 오류만 남는다', async () => {
+    const first = deferred<never>()
+    vi.mocked(listDocuments).mockReturnValueOnce(first.promise)
+    renderPage()
+    await waitFor(() => expect(listDocuments).toHaveBeenCalled())
+    expect(screen.getByTestId('admin-list-skeleton')).toBeInTheDocument()
+
+    await act(async () => first.reject(new Error('503')))
+
+    expect(await screen.findByText('목록을 불러오지 못했습니다')).toBeInTheDocument()
+    expect(screen.queryByTestId('admin-list-skeleton')).toBeNull()
+    expect(screen.queryByRole('list')).toBeNull()
+  })
+
   // #483 : 첫 로드 실패는 폴링도 돌지 않는다 - 배너의 「다시 시도」로 다시 부르고, 성공하면 배너가 걷힌다
   it('첫 로드 실패 배너의 다시 시도가 목록을 다시 읽는다', async () => {
     vi.mocked(listDocuments).mockRejectedValueOnce(new Error('503'))

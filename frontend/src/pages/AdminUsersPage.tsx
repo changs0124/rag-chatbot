@@ -214,8 +214,9 @@ function UsersSection({
         </form>
         {loading ? (
           <AdminListSkeleton rows={3} />
-        ) : (
-        // 한 장의 카드 + 행 구분선(#646). 행 머리에 이름 첫 글자 아바타, 역할은 배지
+        ) : loaded ? (
+        // 한 장의 카드 + 행 구분선(#646). 행 머리에 이름 첫 글자 아바타, 역할은 배지.
+        // 첫 로드가 실패하면(loaded 아님) 그리지 않는다 - 빈 목록에도 테두리 · 그림자가 붙어 배너 아래 빈 상자로 남았다(#657)
         <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line bg-raised shadow-[var(--shadow-card)]">
           {users.map((person) => (
             <li
@@ -275,7 +276,7 @@ function UsersSection({
             </li>
           ))}
         </ul>
-        )}
+        ) : null}
       </section>
 
       {pendingReset && (

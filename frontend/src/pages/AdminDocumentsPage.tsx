@@ -278,8 +278,9 @@ function DocumentsSection({
               문서를 올리면 답변에 출처가 붙기 시작합니다.
             </p>
           </div>
-        ) : (
-          // 한 장의 카드 + 행 구분선(#646) - 행마다 회색 알약을 쌓던 목록을 표처럼 읽히게
+        ) : loaded ? (
+          // 한 장의 카드 + 행 구분선(#646) - 행마다 회색 알약을 쌓던 목록을 표처럼 읽히게.
+          // 첫 로드가 실패하면(loaded 아님) 그리지 않는다 - 빈 목록에도 테두리 · 그림자가 붙어 배너 아래 빈 상자로 남았다(#657)
           <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line bg-raised shadow-[var(--shadow-card)]">
             {documents.map((doc) => (
               <li
@@ -317,7 +318,7 @@ function DocumentsSection({
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
       </section>
 
       {/* 모달은 fixed 라 골격 안에 두어도 화면 기준으로 뜬다 */}
