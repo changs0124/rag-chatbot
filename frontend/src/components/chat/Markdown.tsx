@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkCjkFriendly from 'remark-cjk-friendly'
@@ -20,6 +21,41 @@ function hostOf(href: string | undefined): string | null {
   } catch {
     return null
   }
+}
+
+// 넓은 표는 가로로 스크롤한다(#643). 키보드로도 스크롤하게 상자에 포커스를 주고, 오른쪽에 가린 열이 남아 있을 때만
+// 페이드로 넘침을 알린다 - 데스크톱처럼 표가 상자 안에 들어오면 페이드가 없다
+function TableScroll({ children }: { children?: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [more, setMore] = useState(false)
+  const update = useCallback(() => {
+    const el = ref.current
+    if (el) setMore(el.scrollWidth - el.clientWidth - el.scrollLeft > 1)
+  }, [])
+  useEffect(() => {
+    update()
+    const el = ref.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    // 상자 폭(화면 회전)과 표 폭(스트리밍으로 셀이 늘어남)이 바뀔 때 다시 잰다
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    if (el.firstElementChild) ro.observe(el.firstElementChild)
+    return () => ro.disconnect()
+  }, [update])
+  return (
+    <div className="relative my-2">
+      <div ref={ref} onScroll={update} tabIndex={0} role="region" aria-label="표" className="max-w-full overflow-x-auto">
+        <table className="w-max min-w-full border-collapse text-[14px]">{children}</table>
+      </div>
+      {more && (
+        <div
+          data-testid="table-fade"
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-canvas to-transparent"
+        />
+      )}
+    </div>
+  )
 }
 
 const components: Components = {
@@ -52,18 +88,16 @@ const components: Components = {
       {children}
     </pre>
   ),
-  table: ({ children }) => (
-    <div className="my-2 max-w-full overflow-x-auto">
-      <table className="w-max min-w-full border-collapse text-[14px]">{children}</table>
-    </div>
-  ),
+  table: ({ children }) => <TableScroll>{children}</TableScroll>,
+  // 셀 폭 상한 - 긴 셀이 한 줄로 늘어 표가 상자를 넘지 않게 줄바꿈시킨다(#643). 하한(min-w)을 주면 모바일에서
+  // 긴 셀이 좁게 눌려 행이 300px 넘게 길어져 상한만 둔다
   th: ({ children, style }) => (
-    <th style={style} className="border border-line bg-surface px-2.5 py-1.5 text-left font-semibold">
+    <th style={style} className="max-w-[20rem] border border-line bg-surface px-2.5 py-1.5 text-left font-semibold">
       {children}
     </th>
   ),
   td: ({ children, style }) => (
-    <td style={style} className="border border-line px-2.5 py-1.5 align-top">
+    <td style={style} className="max-w-[20rem] border border-line px-2.5 py-1.5 align-top">
       {children}
     </td>
   ),

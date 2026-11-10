@@ -1,0 +1,80 @@
+{
+ "desktop": {
+  "table": {
+   "tableW": 891,
+   "boxW": 720,
+   "overflow": true,
+   "rows": [
+    36,
+    36,
+    36
+   ],
+   "wrapTabIndex": -1,
+   "wrapRole": null,
+   "wrapLabel": null,
+   "fade": null,
+   "box": {
+    "x": 492,
+    "y": 152.25,
+    "w": 720,
+    "h": 108.25
+   }
+  },
+  "fadeVisible": null,
+  "textarea5": {
+   "h": 40,
+   "sh": 136
+  },
+  "textarea11": {
+   "h": 40,
+   "sh": 280
+  },
+  "composerBox": {
+   "x": 468,
+   "y": 834,
+   "w": 768,
+   "h": 54
+  },
+  "textareaOneLine": 40,
+  "sendBtn": 40
+ },
+ "mobile": {
+  "table": {
+   "tableW": 891,
+   "boxW": 358,
+   "overflow": true,
+   "rows": [
+    36,
+    36,
+    36
+   ],
+   "wrapTabIndex": -1,
+   "wrapRole": null,
+   "wrapLabel": null,
+   "fade": null,
+   "box": {
+    "x": 16,
+    "y": 360.375,
+    "w": 358,
+    "h": 108.25
+   }
+  },
+  "fadeVisible": null,
+  "textarea5": {
+   "h": 44,
+   "sh": 140
+  },
+  "textarea11": {
+   "h": 44,
+   "sh": 284
+  },
+  "composerBox": {
+   "x": 16,
+   "y": 774,
+   "w": 358,
+   "h": 58
+  },
+  "textareaOneLine": 44,
+  "sendBtn": 44
+ }
+}
