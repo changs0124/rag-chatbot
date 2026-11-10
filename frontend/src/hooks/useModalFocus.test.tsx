@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { useRef, useState } from 'react'
+import { StrictMode, useRef, useState } from 'react'
 import { useModalFocus } from './useModalFocus'
 
 /*
@@ -102,5 +102,39 @@ describe('useModalFocus', () => {
     expect(screen.getByRole('button', { name: '안쪽 열기' })).not.toHaveAttribute('inert')
     expect(screen.getByRole('button', { name: '안쪽 열기' })).toHaveFocus()
     expect(screen.getByTestId('page')).toHaveAttribute('inert')
+  })
+
+  // #656 : StrictMode(개발)는 효과를 두 번 돌린다 - 첫 정리가 포커스를 연 요소로 돌려놓아도 다시 data-autofocus 로 간다
+  it('StrictMode 에서도 첫 포커스는 data-autofocus 요소다', () => {
+    function Two() {
+      const ref = useModalFocus<HTMLDivElement>()
+      return (
+        <div ref={ref} role="dialog" aria-modal="true" aria-label="창">
+          <button>내려받기</button>
+          <button autoFocus data-autofocus>
+            닫기
+          </button>
+        </div>
+      )
+    }
+    function Opener() {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>열기</button>
+          {open && <Two />}
+        </>
+      )
+    }
+    render(
+      <StrictMode>
+        <Opener />
+      </StrictMode>,
+    )
+    const opener = screen.getByRole('button', { name: '열기' })
+    opener.focus()
+    fireEvent.click(opener)
+
+    expect(screen.getByRole('button', { name: '닫기' })).toHaveFocus()
   })
 })

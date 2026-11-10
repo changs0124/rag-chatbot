@@ -96,4 +96,28 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
     expect(dialog).toHaveAccessibleName(/삭제/)
     expect(within(dialog).getByRole('button', { name: '취소' })).toHaveFocus()
   })
+
+  // #656 : 대화를 지우면 연 ✕ 가 행째 사라진다 - 포커스를 「새 대화」로 돌려 드로어 안이면 Esc 도 계속 먹게 한다
+  it('대화를 지워 행이 사라지면 포커스가 새 대화 버튼으로 간다', () => {
+    const props = { activeId: null, onSelect: vi.fn(), onNew: vi.fn(), onDelete: vi.fn(), userName: '사용자', onLogout: vi.fn() }
+    const { rerender } = render(
+      <BrowserRouter>
+        <Sidebar conversations={[conv('c1', new Date())]} {...props} />
+      </BrowserRouter>,
+    )
+    // 브라우저는 누른 버튼에 포커스를 준다 - jsdom 은 안 주므로 직접 준다(확인 창은 닫힐 때 이 ✕ 로 포커스를 돌려준다)
+    const x = screen.getByRole('button', { name: "'c1' 대화 삭제" })
+    x.focus()
+    fireEvent.click(x)
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+    expect(x).toHaveFocus()
+    rerender(
+      <BrowserRouter>
+        <Sidebar conversations={[]} {...props} />
+      </BrowserRouter>,
+    )
+
+    expect(props.onDelete).toHaveBeenCalledWith('c1')
+    expect(screen.getByRole('button', { name: '새 대화' })).toHaveFocus()
+  })
 })
