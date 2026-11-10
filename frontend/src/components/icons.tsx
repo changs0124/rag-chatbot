@@ -145,10 +145,26 @@ export function IconClock({ className }: IconProps) {
 export function IconSettings({ className }: IconProps) {
   return (
     <Svg className={className}>
+      {/* 선을 원 자리에서 끊는다 - 원 속을 면 색으로 메우면 hover 배경이 바뀔 때 흰 원판이 드러났다(#675) */}
+      <line x1="4" y1="7" x2="6.8" y2="7" />
+      <line x1="11.2" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="17" x2="12.8" y2="17" />
+      <line x1="17.2" y1="17" x2="20" y2="17" />
+      <circle cx="9" cy="7" r="2.2" />
+      <circle cx="15" cy="17" r="2.2" />
+    </Svg>
+  )
+}
+
+// 대화 삭제(#675) - 닫기 X 와 같은 모양이면 전체 화면 드로어(#669)의 닫기와 헷갈린다
+export function IconTrash({ className }: IconProps) {
+  return (
+    <Svg className={className}>
       <line x1="4" y1="7" x2="20" y2="7" />
-      <line x1="4" y1="17" x2="20" y2="17" />
-      <circle cx="9" cy="7" r="2.2" fill="var(--c-raised)" />
-      <circle cx="15" cy="17" r="2.2" fill="var(--c-raised)" />
+      <path d="M10 7V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2" />
+      <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
     </Svg>
   )
 }

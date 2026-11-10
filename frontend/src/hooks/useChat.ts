@@ -152,6 +152,9 @@ export function useChat() {
   // 첫 목록이 아직 안 왔다(#663) - 빈 배열과 「아직 모름」을 가른다. 실패는 error 가 따로 알린다(#385) - 실패해도 내려서
   // 스켈레톤이 오류 배너와 함께 남지 않게 한다
   const [conversationsLoading, setConversationsLoading] = useState(true)
+  // 목록을 한 번도 받지 못했다(#675) - error 배너는 대화 선택 · 새 대화 · 전송이 걷어 가므로, 그 뒤에도 사이드바가
+  // 「대화가 없습니다」로 거짓말하지 않게 따로 든다. 목록을 한 번이라도 받으면 내린다
+  const [conversationsFailed, setConversationsFailed] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   // 고른 대화의 이력이 오는 중 - 그동안 본문은 직전 대화 대신 로딩 표시를 보인다(#291)
@@ -195,7 +198,9 @@ export function useChat() {
     const mine = ++listGen.current
     listConversations()
       .then((list) => {
-        if (listGen.current === mine) setConversations(list)
+        if (listGen.current !== mine) return
+        setConversations(list)
+        setConversationsFailed(false)
       })
       .catch(() => {})
   }, [])
@@ -213,10 +218,26 @@ export function useChat() {
       .then((list) => {
         if (listGen.current === mine) setConversations(list)
       })
-      .catch(() => setError('대화 목록을 불러오지 못했습니다'))
+      .catch(() => {
+        setError('대화 목록을 불러오지 못했습니다')
+        if (firstLoadGen.current === first) setConversationsFailed(true)
+      })
       .finally(() => {
         if (firstLoadGen.current === first) setConversationsLoading(false)
       })
+  }, [])
+
+  // 사이드바의 「다시 시도」(#675) - 다시 읽는 동안은 첫 로드처럼 스켈레톤을 보이고, 또 실패하면 그 자리에 남는다
+  const retryConversations = useCallback(() => {
+    const mine = ++listGen.current
+    setConversationsLoading(true)
+    listConversations()
+      .then((list) => {
+        if (listGen.current === mine) setConversations(list)
+        setConversationsFailed(false)
+      })
+      .catch(() => {})
+      .finally(() => setConversationsLoading(false))
   }, [])
 
   /**
@@ -640,6 +661,8 @@ export function useChat() {
   return {
     conversations,
     conversationsLoading,
+    conversationsFailed,
+    retryConversations,
     activeId,
     messages,
     loadingMessages,

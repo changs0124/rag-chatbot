@@ -156,6 +156,8 @@ export default function ChatPage() {
       userName={user?.name ?? ''}
       onLogout={logout}
       loading={chat.conversationsLoading}
+      failed={chat.conversationsFailed}
+      onRetry={chat.retryConversations}
     />
   )
 

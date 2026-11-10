@@ -226,7 +226,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
   | 주요 | `accent` 면 · 흰 글자 · hover `accent-hover` · `h-11`(44px) | `components/primaryButton.ts` 의 `primaryButtonClass`(#330). 로그인은 `h-12` 전폭이라 따로 |
   | 보조 | `raised` 면 + 1px `line` 경계 · `ink` 13px medium · hover `surface` · 모바일 `min-h-11` / 데스크톱 `h-8` | `components/actionButton.ts` 의 `actionButtonClass` — 관리 목록 행 끝(동기화 · 초기화 · 삭제) · 임시 비밀번호 창의 「복사」(#662). 삭제는 hover 에 `danger` 글자 · 경계 |
   | 위험 | `danger` 면 · 흰 글자 · hover `brightness-95` · `h-11 md:h-10` | 확인 모달의 확정 버튼 |
-  | 아이콘 | 투명 면 · hover `surface`(보내기는 `accent` 면 · hover `accent-hover`). 반경은 자리마다 : 입력창 안 + · 보내기 · 중단과 확대 보기 이전/다음은 `rounded-full`, 채팅 헤더 · 뒤로가기는 `rounded-xl`, 확대 보기 내려받기 · 닫기는 `rounded-lg`, 대화 삭제 ✕ · 첨부 재시도는 `rounded-md` | 위 각 컴포넌트 |
+  | 아이콘 | 투명 면 · hover `surface`(보내기는 `accent` 면 · hover `accent-hover`). 반경은 자리마다 : 입력창 안 + · 보내기 · 중단과 확대 보기 이전/다음은 `rounded-full`, 채팅 헤더 · 뒤로가기는 `rounded-xl`, 확대 보기 내려받기 · 닫기는 `rounded-lg`, 대화 삭제(휴지통) · 첨부 재시도는 `rounded-md` | 위 각 컴포넌트 |
 
   호출부는 바깥 여백 · 폭만 덧붙인다. 설정 · 관리자 상단의 뒤로가기와 페이지 골격은 `BackLink` · `PageShell` 이 가진다.
   화면 이름은 「설정」 하나다 — 메뉴 · 제목 · 관리 화면 뒤로가기가 같은 말을 쓴다(#646)
@@ -235,8 +235,11 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
   행 머리에 타일(문서는 확장자, 사용자는 이름 첫 글자), 이름 14px medium, 메타 12px. 모바일에서 버튼이 한 줄에 안 들어가면 아래 줄로 내린다
 - **배지** — `rounded-full` · 11~12px medium · 면 + 글자 짝은 토큰 대비 표의 쌍만 쓴다 : 완료 · 관리자 `accent-soft`/`accent`, 처리중 · 사용자 `highlight`/`highlight-ink`, 실패 `danger-soft`/`danger`. 아이콘은 보조(`aria-hidden`)
 - **로딩 · 빈 상태 · 오류** — 첫 로드는 스켈레톤(대화 이력 : 질문 말풍선 + 답변 줄, 관리 목록 : `AdminListSkeleton` 행, 사이드바 대화 목록 : 묶음 라벨 + 대화 행 — #663), 실패하면 스켈레톤을 걷고 오류 배너만 남긴다(멈춘 로딩으로 읽히지 않게).
-  빈 상태는 카드 안에 「무엇이 없는지 + 무엇을 하면 되는지」 두 문장. 사이드바의 「대화가 없습니다」는 첫 목록이 와서 비었을 때만 보인다 — 오기 전에 보이면 대화가 있는 사용자에게 잠깐 「없다」고 말한다(#663, `useChat` 의 `conversationsLoading`)
+  빈 상태는 카드 안에 「무엇이 없는지 + 무엇을 하면 되는지」 두 문장. 사이드바의 「대화가 없습니다」는 첫 목록이 와서 비었을 때만 보인다 — 오기 전에 보이면 대화가 있는 사용자에게 잠깐 「없다」고 말한다(#663, `useChat` 의 `conversationsLoading`).
+  목록을 한 번도 받지 못했으면 그 자리는 「대화 목록을 불러오지 못했습니다 · 다시 시도」다 — 오류 배너는 대화 선택 · 새 대화가 걷어 가도 이 자리는 남는다(#675, `conversationsFailed`).
+  관리 화면 배너의 「다시 시도」는 다시 읽는 동안 막히고 「다시 읽는 중…」으로 바뀐다(#675)
 - **아이콘** : 지금의 자체 SVG 세트(`frontend/src/components/icons.tsx`)를 계속 쓴다. 굵기 1.8 유지.
+  같은 모양을 다른 뜻에 쓰지 않는다 — X 는 닫기(드로어 · 확대 보기 · 첨부 제거), 대화 삭제는 휴지통이다(#675, 전체 화면 드로어 #669 의 닫기와 헷갈렸다)
   **이모지·장식 기호(📄 ⚠ ● ← → 등)를 화면에 쓰지 않는다**(#192) — 글꼴·OS 마다 모양이 다르고 일부는 컬러 이모지로 떠서
   무채색 화면에서 혼자 튄다. 필요한 모양은 같은 규약(24 격자 · 1.8 stroke · `currentColor`)으로 `icons.tsx` 에 더한다.
   아이콘은 뜻을 혼자 전하지 않는다 — 옆 글자를 남기고 아이콘은 `aria-hidden`(Svg 기본값).
@@ -272,7 +275,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
 - 입력창 하단에 `env(safe-area-inset-bottom)` 만큼 여백을 준다(홈 인디케이터 겹침 방지)
 - 터치 대상은 최소 44×44px. 헤더 아이콘 버튼·입력 필드·주요 버튼이 모두 이 높이를 지킨다.
   **모바일(md 미만)에서만 키우고 데스크톱 값은 `md:` 로 그대로 둔다** — 마우스는 작은 대상을 정확히 누르고, 데스크톱 밀도를 바꿀 이유가 없다
-- 시각 크기를 키우지 않고 누르는 영역만 넓힐 때는 패딩으로 한다(예 : 대화 삭제 ✕ 는 아이콘 16 + `p-3.5`).
+- 시각 크기를 키우지 않고 누르는 영역만 넓힐 때는 패딩으로 한다(예 : 대화 삭제 휴지통은 아이콘 16 + `p-3.5`).
   글자 링크(뒤로가기)는 `h-11` 에 `-ml-2 px-2` 로 글자 위치를 유지한다
 - **설정·관리자 상단은 채팅 헤더와 같은 높이다** — 위 여백 `pt-2` + 44px 뒤로가기 = 채팅 헤더 `min-h-14` 의 버튼 줄과 같다
 - **로그인은 한 겹 카드다**(#646) — 이중 테두리를 걷어(§5) 모바일도 데스크톱과 같은 카드(`px-5 py-7`, 페이지 `px-4`)다.

@@ -141,7 +141,7 @@ export default function AdminDocumentsPage() {
         답변 근거로 쓰이는 사내 문서입니다. 여기 없는 내용은 답변에 출처로 붙지 않습니다.
       </p>
 
-      <AdminErrorBanners listError={listError} error={error} loaded={loaded} onRetry={() => void refresh()} />
+      <AdminErrorBanners listError={listError} error={error} loaded={loaded} onRetry={refresh} />
 
       <DocumentsSection documents={documents} loaded={loaded} loading={!loaded && !listError} refresh={refresh} setError={setError} />
     </PageShell>

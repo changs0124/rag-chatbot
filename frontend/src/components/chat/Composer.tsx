@@ -77,6 +77,20 @@ export default function Composer({
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight}px`
   }, [text])
+  // 같은 대체 경로에서 폭이 바뀌면(화면 회전 · 사이드바 폭 조절) 줄 수가 달라지니 다시 잰다(#675). 높이를 바꿔도 다시 불리지 않게 폭만 본다
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el || typeof ResizeObserver === 'undefined' || (typeof CSS !== 'undefined' && CSS.supports?.('field-sizing', 'content'))) return
+    let width = el.clientWidth
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth === width) return
+      width = el.clientWidth
+      el.style.height = 'auto'
+      el.style.height = `${el.scrollHeight}px`
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   // 언마운트 정리용 - 정리 시점에 최신 목록을 봐야 해서 상태가 아니라 ref 로 들고 있음
   const draftsRef = useRef<Draft[]>([])
   draftsRef.current = drafts
@@ -374,7 +388,8 @@ export default function Composer({
             // leading-relaxed(24.375)면 md 에서 버튼이 2.2px 아래로 처진다(#218).
             // 모바일 글자는 16px - iOS 는 16px 미만 입력에 포커스하면 화면을 확대해 버린다(#221)
             // 상한은 모바일이 더 낮다 - 가상 키보드가 열리면 대화가 보이는 칸이 좁아진다(#643)
-            className="max-h-32 md:max-h-40 [field-sizing:content] flex-1 resize-none bg-transparent px-1 py-2.5 text-base leading-6 text-ink md:py-2 md:text-[15px] outline-none placeholder:text-ink-muted"
+            // min-w-0 - flex 항목의 최소 폭이 내용 기준(field-sizing)이 되어 공백 없는 긴 글이 보내기 버튼을 밀지 않게(#675)
+            className="max-h-32 md:max-h-40 [field-sizing:content] min-w-0 flex-1 resize-none bg-transparent px-1 py-2.5 text-base leading-6 text-ink md:py-2 md:text-[15px] outline-none placeholder:text-ink-muted"
           />
 
           {streaming && !settling ? (

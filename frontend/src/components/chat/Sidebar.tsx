@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import type { Conversation } from '../../lib/types'
-import { IconChevronRight, IconClose, IconLogout, IconPlus, IconSettings } from '../icons'
+import { IconChevronRight, IconLogout, IconPlus, IconSettings, IconTrash } from '../icons'
 import Logo from '../Logo'
 import ConfirmModal from '../ConfirmModal'
 
@@ -37,6 +37,8 @@ export default memo(function Sidebar({
   userName,
   onLogout,
   loading = false,
+  failed = false,
+  onRetry,
 }: {
   conversations: Conversation[]
   activeId: string | null
@@ -47,6 +49,9 @@ export default memo(function Sidebar({
   onLogout: () => void
   /** 첫 목록이 아직 안 왔다(#663) - 이때 빈 목록은 「없음」이 아니다 */
   loading?: boolean
+  /** 목록을 아직 한 번도 받지 못했다(#675) - 오류 배너가 걷혀도 빈 자리는 「없음」이 아니라 「못 불러옴」이다 */
+  failed?: boolean
+  onRetry?: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Conversation | null>(null)
@@ -78,7 +83,7 @@ export default memo(function Sidebar({
         <button
           ref={newChatRef}
           onClick={onNew}
-          className="flex h-11 w-full items-center gap-2 rounded-lg border border-line bg-raised px-3 text-sm font-medium text-ink shadow-[var(--shadow-card)] transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas md:h-10"
+          className="flex h-11 w-full items-center gap-2 rounded-lg border border-line bg-raised px-3 text-sm font-medium text-ink shadow-[var(--shadow-card)] transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface md:h-10"
         >
           <IconPlus className="h-4 w-4 text-accent" />새 대화
         </button>
@@ -125,15 +130,26 @@ export default memo(function Sidebar({
                     aria-label={`'${c.title}' 대화 삭제`}
                     className="shrink-0 rounded-md p-3.5 text-ink-muted opacity-100 md:p-1 transition duration-150 ease-[var(--ease-out-quint)] hover:text-danger md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100"
                   >
-                    <IconClose className="h-4 w-4" />
+                    <IconTrash className="h-4 w-4" />
                   </button>
                 </div>
               ))}
             </div>
           </div>
         ))}
-        {conversations.length === 0 && !loading && (
+        {conversations.length === 0 && !loading && !failed && (
           <p className="px-3 py-6 text-center text-[13px] text-ink-muted">대화가 없습니다</p>
+        )}
+        {/* 못 불러온 것을 「없다」고 말하지 않는다(#385 · #663 취지, #675) - 오류 배너는 다른 동작에 걷히지만 이 자리는 남는다 */}
+        {conversations.length === 0 && !loading && failed && (
+          <div className="px-3 py-6 text-center text-[13px] text-ink-muted">
+            <p>대화 목록을 불러오지 못했습니다</p>
+            {onRetry && (
+              <button type="button" onClick={onRetry} className="mt-1 min-h-11 px-2 font-medium text-accent underline md:min-h-0">
+                다시 시도
+              </button>
+            )}
+          </div>
         )}
       </nav>
 
@@ -155,9 +171,10 @@ export default memo(function Sidebar({
 
         {menuOpen && (
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+            {/* 폭 조절 손잡이(z-10, #664)보다 위 - 같은 층이면 뒤에 오는 손잡이가 위에 그려져 그 자리를 누르면 메뉴가 안 닫혔다(#675) */}
+            <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
             {/* 항목은 모바일 44px · 데스크톱 36px(#646 터치 하한). 이름은 화면 제목 「설정」과 맞춘다 */}
-            <div className="absolute right-2 bottom-full left-2 z-20 mb-1 overflow-hidden rounded-xl border border-line bg-raised p-1 shadow-[var(--shadow-lifted)]">
+            <div className="absolute right-2 bottom-full left-2 z-30 mb-1 overflow-hidden rounded-xl border border-line bg-raised p-1 shadow-[var(--shadow-lifted)]">
               <Link
                 to="/me"
                 onClick={() => setMenuOpen(false)}

@@ -849,6 +849,37 @@ describe('Composer', () => {
       expect(ta.style.height).toBe('96px')
     })
 
+    it('field-sizing 을 모르는 브라우저는 폭이 바뀌면 높이를 다시 잰다(#675)', () => {
+      vi.stubGlobal('CSS', { supports: () => false })
+      let cb: ResizeObserverCallback = () => {}
+      vi.stubGlobal('ResizeObserver', class {
+        constructor(c: ResizeObserverCallback) { cb = c }
+        observe() {}
+        disconnect() {}
+      })
+      let width = 300
+      vi.spyOn(HTMLTextAreaElement.prototype, 'clientWidth', 'get').mockImplementation(() => width)
+      const sh = vi.spyOn(HTMLTextAreaElement.prototype, 'scrollHeight', 'get').mockReturnValue(48)
+      render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+      const ta = screen.getByRole('textbox', { name: '메시지 입력' }) as HTMLTextAreaElement
+      fireEvent.change(ta, { target: { value: '긴 글' } })
+      expect(ta.style.height).toBe('48px')
+
+      // 폭이 같으면(높이만 바뀐 통지) 다시 재지 않는다
+      sh.mockReturnValue(72)
+      cb([], {} as ResizeObserver)
+      expect(ta.style.height).toBe('48px')
+      // 폭이 줄어 줄 수가 늘면 다시 잰다
+      width = 200
+      cb([], {} as ResizeObserver)
+      expect(ta.style.height).toBe('72px')
+    })
+
+    it('긴 글이 보내기 버튼을 밀지 않게 입력칸의 최소 폭을 풀어 둔다(#675)', () => {
+      render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+      expect(screen.getByRole('textbox', { name: '메시지 입력' }).className).toContain('min-w-0')
+    })
+
     it('field-sizing 을 아는 브라우저는 인라인 높이를 건드리지 않는다', () => {
       vi.stubGlobal('CSS', { supports: () => true })
       render(<Composer onSend={accept} streaming={false} onStop={noop} />)

@@ -160,3 +160,45 @@ describe('Sidebar 첫 로드 (#663)', () => {
     expect(screen.queryByTestId('conversation-list-skeleton')).not.toBeInTheDocument()
   })
 })
+
+// #675 : 못 불러온 목록을 「없다」고 말하지 않는다 · 삭제는 휴지통 아이콘(전체 화면 드로어의 닫기 X 와 구분)
+describe('Sidebar 목록 실패 · 삭제 아이콘 (#675)', () => {
+  const renderSidebar = (conversations: Conversation[], extra: { failed?: boolean; onRetry?: () => void } = {}) =>
+    render(
+      <BrowserRouter>
+        <Sidebar
+          conversations={conversations}
+          activeId={null}
+          onSelect={vi.fn()}
+          onNew={vi.fn()}
+          onDelete={vi.fn()}
+          userName="사용자"
+          onLogout={vi.fn()}
+          {...extra}
+        />
+      </BrowserRouter>,
+    )
+
+  it('목록을 못 불러왔으면 「대화가 없습니다」 대신 실패 문구와 다시 시도', () => {
+    const onRetry = vi.fn()
+    renderSidebar([], { failed: true, onRetry })
+    expect(screen.queryByText('대화가 없습니다')).not.toBeInTheDocument()
+    expect(screen.getByText('대화 목록을 불러오지 못했습니다')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+    expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('실패했어도 그 사이 만든 대화가 있으면 목록을 보인다', () => {
+    renderSidebar([conv('방금 만든 대화', new Date())], { failed: true })
+    expect(screen.getByText('방금 만든 대화')).toBeInTheDocument()
+    expect(screen.queryByText('대화 목록을 불러오지 못했습니다')).not.toBeInTheDocument()
+  })
+
+  it('대화 삭제 버튼은 X 가 아니라 휴지통 아이콘이다', () => {
+    renderSidebar([conv('c1', new Date())])
+    const svg = screen.getByRole('button', { name: "'c1' 대화 삭제" }).querySelector('svg')!
+    // 닫기 X 는 선 두 개뿐이다 - 휴지통은 뚜껑 손잡이 · 몸통 path 가 있다
+    expect(svg.querySelectorAll('path').length).toBeGreaterThan(0)
+    expect(svg.querySelectorAll('line').length).not.toBe(2)
+  })
+})

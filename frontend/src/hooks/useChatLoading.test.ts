@@ -159,6 +159,37 @@ describe('useChat 이력 불러오는 중', () => {
     expect(result.current.conversations.map((c) => c.id)).toEqual(['a'])
   })
 
+  /** 오류 배너는 다른 동작이 걷어 가므로 목록 실패를 따로 든다(#675) - 다시 시도가 성공하면 내린다 */
+  it('첫 로드가 실패하면 conversationsFailed 가 켜지고 오류가 걷혀도 남으며, 다시 시도가 성공하면 꺼진다', async () => {
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {})
+    expect(result.current.conversationsFailed).toBe(true)
+
+    act(() => result.current.newConversation())
+    expect(result.current.error).toBeNull()
+    expect(result.current.conversationsFailed).toBe(true)
+
+    const again = deferred<Conversation[]>()
+    vi.mocked(listConversations).mockReturnValueOnce(again.promise)
+    act(() => result.current.retryConversations())
+    expect(result.current.conversationsLoading).toBe(true)
+    await act(async () => again.resolve([conv('a')]))
+    expect(result.current.conversationsLoading).toBe(false)
+    expect(result.current.conversationsFailed).toBe(false)
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['a'])
+  })
+
+  it('다시 시도도 실패하면 실패 표시가 남고 로딩은 꺼진다', async () => {
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {})
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('still down'))
+    await act(async () => result.current.retryConversations())
+    expect(result.current.conversationsLoading).toBe(false)
+    expect(result.current.conversationsFailed).toBe(true)
+  })
+
   /** 대화 목록 첫 로드가 실패하면 「대화가 없습니다」가 아니라 오류로 알린다(#385, #77 · #359 와 같은 이유) */
   it('대화 목록을 처음 불러오지 못하면 오류를 띄운다', async () => {
     vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))
