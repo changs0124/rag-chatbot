@@ -95,81 +95,116 @@ describe('ChatPage 모바일 뷰포트 (#221)', () => {
     return target
   }
 
-  /** 높이 반영은 다음 프레임에 한 번(#668) - requestAnimationFrame 을 모아 두었다가 손으로 돌린다 */
-  function fakeFrames() {
-    const queue: FrameRequestCallback[] = []
-    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-      queue.push(cb)
-      return queue.length
-    })
-    const flush = () =>
-      act(() => {
-        for (const cb of queue.splice(0)) cb(performance.now())
-      })
-    return { raf, flush }
-  }
-
   afterEach(() => {
     Reflect.deleteProperty(window, 'visualViewport')
     Object.defineProperty(window, 'scrollY', { value: 0, configurable: true })
+    Object.defineProperty(window, 'innerHeight', { value: 768, configurable: true })
     vi.restoreAllMocks()
   })
 
+  /** 루트(헤더가 든 칼럼의 부모) */
+  const rootOf = () => screen.getByRole('banner').closest('div.flex-col')!.parentElement as HTMLElement
+  /** 키보드 높이는 innerHeight 별로 기억된다(모듈 상태) - 테스트마다 다른 innerHeight 를 써서 서로 섞이지 않게 한다 */
+  function layoutHeight(h: number) {
+    Object.defineProperty(window, 'innerHeight', { value: h, configurable: true })
+  }
+
   it('보이는 영역이 줄면 루트가 그 높이를 따르고 끌려 올라간 문서를 0 으로 되돌린다', () => {
+    layoutHeight(844)
     const vv = fakeVisualViewport(844)
-    const { flush } = fakeFrames()
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
     renderChatPage()
-    const root = screen.getByRole('banner').closest('div.flex-col')!.parentElement as HTMLElement
 
     vv.height = 500
     Object.defineProperty(window, 'scrollY', { value: 120, configurable: true })
     vv.dispatchEvent(new Event('resize'))
-    flush()
 
-    expect(root.style.height).toBe('500px')
+    expect(rootOf().style.height).toBe('500px')
     expect(scrollTo).toHaveBeenCalledWith(0, 0)
   })
 
-  // #668 : iOS 는 키보드 애니메이션 동안 resize · scroll 을 프레임마다 여러 번 보낸다 - 이벤트마다 반영하면
-  // 채팅 화면이 프레임마다 다시 그려져 키보드 반응이 굼떴다. 한 프레임에 한 번, 문서가 밀리지 않았으면 scrollTo 도 안 부른다
-  it('한 프레임 안의 여러 이벤트는 한 번만 반영하고, 문서가 밀리지 않았으면 scrollTo 를 부르지 않는다', () => {
-    const vv = fakeVisualViewport(844)
-    const { raf, flush } = fakeFrames()
+  // #668 : 이벤트마다 React 로 다시 그리지 않는다 - 높이는 루트에 바로 쓰고, 같은 값이면 건너뛰고, 문서가 밀리지 않았으면 scrollTo 도 안 부른다.
+  // #682 : 프레임을 기다리지 않는다(이벤트가 키보드 애니메이션 끝에 오는데 한 프레임 더 늦출 이유가 없다)
+  it('이벤트를 받는 즉시 반영하고, 문서가 밀리지 않았으면 scrollTo 를 부르지 않는다', () => {
+    layoutHeight(845)
+    const vv = fakeVisualViewport(845)
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
     renderChatPage()
-    const root = screen.getByRole('banner').closest('div.flex-col')!.parentElement as HTMLElement
-    raf.mockClear()
 
     for (const h of [800, 760, 720]) {
       vv.height = h
       vv.dispatchEvent(new Event('resize'))
-      vv.dispatchEvent(new Event('scroll'))
+      expect(rootOf().style.height).toBe(`${h}px`)
     }
-    expect(raf).toHaveBeenCalledTimes(1)
-    expect(root.style.height).toBe('')
-
-    flush()
-    expect(root.style.height).toBe('720px')
     expect(scrollTo).not.toHaveBeenCalled()
   })
 
   it('사용자가 확대한 동안에는 루트 높이도 문서 스크롤도 건드리지 않는다', () => {
     // 확대된 보이는 영역 높이를 루트에 넣으면 화면이 짧아져 입력 칸이 위로 솟는다(실기기 보고)
-    const vv = fakeVisualViewport(844)
-    const { flush } = fakeFrames()
+    layoutHeight(846)
+    const vv = fakeVisualViewport(846)
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
     renderChatPage()
-    const root = screen.getByRole('banner').closest('div.flex-col')!.parentElement as HTMLElement
 
     vv.scale = 1.2
     vv.height = 400
     Object.defineProperty(window, 'scrollY', { value: 120, configurable: true })
     vv.dispatchEvent(new Event('resize'))
-    flush()
+    fireEvent.focusOut(screen.getByRole('textbox', { name: '메시지 입력' }))
 
-    expect(root.style.height).toBe('')
+    expect(rootOf().style.height).toBe('')
     expect(scrollTo).not.toHaveBeenCalled()
+  })
+
+  // #682 : iOS 는 키보드가 다 내려간 뒤에야 resize 를 보내 그때서야 화면이 늘어났다 - 입력칸이 포커스를 잃는 순간 되돌린다
+  it('입력칸이 포커스를 잃으면 키보드가 내려가길 기다리지 않고 루트 높이를 바로 되돌린다', () => {
+    layoutHeight(847)
+    const vv = fakeVisualViewport(847)
+    renderChatPage()
+    const input = screen.getByRole('textbox', { name: '메시지 입력' })
+
+    vv.height = 500
+    vv.dispatchEvent(new Event('resize'))
+    expect(rootOf().style.height).toBe('500px')
+
+    fireEvent.focusOut(input, { relatedTarget: null })
+    expect(rootOf().style.height).toBe('')
+  })
+
+  it('다른 입력칸으로 포커스가 옮겨 가면(키보드가 그대로) 높이를 그대로 둔다', () => {
+    layoutHeight(848)
+    const vv = fakeVisualViewport(848)
+    renderChatPage()
+    const input = screen.getByRole('textbox', { name: '메시지 입력' })
+    const other = document.createElement('input')
+    document.body.appendChild(other)
+
+    vv.height = 500
+    vv.dispatchEvent(new Event('resize'))
+    fireEvent.focusOut(input, { relatedTarget: other })
+    expect(rootOf().style.height).toBe('500px')
+    other.remove()
+  })
+
+  // #682 : 열릴 때 Safari 가 화면 전체를 민 다음 줄어드는(두 번 움직임) 것을 줄인다 - 한 번 배운 키보드 높이만큼 포커스 순간 미리 줄인다
+  it('한 번 연 키보드 높이를 기억해 두고, 다음 포커스 때 그만큼 미리 줄인다(처음엔 모르므로 줄이지 않는다)', () => {
+    layoutHeight(849)
+    const vv = fakeVisualViewport(849)
+    renderChatPage()
+    const input = screen.getByRole('textbox', { name: '메시지 입력' })
+
+    fireEvent.focusIn(input)
+    expect(rootOf().style.height).toBe('')
+
+    vv.height = 549 // 키보드 300px 이 열림
+    vv.dispatchEvent(new Event('resize'))
+    fireEvent.focusOut(input, { relatedTarget: null })
+    vv.height = 849 // 키보드가 내려감
+    vv.dispatchEvent(new Event('resize'))
+    expect(rootOf().style.height).toBe('849px')
+
+    fireEvent.focusIn(input)
+    expect(rootOf().style.height).toBe('549px')
   })
 
   it('채팅 화면에 있는 동안만 문서 스크롤·튕김을 끄고, 떠나면 되돌린다', () => {
