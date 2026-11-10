@@ -173,6 +173,17 @@ describe('ChatPage 대화 불러오는 중 (#291)', () => {
   })
 })
 
+describe('ChatPage 본문 스크롤 상자 (#642)', () => {
+  // jsdom 은 레이아웃이 없어 밀림 자체는 못 잰다(브라우저 측정은 이슈 증거) - 원인인 기준 상자만 지킨다
+  it('스크롤 상자가 relative 라 목록 안 sr-only 줄이 문서 높이를 늘리지 않는다', () => {
+    renderChatPage()
+
+    const scroller = screen.getByText('무엇을 도와드릴까요?').closest('.overflow-y-auto')
+    expect(scroller).not.toBeNull()
+    expect(scroller).toHaveClass('relative')
+  })
+})
+
 describe('ChatPage 제목 수정 (#371)', () => {
   afterEach(() => {
     chatState.conversations = []
