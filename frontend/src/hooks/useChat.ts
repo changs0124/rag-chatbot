@@ -149,6 +149,9 @@ async function judgeEarlyAbort(
 
 export function useChat() {
   const [conversations, setConversations] = useState<Conversation[]>([])
+  // 첫 목록이 아직 안 왔다(#663) - 빈 배열과 「아직 모름」을 가른다. 실패는 error 가 따로 알린다(#385) - 실패해도 내려서
+  // 스켈레톤이 오류 배너와 함께 남지 않게 한다
+  const [conversationsLoading, setConversationsLoading] = useState(true)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   // 고른 대화의 이력이 오는 중 - 그동안 본문은 직전 대화 대신 로딩 표시를 보인다(#291)
@@ -199,13 +202,21 @@ export function useChat() {
 
   // 첫 로드 실패를 삼키면 「대화가 없습니다」로 보인다 - 없는 것과 못 불러온 것을 가른다(#385, #77 · #359 와 같은 이유)
   // 첫 로드도 세대를 잡는다(#588) - 아주 느린 첫 응답이 그 사이 만든 새 대화를 옛 목록으로 덮지 않게
+  // 로딩 표시는 마지막 첫 로드 요청이 끝날 때 내린다 - StrictMode(개발)는 효과를 두 번 돌려, 세대에 막힌 앞 요청이 먼저 끝나면
+  // 목록이 오기 전에 「대화가 없습니다」가 잠깐 보인다. 목록 세대(listGen)와 따로 두는 건 새 대화 추가 같은 고침이 올린 세대에
+  // 막혀도 로딩은 내려야 해서다
+  const firstLoadGen = useRef(0)
   useEffect(() => {
     const mine = ++listGen.current
+    const first = ++firstLoadGen.current
     listConversations()
       .then((list) => {
         if (listGen.current === mine) setConversations(list)
       })
       .catch(() => setError('대화 목록을 불러오지 못했습니다'))
+      .finally(() => {
+        if (firstLoadGen.current === first) setConversationsLoading(false)
+      })
   }, [])
 
   /**
@@ -628,6 +639,7 @@ export function useChat() {
 
   return {
     conversations,
+    conversationsLoading,
     activeId,
     messages,
     loadingMessages,
