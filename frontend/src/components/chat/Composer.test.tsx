@@ -824,4 +824,37 @@ describe('Composer', () => {
     // 회수할 길이 없는 미리보기 URL 을 만들지 않는다
     expect(createObjectURL.mock.calls.length).toBe(made)
   })
+
+  // 입력창 자동 높이(#643) - 실제 높이는 브라우저 측정 증거로 보고, 여기서는 상한 클래스와 대체 경로만 고정한다
+  describe('입력창 높이', () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+      vi.unstubAllGlobals()
+    })
+
+    it('내용 크기를 따르고 상한은 모바일이 더 낮다', () => {
+      render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+      const ta = screen.getByRole('textbox', { name: '메시지 입력' })
+      expect(ta.className).toContain('[field-sizing:content]')
+      expect(ta.className).toContain('max-h-32')
+      expect(ta.className).toContain('md:max-h-40')
+    })
+
+    it('field-sizing 을 모르는 브라우저는 입력할 때 scrollHeight 로 높이를 맞춘다', () => {
+      vi.stubGlobal('CSS', { supports: () => false })
+      vi.spyOn(HTMLTextAreaElement.prototype, 'scrollHeight', 'get').mockReturnValue(96)
+      render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+      const ta = screen.getByRole('textbox', { name: '메시지 입력' }) as HTMLTextAreaElement
+      fireEvent.change(ta, { target: { value: '첫 줄\n둘째 줄\n셋째 줄' } })
+      expect(ta.style.height).toBe('96px')
+    })
+
+    it('field-sizing 을 아는 브라우저는 인라인 높이를 건드리지 않는다', () => {
+      vi.stubGlobal('CSS', { supports: () => true })
+      render(<Composer onSend={accept} streaming={false} onStop={noop} />)
+      const ta = screen.getByRole('textbox', { name: '메시지 입력' }) as HTMLTextAreaElement
+      fireEvent.change(ta, { target: { value: '첫 줄\n둘째 줄' } })
+      expect(ta.style.height).toBe('')
+    })
+  })
 })
