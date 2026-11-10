@@ -225,7 +225,8 @@ export default function ChatPage() {
           <p role="status" data-testid="loading-status" className="sr-only">
             {chat.loadingMessages ? '대화 불러오는 중' : ''}
           </p>
-          <div className="h-full overflow-y-auto">
+          {/* relative : 목록 끝 sr-only(absolute) 상태 줄의 기준 상자를 이 스크롤 상자로 묶는다 - 없으면 줄이 밖으로 나가 문서가 길어지고 scrollIntoView 가 화면 전체를 민다(#642) */}
+          <div className="relative h-full overflow-y-auto">
             {chat.loadingMessages ? (
               // 이력이 오는 동안 직전 대화나 빈 화면 안내 대신 로딩 표시(#291) - 모바일 · 데스크탑 같은 자리
               <div className="grid h-full place-items-center">

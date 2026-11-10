@@ -8,7 +8,11 @@
 
 ## [Unreleased]
 
+### Fixed
+- **대화를 열면 화면 전체가 위로 밀려 헤더가 사라지고 입력창이 화면 중간에 뜨던 것을 고쳤다(#642).** 본문 스크롤 상자에 `relative` 가 없어 목록 끝 낭독용 상태 줄(`sr-only` = absolute)이 상자 밖으로 나가 문서 높이를 늘렸고, `scrollIntoView` 가 html 까지 스크롤했다. 스크롤 상자에 `relative` 를 더해 대화를 연 뒤 문서 스크롤이 데스크톱 212 → 0 · 모바일 521 → 0(11-10 디자인 검토 H1, 두 폭 측정). 회귀 테스트 1 · 프론트 케이스 하한 340 → 341
+
 ### Changed
+- **gitleaks 가 증거 캡처 스크립트의 목업 토큰을 비밀로 잡지 않게 그 값만 허용한다(#651).** 11-10 #642~#645 증거 스크립트가 목업 API 화면을 띄우려고 localStorage 에 넣은 서명 없는 토큰(`{"sub":"u1"}`)이 generic-api-key 규칙에 걸려 PR 4개와 (증거가 미러된) main 의 secrets 잡이 실패했다. 히스토리 스캔이라 파일 수정으로는 풀리지 않아 `.gitleaks.toml` 허용 목록에 그 값 하나만 `^…$` 로 넣었다(규칙 · 경로는 그대로, 임시 비밀번호 예시값과 같은 방식). 로컬 8.30.1 : main 8 → 0 · 한 글자 바꾼 토큰은 여전히 잡힘. 새 캡처 스크립트는 토큰을 실행 때 만든다. 앱 동작 변화 없음
 - **CI 의 `checkout` · `setup-java` · `setup-node` 를 Node 24 판으로 올렸다(#635, CI #908 경고).** v4 판은 액션 런타임이 Node 20 이라 잡마다 「Node.js 20 is deprecated … forced to run on Node.js 24」와 「setup-java v4 is deprecated」가 찍혔다. `checkout` v4.4.0 → v7.0.1 · `setup-java` v4.9.1 → v6.1.0(공개 2주 미만 판은 피한다 — v6.2.0 은 11-04 공개) · `setup-node` v4.4.0 → v7.1.0, 40자 SHA + `# vX.Y.Z` 고정(#416)은 그대로. 입력은 그대로지만 setup-java 새 기본값으로 backend 잡 동작이 넷 바뀌었다 — `MAVEN_ARGS=-ntp` 주입(다운로드 진행 표시 끔) · maven 캐시 키 패턴이 `**/pom.xml` 에 `**/.mvn/wrapper/maven-wrapper.properties` · `**/.mvn/extensions.xml` 까지 넓어짐(이 저장소에선 `backend/.mvn/wrapper/maven-wrapper.properties` 가 키에 더해져 교체 뒤 첫 main 실행 1회 miss, `extensions.xml` 은 없음) · Maven Wrapper 배포본(`~/.m2/wrapper/dists`) 별도 캐시 · javac problem matcher 등록. setup-node 자동 캐시는 저장소 **루트** `package.json` 의 `devEngines.packageManager` · `packageManager` 만 보는데 루트에 package.json 이 없어 켜지지 않는다(`frontend/package.json` 은 보지 않는다). checkout 자격 증명 저장 위치 변경은 push 하지 않아 무관. 앱 동작 변화 없음
 - **secrets 잡의 gitleaks 내려받기가 일시 5xx 에 한 번에 실패하지 않게 재시도한다(#640).** GitHub 릴리스 다운로드가 504 를 섞어 내 11-09 하루 secrets 잡이 8번 실패했고 매번 손으로 다시 돌렸다. `curl` 에 `--retry 5 --retry-delay 10 --retry-connrefused --connect-timeout 30 --retry-max-time 120` 을 붙여 408 · 429 · 500 · 502 · 503 · 504 · 연결 거부 · 타임아웃은 잡 안에서 10초 간격으로 다시 받고(재시도는 합계 2분 안에서 끝, 연결은 한 번에 30초까지), 404 같은 다른 오류는 지금처럼 바로 실패한다. 버전 · SHA256 체크섬 검증은 그대로. 앱 동작 변화 없음
 
