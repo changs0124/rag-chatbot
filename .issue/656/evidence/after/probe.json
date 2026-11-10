@@ -1,0 +1,29 @@
+{
+ "rotate": {
+  "opened390": {
+   "width": 390,
+   "inertCount": 2,
+   "bodyOverflow": "hidden",
+   "drawerInDom": true,
+   "desktopNewChatInert": null
+  },
+  "after1024": {
+   "width": 1024,
+   "inertCount": 0,
+   "bodyOverflow": "(비어 있음)",
+   "drawerInDom": false,
+   "desktopNewChatInert": false,
+   "clickOpenedConversation": true
+  }
+ },
+ "desktop": {
+  "resetFailedFocus": "button「김철수 비밀번호 초기화」",
+  "docDeletedFocus": "h2「문서 1건」"
+ },
+ "mobile": {
+  "resetFailedFocus": "button「김철수 비밀번호 초기화」",
+  "docDeletedFocus": "h2「문서 1건」",
+  "drawerConvDeletedFocus": "button「새 대화」",
+  "drawerOpenAfterEsc": 0
+ }
+}
