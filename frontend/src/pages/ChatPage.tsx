@@ -6,11 +6,11 @@ import ResizableSidebar from '../components/chat/ResizableSidebar'
 import MessageList from '../components/chat/MessageList'
 import Composer from '../components/chat/Composer'
 import ConfirmModal from '../components/ConfirmModal'
-import { IconEdit, IconMenu } from '../components/icons'
+import { IconMenu } from '../components/icons'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { MAX_TITLE_CHARS } from '../lib/limits'
 
-// 헤더 양끝의 모바일 전용 아이콘 버튼(목록 열기 · 새 채팅)(#390)
+// 헤더 왼쪽의 모바일 전용 아이콘 버튼(목록 열기)(#390). 오른쪽 새 채팅 버튼은 #670 에서 뺐다 - 새 대화는 사이드바(드로어)의 「새 대화」로
 const headerIconBtn =
   'grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink md:hidden'
 
@@ -210,18 +210,9 @@ export default function ChatPage() {
                   {activeTitle ?? '새 대화'}
                 </button>
               )
-            ) : (
-              <span className="px-2.5 text-[15px] font-semibold text-ink-muted">새 대화</span>
-            )}
+            ) : null}
+            {/* 새 대화(아직 대화 없음)는 제목을 비운다(#670) - 빈 화면의 「무엇을 도와드릴까요?」 하나만 남긴다 */}
           </div>
-
-          <button
-            className={headerIconBtn}
-            onClick={startNewChat}
-            aria-label="새 채팅"
-          >
-            <IconEdit />
-          </button>
         </header>
 
         {/* 스크롤 페이드 - 입력창 뒤로 글이 잘리지 않고 사라지게 함 */}
