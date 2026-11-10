@@ -1,0 +1,232 @@
+{
+ "runs": [
+  {
+   "mobile": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 6.8,
+    "totalMs": 986,
+    "maxFrameMs": 40,
+    "medianFrameMs": 33,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     844,
+     844
+    ],
+    "docScrollTop": 0
+   },
+   "desktop": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 8.8,
+    "totalMs": 985,
+    "maxFrameMs": 37,
+    "medianFrameMs": 33,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     900,
+     900
+    ],
+    "docScrollTop": 0
+   }
+  },
+  {
+   "mobile": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 10,
+    "totalMs": 996,
+    "maxFrameMs": 49,
+    "medianFrameMs": 33,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     844,
+     844
+    ],
+    "docScrollTop": 0
+   },
+   "desktop": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 11.3,
+    "totalMs": 1011,
+    "maxFrameMs": 43,
+    "medianFrameMs": 33,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     900,
+     900
+    ],
+    "docScrollTop": 0
+   }
+  },
+  {
+   "mobile": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 11.1,
+    "totalMs": 979,
+    "maxFrameMs": 40,
+    "medianFrameMs": 33,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     844,
+     844
+    ],
+    "docScrollTop": 0
+   },
+   "desktop": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 10.7,
+    "totalMs": 979,
+    "maxFrameMs": 39,
+    "medianFrameMs": 33,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     900,
+     900
+    ],
+    "docScrollTop": 0
+   }
+  },
+  {
+   "mobile": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 8.1,
+    "totalMs": 994,
+    "maxFrameMs": 39,
+    "medianFrameMs": 33,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     844,
+     844
+    ],
+    "docScrollTop": 0
+   },
+   "desktop": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 8.2,
+    "totalMs": 993,
+    "maxFrameMs": 39,
+    "medianFrameMs": 34,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     900,
+     900
+    ],
+    "docScrollTop": 0
+   }
+  },
+  {
+   "mobile": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 8.9,
+    "totalMs": 993,
+    "maxFrameMs": 42,
+    "medianFrameMs": 33,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     844,
+     844
+    ],
+    "docScrollTop": 0
+   },
+   "desktop": {
+    "events": 60,
+    "frames": 30,
+    "reactCommits": 0,
+    "handlerMsSync": 10.4,
+    "totalMs": 986,
+    "maxFrameMs": 41,
+    "medianFrameMs": 33,
+    "longTaskMs": 0,
+    "rootFollows": true,
+    "rootAtMin": [
+     500,
+     500
+    ],
+    "rootAtEnd": [
+     900,
+     900
+    ],
+    "docScrollTop": 0
+   }
+  }
+ ],
+ "median": {
+  "mobile": {
+   "reactCommits": 0,
+   "handlerMsSync": 8.9,
+   "totalMs": 993,
+   "maxFrameMs": 40,
+   "medianFrameMs": 33,
+   "longTaskMs": 0
+  },
+  "desktop": {
+   "reactCommits": 0,
+   "handlerMsSync": 10.4,
+   "totalMs": 986,
+   "maxFrameMs": 39,
+   "medianFrameMs": 33,
+   "longTaskMs": 0
+  }
+ }
+}
