@@ -222,7 +222,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
   | 종류 | 모양 | 정본 |
   |------|------|------|
   | 주요 | `accent` 면 · 흰 글자 · hover `accent-hover` · `h-11`(44px) | `components/primaryButton.ts` 의 `primaryButtonClass`(#330). 로그인은 `h-12` 전폭이라 따로 |
-  | 보조 | `raised` 면 + 1px `line` 경계 · `ink` 13px medium · hover `surface` · 모바일 `min-h-11` / 데스크톱 `h-8` | `components/actionButton.ts` 의 `actionButtonClass` — 관리 목록 행 끝(동기화 · 초기화 · 삭제). 삭제는 hover 에 `danger` 글자 · 경계 |
+  | 보조 | `raised` 면 + 1px `line` 경계 · `ink` 13px medium · hover `surface` · 모바일 `min-h-11` / 데스크톱 `h-8` | `components/actionButton.ts` 의 `actionButtonClass` — 관리 목록 행 끝(동기화 · 초기화 · 삭제) · 임시 비밀번호 창의 「복사」(#662). 삭제는 hover 에 `danger` 글자 · 경계 |
   | 위험 | `danger` 면 · 흰 글자 · hover `brightness-95` · `h-11 md:h-10` | 확인 모달의 확정 버튼 |
   | 아이콘 | 투명 면 · hover `surface`(보내기는 `accent` 면 · hover `accent-hover`). 반경은 자리마다 : 입력창 안 + · 보내기 · 중단과 확대 보기 이전/다음은 `rounded-full`, 채팅 헤더 · 뒤로가기는 `rounded-xl`, 확대 보기 내려받기 · 닫기는 `rounded-lg`, 대화 삭제 ✕ · 첨부 재시도는 `rounded-md` | 위 각 컴포넌트 |
 

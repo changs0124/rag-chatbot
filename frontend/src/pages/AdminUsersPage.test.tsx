@@ -265,6 +265,42 @@ describe('사용자 관리 화면', () => {
     expect(await screen.findByRole('dialog', { name: '임시 비밀번호가 발급되었습니다' })).toBeInTheDocument()
   })
 
+  // #662 : 다시 볼 수 없는 값이라 손으로 옮겨 적지 않게 복사 버튼을 둔다
+  describe('임시 비밀번호 복사', () => {
+    const writeText = vi.fn()
+    beforeEach(() => {
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+      vi.mocked(listAdminUsers).mockResolvedValue([PARK])
+      vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    })
+
+    it('복사 버튼이 값을 클립보드에 넣고 결과를 알린다', async () => {
+      writeText.mockResolvedValue(undefined)
+      renderPage()
+      await confirmReset()
+      const dialog = await screen.findByRole('dialog', { name: '임시 비밀번호가 발급되었습니다' })
+
+      fireEvent.click(within(dialog).getByRole('button', { name: '복사' }))
+
+      expect(writeText).toHaveBeenCalledWith('Xk7m-Qp29-Vr4t')
+      expect(await within(dialog).findByRole('status')).toHaveTextContent('복사했습니다')
+      // 복사해도 창은 닫히지 않는다 - 닫기는 사용자가 「닫기」로만(값을 다시 볼 수 없으므로)
+      expect(screen.getByRole('dialog', { name: '임시 비밀번호가 발급되었습니다' })).toBeInTheDocument()
+    })
+
+    it('클립보드가 막히면 값을 선택해 두고 직접 복사하라고 알린다', async () => {
+      writeText.mockRejectedValue(new Error('denied'))
+      renderPage()
+      await confirmReset()
+      const dialog = await screen.findByRole('dialog', { name: '임시 비밀번호가 발급되었습니다' })
+
+      fireEvent.click(within(dialog).getByRole('button', { name: '복사' }))
+
+      expect(await within(dialog).findByRole('status')).toHaveTextContent('복사하지 못했습니다')
+      expect(window.getSelection()?.toString()).toBe('Xk7m-Qp29-Vr4t')
+    })
+  })
+
   /** TC-ADMIN-041 : 일반 사용자는 되돌려진다(#513 - 나뉜 사용자 관리 화면도 같다) */
   it('일반 사용자는 사용자 관리 화면을 보지 못한다', async () => {
     currentRole = 'user'
