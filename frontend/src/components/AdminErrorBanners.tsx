@@ -22,6 +22,8 @@ export default function AdminErrorBanners({
     setRetrying(true)
     try {
       await onRetry()
+    } catch {
+      // 실패 표시(오류 배너)는 호출부가 맡는다 - 여기서 다시 던지면 클릭 핸들러 밖으로 새어 처리되지 않은 rejection 이 된다
     } finally {
       setRetrying(false)
     }
