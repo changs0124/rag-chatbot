@@ -1,0 +1,26 @@
+{
+ "desktop": {
+  "현재비번_보이는라벨": true,
+  "새비번_보이는라벨": true,
+  "규칙안내_입력중_보임": true,
+  "폼": true,
+  "카드높이": 305,
+  "문서높이": 900,
+  "가로넘침": false,
+  "Enter_제출요청": [
+   "PATCH /api/profile/password"
+  ]
+ },
+ "mobile": {
+  "현재비번_보이는라벨": true,
+  "새비번_보이는라벨": true,
+  "규칙안내_입력중_보임": true,
+  "폼": true,
+  "카드높이": 305,
+  "문서높이": 844,
+  "가로넘침": false,
+  "Enter_제출요청": [
+   "PATCH /api/profile/password"
+  ]
+ }
+}
