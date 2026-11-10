@@ -9,16 +9,19 @@ const PRESS_FRESH_MS = 1000
 let lastPressed: HTMLElement | null = null
 let lastPressedAt = 0
 let listening = false
+const onPress = (e: PointerEvent) => {
+  lastPressed = (e.target as Element | null)?.closest?.<HTMLElement>(FOCUSABLE) ?? null
+  lastPressedAt = Date.now()
+}
 function rememberPresses() {
   if (listening || typeof document === 'undefined') return
   listening = true
-  document.addEventListener('pointerdown', (e) => {
-    lastPressed = (e.target as Element | null)?.closest?.<HTMLElement>(FOCUSABLE) ?? null
-    lastPressedAt = Date.now()
-  }, true)
+  document.addEventListener('pointerdown', onPress, true)
 }
 // 모듈을 읽을 때 단다 - 첫 창을 연 그 누름부터 기억해야 한다(훅 안에서 달면 첫 창은 이미 늦다)
 rememberPresses()
+// 개발 HMR 은 모듈을 다시 평가해 listening 이 초기화된다 - 옛 리스너를 떼어 쌓이지 않게(#684, 운영 빌드에는 hot 이 없다)
+import.meta.hot?.dispose(() => document.removeEventListener('pointerdown', onPress, true))
 function currentOpener(): HTMLElement | null {
   if (typeof document === 'undefined') return null
   const active = document.activeElement as HTMLElement | null
@@ -60,10 +63,16 @@ export function useModalFocus<T extends HTMLElement>(returnTo?: () => HTMLElemen
     if (!root.contains(document.activeElement)) (root.querySelector<HTMLElement>('[data-autofocus]') ?? root.querySelector<HTMLElement>(FOCUSABLE))?.focus()
     return () => {
       for (const el of made) el.removeAttribute('inert')
+      // 보이지 않는 요소(조상이 display:none - 폭이 줄어 숨은 데스크톱 사이드바)는 focus() 가 아무 일도 안 해 body 로 남는다(#684).
+      // checkVisibility 가 없는 환경(jsdom · 구형 브라우저)은 보이는 것으로 친다
       const usable = (el: HTMLElement | null | undefined) =>
-        !!el && el.isConnected && el !== document.body && !(el as HTMLButtonElement).disabled
+        !!el && el.isConnected && el !== document.body && !(el as HTMLButtonElement).disabled && el.checkVisibility?.() !== false
       const back = usable(opener) ? opener : returnToRef.current?.()
-      if (usable(back)) back!.focus()
+      if (!usable(back)) return
+      // 돌아갈 곳이 아직 inert 안이면(같은 커밋에서 겹친 창이 함께 닫히고 바깥 창이 건 inert 가 아직 안 풀림) 포커스가 안 받힌다 -
+      // 그 정리가 끝난 뒤(마이크로태스크)에 옮긴다(#684). 보통은 바로 옮긴다
+      if (back!.closest('[inert]')) queueMicrotask(() => back!.isConnected && !back!.closest('[inert]') && back!.focus())
+      else back!.focus()
     }
   }, [opener])
 
