@@ -406,4 +406,16 @@ describe('문서 관리 화면', () => {
     expect(screen.getByRole('button', { name: '복무규정.pdf 삭제' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: ROW_DELETE })).toHaveLength(2)
   })
+
+  // #656 : 삭제를 확정하면 연 행이 사라진다 - 포커스가 body 로 빠지지 않고 목록 머리로 간다
+  it('삭제가 끝나 행이 사라지면 포커스가 목록 머리로 간다', async () => {
+    vi.mocked(listDocuments).mockResolvedValueOnce([doc()]).mockResolvedValue([])
+    vi.mocked(deleteDocument).mockResolvedValue(undefined)
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: ROW_DELETE }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: ROW_DELETE })).toBeNull())
+    expect(screen.getByRole('heading', { level: 2, name: /^문서/ })).toHaveFocus()
+  })
 })

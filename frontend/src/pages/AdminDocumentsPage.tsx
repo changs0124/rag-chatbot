@@ -166,6 +166,8 @@ function DocumentsSection({
   const [syncNotice, setSyncNotice] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<RagDocument | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  // 삭제를 확정하면 연 행이 사라져 포커스가 body 로 빠진다(#656) - 목록 머리로 돌려준다
+  const listHeadingRef = useRef<HTMLHeadingElement>(null)
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -246,7 +248,7 @@ function DocumentsSection({
 
       <section className="mt-8">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-ink">
+          <h2 ref={listHeadingRef} tabIndex={-1} className="text-base font-semibold text-ink">
             {/* 다 읽기 전 · 못 읽었을 때 「0건」은 다 지워졌다고 읽힌다(#589, #483 F4 와 같은 오독) */}
             문서{loaded && ` ${documents.length}건`}
           </h2>
@@ -328,6 +330,7 @@ function DocumentsSection({
           message="이 문서는 더 이상 답변 근거로 쓰이지 않습니다. 이미 나간 답변의 출처 표기는 그대로 남습니다."
           onConfirm={() => void confirmDelete()}
           onCancel={() => setPendingDelete(null)}
+          returnTo={() => listHeadingRef.current}
         />
       )}
     </>

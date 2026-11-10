@@ -7,15 +7,18 @@ export default function ConfirmModal({
   confirmLabel = '삭제',
   onConfirm,
   onCancel,
+  returnTo,
 }: {
   title: string
   message?: string
   confirmLabel?: string
   onConfirm: () => void
   onCancel: () => void
+  // 닫힐 때 연 버튼이 막혔거나 사라졌으면(삭제 확정 등) 포커스를 돌려줄 곳(#656)
+  returnTo?: () => HTMLElement | null | undefined
 }) {
   const titleId = useId()
-  const dialogRef = useModalFocus<HTMLDivElement>()
+  const dialogRef = useModalFocus<HTMLDivElement>(returnTo)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -36,6 +39,7 @@ export default function ConfirmModal({
             {/* 첫 포커스는 취소 - 열리자마자 Enter 한 번이 삭제가 되지 않게 한다(#484) */}
             <button
               autoFocus
+              data-autofocus
               onClick={onCancel}
               className="h-11 rounded-lg border border-line bg-raised px-4 text-sm font-medium text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface md:h-10"
             >

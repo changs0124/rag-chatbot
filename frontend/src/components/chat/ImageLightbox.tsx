@@ -173,6 +173,7 @@ export default function ImageLightbox({
         <button
           type="button"
           autoFocus
+          data-autofocus
           onClick={onClose}
           aria-label="닫기"
           className="grid h-11 w-11 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white focus-visible:outline-white md:h-9 md:w-9"

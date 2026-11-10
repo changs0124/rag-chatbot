@@ -1,0 +1,29 @@
+{
+ "rotate": {
+  "opened390": {
+   "width": 390,
+   "inertCount": 2,
+   "bodyOverflow": "hidden",
+   "drawerInDom": true,
+   "desktopNewChatInert": null
+  },
+  "after1024": {
+   "width": 1024,
+   "inertCount": 2,
+   "bodyOverflow": "hidden",
+   "drawerInDom": true,
+   "desktopNewChatInert": true,
+   "clickOpenedConversation": false
+  }
+ },
+ "desktop": {
+  "resetFailedFocus": "BODY",
+  "docDeletedFocus": "BODY"
+ },
+ "mobile": {
+  "resetFailedFocus": "BODY",
+  "docDeletedFocus": "BODY",
+  "drawerConvDeletedFocus": "BODY",
+  "drawerOpenAfterEsc": 1
+ }
+}
