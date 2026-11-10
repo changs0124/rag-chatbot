@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import com.ragchatbot.support.AbstractPgIntegrationTest;
 
 /**
- * 설정 화면(/me) - 이름/비밀번호/테마 변경.
+ * 설정 화면(/me) - 이름/비밀번호 변경.
  */
 class ProfileFlowTest extends AbstractPgIntegrationTest {
 
