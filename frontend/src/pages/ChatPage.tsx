@@ -29,7 +29,8 @@ export default function ChatPage() {
 
   const activeTitle = chat.conversations.find((c) => c.id === chat.activeId)?.title
 
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
+  // 키보드가 열고 닫히는 동안 루트 높이를 바꾸는 자리(#221) - 상태가 아니라 DOM 에 바로 쓴다(#668)
+  const rootRef = useRef<HTMLDivElement>(null)
   // 마크다운 청크를 미리 받아 둔다(#417) - 첫 답변 자리에서 평문→서식 깜빡임과, 오래 열어 둔 탭이 재배포 뒤 옛 청크를 찾는 창을 줄인다.
   // 실패는 무시한다 - 그리는 쪽(MessageList)이 평문으로 물러선다
   useEffect(() => {
@@ -42,6 +43,9 @@ export default function ChatPage() {
   //   루트 높이를 보이는 영역에 맞추고 끌려 올라간 문서를 되돌린다. Android Chrome 은 index.html 의
   //   interactive-widget=resizes-content 로 레이아웃 자체가 줄어 같은 결과가 된다.
   // 헤드리스 브라우저는 가상 키보드와 튕김을 재현하지 못해 실기기로만 확인된다
+  // 높이는 React 상태가 아니라 루트 요소에 바로 쓴다(#668) - iOS 는 키보드 애니메이션 동안 resize · scroll 을 프레임마다 보내
+  // 상태로 두면 채팅 화면 전체(메시지 목록 · 마크다운 · 사이드바)가 프레임마다 다시 그려져 키보드 반응이 굼떴다.
+  // 한 프레임에 한 번만 쓰고(requestAnimationFrame), 같은 높이면 건너뛰고, 문서가 실제로 밀렸을 때만 되돌린다
   useEffect(() => {
     const html = document.documentElement
     const prev = { overflow: html.style.overflow, overscroll: html.style.overscrollBehavior }
@@ -49,12 +53,19 @@ export default function ChatPage() {
     html.style.overscrollBehavior = 'none'
 
     const vv = window.visualViewport
-    const sync = () => {
+    let frame = 0
+    const apply = () => {
+      frame = 0
       // 사용자가 손가락으로 확대한 동안은 손대지 않는다 - 확대된 보이는 영역 높이를 루트에 넣으면 화면이
       // 짧아지고, 문서를 되돌리면 확대해서 보던 자리를 잃는다(#221). 입력 포커스 확대는 글자 16px 로 막았다
-      if (!vv || Math.abs(vv.scale - 1) > 0.01) return
-      setViewportHeight(vv.height)
-      window.scrollTo(0, 0)
+      const root = rootRef.current
+      if (!vv || !root || Math.abs(vv.scale - 1) > 0.01) return
+      const height = `${vv.height}px`
+      if (root.style.height !== height) root.style.height = height
+      if (window.scrollY || window.scrollX) window.scrollTo(0, 0)
+    }
+    const sync = () => {
+      if (!frame) frame = requestAnimationFrame(apply)
     }
     vv?.addEventListener('resize', sync)
     vv?.addEventListener('scroll', sync)
@@ -63,6 +74,7 @@ export default function ChatPage() {
       html.style.overscrollBehavior = prev.overscroll
       vv?.removeEventListener('resize', sync)
       vv?.removeEventListener('scroll', sync)
+      if (frame) cancelAnimationFrame(frame)
     }
   }, [])
 
@@ -149,11 +161,8 @@ export default function ChatPage() {
 
   return (
     // h-screen 이 아니라 100dvh - iOS 주소창이 접힐 때 입력창이 화면 밖으로 밀리는 것을 막음.
-    // 키보드가 열려 보이는 영역이 바뀐 뒤에는 그 높이를 따른다(#221)
-    <div
-      className="flex h-[100dvh] bg-canvas"
-      style={viewportHeight === null ? undefined : { height: viewportHeight }}
-    >
+    // 키보드가 열려 보이는 영역이 바뀐 뒤에는 그 높이를 따른다(#221) - 위 효과가 rootRef 에 바로 쓴다(#668)
+    <div ref={rootRef} className="flex h-[100dvh] bg-canvas">
       <div className="hidden md:block">
         <ResizableSidebar>{sidebar}</ResizableSidebar>
       </div>

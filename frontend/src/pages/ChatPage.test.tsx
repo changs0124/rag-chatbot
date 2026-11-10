@@ -95,38 +95,78 @@ describe('ChatPage 모바일 뷰포트 (#221)', () => {
     return target
   }
 
+  /** 높이 반영은 다음 프레임에 한 번(#668) - requestAnimationFrame 을 모아 두었다가 손으로 돌린다 */
+  function fakeFrames() {
+    const queue: FrameRequestCallback[] = []
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      queue.push(cb)
+      return queue.length
+    })
+    const flush = () =>
+      act(() => {
+        for (const cb of queue.splice(0)) cb(performance.now())
+      })
+    return { raf, flush }
+  }
+
   afterEach(() => {
     Reflect.deleteProperty(window, 'visualViewport')
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true })
     vi.restoreAllMocks()
   })
 
-  it('보이는 영역이 줄면 루트가 그 높이를 따르고 문서 스크롤을 0 으로 되돌린다', () => {
+  it('보이는 영역이 줄면 루트가 그 높이를 따르고 끌려 올라간 문서를 0 으로 되돌린다', () => {
     const vv = fakeVisualViewport(844)
+    const { flush } = fakeFrames()
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
     renderChatPage()
     const root = screen.getByRole('banner').closest('div.flex-col')!.parentElement as HTMLElement
 
     vv.height = 500
-    act(() => {
-      vv.dispatchEvent(new Event('resize'))
-    })
+    Object.defineProperty(window, 'scrollY', { value: 120, configurable: true })
+    vv.dispatchEvent(new Event('resize'))
+    flush()
 
     expect(root.style.height).toBe('500px')
     expect(scrollTo).toHaveBeenCalledWith(0, 0)
   })
 
+  // #668 : iOS 는 키보드 애니메이션 동안 resize · scroll 을 프레임마다 여러 번 보낸다 - 이벤트마다 반영하면
+  // 채팅 화면이 프레임마다 다시 그려져 키보드 반응이 굼떴다. 한 프레임에 한 번, 문서가 밀리지 않았으면 scrollTo 도 안 부른다
+  it('한 프레임 안의 여러 이벤트는 한 번만 반영하고, 문서가 밀리지 않았으면 scrollTo 를 부르지 않는다', () => {
+    const vv = fakeVisualViewport(844)
+    const { raf, flush } = fakeFrames()
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    renderChatPage()
+    const root = screen.getByRole('banner').closest('div.flex-col')!.parentElement as HTMLElement
+    raf.mockClear()
+
+    for (const h of [800, 760, 720]) {
+      vv.height = h
+      vv.dispatchEvent(new Event('resize'))
+      vv.dispatchEvent(new Event('scroll'))
+    }
+    expect(raf).toHaveBeenCalledTimes(1)
+    expect(root.style.height).toBe('')
+
+    flush()
+    expect(root.style.height).toBe('720px')
+    expect(scrollTo).not.toHaveBeenCalled()
+  })
+
   it('사용자가 확대한 동안에는 루트 높이도 문서 스크롤도 건드리지 않는다', () => {
     // 확대된 보이는 영역 높이를 루트에 넣으면 화면이 짧아져 입력 칸이 위로 솟는다(실기기 보고)
     const vv = fakeVisualViewport(844)
+    const { flush } = fakeFrames()
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
     renderChatPage()
     const root = screen.getByRole('banner').closest('div.flex-col')!.parentElement as HTMLElement
 
     vv.scale = 1.2
     vv.height = 400
-    act(() => {
-      vv.dispatchEvent(new Event('resize'))
-    })
+    Object.defineProperty(window, 'scrollY', { value: 120, configurable: true })
+    vv.dispatchEvent(new Event('resize'))
+    flush()
 
     expect(root.style.height).toBe('')
     expect(scrollTo).not.toHaveBeenCalled()
