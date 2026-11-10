@@ -44,7 +44,8 @@ export default memo(function Sidebar({
   activeId: string | null
   onSelect: (id: string) => void
   onNew: () => void
-  onDelete: (id: string) => void
+  /** 실패면 false 를 돌려준다(#684) - 사이드바가 「곧 빠질 행」 표시를 거둔다 */
+  onDelete: (id: string) => unknown
   userName: string
   onLogout: () => void
   /** 첫 목록이 아직 안 왔다(#663) - 이때 빈 목록은 「없음」이 아니다 */
@@ -55,23 +56,31 @@ export default memo(function Sidebar({
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Conversation | null>(null)
-  // 대화를 지우면 연 ✕ 버튼이 행째 사라진다(#656). 확인 창이 닫힐 때는 아직 ✕ 가 있어 포커스가 거기로 돌아갔다가,
+  // 대화를 지우면 연 삭제(휴지통) 버튼이 행째 사라진다(#656). 확인 창이 닫힐 때는 아직 버튼이 있어 포커스가 거기로 돌아갔다가,
   // 삭제가 끝나 행이 빠지는 순간 body 로 빠진다 - 그때 「새 대화」로 옮겨 드로어 안이면 Esc 도 계속 먹게 한다
   const newChatRef = useRef<HTMLButtonElement>(null)
   const deletedIdRef = useRef<string | null>(null)
-  // 목록이 한 번 바뀌면 표시를 거둔다 - 삭제가 실패해 행이 남았는데 표시를 들고 있으면, 나중에 다른 경로(다른 기기에서
-  // 지움 · 목록 갱신)로 그 행이 빠질 때 엉뚱하게 「새 대화」로 포커스가 튄다(#674)
+  // 표시는 행이 실제로 빠졌을 때 거둔다. 삭제가 실패하면 onDelete 결과(false)로 거둔다(#684) - 실패는 목록을 안 바꿔
+  // 목록 변화로는 알 수 없고(#674 판은 그래서 실패 경로에서 안 돌았다), 기다리는 사이 다른 이유(답변 뒤 갱신 · 이름 변경)로
+  // 목록이 바뀌어도 거두면 정작 행이 빠질 때 포커스가 body 로 떨어진다
   useEffect(() => {
     const id = deletedIdRef.current
-    if (!id) return
+    if (!id || conversations.some((c) => c.id === id)) return
     deletedIdRef.current = null
-    if (conversations.some((c) => c.id === id)) return
     if (!document.activeElement || document.activeElement === document.body) newChatRef.current?.focus()
   }, [conversations])
+  // 「다시 시도」가 성공하면 버튼이 목록으로 바뀌어 사라진다 - 포커스가 body 로 빠지면 「새 대화」로(#684, 위와 같은 이유)
+  const wasFailed = useRef(failed)
+  useEffect(() => {
+    if (wasFailed.current && !failed && (!document.activeElement || document.activeElement === document.body)) newChatRef.current?.focus()
+    wasFailed.current = failed
+  }, [failed])
   const initial = userName.trim().charAt(0) || '?'
   const groups = groupByRecency(conversations)
-  // 첫 목록을 기다리는 동안에도 그 사이 만든 새 대화가 있으면 그것부터 보인다 - 스켈레톤은 빈 자리에만
-  const listPending = loading && conversations.length === 0
+  // 첫 목록을 기다리는 동안에도 그 사이 만든 새 대화가 있으면 그것부터 보인다 - 스켈레톤은 빈 자리에만.
+  // 실패 뒤 「다시 시도」 중에는 스켈레톤 대신 실패 자리를 두고 버튼만 막는다(#684) - 버튼을 빼면 포커스가 body 로 빠진다
+  const listPending = loading && conversations.length === 0 && !failed
+  const retrying = loading && failed
 
   return (
     <aside className="flex h-full w-full flex-col border-r border-line bg-surface">
@@ -83,8 +92,10 @@ export default memo(function Sidebar({
       </div>
       <div className="p-3">
         {/* 테두리 버튼(#646 버튼 체계) - 떠 있는 카드 + 커지는 hover 를 걷고 보조 버튼과 같은 모양으로 */}
+        {/* data-autofocus - 드로어(#669)를 열면 닫기 X 가 DOM 맨 앞에 있어도 첫 포커스는 여기로(useModalFocus, #684) */}
         <button
           ref={newChatRef}
+          data-autofocus
           onClick={onNew}
           className="flex h-11 w-full items-center gap-2 rounded-lg border border-line bg-raised px-3 text-sm font-medium text-ink shadow-[var(--shadow-card)] transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface md:h-10"
         >
@@ -96,7 +107,7 @@ export default memo(function Sidebar({
       <nav className="scrollbar-none relative min-w-0 flex-1 overflow-y-auto px-2 pb-2">
         {/* 늘 있는 그릇에 글만 넣는다(#484 규칙 · #590) - 끼웠다 빼면 낭독기가 놓친다 */}
         <p role="status" className="sr-only">
-          {listPending ? '대화 목록 불러오는 중' : ''}
+          {listPending ? '대화 목록 불러오는 중' : retrying ? '대화 목록 다시 읽는 중' : ''}
         </p>
         {listPending && <ConversationListSkeleton />}
         {groups.map((group) => (
@@ -144,12 +155,18 @@ export default memo(function Sidebar({
           <p className="px-3 py-6 text-center text-[13px] text-ink-muted">대화가 없습니다</p>
         )}
         {/* 못 불러온 것을 「없다」고 말하지 않는다(#385 · #663 취지, #675) - 오류 배너는 다른 동작에 걷히지만 이 자리는 남는다 */}
-        {conversations.length === 0 && !loading && failed && (
+        {conversations.length === 0 && failed && (
           <div className="px-3 py-6 text-center text-[13px] text-ink-muted">
             <p>대화 목록을 불러오지 못했습니다</p>
             {onRetry && (
-              <button type="button" onClick={onRetry} className="mt-1 min-h-11 px-2 font-medium text-accent underline md:min-h-0">
-                다시 시도
+              // disabled 가 아니라 aria-disabled - 포커스된 버튼이 disabled 가 되면 브라우저가 포커스를 body 로 뺀다(#684 탐침)
+              <button
+                type="button"
+                onClick={retrying ? undefined : onRetry}
+                aria-disabled={retrying || undefined}
+                className="mt-1 min-h-11 px-2 font-medium text-accent underline aria-disabled:no-underline aria-disabled:opacity-70 md:min-h-0"
+              >
+                {retrying ? '다시 읽는 중…' : '다시 시도'}
               </button>
             )}
           </div>
@@ -207,11 +224,16 @@ export default memo(function Sidebar({
           message={`'${pendingDelete.title}' 대화가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`}
           confirmLabel="삭제"
           onConfirm={() => {
-            deletedIdRef.current = pendingDelete.id
-            onDelete(pendingDelete.id)
+            const id = pendingDelete.id
+            deletedIdRef.current = id
+            void Promise.resolve(onDelete(id)).then((ok) => {
+              if (ok === false && deletedIdRef.current === id) deletedIdRef.current = null
+            })
             setPendingDelete(null)
           }}
           onCancel={() => setPendingDelete(null)}
+          // 연 버튼이 안 보이게 되면(폭이 md 아래로 줄어 데스크톱 사이드바가 숨음) 「새 대화」로(#684)
+          returnTo={() => newChatRef.current}
         />
       )}
     </aside>

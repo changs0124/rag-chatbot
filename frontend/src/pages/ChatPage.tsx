@@ -195,7 +195,7 @@ export default function ChatPage() {
   // useChat 의 두 콜백은 토큰마다 바뀌지 않는다 - selectConversation 은 대화가 바뀔 때만 새로 만들어진다
   const { newConversation, selectConversation } = chat
 
-  // 사이드바 버튼과 모바일 헤더 버튼이 같이 쓴다 - 모바일 드로어가 열려 있으면 닫는다
+  // 사이드바(데스크톱 · 드로어)의 「새 대화」와 이동 확인 창이 같이 쓴다 - 모바일 드로어가 열려 있으면 닫는다
   const leave = useCallback(
     (target: LeaveTarget) => {
       if (target.to === 'new') newConversation()
@@ -379,7 +379,8 @@ function MobileDrawer({ onClose, children }: { onClose: () => void; children: Re
   return (
     <div
       ref={ref}
-      className="fixed inset-0 z-40 bg-surface md:hidden"
+      // 사이드바의 오른쪽 경계선은 화면 전체 드로어에서는 화면 끝 1px 선으로만 남아 지운다(#684)
+      className="fixed inset-0 z-40 bg-surface md:hidden [&_aside]:border-r-0"
       role="dialog"
       aria-modal="true"
       aria-label="대화 목록"
@@ -389,15 +390,16 @@ function MobileDrawer({ onClose, children }: { onClose: () => void; children: Re
         onClose()
       }}
     >
-      {children}
+      {/* X 는 DOM 맨 앞 - 화면 오른쪽 위라 Tab 순서도 앞이 맞다(#684). 첫 포커스는 사이드바 「새 대화」의 data-autofocus 가 가져간다 */}
       <button
         type="button"
         onClick={onClose}
         aria-label="대화 목록 닫기"
-        className="absolute top-2.5 right-3 grid h-11 w-11 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink"
+        className="absolute top-2.5 right-3 z-10 grid h-11 w-11 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink"
       >
         <IconClose className="h-5 w-5" />
       </button>
+      {children}
     </div>
   )
 }

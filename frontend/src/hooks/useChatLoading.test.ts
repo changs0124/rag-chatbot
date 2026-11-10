@@ -190,6 +190,65 @@ describe('useChat 이력 불러오는 중', () => {
     expect(result.current.conversationsFailed).toBe(true)
   })
 
+  // #684 : 다시 시도가 성공했는데 입력창 위 「대화 목록을 불러오지 못했습니다」가 그대로 남았다
+  it('다시 시도가 성공하면 목록 오류 줄이 걷힌다(다른 동작 없이)', async () => {
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {})
+    expect(result.current.error).toBe('대화 목록을 불러오지 못했습니다')
+
+    vi.mocked(listConversations).mockResolvedValueOnce([conv('a')])
+    await act(async () => result.current.retryConversations())
+    expect(result.current.error).toBeNull()
+    expect(result.current.conversationsFailed).toBe(false)
+  })
+
+  it('다시 시도가 또 실패하면 걷혔던 오류 줄을 다시 건다', async () => {
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {})
+    act(() => result.current.newConversation())
+    expect(result.current.error).toBeNull()
+
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('still down'))
+    await act(async () => result.current.retryConversations())
+    expect(result.current.error).toBe('대화 목록을 불러오지 못했습니다')
+  })
+
+  it('세대가 밀린 다시 시도 응답은 실패 표시를 건드리지 않는다', async () => {
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {})
+    const stale = deferred<Conversation[]>()
+    vi.mocked(listConversations).mockReturnValueOnce(stale.promise)
+    act(() => result.current.retryConversations())
+    // 그 사이 목록을 고친 다른 동작(삭제 성공)이 세대를 올렸다 - 늦게 온 옛 응답은 버린다
+    const { deleteConversation } = await import('../lib/endpoints')
+    vi.mocked(deleteConversation).mockResolvedValueOnce(undefined)
+    await act(async () => void (await result.current.deleteConversation('z')))
+    await act(async () => stale.resolve([conv('a')]))
+    expect(result.current.conversationsFailed).toBe(true)
+    expect(result.current.conversations).toEqual([])
+  })
+
+  it('다른 오류는 다시 시도가 덮지 않는다', async () => {
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))
+    const { result } = renderHook(() => useChat())
+    await act(async () => {})
+    vi.mocked(listConversations).mockResolvedValueOnce([conv('a')])
+    const { deleteConversation } = await import('../lib/endpoints')
+    vi.mocked(deleteConversation).mockRejectedValueOnce(new Error('x'))
+    let ok: unknown
+    await act(async () => {
+      ok = await result.current.deleteConversation('a')
+    })
+    expect(ok).toBe(false)
+    const other = result.current.error
+    expect(other).not.toBe('대화 목록을 불러오지 못했습니다')
+    await act(async () => result.current.retryConversations())
+    expect(result.current.error).toBe(other)
+  })
+
   /** 대화 목록 첫 로드가 실패하면 「대화가 없습니다」가 아니라 오류로 알린다(#385, #77 · #359 와 같은 이유) */
   it('대화 목록을 처음 불러오지 못하면 오류를 띄운다', async () => {
     vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))

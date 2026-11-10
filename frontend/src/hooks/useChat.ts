@@ -37,6 +37,8 @@ export const RECHECK_WINDOW_MS = 8000
 export const RESIGN_RETRY_MS = 15 * 60_000
 /** 재확인 요청 하나의 시간 제한 - 매달린 요청이 판정을 붙들지 않게 한다 */
 const RECHECK_REQUEST_TIMEOUT_MS = 3000
+/** 목록을 못 불러온 오류 줄 - 「다시 시도」가 성공하면 이것만 걷는다(#684) */
+const LIST_LOAD_ERROR = '대화 목록을 불러오지 못했습니다'
 
 /** 이력의 마지막이 보낸 질문인지 - 답 행이 아직 없다 */
 function endsWithQuestion(server: ChatMessage[], text: string) {
@@ -219,7 +221,7 @@ export function useChat() {
         if (listGen.current === mine) setConversations(list)
       })
       .catch(() => {
-        setError('대화 목록을 불러오지 못했습니다')
+        setError(LIST_LOAD_ERROR)
         if (firstLoadGen.current === first) setConversationsFailed(true)
       })
       .finally(() => {
@@ -227,16 +229,23 @@ export function useChat() {
       })
   }, [])
 
-  // 사이드바의 「다시 시도」(#675) - 다시 읽는 동안은 첫 로드처럼 스켈레톤을 보이고, 또 실패하면 그 자리에 남는다
+  // 사이드바의 「다시 시도」(#675) - 다시 읽는 동안 사이드바는 버튼을 막아 두고(#684), 또 실패하면 그 자리에 남는다.
+  // 성공하면 첫 로드 실패가 남긴 오류 줄도 걷는다 - 안 걷으면 목록이 왔는데 입력창 위에 「불러오지 못했습니다」가 남았다(#684).
+  // 다른 오류는 덮지 않는다. 또 실패하면 오류 줄을 다시 건다 - 그새 걷혔으면 낭독기 사용자는 실패를 모른다.
+  // 세대가 밀린 응답(그 사이 다른 목록 요청)은 실패 표시를 건드리지 않는다 - 뒤 요청이 정한다
   const retryConversations = useCallback(() => {
     const mine = ++listGen.current
     setConversationsLoading(true)
     listConversations()
       .then((list) => {
-        if (listGen.current === mine) setConversations(list)
+        if (listGen.current !== mine) return
+        setConversations(list)
         setConversationsFailed(false)
+        setError((e) => (e === LIST_LOAD_ERROR ? null : e))
       })
-      .catch(() => {})
+      .catch(() => {
+        if (listGen.current === mine) setError(LIST_LOAD_ERROR)
+      })
       .finally(() => setConversationsLoading(false))
   }, [])
 
@@ -370,7 +379,8 @@ export function useChat() {
         await apiDelete(id)
       } catch (e) {
         setError(errorMessage(e, '대화를 삭제하지 못했습니다'))
-        return
+        // 실패를 알린다 - 사이드바가 「곧 빠질 행」 표시를 거둔다(#684). 목록은 그대로라 목록 변화로는 알 수 없다
+        return false
       }
       listGen.current++
       setConversations((prev) => prev.filter((c) => c.id !== id))
@@ -378,6 +388,7 @@ export function useChat() {
         // 지운 대화를 떠나는 것도 전환임 - 안 끊으면 사라진 대화에 대고 스트림이 계속 돎
         newConversation()
       }
+      return true
     },
     [activeId, newConversation],
   )
