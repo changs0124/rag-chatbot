@@ -1,0 +1,102 @@
+diff --git a/backend/src/main/java/com/ragchatbot/config/AdminRoleSynchronizer.java b/backend/src/main/java/com/ragchatbot/config/AdminRoleSynchronizer.java
+index e02117fa..a3e2366d 100644
+--- a/backend/src/main/java/com/ragchatbot/config/AdminRoleSynchronizer.java
++++ b/backend/src/main/java/com/ragchatbot/config/AdminRoleSynchronizer.java
+@@ -61 +61 @@ public class AdminRoleSynchronizer {
+-				log.warn("관리자 계정 발급 : {} · 임시 비밀번호 {} (최초 로그인 후 마이페이지에서 변경할 것)",
++				log.warn("관리자 계정 발급 : {} · 임시 비밀번호 {} (최초 로그인 후 설정에서 변경할 것)",
+diff --git a/backend/src/main/java/com/ragchatbot/dto/AuthDtos.java b/backend/src/main/java/com/ragchatbot/dto/AuthDtos.java
+index 736e0543..8ffe4cc7 100644
+--- a/backend/src/main/java/com/ragchatbot/dto/AuthDtos.java
++++ b/backend/src/main/java/com/ragchatbot/dto/AuthDtos.java
+@@ -26 +26 @@ public final class AuthDtos {
+-		/** 로그인·마이페이지가 같은 모양을 내도록 한 곳에서 만든다(#389) */
++		/** 로그인·설정 화면이 같은 모양을 내도록 한 곳에서 만든다(#389) */
+diff --git a/backend/src/main/java/com/ragchatbot/dto/ProfileDtos.java b/backend/src/main/java/com/ragchatbot/dto/ProfileDtos.java
+index 21b3d27d..0b693113 100644
+--- a/backend/src/main/java/com/ragchatbot/dto/ProfileDtos.java
++++ b/backend/src/main/java/com/ragchatbot/dto/ProfileDtos.java
+@@ -7 +7 @@ import jakarta.validation.constraints.Size;
+- * 마이페이지 - 이름/비밀번호 변경 요청 DTO.
++ * 설정 화면(/me) - 이름/비밀번호 변경 요청 DTO.
+diff --git a/backend/src/main/java/com/ragchatbot/service/AdminUserService.java b/backend/src/main/java/com/ragchatbot/service/AdminUserService.java
+index 0764980e..4ae3325c 100644
+--- a/backend/src/main/java/com/ragchatbot/service/AdminUserService.java
++++ b/backend/src/main/java/com/ragchatbot/service/AdminUserService.java
+@@ -115,2 +115,2 @@ public class AdminUserService {
+-			// 마이페이지에 비밀번호 변경이 이미 있고, 관리자가 자기 세션을 스스로 끊을 이유가 없다
+-			throw new BadRequestException("자기 자신은 초기화 대상이 아님 - 마이페이지에서 변경할 것");
++			// 설정 화면에 비밀번호 변경이 이미 있고, 관리자가 자기 세션을 스스로 끊을 이유가 없다
++			throw new BadRequestException("자기 자신은 초기화 대상이 아님 - 설정에서 변경할 것");
+diff --git a/backend/src/main/java/com/ragchatbot/service/ProfileService.java b/backend/src/main/java/com/ragchatbot/service/ProfileService.java
+index 6c51d287..43ecc962 100644
+--- a/backend/src/main/java/com/ragchatbot/service/ProfileService.java
++++ b/backend/src/main/java/com/ragchatbot/service/ProfileService.java
+@@ -22 +22 @@ import com.ragchatbot.dto.AuthDtos.MeResponse;
+- * 마이페이지 - 이름/비밀번호 변경. 소유자 본인만(userId는 JWT에서).
++ * 설정 화면(/me) - 이름/비밀번호 변경. 소유자 본인만(userId는 JWT에서).
+diff --git a/backend/src/test/java/com/ragchatbot/controller/AdminUserFlowTest.java b/backend/src/test/java/com/ragchatbot/controller/AdminUserFlowTest.java
+index 379f3966..9a375a4a 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/AdminUserFlowTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/AdminUserFlowTest.java
+@@ -158 +158 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
+-	/** 자기 자신은 대상이 아니다 - 마이페이지에 변경 기능이 이미 있고, 자기 세션을 스스로 끊을 이유가 없다 */
++	/** 자기 자신은 대상이 아니다 - 설정 화면에 변경 기능이 이미 있고, 자기 세션을 스스로 끊을 이유가 없다 */
+@@ -181 +181 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
+-	 * 발급하는 이름도 앞뒤 공백을 걷는다(#327). 마이페이지 이름 변경과 대화 제목은 이미 걷는데
++	 * 발급하는 이름도 앞뒤 공백을 걷는다(#327). 설정 화면 이름 변경과 대화 제목은 이미 걷는데
+diff --git a/backend/src/test/java/com/ragchatbot/controller/ProfileFlowTest.java b/backend/src/test/java/com/ragchatbot/controller/ProfileFlowTest.java
+index d91f5bd3..06d8c808 100644
+--- a/backend/src/test/java/com/ragchatbot/controller/ProfileFlowTest.java
++++ b/backend/src/test/java/com/ragchatbot/controller/ProfileFlowTest.java
+@@ -15 +15 @@ import com.ragchatbot.support.AbstractPgIntegrationTest;
+- * 마이페이지 - 이름/비밀번호/테마 변경.
++ * 설정 화면(/me) - 이름/비밀번호/테마 변경.
+diff --git a/docs/01_specs/live-integration.md b/docs/01_specs/live-integration.md
+index 13544e7e..2c20588d 100644
+--- a/docs/01_specs/live-integration.md
++++ b/docs/01_specs/live-integration.md
+@@ -309 +309 @@ Vector Store 는 텍스트만 색인하므로 **그림은 따로 옮겨야 한
+-   산출물은 **상세의 모든 줄 앞에 `[클레임 N]`** 을 붙이고 클레임마다 결론 요약 한 줄(서비스번호 · S/N · 기종 · 호기정보 · 불량유형 · 분석내용 · 불량원인 · 최종원인)을 머리 바로 밑에 두며(#267 · #468 — 조각이 상세 중간에서 끊겨도 서비스번호 · 호기로 찾은 조각에 이 값들이 함께 오게) 상세 줄에는 요약에 없는 필드만 남기고(#467 — 같은 값이 두 번 들어가면 키워드 점수가 부풀어 매뉴얼 조각이 검색에서 밀렸다) 머리에 전수 집계 표를 둔다(표 목록은 스크립트가 쓰는 `## 전체 요약 (집계)` 절이 정본) —
++   산출물은 **상세의 모든 줄 앞에 `[클레임 N]`** 을 붙이고 클레임마다 결론 요약 한 줄(서비스번호 · S/N · 기종 · 호기정보 · 입고일자 · 불량유형 · 분석내용 · 불량원인 · 최종원인)을 머리 바로 밑에 두며(#267 · #468 — 조각이 상세 중간에서 끊겨도 서비스번호 · 호기로 찾은 조각에 이 값들이 함께 오게. 입고일자는 #653 — 상세 첫 줄이라 긴 「불량 내용」 뒤에서 조각이 갈려 두 건 비교 때 빠졌다 : 임시 스토어 비교 60문항 전부 맞음 47 → 58, 운영 교체 뒤 앱 30/30) 상세 줄에는 요약에 없는 필드만 남기고(#467 — 같은 값이 두 번 들어가면 키워드 점수가 부풀어 매뉴얼 조각이 검색에서 밀렸다) 머리에 전수 집계 표를 둔다(표 목록은 스크립트가 쓰는 `## 전체 요약 (집계)` 절이 정본) —
+diff --git a/docs/02_architecture/design-system.md b/docs/02_architecture/design-system.md
+index 95c77f25..42002b0a 100644
+--- a/docs/02_architecture/design-system.md
++++ b/docs/02_architecture/design-system.md
+@@ -44 +44 @@
+-| `accent-soft` | `#E8F7FC` | 활성 항목 배경 · 알림 배너 | `--brand` 12% 를 흰 바탕에 합성(body 틴트와 같은 세기) |
++| `accent-soft` | `#E8F7FC` | 알림 배너 · 완료/관리자 배지 · 업로드 아이콘 바탕(활성 대화 배경은 #646 에서 `raised` 로) | `--brand` 12% 를 흰 바탕에 합성(body 틴트와 같은 세기) |
+@@ -64 +64,2 @@
+-| 활성 대화 글자 / 배경 | 4.98 | 4.5 |
++| 활성 대화 글자(`ink`) / `raised` | 13.22 | 4.5 |
++| 완료 · 관리자 배지 글자(`accent`) / `accent-soft` | 4.98 | 4.5 |
+@@ -72 +73 @@
+-| 지금 대화 막대(`accent`) / 사이드바 | 4.85 | 3.0 |
++| 지금 대화 막대(`accent`) / `raised`(막대가 놓인 활성 행) | 5.46 | 3.0 |
+@@ -74 +75 @@
+-가장 빡빡한 쌍은 「accent 아이콘 / 사이드바」(4.85)다.
++가장 빡빡한 쌍은 「오류 글자 / 오류 배경」(4.64), 그다음 「accent 아이콘 / 사이드바」(4.85)다.
+diff --git a/docs/02_architecture/frontend.md b/docs/02_architecture/frontend.md
+index 7e637079..a3ed01b3 100644
+--- a/docs/02_architecture/frontend.md
++++ b/docs/02_architecture/frontend.md
+@@ -117,0 +118 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
++- **첫 대화 목록 로딩은 `conversationsLoading` 이 가진다**(#663) — 첫 요청 세대(`firstLoadGen`)가 끝날 때만 내리고(StrictMode 가 두 번 낸 요청 중 마지막), 실패해도 내린다. 그동안 사이드바는 스켈레톤과 `role="status"` 문구를 보이고 「대화가 없습니다」는 다 읽고 비었을 때만 보인다(규칙은 `design-system.md` §5).
+@@ -264 +265 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
+-- 모바일 드로어는 화면 전체를 덮는 대화창이다(#644 · #669) — `role="dialog"` · X · Esc · 열린 동안 바깥 `inert` · 닫으면 메뉴 버튼으로 포커스 복귀(`hooks/useModalFocus`). 규칙은 `design-system.md` §7-1.
++- 모바일 드로어는 화면 전체를 덮는 대화창이다(#644 · #669) — `role="dialog"` · X · Esc · 열린 동안 바깥 `inert` · 닫으면 메뉴 버튼으로 포커스 복귀(`hooks/useModalFocus`). 열린 채 폭이 md(768px)가 되면 닫는다(#656). 규칙은 `design-system.md` §7-1.
+diff --git a/frontend/src/components/chat/MessageList.tsx b/frontend/src/components/chat/MessageList.tsx
+index 680d9211..ee7b6c18 100644
+--- a/frontend/src/components/chat/MessageList.tsx
++++ b/frontend/src/components/chat/MessageList.tsx
+@@ -101 +101,2 @@ export default function MessageList({
+-  // 답이 흐르는 동안 log 를 바쁨으로 둔다(#644) - 아니면 낭독기가 토큰 조각마다 읽어 쌓는다. 끝나면 풀려 완성된 답을 읽는다
++  // 답이 흐르는 동안 log 를 바쁨으로 둔다(#644) - 아니면 낭독기가 토큰 조각마다 읽어 쌓는다. 끝나 풀린 뒤 완성된 답을 읽게 하려는
++  // 의도다 - 해제 뒤 실제로 읽는지는 낭독기마다 달라 실기기로 확인하지 않았다(11-10 보류, #105)
+diff --git a/frontend/src/components/chat/Sidebar.tsx b/frontend/src/components/chat/Sidebar.tsx
+index 5e7f53c6..5e803c67 100644
+--- a/frontend/src/components/chat/Sidebar.tsx
++++ b/frontend/src/components/chat/Sidebar.tsx
+@@ -96 +96 @@ export default memo(function Sidebar({
+-            {/* 한글에는 자간 · 대문자 효과가 없어 걷었다(#646). 12px 이 읽히는 하한 */}
++            {/* 한글에는 자간 · 대문자 효과가 없어 걷었다(#646). 묶음 라벨은 12px 이 읽히는 하한(배지 · 장식 글자는 따로) */}
