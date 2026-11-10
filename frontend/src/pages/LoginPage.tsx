@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
@@ -13,6 +13,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // 오류 문구를 두 입력칸에 잇는다(#664) - 낭독기가 칸에 들어갈 때 「잘못됨」과 이유를 함께 읽는다
+  const errorId = useId()
+  const invalid = error ? { 'aria-invalid': true, 'aria-describedby': errorId } : {}
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -60,6 +63,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
+                  {...invalid}
                 />
               </Field>
               <Field label="비밀번호">
@@ -69,11 +73,12 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
+                  {...invalid}
                 />
               </Field>
 
               {/* 자리를 미리 비워 둠 - 오류가 뜰 때 폼 전체가 밀려 내려가면 눌린 버튼 위치가 어긋남 */}
-              <p aria-live="assertive" className="min-h-5 text-[13px] leading-5 text-danger">{error}</p>
+              <p id={errorId} aria-live="assertive" className="min-h-5 text-[13px] leading-5 text-danger">{error}</p>
 
               <button
                 type="submit"

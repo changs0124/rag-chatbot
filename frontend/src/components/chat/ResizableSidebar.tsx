@@ -116,9 +116,11 @@ export default function ResizableSidebar({ children }: { children: ReactNode }) 
           if (e.key === 'ArrowLeft') nudge(-KEY_STEP)
           if (e.key === 'ArrowRight') nudge(KEY_STEP)
         }}
-        className="group relative w-1 shrink-0 cursor-col-resize outline-none"
+        // 자리는 4px 그대로 두고 누르는 영역만 ::after 로 본문 쪽 8px 더 넓힌다(합 12px, #664) - 사이드바 쪽으로 넓히면
+        // 대화 목록 스크롤바를 덮는다. 본문 왼쪽 12px 안(헤더 여백)에는 누를 것이 없다. 키보드 포커스 선은 2px(hover 는 1px)
+        className="group relative w-1 shrink-0 cursor-col-resize outline-none after:absolute after:inset-y-0 after:left-0 after:-right-2 after:content-['']"
       >
-        <span className="absolute inset-y-0 left-0 w-px bg-transparent transition-colors duration-150 ease-[var(--ease-out-quint)] group-hover:bg-accent group-focus-visible:bg-accent" />
+        <span className="absolute inset-y-0 left-0 w-px bg-transparent transition-colors duration-150 ease-[var(--ease-out-quint)] group-hover:bg-accent group-focus-visible:w-0.5 group-focus-visible:bg-accent" />
       </div>
     </div>
   )
