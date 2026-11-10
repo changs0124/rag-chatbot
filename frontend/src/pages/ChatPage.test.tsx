@@ -173,6 +173,17 @@ describe('ChatPage 대화 불러오는 중 (#291)', () => {
   })
 })
 
+describe('ChatPage 본문 스크롤 상자 (#642)', () => {
+  // jsdom 은 레이아웃이 없어 밀림 자체는 못 잰다(브라우저 측정은 이슈 증거) - 원인인 기준 상자만 지킨다
+  it('스크롤 상자가 relative 라 목록 안 sr-only 줄이 문서 높이를 늘리지 않는다', () => {
+    renderChatPage()
+
+    const scroller = screen.getByText('무엇을 도와드릴까요?').closest('.overflow-y-auto')
+    expect(scroller).not.toBeNull()
+    expect(scroller).toHaveClass('relative')
+  })
+})
+
 describe('ChatPage 제목 수정 (#371)', () => {
   afterEach(() => {
     chatState.conversations = []
@@ -429,5 +440,27 @@ describe('ChatPage 답변 중 이동 확인 (#503)', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     // 끊지 않는 처리는 useChat 의 몫이다 - 화면은 그대로 넘긴다
     expect(chatState.selectConversation).toHaveBeenCalledWith('c1')
+  })
+})
+
+// #644 (#105 F9) : 모바일 드로어는 대화창으로 읽히고, Esc 로 닫히고, 포커스가 안으로 들어갔다 햄버거로 돌아온다
+describe('ChatPage 모바일 드로어 (#644)', () => {
+  it('열면 이름 있는 대화창 · 포커스가 안으로, Esc 로 닫으면 햄버거로 돌아온다', () => {
+    renderChatPage()
+    const menu = screen.getByRole('button', { name: '대화 목록 열기' })
+    menu.focus()
+    fireEvent.click(menu)
+
+    const drawer = screen.getByRole('dialog', { name: '대화 목록' })
+    expect(drawer).toHaveAttribute('aria-modal', 'true')
+    expect(drawer).toContainElement(document.activeElement as HTMLElement)
+    // 헤더는 드로어 바깥 갈래(본문 칼럼)에 있다 - 그 갈래에 inert 가 걸린다
+    expect(screen.getByRole('banner').closest('[inert]')).not.toBeNull()
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog', { name: '대화 목록' })).toBeNull()
+    expect(menu).toHaveFocus()
+    expect(screen.getByRole('banner').closest('[inert]')).toBeNull()
   })
 })

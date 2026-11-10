@@ -1,0 +1,30 @@
+{
+ "desktop": {
+  "대화_열기_전": {
+   "scrollTop": 0,
+   "scrollHeight": 900,
+   "clientHeight": 900,
+   "headerTop": 0
+  },
+  "대화_연_뒤": {
+   "scrollTop": 212,
+   "scrollHeight": 1310,
+   "clientHeight": 900,
+   "headerTop": -212
+  }
+ },
+ "mobile": {
+  "대화_열기_전": {
+   "scrollTop": 0,
+   "scrollHeight": 844,
+   "clientHeight": 844,
+   "headerTop": 0
+  },
+  "대화_연_뒤": {
+   "scrollTop": 521,
+   "scrollHeight": 1365,
+   "clientHeight": 844,
+   "headerTop": -521
+  }
+ }
+}
