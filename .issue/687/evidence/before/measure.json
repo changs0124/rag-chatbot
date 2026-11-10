@@ -1,0 +1,46 @@
+{
+ "mobile": {
+  "onPress": {
+   "height": "844px",
+   "transform": "(비어 있음)"
+  },
+  "afterFocus": {
+   "height": "544px",
+   "transform": "(비어 있음)"
+  },
+  "panned": {
+   "height": "544px",
+   "transform": "(비어 있음)"
+  },
+  "afterBlur": {
+   "height": "(비어 있음)",
+   "transform": "(비어 있음)"
+  },
+  "closed": {
+   "height": "844px",
+   "transform": "(비어 있음)"
+  },
+  "reactCommits": 0,
+  "docScrollTop": 0
+ },
+ "desktop": {
+  "onPress": {
+   "height": "(비어 있음)",
+   "transform": "(비어 있음)"
+  },
+  "afterFocus": {
+   "height": "(비어 있음)",
+   "transform": "(비어 있음)"
+  },
+  "afterBlur": {
+   "height": "(비어 있음)",
+   "transform": "(비어 있음)"
+  },
+  "closed": {
+   "height": "(비어 있음)",
+   "transform": "(비어 있음)"
+  },
+  "reactCommits": 0,
+  "docScrollTop": 0
+ }
+}
