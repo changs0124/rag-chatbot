@@ -1,0 +1,57 @@
+{
+ "handle": {
+  "layoutWidth": 4,
+  "hitFromLeftEdge": [
+   0,
+   3
+  ],
+  "hitWidth": 4,
+  "intoSidebar": 0,
+  "intoMain": 0,
+  "focusLine": {
+   "focused": true,
+   "spanWidth": 1,
+   "spanBg": "rgb(8, 113, 155)"
+  }
+ },
+ "desktop-login": [
+  {
+   "type": "email",
+   "ariaInvalid": null,
+   "describedBy": []
+  },
+  {
+   "type": "password",
+   "ariaInvalid": null,
+   "describedBy": []
+  }
+ ],
+ "desktop-header": {
+  "titleBoxX": 276,
+  "titleTextX": 286,
+  "columnBoxX": 492,
+  "columnContentX": 492,
+  "headerLeft": 264,
+  "scrollTop": 0
+ },
+ "mobile-login": [
+  {
+   "type": "email",
+   "ariaInvalid": null,
+   "describedBy": []
+  },
+  {
+   "type": "password",
+   "ariaInvalid": null,
+   "describedBy": []
+  }
+ ],
+ "mobile-header": {
+  "titleBoxX": 60,
+  "titleTextX": 70,
+  "columnBoxX": 16,
+  "columnContentX": 16,
+  "headerLeft": 0,
+  "scrollTop": 0
+ }
+}
