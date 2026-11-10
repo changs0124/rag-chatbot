@@ -1,0 +1,41 @@
+{
+ "mobile": {
+  "opened": {
+   "panel": {
+    "x": 0,
+    "width": 390,
+    "height": 844
+   },
+   "viewport": {
+    "width": 390,
+    "height": 844
+   },
+   "closeButton": {
+    "x": 334,
+    "y": 10,
+    "width": 44,
+    "height": 44
+   },
+   "focus": "button「새 대화」",
+   "open": 1,
+   "inert": 2,
+   "bodyOverflow": "hidden"
+  },
+  "afterX": {
+   "focus": "button「대화 목록 열기」",
+   "open": 0,
+   "inert": 0,
+   "bodyOverflow": "(비어 있음)"
+  },
+  "afterEsc": {
+   "focus": "button「대화 목록 열기」",
+   "open": 0,
+   "inert": 0,
+   "bodyOverflow": "(비어 있음)"
+  }
+ },
+ "desktop": {
+  "closeButtons": 0,
+  "sidebarWidth": 260
+ }
+}
