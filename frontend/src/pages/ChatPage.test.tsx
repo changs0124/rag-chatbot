@@ -88,9 +88,10 @@ describe('ChatPage 모바일 헤더 로고', () => {
 describe('ChatPage 모바일 뷰포트 (#221)', () => {
   /** jsdom 에 없는 visualViewport 를 이벤트만 쏠 수 있게 흉내 냄 */
   function fakeVisualViewport(height: number) {
-    const target = new EventTarget() as EventTarget & { height: number; scale: number }
+    const target = new EventTarget() as EventTarget & { height: number; scale: number; offsetTop: number }
     target.height = height
     target.scale = 1
+    target.offsetTop = 0
     Object.defineProperty(window, 'visualViewport', { value: target, configurable: true })
     return target
   }
@@ -205,6 +206,110 @@ describe('ChatPage 모바일 뷰포트 (#221)', () => {
 
     fireEvent.focusIn(input)
     expect(rootOf().style.height).toBe('549px')
+  })
+
+  /** 키보드 300px 을 한 번 열고 닫아 높이를 배우게 한다 */
+  function learnKeyboard(vv: { height: number } & EventTarget, input: HTMLElement, h: number) {
+    vv.height = h - 300
+    vv.dispatchEvent(new Event('resize'))
+    fireEvent.focusOut(input, { relatedTarget: null })
+    vv.height = h
+    vv.dispatchEvent(new Event('resize'))
+  }
+
+  // #687 : focusin 은 Safari 가 화면을 밀지 정한 뒤라 늦었다(실기기 : 매번 입력칸이 위 끝까지 갔다 내려옴) - 누르는 순간 줄인다
+  it('입력칸을 누르는 순간(포커스 전) 기억한 키보드 높이만큼 미리 줄인다', () => {
+    layoutHeight(850)
+    const vv = fakeVisualViewport(850)
+    renderChatPage()
+    const input = screen.getByRole('textbox', { name: '메시지 입력' })
+    learnKeyboard(vv, input, 850)
+
+    fireEvent.touchStart(input)
+    expect(rootOf().style.height).toBe('550px')
+  })
+
+  it('누른 곳이 입력칸이 아니거나, 확대 중이거나, 키보드가 이미 떠 있으면 줄이지 않는다', () => {
+    layoutHeight(851)
+    const vv = fakeVisualViewport(851)
+    renderChatPage()
+    const input = screen.getByRole('textbox', { name: '메시지 입력' })
+    learnKeyboard(vv, input, 851)
+
+    fireEvent.pointerDown(screen.getByRole('banner'))
+    expect(rootOf().style.height).toBe('851px')
+
+    vv.scale = 1.5
+    fireEvent.touchStart(input)
+    expect(rootOf().style.height).toBe('851px')
+
+    vv.scale = 1
+    vv.height = 551
+    vv.dispatchEvent(new Event('resize'))
+    vv.height = 500 // 키보드가 떠 있는 채 예측 문구 줄 등으로 더 줄어든 상태
+    vv.dispatchEvent(new Event('resize'))
+    fireEvent.touchStart(input)
+    expect(rootOf().style.height).toBe('500px')
+  })
+
+  it('누르고도 포커스가 오지 않으면(끌기 등) 미리 줄인 높이를 되돌리고, 포커스가 오면 그대로 둔다', () => {
+    vi.useFakeTimers()
+    try {
+      layoutHeight(852)
+      const vv = fakeVisualViewport(852)
+      renderChatPage()
+      const input = screen.getByRole('textbox', { name: '메시지 입력' })
+      learnKeyboard(vv, input, 852)
+      ;(document.activeElement as HTMLElement | null)?.blur()
+
+      fireEvent.touchStart(input)
+      expect(rootOf().style.height).toBe('552px')
+      vi.advanceTimersByTime(700)
+      expect(rootOf().style.height).toBe('')
+
+      fireEvent.touchStart(input)
+      input.focus()
+      vi.advanceTimersByTime(700)
+      expect(rootOf().style.height).toBe('552px')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // #687 : 문서 스크롤을 꺼 두면 Safari 는 보이는 영역을 민다(offsetTop) - scrollTo 로 안 돌아오니 루트가 따라 내려간다
+  it('키보드가 떠 있는 동안 보이는 영역이 밀리면 루트를 그만큼 내리고, 닫히면 푼다', () => {
+    layoutHeight(853)
+    const vv = fakeVisualViewport(853)
+    renderChatPage()
+    const input = screen.getByRole('textbox', { name: '메시지 입력' })
+
+    vv.height = 553
+    vv.offsetTop = 120
+    vv.dispatchEvent(new Event('scroll'))
+    expect(rootOf().style.height).toBe('553px')
+    expect(rootOf().style.transform).toBe('translateY(120px)')
+
+    fireEvent.focusOut(input, { relatedTarget: null })
+    expect(rootOf().style.transform).toBe('')
+  })
+
+  it('키보드 없이 밀린 것(주소창 등)이나 확대 중에는 루트를 옮기지 않는다', () => {
+    layoutHeight(854)
+    const vv = fakeVisualViewport(854)
+    renderChatPage()
+
+    vv.height = 800
+    vv.offsetTop = 30
+    vv.dispatchEvent(new Event('scroll'))
+    expect(rootOf().style.transform).toBe('')
+
+    vv.height = 554
+    vv.offsetTop = 120
+    vv.dispatchEvent(new Event('scroll'))
+    expect(rootOf().style.transform).toBe('translateY(120px)')
+    vv.scale = 1.4
+    vv.dispatchEvent(new Event('resize'))
+    expect(rootOf().style.transform).toBe('')
   })
 
   it('채팅 화면에 있는 동안만 문서 스크롤·튕김을 끄고, 떠나면 되돌린다', () => {

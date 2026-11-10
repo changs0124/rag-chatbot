@@ -255,7 +255,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   끄고 ② `visualViewport` 가 바뀌면 루트 높이를 **React 상태가 아니라 루트 요소에 직접** 그 높이로 맞추고(같은 값이면 건너뜀)
   문서가 실제로 밀렸을 때만 스크롤을 0 으로 되돌린다(`ChatPage.tsx`, #668 — 상태로 두면 키보드 애니메이션 동안 화면 전체가 다시 그려졌다).
   iOS Safari 는 resize 를 키보드 애니메이션이 **끝난 뒤** 보내므로(#682) ③ 입력칸 `focusout` 에서 높이를 바로 지우고
-  ④ 한 번 연 키보드 높이를 화면 방향별로 기억해 다음 `focusin` 에 미리 줄인다(첫 열림은 기억이 없어 resize 를 기다린다 — 체감은 실기기 확인).
+  ④ 한 번 연 키보드 높이를 화면 방향별로 기억해 다음부터 입력칸을 **누르는 순간**(`touchstart` · `pointerdown`, 포커스 전 — #687, `focusin` 은 키보드 탐색용으로 남김) 미리 줄이고, 키보드가 떠 있는 동안 보이는 영역이 밀리면(`visualViewport.offsetTop`) 루트를 `translateY` 로 따라 내린다(첫 열림은 기억이 없어 resize 를 기다린다 — 체감은 실기기 확인).
   Android Chrome 은 `index.html` viewport 의 `interactive-widget=resizes-content` 로 레이아웃 자체가 줄어든다.
   **이 메타는 전 페이지에 걸린다** — Chrome 108 전의 기본 동작과 같다. 로그인·관리·설정 화면은 `min-h-[100dvh]` +
   문서 스크롤이라 키보드가 열리면 최소 높이만 줄고 내용은 그대로 스크롤된다.
