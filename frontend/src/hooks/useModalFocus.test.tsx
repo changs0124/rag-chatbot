@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { StrictMode, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useModalFocus } from './useModalFocus'
 
 /*
@@ -150,5 +151,73 @@ describe('useModalFocus', () => {
     fireEvent.click(screen.getByRole('button', { name: '창 닫기' }))
 
     expect(opener).toHaveFocus()
+  })
+
+  // #684 : 연 버튼이 안 보이게 되면(폭이 줄어 데스크톱 사이드바가 숨음) focus() 가 아무 일도 안 해 body 로 남았다 - returnTo 로
+  it('연 버튼이 보이지 않게 되면 returnTo 로 돌아간다', () => {
+    render(<Harness />)
+    const opener = screen.getByRole('button', { name: '열기' })
+    opener.focus()
+    fireEvent.click(opener)
+    // jsdom 은 레이아웃이 없어 숨김을 checkVisibility 로 흉내 낸다
+    ;(opener as HTMLElement & { checkVisibility?: () => boolean }).checkVisibility = () => false
+    fireEvent.click(screen.getByRole('button', { name: '창 닫기' }))
+    expect(screen.getByRole('button', { name: '돌아갈 곳' })).toHaveFocus()
+  })
+
+  // #684 : 드로어(#root 안) 위에 body 로 portal 된 확인 창(#674)이 떠 #root 를 inert 로 둔 채 둘이 한 커밋에 닫히는 경우.
+  // 브라우저는 inert 안 요소에 포커스를 주지 않아 정리가 끝난 뒤(마이크로태스크) 옮기게 했다. jsdom 은 inert 를 포커스에 반영하지
+  // 않아 그 미루기 자체는 여기서 가를 수 없다(미루기를 빼도 통과) - 여기서는 둘이 같이 닫힌 뒤의 최종 상태만 잠근다
+  it('겹친 창이 같이 닫히면 inert 가 남지 않고 포커스는 처음 연 버튼에 있다', async () => {
+    function Drawer({ children }: { children: React.ReactNode }) {
+      const ref = useModalFocus<HTMLDivElement>()
+      return (
+        <div ref={ref} role="dialog" aria-modal="true" aria-label="드로어">
+          {children}
+        </div>
+      )
+    }
+    function Confirm({ onConfirm }: { onConfirm: () => void }) {
+      const ref = useModalFocus<HTMLDivElement>()
+      return createPortal(
+        <div ref={ref} role="dialog" aria-modal="true" aria-label="확인">
+          <button onClick={onConfirm}>이동</button>
+        </div>,
+        document.body,
+      )
+    }
+    function Page() {
+      const [drawer, setDrawer] = useState(false)
+      const [confirm, setConfirm] = useState(false)
+      return (
+        <div data-testid="root">
+          <button onClick={() => setDrawer(true)}>메뉴</button>
+          {drawer && (
+            <Drawer>
+              <button onClick={() => setConfirm(true)}>다른 대화</button>
+            </Drawer>
+          )}
+          {confirm && (
+            <Confirm
+              onConfirm={() => {
+                setDrawer(false)
+                setConfirm(false)
+              }}
+            />
+          )}
+        </div>
+      )
+    }
+    render(<Page />)
+    const menu = screen.getByRole('button', { name: '메뉴' })
+    menu.focus()
+    fireEvent.click(menu)
+    const other = screen.getByRole('button', { name: '다른 대화' })
+    other.focus()
+    fireEvent.click(other)
+    fireEvent.click(screen.getByRole('button', { name: '이동' }))
+    await Promise.resolve()
+    expect(document.querySelector('[inert]')).toBeNull()
+    expect(menu).toHaveFocus()
   })
 })

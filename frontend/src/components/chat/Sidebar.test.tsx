@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { BrowserRouter } from 'react-router'
 import Sidebar from './Sidebar'
 import type { Conversation } from '../../lib/types'
@@ -97,7 +97,7 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
     expect(within(dialog).getByRole('button', { name: '취소' })).toHaveFocus()
   })
 
-  // #656 : 대화를 지우면 연 ✕ 가 행째 사라진다 - 포커스를 「새 대화」로 돌려 드로어 안이면 Esc 도 계속 먹게 한다
+  // #656 : 대화를 지우면 연 삭제(휴지통) 버튼이 행째 사라진다 - 포커스를 「새 대화」로 돌려 드로어 안이면 Esc 도 계속 먹게 한다
   it('대화를 지워 행이 사라지면 포커스가 새 대화 버튼으로 간다', () => {
     const props = { activeId: null, onSelect: vi.fn(), onNew: vi.fn(), onDelete: vi.fn(), userName: '사용자', onLogout: vi.fn() }
     const { rerender } = render(
@@ -105,7 +105,7 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
         <Sidebar conversations={[conv('c1', new Date())]} {...props} />
       </BrowserRouter>,
     )
-    // 브라우저는 누른 버튼에 포커스를 준다 - jsdom 은 안 주므로 직접 준다(확인 창은 닫힐 때 이 ✕ 로 포커스를 돌려준다)
+    // 브라우저는 누른 버튼에 포커스를 준다 - jsdom 은 안 주므로 직접 준다(확인 창은 닫힐 때 이 삭제 버튼으로 포커스를 돌려준다)
     const x = screen.getByRole('button', { name: "'c1' 대화 삭제" })
     x.focus()
     fireEvent.click(x)
@@ -122,8 +122,36 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
   })
 
   // #674 : 삭제가 실패해 행이 남은 뒤, 나중에 다른 경로(다른 기기에서 지움 · 목록 갱신)로 그 행이 빠져도 포커스를 옮기지 않는다
-  it('삭제가 실패한 뒤 나중에 그 행이 빠져도 포커스를 새 대화로 옮기지 않는다', () => {
-    const props = { activeId: null, onSelect: vi.fn(), onNew: vi.fn(), onDelete: vi.fn(), userName: '사용자', onLogout: vi.fn() }
+  // #684 : 실제 실패는 목록을 안 바꾼다(같은 배열) - onDelete 의 false 로 표시를 거둔다
+  it('삭제가 실패한 뒤 나중에 그 행이 빠져도 포커스를 새 대화로 옮기지 않는다', async () => {
+    const props = { activeId: null, onSelect: vi.fn(), onNew: vi.fn(), onDelete: vi.fn().mockResolvedValue(false), userName: '사용자', onLogout: vi.fn() }
+    const c1 = conv('c1', new Date())
+    const c2 = conv('c2', new Date())
+    const view = (list: Conversation[]) => (
+      <BrowserRouter>
+        <Sidebar conversations={list} {...props} />
+      </BrowserRouter>
+    )
+    const list = [c1, c2]
+    const { rerender } = render(view(list))
+    fireEvent.click(screen.getByRole('button', { name: "'c1' 대화 삭제" }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+    // 실패 - 목록은 그대로(같은 배열 참조라 목록 효과가 돌지 않는다), onDelete 가 false 를 돌려준다
+    rerender(view(list))
+    await act(async () => {})
+    const elsewhere = screen.getByRole('button', { name: "'c2' 대화 삭제" })
+    elsewhere.focus()
+    ;(document.activeElement as HTMLElement).blur()
+
+    // 한참 뒤 다른 경로로 c1 이 빠진다
+    rerender(view([c2]))
+
+    expect(screen.getByRole('button', { name: '새 대화' })).not.toHaveFocus()
+  })
+
+  // #684 : 삭제를 기다리는 사이 다른 이유(답변 뒤 갱신 · 이름 변경)로 목록이 바뀌어도 표시를 들고 있다가 행이 빠질 때 옮긴다
+  it('삭제를 기다리는 사이 목록이 바뀌어도, 행이 빠지면 포커스가 새 대화로 간다', () => {
+    const props = { activeId: null, onSelect: vi.fn(), onNew: vi.fn(), onDelete: vi.fn(() => new Promise(() => {})), userName: '사용자', onLogout: vi.fn() }
     const c1 = conv('c1', new Date())
     const c2 = conv('c2', new Date())
     const view = (list: Conversation[]) => (
@@ -134,16 +162,10 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
     const { rerender } = render(view([c1, c2]))
     fireEvent.click(screen.getByRole('button', { name: "'c1' 대화 삭제" }))
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
-    // 실패 - 목록은 그대로(새 배열로 다시 그려짐)
-    rerender(view([c1, c2]))
-    const elsewhere = screen.getByRole('button', { name: "'c2' 대화 삭제" })
-    elsewhere.focus()
-    ;(document.activeElement as HTMLElement).blur()
-
-    // 한참 뒤 다른 경로로 c1 이 빠진다
-    rerender(view([c2]))
-
-    expect(screen.getByRole('button', { name: '새 대화' })).not.toHaveFocus()
+    rerender(view([c1, { ...c2, title: 'c2 새 이름' }]))
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    rerender(view([{ ...c2, title: 'c2 새 이름' }]))
+    expect(screen.getByRole('button', { name: '새 대화' })).toHaveFocus()
   })
 })
 
@@ -211,6 +233,32 @@ describe('Sidebar 목록 실패 · 삭제 아이콘 (#675)', () => {
     expect(screen.getByText('대화 목록을 불러오지 못했습니다')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
     expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  // #684 : 누르는 순간 버튼이 사라져 포커스가 body 로 빠졌다 - 다시 읽는 동안은 막아 두고 글자만 바꾼다
+  it('다시 읽는 동안 버튼은 남아 막히고, 성공해 목록이 오면 포커스가 새 대화로 간다', () => {
+    const props = { activeId: null, onSelect: vi.fn(), onNew: vi.fn(), onDelete: vi.fn(), userName: '사용자', onLogout: vi.fn(), onRetry: vi.fn() }
+    const view = (list: Conversation[], loading: boolean, failed: boolean) => (
+      <BrowserRouter>
+        <Sidebar conversations={list} loading={loading} failed={failed} {...props} />
+      </BrowserRouter>
+    )
+    const { rerender } = render(view([], false, true))
+    const retry = screen.getByRole('button', { name: '다시 시도' })
+    retry.focus()
+    fireEvent.click(retry)
+    rerender(view([], true, true))
+    const busy = screen.getByRole('button', { name: '다시 읽는 중…' })
+    // disabled 가 아니라 aria-disabled - 포커스를 지킨다. 그동안 눌러도 다시 부르지 않는다
+    expect(busy).toHaveAttribute('aria-disabled', 'true')
+    expect(busy).toHaveFocus()
+    fireEvent.click(busy)
+    expect(props.onRetry).toHaveBeenCalledTimes(1)
+    expect(screen.queryByTestId('conversation-list-skeleton')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('대화 목록 다시 읽는 중')
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    rerender(view([conv('a', new Date())], false, false))
+    expect(screen.getByRole('button', { name: '새 대화' })).toHaveFocus()
   })
 
   it('실패했어도 그 사이 만든 대화가 있으면 목록을 보인다', () => {

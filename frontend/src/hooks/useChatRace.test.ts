@@ -281,7 +281,7 @@ describe('useChat 대화 컨텍스트 경쟁', () => {
       await result.current.selectConversation('A')
     })
 
-    let pending!: Promise<void>
+    let pending!: Promise<boolean>
     act(() => {
       pending = result.current.deleteConversation('A')
     })
