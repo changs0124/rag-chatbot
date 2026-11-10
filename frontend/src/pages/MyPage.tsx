@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import BackLink from '../components/BackLink'
@@ -19,6 +19,8 @@ export default function MyPage() {
   // 변경 요청이 도는 동안 버튼을 막는다(#359) - 연타한 두 번째 요청은 바뀐 비밀번호로 401 이 되어,
   // 이미 성공한 변경 위에 오류 문구를 덮는다
   const [savingPassword, setSavingPassword] = useState(false)
+  // 이름도 같은 이유로 막는다(#645) - 진행 표시 없이 두 번 누르면 같은 요청이 두 번 간다
+  const [savingName, setSavingName] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,17 +33,28 @@ export default function MyPage() {
     setError(errorMessage(e, '요청 중 오류가 발생했습니다'))
   }
 
-  async function saveName() {
+  const canSaveName = !savingName && !!name.trim()
+  const canSavePassword = !savingPassword && !!currentPassword && newPassword.length >= 8
+
+  // 폼 제출이라 Enter 로도 온다(#645) - 버튼이 막힌 상태의 Enter 는 브라우저가 걸러 주지만 여기서도 한 번 더 막는다
+  async function saveName(e: FormEvent) {
+    e.preventDefault()
+    if (!canSaveName) return
+    setSavingName(true)
     try {
       const me = await updateName(name)
       setUser(me)
       flash('이름을 변경했습니다')
     } catch (e) {
       fail(e)
+    } finally {
+      setSavingName(false)
     }
   }
 
-  async function savePassword() {
+  async function savePassword(e: FormEvent) {
+    e.preventDefault()
+    if (!canSavePassword) return
     setSavingPassword(true)
     try {
       // 서버가 변경 시각 이전 토큰을 전부 무효화함 - 새 토큰으로 갈아 끼우지 않으면
@@ -78,45 +91,46 @@ export default function MyPage() {
 
       <div className="space-y-4">
         <Card title="이름">
-          <div className="flex gap-2">
+          <form onSubmit={saveName} className="flex gap-2">
             <TextInput
               aria-label="이름"
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={MAX_NAME_CHARS}
             />
-            <button onClick={saveName} disabled={!name.trim()} className={primaryButtonClass}>
-              저장
+            <button type="submit" disabled={!canSaveName} className={primaryButtonClass}>
+              {savingName ? '저장 중…' : '저장'}
             </button>
-          </div>
+          </form>
         </Card>
 
         <Card title="비밀번호">
-          <div className="space-y-2.5">
-            <TextInput
-              type="password"
-              aria-label="현재 비밀번호"
-              placeholder="현재 비밀번호"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-            <TextInput
-              type="password"
-              aria-label="새 비밀번호 (8자 이상)"
-              placeholder="새 비밀번호 (8자 이상)"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              autoComplete="new-password"
-            />
-            <button
-              onClick={savePassword}
-              disabled={savingPassword || !currentPassword || newPassword.length < 8}
-              className={primaryButtonClass}
-            >
+          {/* 라벨 · 규칙 안내를 입력칸 밖에 둔다(#645) - placeholder 뿐이면 입력하는 순간 무엇을 넣는 칸인지와 「8자 이상」이 사라진다 */}
+          <form onSubmit={savePassword} className="space-y-3">
+            <Field label="현재 비밀번호">
+              <TextInput
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </Field>
+            <Field label="새 비밀번호">
+              <TextInput
+                type="password"
+                aria-describedby="new-password-hint"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </Field>
+            <p id="new-password-hint" className="-mt-1.5 text-[13px] text-ink-muted">
+              8자 이상
+            </p>
+            <button type="submit" disabled={!canSavePassword} className={primaryButtonClass}>
               비밀번호 변경
             </button>
-          </div>
+          </form>
         </Card>
 
         {/* 관리자에게만 렌더한다 — 눌러서 404 를 만나는 것보다 없는 편이 낫다(접근 제어는 Me.role 주석) */}
@@ -148,6 +162,16 @@ export default function MyPage() {
         )}
       </div>
     </PageShell>
+  )
+}
+
+/** LoginPage 의 Field 와 같은 모양 - 보이는 라벨이 입력칸의 접근 가능한 이름이 된다 */
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[13px] font-medium text-ink-muted">{label}</span>
+      {children}
+    </label>
   )
 }
 
