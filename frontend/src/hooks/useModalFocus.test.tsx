@@ -137,4 +137,18 @@ describe('useModalFocus', () => {
 
     expect(screen.getByRole('button', { name: '닫기' })).toHaveFocus()
   })
+
+  // #674 : Safari 는 클릭 · 탭에 버튼 포커스를 주지 않는다 - 연 순간 activeElement 가 body. jsdom 의 click 도 포커스를 안 줘
+  // 그 경우와 같다. 직전에 누른(pointerdown) 버튼을 연 요소로 써서 닫히면 거기로 돌아간다
+  it('포커스 없이 눌러 열어도(Safari) 닫히면 누른 버튼으로 돌아간다', () => {
+    render(<Harness />)
+    const opener = screen.getByRole('button', { name: '열기' })
+    expect(document.activeElement).toBe(document.body)
+    fireEvent.pointerDown(opener)
+    fireEvent.click(opener)
+
+    fireEvent.click(screen.getByRole('button', { name: '창 닫기' }))
+
+    expect(opener).toHaveFocus()
+  })
 })

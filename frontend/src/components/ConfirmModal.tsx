@@ -1,4 +1,5 @@
 import { useEffect, useId } from 'react'
+import { createPortal } from 'react-dom'
 import { useModalFocus } from '../hooks/useModalFocus'
 
 export default function ConfirmModal({
@@ -27,7 +28,10 @@ export default function ConfirmModal({
     return () => window.removeEventListener('keydown', onKey)
   }, [onCancel])
 
-  return (
+  // body 바로 아래에 그린다(#674) - 데스크톱 사이드바(`hidden md:block`) 안에서 띄운 창은 폭이 md 아래로 줄면 조상째 숨는데,
+  // 바깥에 건 inert 는 남아 앱 전체가 눌리지 않았다. body 아래면 늘 보이고 inert 는 #root 하나에 걸려, 겹친 창(드로어 위의
+  // 이동 확인 창)이 먼저 닫힌 바깥 창 때문에 풀리지도 않는다. React 이벤트는 컴포넌트 트리를 따라 올라가므로 드로어의 Esc 판정은 그대로
+  return createPortal(
     <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className="absolute inset-0" onClick={onCancel} aria-hidden="true" />
       {/* 한 겹 카드(#646) - 이중 테두리(트레이)를 걷었다. 경계는 1px line + 떠 있는 그림자 */}
@@ -54,6 +58,7 @@ export default function ConfirmModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
