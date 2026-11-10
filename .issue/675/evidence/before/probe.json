@@ -1,0 +1,59 @@
+{
+ "desktop": {
+  "icons": {
+   "deleteIsX": true,
+   "closeIsX": null
+  },
+  "newChatBg": {
+   "rest": "rgb(255, 255, 255)",
+   "hover": "rgb(251, 252, 254)"
+  },
+  "longUrl": {
+   "rowRight": 1236,
+   "sendRight": 1227,
+   "sendInside": true,
+   "textareaWidth": 662,
+   "pageHScroll": false
+  },
+  "listFail": {
+   "atFail": "대화가 없습니다",
+   "afterErrorCleared": "대화가 없습니다",
+   "retryButton": false
+  },
+  "adminRetry": {
+   "text": "다시 시도",
+   "disabled": false,
+   "afterLoaded": true
+  },
+  "menuOverHandle": {
+   "menuStillOpen": true
+  }
+ },
+ "mobile": {
+  "icons": {
+   "deleteIsX": true,
+   "closeIsX": true
+  },
+  "newChatBg": {
+   "rest": "rgb(255, 255, 255)",
+   "hover": "rgb(255, 255, 255)"
+  },
+  "longUrl": {
+   "rowRight": 374,
+   "sendRight": 365,
+   "sendInside": true,
+   "textareaWidth": 244,
+   "pageHScroll": false
+  },
+  "listFail": {
+   "atFail": "대화가 없습니다",
+   "afterErrorCleared": "대화가 없습니다",
+   "retryButton": false
+  },
+  "adminRetry": {
+   "text": "다시 시도",
+   "disabled": false,
+   "afterLoaded": true
+  }
+ }
+}

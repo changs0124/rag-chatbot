@@ -1,0 +1,61 @@
+{
+ "desktop": {
+  "icons": {
+   "deleteIsX": false,
+   "closeIsX": null
+  },
+  "newChatBg": {
+   "rest": "rgb(255, 255, 255)",
+   "hover": "rgb(237, 242, 248)"
+  },
+  "longUrl": {
+   "rowRight": 1236,
+   "sendRight": 1227,
+   "sendInside": true,
+   "textareaWidth": 662,
+   "pageHScroll": false
+  },
+  "listFail": {
+   "atFail": "불러오지 못했습니다",
+   "afterErrorCleared": "불러오지 못했습니다",
+   "retryButton": true,
+   "afterRetryTitles": 2
+  },
+  "adminRetry": {
+   "text": "다시 읽는 중…",
+   "disabled": true,
+   "afterLoaded": true
+  },
+  "menuOverHandle": {
+   "menuStillOpen": false
+  }
+ },
+ "mobile": {
+  "icons": {
+   "deleteIsX": false,
+   "closeIsX": true
+  },
+  "newChatBg": {
+   "rest": "rgb(255, 255, 255)",
+   "hover": "rgb(255, 255, 255)"
+  },
+  "longUrl": {
+   "rowRight": 374,
+   "sendRight": 365,
+   "sendInside": true,
+   "textareaWidth": 244,
+   "pageHScroll": false
+  },
+  "listFail": {
+   "atFail": "불러오지 못했습니다",
+   "afterErrorCleared": "불러오지 못했습니다",
+   "retryButton": true,
+   "afterRetryTitles": 2
+  },
+  "adminRetry": {
+   "text": "다시 읽는 중…",
+   "disabled": true,
+   "afterLoaded": true
+  }
+ }
+}
