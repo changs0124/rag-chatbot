@@ -30,7 +30,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[100dvh] bg-canvas">
-      <div className="mx-auto grid min-h-[100dvh] w-full max-w-5xl items-center gap-6 px-3 py-6 md:grid-cols-2 md:gap-16 md:px-8 md:py-10">
+      {/* 모바일은 위에서부터 쌓는다(#646) - 가운데 정렬은 소개글과 폼 사이에 230px 빈 띠를 만들었다 */}
+      <div className="mx-auto grid min-h-[100dvh] w-full max-w-5xl content-start gap-8 px-4 pt-12 pb-6 md:grid-cols-2 md:content-center md:items-center md:gap-16 md:px-8 md:py-10">
         {/* 왼쪽은 정체성, 오른쪽은 폼. 모바일에서는 위아래로 쌓임 */}
         <div className="md:pr-4">
           <Logo className="h-8 w-auto text-ink md:h-10" />
@@ -45,9 +46,9 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* 모바일에서는 바깥 프레임(면 + 1.5 여백)을 걷는다 - 좁은 폭에서 이중 테두리가 입력칸을 268px 까지 줄였다(#198) */}
-        <div className="md:rounded-[1.75rem] md:bg-surface md:p-1.5 md:shadow-[var(--shadow-ambient)]">
-          <div className="rounded-[1.375rem] bg-raised px-4 py-6 shadow-[var(--shadow-ambient)] md:p-8 md:shadow-none">
+        {/* 한 겹 카드(#646) - 이중 테두리(트레이)를 걷어 모바일 · 데스크톱이 같은 모양이다(#198 의 폭 문제도 없음) */}
+        <div>
+          <div className="rounded-2xl border border-line bg-raised px-5 py-7 shadow-[var(--shadow-ambient)] md:p-8">
             <h2 className="text-lg font-semibold text-ink">로그인</h2>
             <p className="mt-1 mb-6 text-sm text-ink-muted">계속하려면 로그인하세요</p>
 
@@ -77,7 +78,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="h-12 w-full rounded-full bg-accent text-[15px] font-medium text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.01] active:scale-[0.99] disabled:scale-100 disabled:opacity-50"
+                className="h-12 w-full rounded-lg bg-accent text-[15px] font-medium text-accent-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-accent-hover disabled:opacity-50"
               >
                 {busy ? '처리 중…' : '로그인'}
               </button>

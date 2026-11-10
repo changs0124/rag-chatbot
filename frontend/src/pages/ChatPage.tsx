@@ -190,7 +190,7 @@ export default function ChatPage() {
                       setEditingTitle(false)
                     }
                   }}
-                  className="w-full max-w-xs rounded-lg border border-line bg-raised px-2.5 py-1.5 text-base font-semibold md:text-[15px] text-ink outline-none focus:border-accent focus:shadow-[0_0_0_4px_var(--c-focus-ring)]"
+                  className="w-full max-w-xs rounded-lg border border-line-strong bg-raised px-2.5 py-1.5 text-base font-semibold md:text-[15px] text-ink outline-none focus:border-accent focus:shadow-[0_0_0_4px_var(--c-focus-ring)]"
                 />
               ) : (
                 <button
@@ -200,7 +200,7 @@ export default function ChatPage() {
                     setEditingTitle(true)
                   }}
                   title="제목 변경"
-                  className="max-w-full truncate rounded-lg px-2.5 py-1.5 text-[15px] font-semibold text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface"
+                  className="min-h-11 max-w-full truncate rounded-lg px-2.5 py-1.5 text-[15px] font-semibold text-ink transition-colors md:min-h-0 duration-150 ease-[var(--ease-out-quint)] hover:bg-surface"
                 >
                   {activeTitle ?? '새 대화'}
                 </button>
@@ -228,11 +228,22 @@ export default function ChatPage() {
           <div className="h-full overflow-y-auto">
             {chat.loadingMessages ? (
               // 이력이 오는 동안 직전 대화나 빈 화면 안내 대신 로딩 표시(#291) - 모바일 · 데스크탑 같은 자리
-              <div className="grid h-full place-items-center">
-                <div className="flex flex-col items-center gap-3 text-sm text-ink-muted">
-                  <span className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-accent motion-reduce:animate-none" />
-                  불러오는 중…
+              // 스켈레톤(#646) - 돌아가는 원 대신 올 대화의 모양(질문 말풍선 + 답변 줄)을 미리 깐다. 움직임 줄이기면 깜빡임을 끈다
+              <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 md:px-6">
+                <div aria-hidden="true" className="flex animate-pulse flex-col gap-6 motion-reduce:animate-none">
+                  <div className="ml-auto h-11 w-2/5 rounded-3xl bg-highlight" />
+                  <div className="space-y-3">
+                    <div className="h-3.5 w-11/12 rounded-full bg-highlight" />
+                    <div className="h-3.5 w-4/5 rounded-full bg-highlight" />
+                    <div className="h-3.5 w-3/5 rounded-full bg-highlight" />
+                  </div>
+                  <div className="ml-auto h-11 w-1/4 rounded-3xl bg-highlight" />
+                  <div className="space-y-3">
+                    <div className="h-3.5 w-10/12 rounded-full bg-highlight" />
+                    <div className="h-3.5 w-2/3 rounded-full bg-highlight" />
+                  </div>
                 </div>
+                <p className="text-center text-[13px] text-ink-muted">불러오는 중…</p>
               </div>
             ) : (
               <MessageList messages={chat.messages} stage={chat.stage} onAttachmentError={chat.refreshAttachment} />

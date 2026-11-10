@@ -4,6 +4,7 @@ import { Navigate } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
 import AdminErrorBanners from '../components/AdminErrorBanners'
 import BackLink from '../components/BackLink'
+import AdminListSkeleton from '../components/AdminListSkeleton'
 import ConfirmModal from '../components/ConfirmModal'
 import PageShell from '../components/PageShell'
 import TextInput from '../components/TextInput'
@@ -53,16 +54,16 @@ export default function AdminUsersPage() {
 
   return (
     <PageShell maxWidth="max-w-3xl">
-      <BackLink to="/me">마이페이지</BackLink>
+      <BackLink to="/me">설정</BackLink>
 
-      <h1 className="mt-6 text-xl font-semibold text-ink">사용자 관리</h1>
+      <h1 className="mt-6 text-xl font-semibold tracking-tight text-ink md:text-2xl">사용자 관리</h1>
       <p className="mt-1 text-sm leading-relaxed text-ink-muted">
         스스로 가입하는 경로가 없어 계정은 여기서만 만들어집니다.
       </p>
 
       <AdminErrorBanners listError={listError} error={error} loaded={loaded} onRetry={() => void refresh()} />
 
-      <UsersSection users={users} loaded={loaded} currentUserId={user?.id} refresh={refresh} setError={setError} />
+      <UsersSection users={users} loaded={loaded} loading={!loaded && !listError} currentUserId={user?.id} refresh={refresh} setError={setError} />
     </PageShell>
   )
 }
@@ -70,12 +71,14 @@ export default function AdminUsersPage() {
 function UsersSection({
   users,
   loaded,
+  loading,
   currentUserId,
   refresh,
   setError,
 }: {
   users: AdminUser[]
   loaded: boolean
+  loading: boolean
   currentUserId: string | undefined
   refresh: () => Promise<void>
   setError: (message: string | null) => void
@@ -164,11 +167,12 @@ function UsersSection({
     <>
       <section className="mt-6">
         {/* 못 불러온 것을 「0명」으로 보이지 않는다(#483) */}
-        <h2 className="text-sm font-medium text-ink-muted">사용자{loaded && ` ${users.length}명`}</h2>
+        <h2 className="text-base font-semibold text-ink">사용자{loaded && ` ${users.length}명`}</h2>
         {/* 스스로 가입하는 경로가 없으므로 계정은 여기서만 태어난다 */}
-        <form onSubmit={onCreate} className="mt-3 rounded-2xl bg-surface px-4 py-3 md:flex md:items-end md:gap-3">
+        {/* 흰 카드 위에 둔다(#646) - 입력칸 테두리 line-strong 은 surface 위에서 2.95:1 로 3:1 에 못 미친다 */}
+        <form onSubmit={onCreate} className="mt-3 rounded-xl border border-line bg-raised p-4 shadow-[var(--shadow-card)] md:flex md:items-end md:gap-3">
           <label className="block flex-1">
-            <span className="text-xs text-ink-muted">이메일</span>
+            <span className="mb-1.5 block text-[13px] font-medium text-ink-muted">이메일</span>
             <TextInput
               type="email"
               value={newEmail}
@@ -178,7 +182,7 @@ function UsersSection({
             />
           </label>
           <label className="mt-3 block flex-1 md:mt-0">
-            <span className="text-xs text-ink-muted">이름</span>
+            <span className="mb-1.5 block text-[13px] font-medium text-ink-muted">이름</span>
             <TextInput
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -190,33 +194,51 @@ function UsersSection({
           <button
             type="submit"
             disabled={creating}
-            className={primaryButtonClass + ' mt-3 md:mt-0'}
+            className={primaryButtonClass + ' mt-4 w-full md:mt-0 md:w-auto'}
           >
             {creating ? '발급 중…' : '계정 추가'}
           </button>
         </form>
-        <ul className="mt-3 space-y-2">
+        {loading ? (
+          <AdminListSkeleton rows={3} />
+        ) : (
+        // 한 장의 카드 + 행 구분선(#646). 행 머리에 이름 첫 글자 아바타, 역할은 배지
+        <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line bg-raised shadow-[var(--shadow-card)]">
           {users.map((person) => (
             <li
               key={person.id}
-              className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 md:gap-4"
+              className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3.5 md:flex-nowrap md:gap-4"
             >
+              <span
+                aria-hidden="true"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-sm font-semibold text-ink-muted"
+              >
+                {person.name.trim().charAt(0) || '?'}
+              </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-ink">
-                  {person.name}
-                  <span className="ml-2 text-xs text-ink-muted">
+                {/* 이름만 잘리고 역할 배지는 남는다(#646) - 한 줄 truncate 안에 두면 긴 이름이 배지까지 밀어냈다 */}
+                <p className="flex min-w-0 items-center gap-2">
+                  <span className="truncate text-sm font-medium text-ink">{person.name}</span>
+                  <span
+                    className={
+                      'shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ' +
+                      (person.role === 'admin' ? 'bg-accent-soft text-accent' : 'bg-highlight text-highlight-ink')
+                    }
+                  >
                     {person.role === 'admin' ? '관리자' : '사용자'}
                   </span>
                 </p>
                 <p className="mt-0.5 truncate text-xs text-ink-muted">{person.email}</p>
               </div>
+              {/* 모바일은 동작 버튼을 아래 줄로 내린다 - 390px 한 줄에 이름 · 메일 · 버튼 둘이 들어가지 않는다 */}
+              <div className="flex w-full shrink-0 justify-end gap-2 md:w-auto">
               {/* 자기 자신은 대상이 아니다 — 마이페이지에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
               {person.id !== currentUserId && (
                 <button
                   onClick={() => setPendingReset(person)}
                   disabled={resettingId !== null}
                   aria-label={`${person.name} 비밀번호 초기화`}
-                  className={actionButtonClass + ' hover:text-ink'}
+                  className={actionButtonClass}
                 >
                   비밀번호 초기화
                 </button>
@@ -228,14 +250,16 @@ function UsersSection({
                   onClick={() => setPendingDelete(person)}
                   disabled={deletingId !== null}
                   aria-label={`${person.name} ${deletingId === person.id ? '삭제 중' : '삭제'}`}
-                  className={actionButtonClass + ' hover:text-danger'}
+                  className={actionButtonClass + ' hover:border-danger/40 hover:text-danger'}
                 >
                   {deletingId === person.id ? '삭제 중…' : '삭제'}
                 </button>
               )}
+              </div>
             </li>
           ))}
         </ul>
+        )}
       </section>
 
       {pendingReset && (
@@ -259,12 +283,13 @@ function UsersSection({
 
       {issued && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={issuedTitleId}>
-          <div className="relative w-full max-w-sm rounded-[1.75rem] bg-surface p-1.5 shadow-[var(--shadow-lifted)]">
-            <div className="rounded-[1.375rem] bg-raised p-6">
+          {/* ConfirmModal 과 같은 한 겹 카드(#646) */}
+          <div className="relative w-full max-w-sm rounded-2xl border border-line bg-raised shadow-[var(--shadow-lifted)]">
+            <div className="p-6">
               <h2 id={issuedTitleId} className="text-base font-semibold text-ink">
                 {issued.kind === 'created' ? '계정이 발급되었습니다' : '임시 비밀번호가 발급되었습니다'}
               </h2>
-              <p className="mt-4 rounded-xl bg-surface px-4 py-3 text-center font-mono text-base text-ink">
+              <p className="mt-4 rounded-lg border border-line bg-surface px-4 py-3 text-center font-mono text-base break-all text-ink">
                 {issued.password}
               </p>
               {/* 두 문장 모두 필요하다 : 다시 못 본다는 사실과, 이 발급이 상대에게 무엇을 뜻하는지 */}

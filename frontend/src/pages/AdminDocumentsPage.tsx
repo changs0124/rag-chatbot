@@ -6,7 +6,8 @@ import BackLink from '../components/BackLink'
 import ConfirmModal from '../components/ConfirmModal'
 import PageShell from '../components/PageShell'
 import { actionButtonClass } from '../components/actionButton'
-import { IconAlert, IconCheck, IconClock } from '../components/icons'
+import { IconAlert, IconCheck, IconClock, IconRefresh, IconUpload } from '../components/icons'
+import AdminListSkeleton from '../components/AdminListSkeleton'
 import { errorMessage } from '../lib/api'
 import { deleteDocument, listDocuments, syncDocuments, uploadDocument } from '../lib/endpoints'
 import type { RagDocument } from '../lib/types'
@@ -16,7 +17,7 @@ const POLL_MS = 5000
 /** 폴링 요청 하나의 상한(#624) - 넘으면 끊어 진행 중 표시(#615)를 풀고 다음 틱이 다시 보낸다 */
 const POLL_TIMEOUT_MS = 15_000
 
-// 상태 표시는 무채색 라인 아이콘(#192). 뜻은 글자가 전하고 아이콘은 보조다(aria-hidden). 색은 아래 STATUS_CLASS 를 그대로 따른다
+// 상태 표시는 라인 아이콘 + 배지(#192 · #646). 뜻은 글자가 전하고 아이콘은 보조다(aria-hidden). 색은 아래 STATUS_CLASS 를 그대로 따른다
 const STATUS_LABEL: Record<RagDocument['status'], string> = {
   completed: '완료',
   in_progress: '처리중',
@@ -30,9 +31,10 @@ const STATUS_ICON: Record<RagDocument['status'], typeof IconCheck> = {
 }
 
 const STATUS_CLASS: Record<RagDocument['status'], string> = {
-  completed: 'text-accent',
-  in_progress: 'text-ink-muted',
-  failed: 'text-danger',
+  // 배지 면 + 글자(#646). 대비 : accent/accent-soft 4.98 · ink/highlight 10.63 · danger/danger-soft 4.64
+  completed: 'bg-accent-soft text-accent',
+  in_progress: 'bg-highlight text-highlight-ink',
+  failed: 'bg-danger-soft text-danger',
 }
 
 const ACCEPT = '.pdf,.txt,.md,.docx'
@@ -43,9 +45,17 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+// 올해가 아니면 연도를 붙인다(#646) - 400일 전 문서가 「10/6」으로 보이면 이번 가을 문서로 읽힌다
 function formatDate(iso: string): string {
   const d = new Date(iso)
-  return `${d.getMonth() + 1}/${d.getDate()}`
+  const md = `${d.getMonth() + 1}/${d.getDate()}`
+  return d.getFullYear() === new Date().getFullYear() ? md : `${d.getFullYear()}/${md}`
+}
+
+/** 파일 종류 타일에 쓰는 확장자(대문자, 최대 4자). 확장자가 없으면 FILE */
+function extOf(filename: string): string {
+  const i = filename.lastIndexOf('.')
+  return i > 0 ? filename.slice(i + 1, i + 5).toUpperCase() : 'FILE'
 }
 
 // 문서 관리(FEAT-ADMIN-002). 사용자 관리는 AdminUsersPage 로 나뉘었다(#513).
@@ -124,16 +134,16 @@ export default function AdminDocumentsPage() {
 
   return (
     <PageShell maxWidth="max-w-3xl">
-      <BackLink to="/me">마이페이지</BackLink>
+      <BackLink to="/me">설정</BackLink>
 
-      <h1 className="mt-6 text-xl font-semibold text-ink">문서 관리</h1>
+      <h1 className="mt-6 text-xl font-semibold tracking-tight text-ink md:text-2xl">문서 관리</h1>
       <p className="mt-1 text-sm leading-relaxed text-ink-muted">
         답변 근거로 쓰이는 사내 문서입니다. 여기 없는 내용은 답변에 출처로 붙지 않습니다.
       </p>
 
       <AdminErrorBanners listError={listError} error={error} loaded={loaded} onRetry={() => void refresh()} />
 
-      <DocumentsSection documents={documents} loaded={loaded} refresh={refresh} setError={setError} />
+      <DocumentsSection documents={documents} loaded={loaded} loading={!loaded && !listError} refresh={refresh} setError={setError} />
     </PageShell>
   )
 }
@@ -141,11 +151,13 @@ export default function AdminDocumentsPage() {
 function DocumentsSection({
   documents,
   loaded,
+  loading,
   refresh,
   setError,
 }: {
   documents: RagDocument[]
   loaded: boolean
+  loading: boolean
   refresh: () => Promise<void>
   setError: (message: string | null) => void
 }) {
@@ -211,8 +223,12 @@ function DocumentsSection({
   return (
     <>
       <section className="mt-6">
-        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-surface px-6 py-8 text-center transition duration-150 ease-[var(--ease-out-quint)] hover:border-accent">
-          <span className="text-sm text-ink">
+        {/* 올리기 영역(#646) - 회색 면 대신 흰 카드 + 점선, 아이콘 타일과 버튼 모양 글자로 「누르는 곳」을 드러낸다 */}
+        <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border border-dashed border-line-strong bg-raised px-6 py-8 text-center transition-colors duration-150 ease-[var(--ease-out-quint)] hover:border-accent hover:bg-accent-soft/40">
+          <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-accent-soft text-accent">
+            <IconUpload className="h-5 w-5" />
+          </span>
+          <span className="text-sm font-medium text-ink">
             {uploading ? '올리는 중…' : '파일을 선택해 올립니다'}
           </span>
           <span className="text-xs text-ink-muted">PDF · TXT · MD · DOCX · 최대 25MB</span>
@@ -228,15 +244,16 @@ function DocumentsSection({
 
       <section className="mt-8">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-medium text-ink-muted">
+          <h2 className="text-base font-semibold text-ink">
             {/* 다 읽기 전 · 못 읽었을 때 「0건」은 다 지워졌다고 읽힌다(#589, #483 F4 와 같은 오독) */}
             문서{loaded && ` ${documents.length}건`}
           </h2>
           <button
             onClick={() => void onSync()}
             disabled={syncing}
-            className={actionButtonClass + ' hover:text-ink'}
+            className={actionButtonClass + ' gap-1.5'}
           >
+            <IconRefresh className={'h-3.5 w-3.5 text-ink-muted ' + (syncing ? 'animate-spin motion-reduce:animate-none' : '')} />
             {syncing ? '맞추는 중…' : '스토어와 동기화'}
           </button>
         </div>
@@ -244,8 +261,11 @@ function DocumentsSection({
           {syncNotice && <p className="mt-2 text-xs text-ink-muted">{syncNotice}</p>}
         </div>
 
-        {loaded && documents.length === 0 ? (
-          <div className="mt-3 rounded-2xl bg-surface px-6 py-10 text-center">
+        {loading ? (
+          // 첫 로드 동안 빈 칸 대신 행 모양(#646). 실패하면 배너가 알리고 스켈레톤은 걷는다(멈춘 로딩으로 읽히지 않게)
+          <AdminListSkeleton rows={3} />
+        ) : loaded && documents.length === 0 ? (
+          <div className="mt-3 rounded-xl border border-line bg-raised px-6 py-10 text-center">
             <p className="text-sm text-ink">아직 문서가 없습니다</p>
             {/* 0건은 "검색했는데 없다"가 아니라 **아직 시작하지 않은** 상태다. 그 차이를 밝힌다 */}
             <p className="mt-2 text-sm leading-relaxed text-ink-muted">
@@ -255,18 +275,24 @@ function DocumentsSection({
             </p>
           </div>
         ) : (
-          <ul className="mt-3 space-y-2">
+          // 한 장의 카드 + 행 구분선(#646) - 행마다 회색 알약을 쌓던 목록을 표처럼 읽히게
+          <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line bg-raised shadow-[var(--shadow-card)]">
             {documents.map((doc) => (
               <li
                 key={doc.id}
-                className="flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 md:gap-4"
+                className="flex items-center gap-3 px-4 py-3.5 md:gap-4"
               >
+                <span
+                  aria-hidden="true"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-line bg-surface text-[10px] font-semibold text-ink-muted"
+                >
+                  {extOf(doc.filename)}
+                </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-ink">{doc.filename}</p>
-                  <p className="mt-0.5 text-xs text-ink-muted">
+                  <p className="truncate text-sm font-medium text-ink">{doc.filename}</p>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-ink-muted">
                     <StatusLabel status={doc.status} />
-                    {' · '}
-                    {formatSize(doc.byteSize)} · {doc.uploadedByName} · {formatDate(doc.createdAt)}
+                    <span>{formatSize(doc.byteSize)} · {doc.uploadedByName} · {formatDate(doc.createdAt)}</span>
                   </p>
                   {/* 아이콘만 두면 "올라갔으니 됐다"고 읽는다 — REQ-ADMIN-003 이 막으려는 오독 */}
                   {doc.status === 'failed' && (
@@ -278,7 +304,7 @@ function DocumentsSection({
                 <button
                   onClick={() => setPendingDelete(doc)}
                   disabled={deletingId !== null}
-                  className={actionButtonClass + ' hover:text-danger'}
+                  className={actionButtonClass + ' hover:border-danger/40 hover:text-danger'}
                 >
                   {deletingId === doc.id ? '삭제 중…' : '삭제'}
                 </button>
@@ -306,8 +332,8 @@ function DocumentsSection({
 function StatusLabel({ status }: { status: RagDocument['status'] }) {
   const Icon = STATUS_ICON[status]
   return (
-    <span className={'inline-flex items-center gap-1 align-[-2px] ' + STATUS_CLASS[status]}>
-      <Icon className="h-3.5 w-3.5" />
+    <span className={'inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ' + STATUS_CLASS[status]}>
+      <Icon className="h-3 w-3" />
       {STATUS_LABEL[status]}
     </span>
   )

@@ -316,13 +316,13 @@ export default function Composer({
           </p>
         )}
 
-        <div className="flex items-end gap-2 rounded-3xl border border-line bg-raised px-2 py-1.5 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-within:border-accent focus-within:shadow-[0_0_0_4px_var(--c-focus-ring)]">
+        <div className="flex items-end gap-2 rounded-3xl border border-line-strong bg-raised px-2 py-1.5 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-within:border-accent focus-within:shadow-[0_0_0_4px_var(--c-focus-ring)]">
           {/* + 는 OS 선택창을 바로 연다 - iOS · Android 선택창이 촬영 항목을 붙인다(#289) */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             aria-label="첨부 추가"
-            className={roundBtn + ' text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink active:scale-[0.95]'}
+            className={roundBtn + ' text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink'}
           >
             <IconPlus />
           </button>
@@ -372,7 +372,7 @@ export default function Composer({
                 onStop()
               }}
               aria-label="중단"
-              className={roundBtn + ' bg-surface text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97]'}
+              className={roundBtn + ' bg-surface text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-highlight'}
             >
               <IconStop />
             </button>
@@ -380,7 +380,7 @@ export default function Composer({
             <button
               type="submit"
               aria-label="보내기"
-              className={roundBtn + ' bg-accent text-accent-ink transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03] active:scale-[0.97] disabled:scale-100 disabled:opacity-35'}
+              className={roundBtn + ' bg-accent text-accent-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-accent-hover disabled:opacity-35'}
               // 올라가지 않은(또는 실패한) 첨부를 둔 채 보내면 그 이미지가 빠진 줄 모르고 보내게 됨
               disabled={settling || busy || pending || (!text.trim() && drafts.length === 0)}
               // 비활성 버튼은 이유를 말하지 않으면 고장으로 읽힌다(#101)
@@ -451,7 +451,7 @@ function DraftCard({
         type="button"
         onClick={onOpen}
         aria-label={`${draft.file.name} 확대`}
-        className="block h-16 w-16 overflow-hidden rounded-xl border border-line bg-surface transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.03]"
+        className="block h-16 w-16 overflow-hidden rounded-xl border border-line bg-surface transition-[border-color] duration-150 ease-[var(--ease-out-quint)] hover:border-line-strong"
       >
         {!unrenderable && (
           <img
@@ -481,7 +481,8 @@ function DraftCard({
           {/* 바탕이 임의의 이미지라 최악(흰 이미지)을 기준으로 잰다 - 스크림 75% 에서 highlight 8.34
               (아이콘 기준 3.0). 화면 색과 무관한 고정 어두운 면이라 danger 를 쓰면 1.06 으로 무너진다 */}
           <IconAlert className="h-4 w-4 text-highlight" />
-          <button type="button" onClick={onRetry} className="text-[10px] underline">
+          {/* 누르는 영역을 카드 아래쪽 절반으로(#646 터치 타깃) - 글자 10px 밑줄 링크는 손가락으로 맞히기 어렵다 */}
+          <button type="button" onClick={onRetry} className="min-h-6 rounded-md px-2 text-[11px] font-medium underline">
             재시도
           </button>
         </div>
@@ -491,7 +492,9 @@ function DraftCard({
         type="button"
         onClick={onRemove}
         aria-label="첨부 제거"
-        className="absolute -top-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full border border-line bg-raised text-ink-muted shadow-[var(--shadow-ambient)] transition duration-150 ease-[var(--ease-out-quint)] hover:text-danger"
+        // 보이는 원은 20px 그대로, 누르는 영역만 ::after 로 넓힌다(#646) - 데스크톱 28px(WCAG 2.5.8 24px 이상) · 모바일 36px.
+        // 카드 간격(gap-3 = 12px) 안에 들어가 이웃 카드의 누르는 영역과 겹치지 않는 크기
+        className="absolute -top-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full border border-line bg-raised text-ink-muted shadow-[var(--shadow-ambient)] transition-colors duration-150 ease-[var(--ease-out-quint)] after:absolute after:-inset-2 after:content-[''] hover:text-danger md:after:-inset-1"
       >
         <IconClose className="h-3 w-3" />
       </button>

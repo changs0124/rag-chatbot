@@ -150,3 +150,43 @@ export function IconClock({ className }: IconProps) {
     </Svg>
   )
 }
+
+export function IconSettings({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="17" x2="20" y2="17" />
+      <circle cx="9" cy="7" r="2.2" fill="var(--c-raised)" />
+      <circle cx="15" cy="17" r="2.2" fill="var(--c-raised)" />
+    </Svg>
+  )
+}
+
+export function IconLogout({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </Svg>
+  )
+}
+
+export function IconUpload({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </Svg>
+  )
+}
+
+export function IconRefresh({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <polyline points="21 4 21 10 15 10" />
+      <path d="M20.5 15a9 9 0 1 1-2.1-9.4L21 10" />
+    </Svg>
+  )
+}

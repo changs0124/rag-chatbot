@@ -1,7 +1,7 @@
 import { memo, useState } from 'react'
 import { Link } from 'react-router'
 import type { Conversation } from '../../lib/types'
-import { IconClose, IconPlus } from '../icons'
+import { IconChevronRight, IconClose, IconLogout, IconPlus, IconSettings } from '../icons'
 import Logo from '../Logo'
 import ConfirmModal from '../ConfirmModal'
 
@@ -51,7 +51,7 @@ export default memo(function Sidebar({
   const groups = groupByRecency(conversations)
 
   return (
-    <aside className="flex h-full w-full flex-col bg-surface">
+    <aside className="flex h-full w-full flex-col border-r border-line bg-surface">
       {/* h-9 는 2줄째 글자가 읽히게 하려는 값이다(#233). 락업 149px 은 사이드바 최소 폭 200px 에서 px-6 을 뺀 152px 안에 들어가므로
           좁아질 때 마크로 줄이는 분기는 두지 않았다 */}
       {/* px-6 은 바로 아래 「새 대화」 버튼의 내용 시작(p-3 + px-3 = 24px)에 맞춘 값이다 */}
@@ -59,9 +59,10 @@ export default memo(function Sidebar({
         <Logo className="h-9 w-auto text-ink" />
       </div>
       <div className="p-3">
+        {/* 테두리 버튼(#646 버튼 체계) - 떠 있는 카드 + 커지는 hover 를 걷고 보조 버튼과 같은 모양으로 */}
         <button
           onClick={onNew}
-          className="flex w-full items-center gap-2 rounded-xl bg-raised px-3 py-3 text-sm font-medium text-ink shadow-[var(--shadow-ambient)] transition duration-150 ease-[var(--ease-out-quint)] hover:scale-[1.01] active:scale-[0.99] md:py-2.5"
+          className="flex h-11 w-full items-center gap-2 rounded-lg border border-line bg-raised px-3 text-sm font-medium text-ink shadow-[var(--shadow-card)] transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas md:h-10"
         >
           <IconPlus className="h-4 w-4 text-accent" />새 대화
         </button>
@@ -70,7 +71,8 @@ export default memo(function Sidebar({
       <nav className="scrollbar-none min-w-0 flex-1 overflow-y-auto px-2 pb-2">
         {groups.map((group) => (
           <div key={group.label} className="mb-3">
-            <p className="px-3 pb-1 text-[11px] font-medium tracking-[0.08em] text-ink-muted">
+            {/* 한글에는 자간 · 대문자 효과가 없어 걷었다(#646). 12px 이 읽히는 하한 */}
+            <p className="px-3 pb-1 text-xs font-medium text-ink-muted">
               {group.label}
             </p>
             <div className="space-y-0.5">
@@ -78,12 +80,16 @@ export default memo(function Sidebar({
                 <div
                   key={c.id}
                   className={
-                    'group flex items-center rounded-lg pr-1.5 text-sm transition-colors duration-150 ease-[var(--ease-out-quint)] ' +
+                    'group relative flex items-center rounded-lg pr-1.5 text-sm transition-colors duration-150 ease-[var(--ease-out-quint)] ' +
                     (c.id === activeId
-                      ? 'bg-accent-soft text-accent'
-                      : 'text-ink-muted hover:bg-raised hover:text-ink')
+                      ? 'bg-raised font-medium text-ink shadow-[var(--shadow-card)]'
+                      : 'text-ink-muted hover:bg-raised/70 hover:text-ink')
                   }
                 >
+                  {/* 지금 대화는 색 말고도 드러낸다(#646, WCAG 1.4.1) - 면 차이(1.13:1)만으로는 안 보여 굵기 + 왼쪽 막대(accent 4.85) */}
+                  {c.id === activeId && (
+                    <span aria-hidden="true" className="absolute top-2 bottom-2 left-0 w-[3px] rounded-full bg-accent" />
+                  )}
                   <button
                     onClick={() => onSelect(c.id)}
                     // 색으로만 드러난 현재 대화를 낭독기에도 알린다(#590)
@@ -105,41 +111,47 @@ export default memo(function Sidebar({
           </div>
         ))}
         {conversations.length === 0 && (
-          <p className="px-3 py-2 text-xs text-ink-muted">대화가 없습니다</p>
+          <p className="px-3 py-6 text-center text-[13px] text-ink-muted">대화가 없습니다</p>
         )}
       </nav>
 
       {/* 사용자 프로필 - 클릭 시 환경설정/로그아웃 */}
-      <div className="relative p-2">
+      <div className="relative border-t border-line p-2">
         <button
           onClick={() => setMenuOpen((v) => !v)}
           aria-expanded={menuOpen}
-          className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-raised"
+          className="flex min-h-11 w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-raised"
         >
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-sm font-semibold text-accent-ink">
             {initial}
           </span>
-          <span className="min-w-0 flex-1 truncate text-sm text-ink">{userName}</span>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{userName}</span>
+          <IconChevronRight
+            className={'h-4 w-4 shrink-0 text-ink-muted transition-transform duration-150 ease-[var(--ease-out-quint)] ' + (menuOpen ? '-rotate-90' : '')}
+          />
         </button>
 
         {menuOpen && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-            <div className="absolute right-2 bottom-14 left-2 z-20 overflow-hidden rounded-xl bg-raised py-1 shadow-[var(--shadow-lifted)]">
+            {/* 항목은 모바일 44px · 데스크톱 36px(#646 터치 하한). 이름은 화면 제목 「설정」과 맞춘다 */}
+            <div className="absolute right-2 bottom-full left-2 z-20 mb-1 overflow-hidden rounded-xl border border-line bg-raised p-1 shadow-[var(--shadow-lifted)]">
               <Link
                 to="/me"
                 onClick={() => setMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface"
+                className="flex h-11 items-center gap-2.5 rounded-lg px-2.5 text-sm text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface md:h-9"
               >
-                환경설정
+                <IconSettings className="h-4 w-4 text-ink-muted" />
+                설정
               </Link>
               <button
                 onClick={() => {
                   setMenuOpen(false)
                   onLogout()
                 }}
-                className="block w-full px-3 py-2.5 text-left text-sm text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface"
+                className="flex h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface md:h-9"
               >
+                <IconLogout className="h-4 w-4 text-ink-muted" />
                 로그아웃
               </button>
             </div>
