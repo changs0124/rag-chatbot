@@ -96,4 +96,24 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
     expect(dialog).toHaveAccessibleName(/삭제/)
     expect(within(dialog).getByRole('button', { name: '취소' })).toHaveFocus()
   })
+
+  // #656 : 대화를 지우면 연 ✕ 가 행째 사라진다 - 포커스를 「새 대화」로 돌려 드로어 안이면 Esc 도 계속 먹게 한다
+  it('대화를 지워 행이 사라지면 포커스가 새 대화 버튼으로 간다', () => {
+    const props = { activeId: null, onSelect: vi.fn(), onNew: vi.fn(), onDelete: vi.fn(), userName: '사용자', onLogout: vi.fn() }
+    const { rerender } = render(
+      <BrowserRouter>
+        <Sidebar conversations={[conv('c1', new Date())]} {...props} />
+      </BrowserRouter>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: "'c1' 대화 삭제" }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+    rerender(
+      <BrowserRouter>
+        <Sidebar conversations={[]} {...props} />
+      </BrowserRouter>,
+    )
+
+    expect(props.onDelete).toHaveBeenCalledWith('c1')
+    expect(screen.getByRole('button', { name: '새 대화' })).toHaveFocus()
+  })
 })

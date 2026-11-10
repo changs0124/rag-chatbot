@@ -403,4 +403,26 @@ describe('사용자 관리 화면', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: '박사원 비밀번호 초기화' })).toHaveFocus())
   })
+
+  // #656 : 초기화가 실패하면 발급 창이 뜨지 않는다 - 요청이 끝나 버튼이 풀린 뒤 그 버튼으로 포커스를 돌린다
+  it('초기화가 실패하면 포커스가 그 행의 초기화 버튼으로 돌아온다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([PARK])
+    vi.mocked(resetUserPassword).mockRejectedValue(new Error('500'))
+    renderPage()
+    await confirmReset()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '박사원 비밀번호 초기화' })).toHaveFocus())
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+  })
+
+  // #656 : 삭제를 확정하면 행이 사라진다 - 포커스가 목록 머리로 간다
+  it('사용자를 지워 행이 사라지면 포커스가 목록 머리로 간다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValueOnce([PARK]).mockResolvedValue([])
+    vi.mocked(deleteAdminUser).mockResolvedValue(undefined)
+    renderPage()
+    await confirmDelete()
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: '박사원 삭제' })).toBeNull())
+    expect(screen.getByRole('heading', { level: 2, name: /^사용자/ })).toHaveFocus()
+  })
 })

@@ -463,4 +463,47 @@ describe('ChatPage 모바일 드로어 (#644)', () => {
     expect(menu).toHaveFocus()
     expect(screen.getByRole('banner').closest('[inert]')).toBeNull()
   })
+
+  // #656 : 드로어를 연 채 md 폭이 되면(폰을 가로로) 드로어는 md:hidden 으로 사라지는데 inert · 스크롤 잠금이 남아
+  // 앱 전체가 눌리지 않았다 - 넓어지는 순간 드로어를 닫는다
+  it('드로어가 열린 채 md 폭이 되면 닫히고 inert · 스크롤 잠금이 풀린다', () => {
+    const original = window.matchMedia
+    const listeners: (() => void)[] = []
+    const mq = { matches: false, addEventListener: (_: string, f: () => void) => listeners.push(f), removeEventListener: vi.fn() }
+    window.matchMedia = (() => mq) as unknown as typeof window.matchMedia
+    try {
+      renderChatPage()
+      fireEvent.click(screen.getByRole('button', { name: '대화 목록 열기' }))
+      expect(screen.getByRole('dialog', { name: '대화 목록' })).toBeInTheDocument()
+      expect(document.body.style.overflow).toBe('hidden')
+
+      mq.matches = true
+      act(() => listeners.forEach((f) => f()))
+
+      expect(screen.queryByRole('dialog', { name: '대화 목록' })).toBeNull()
+      expect(document.querySelector('[inert]')).toBeNull()
+      expect(document.body.style.overflow).toBe('')
+    } finally {
+      window.matchMedia = original
+    }
+  })
+
+  // #656 : 드로어 안 확인 창(대화 삭제)에서 누른 Esc 는 확인 창만 닫는다 - 드로어는 열린 채
+  it('드로어 안 확인 창의 Esc 는 확인 창만 닫는다', () => {
+    chatState.conversations = [{ id: 'c1', title: '가' }]
+    try {
+      renderChatPage()
+      fireEvent.click(screen.getByRole('button', { name: '대화 목록 열기' }))
+      const drawer = screen.getByRole('dialog', { name: '대화 목록' })
+      fireEvent.click(within(drawer).getByRole('button', { name: "'가' 대화 삭제" }))
+      const confirm = screen.getByRole('dialog', { name: /삭제/ })
+
+      fireEvent.keyDown(within(confirm).getByRole('button', { name: '취소' }), { key: 'Escape' })
+
+      expect(screen.queryByRole('dialog', { name: /삭제/ })).toBeNull()
+      expect(screen.getByRole('dialog', { name: '대화 목록' })).toBeInTheDocument()
+    } finally {
+      chatState.conversations = []
+    }
+  })
 })
