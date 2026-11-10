@@ -1,0 +1,48 @@
+{
+ "desktop": {
+  "admin-docs-fail": [],
+  "admin-users-fail": [],
+  "table": [
+   {
+    "tableW": 720,
+    "boxW": 720,
+    "overflows": false,
+    "role": null,
+    "tabIndex": null
+   }
+  ],
+  "attach": {
+   "removeHit": [
+    "28x28",
+    "28x28"
+   ],
+   "overlapWithNeighborOpen": [
+    0,
+    0
+   ]
+  }
+ },
+ "mobile": {
+  "admin-docs-fail": [],
+  "admin-users-fail": [],
+  "table": [
+   {
+    "tableW": 536,
+    "boxW": 358,
+    "overflows": true,
+    "role": "region",
+    "tabIndex": "0"
+   }
+  ],
+  "attach": {
+   "removeHit": [
+    "30x30",
+    "30x30"
+   ],
+   "overlapWithNeighborOpen": [
+    0,
+    0
+   ]
+  }
+ }
+}
