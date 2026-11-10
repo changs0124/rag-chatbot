@@ -158,6 +158,15 @@ describe('MessageList', () => {
     expect(screen.queryByText('응답 생성 중…')).not.toBeInTheDocument()
   })
 
+  // #657 : 단계 글자가 아직 없으면 보이는 줄은 움직이는 점 셋만 - 「…」 글자를 더하면 점이 두 번 보였다. 낭독은 「…」 그대로
+  it('단계 글자가 없으면 보이는 준비 줄에 「…」를 겹쳐 그리지 않는다', () => {
+    const { container } = render(<MessageList messages={pending} stage={null} />)
+    const line = [...container.querySelectorAll('p[aria-hidden="true"]')].find((p) => p.querySelector('.animate-bounce'))
+    expect(line).toBeDefined()
+    expect(line!.textContent).toBe('')
+    expect(screen.getByRole('status')).toHaveTextContent('…')
+  })
+
   // #590 : 라이브 영역은 늘 있는 그릇에 글만 넣는다(#484 규칙) - 내용과 함께 새로 끼우면 낭독기가 놓친다
   it('단계 줄이 없을 때도 status 그릇은 비어 있는 채로 남는다', () => {
     const done: ChatMessage[] = [pending[0], { ...pending[1], content: '답변', status: 'complete' }]

@@ -28,9 +28,12 @@ function hostOf(href: string | undefined): string | null {
 function TableScroll({ children }: { children?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const [more, setMore] = useState(false)
+  const [overflows, setOverflows] = useState(false)
   const update = useCallback(() => {
     const el = ref.current
-    if (el) setMore(el.scrollWidth - el.clientWidth - el.scrollLeft > 1)
+    if (!el) return
+    setMore(el.scrollWidth - el.clientWidth - el.scrollLeft > 1)
+    setOverflows(el.scrollWidth - el.clientWidth > 1)
   }, [])
   useEffect(() => {
     update()
@@ -44,7 +47,16 @@ function TableScroll({ children }: { children?: ReactNode }) {
   }, [update])
   return (
     <div className="relative my-2">
-      <div ref={ref} onScroll={update} tabIndex={0} role="region" aria-label="표" className="max-w-full overflow-x-auto">
+      {/* 키보드 스크롤 대상(Tab 정지점 · region 랜드마크)은 실제로 넘칠 때만 - 넘치지 않는 표마다 붙이면 답변의 표 수만큼
+          「표」 랜드마크와 Tab 정지점이 늘었다(#657) */}
+      <div
+        ref={ref}
+        onScroll={update}
+        tabIndex={overflows ? 0 : undefined}
+        role={overflows ? 'region' : undefined}
+        aria-label={overflows ? '표' : undefined}
+        className="max-w-full overflow-x-auto"
+      >
         <table className="w-max min-w-full border-collapse text-[14px]">{children}</table>
       </div>
       {more && (
