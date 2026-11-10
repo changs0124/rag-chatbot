@@ -1,0 +1,149 @@
+{
+ "desktop": {
+  "retryOk": {
+   "beforeRetry": {
+    "sidebar": {
+     "text": "새 대화 대화 목록을 불러오지 못했습니다 다시 시도 관 관리자홍길동",
+     "retryButton": {
+      "text": "다시 시도",
+      "disabled": false
+     }
+    },
+    "alerts": [
+     "대화 목록을 불러오지 못했습니다"
+    ]
+   },
+   "during": {
+    "sidebar": {
+     "text": "새 대화 대화 목록 불러오는 중 관 관리자홍길동",
+     "retryButton": null
+    },
+    "focus": "BODY"
+   },
+   "after": {
+    "sidebar": {
+     "text": "새 대화 오늘 클레임 처리 절차 품질 보증 기간 문의 관 관리자홍길동",
+     "retryButton": null
+    },
+    "alerts": [
+     "대화 목록을 불러오지 못했습니다"
+    ],
+    "focus": "BODY"
+   }
+  },
+  "retryFail": {
+   "beforeRetry": {
+    "sidebar": {
+     "text": "새 대화 대화 목록을 불러오지 못했습니다 다시 시도 관 관리자홍길동",
+     "retryButton": {
+      "text": "다시 시도",
+      "disabled": false
+     }
+    },
+    "alerts": [
+     "대화 목록을 불러오지 못했습니다"
+    ]
+   },
+   "during": {
+    "sidebar": {
+     "text": "새 대화 대화 목록 불러오는 중 관 관리자홍길동",
+     "retryButton": null
+    },
+    "focus": "BODY"
+   },
+   "after": {
+    "sidebar": {
+     "text": "새 대화 대화 목록을 불러오지 못했습니다 다시 시도 관 관리자홍길동",
+     "retryButton": {
+      "text": "다시 시도",
+      "disabled": false
+     }
+    },
+    "alerts": [
+     "대화 목록을 불러오지 못했습니다"
+    ],
+    "focus": "BODY"
+   }
+  },
+  "hiddenSidebarConfirm": {
+   "focusAfterCancel": "BODY"
+  }
+ },
+ "mobile": {
+  "retryOk": {
+   "beforeRetry": {
+    "sidebar": {
+     "text": "새 대화 대화 목록을 불러오지 못했습니다 다시 시도 관 관리자홍길동",
+     "retryButton": {
+      "text": "다시 시도",
+      "disabled": false
+     }
+    },
+    "alerts": [
+     "대화 목록을 불러오지 못했습니다"
+    ]
+   },
+   "during": {
+    "sidebar": {
+     "text": "새 대화 대화 목록 불러오는 중 관 관리자홍길동",
+     "retryButton": null
+    },
+    "focus": "BODY"
+   },
+   "after": {
+    "sidebar": {
+     "text": "새 대화 오늘 클레임 처리 절차 품질 보증 기간 문의 관 관리자홍길동",
+     "retryButton": null
+    },
+    "alerts": [
+     "대화 목록을 불러오지 못했습니다"
+    ],
+    "focus": "BODY"
+   }
+  },
+  "retryFail": {
+   "beforeRetry": {
+    "sidebar": {
+     "text": "새 대화 대화 목록을 불러오지 못했습니다 다시 시도 관 관리자홍길동",
+     "retryButton": {
+      "text": "다시 시도",
+      "disabled": false
+     }
+    },
+    "alerts": [
+     "대화 목록을 불러오지 못했습니다"
+    ]
+   },
+   "during": {
+    "sidebar": {
+     "text": "새 대화 대화 목록 불러오는 중 관 관리자홍길동",
+     "retryButton": null
+    },
+    "focus": "BODY"
+   },
+   "after": {
+    "sidebar": {
+     "text": "새 대화 대화 목록을 불러오지 못했습니다 다시 시도 관 관리자홍길동",
+     "retryButton": {
+      "text": "다시 시도",
+      "disabled": false
+     }
+    },
+    "alerts": [
+     "대화 목록을 불러오지 못했습니다"
+    ],
+    "focus": "BODY"
+   }
+  },
+  "drawer": {
+   "firstFocus": "button「새 대화」",
+   "tabOrder": [
+    "button「클레임 처리 절차」",
+    "button「'클레임 처리 절차' 대화 삭제」",
+    "button「품질 보증 기간 문의」",
+    "button「'품질 보증 기간 문의' 대화 삭제」"
+   ],
+   "asideBorderRight": "1px"
+  }
+ }
+}
