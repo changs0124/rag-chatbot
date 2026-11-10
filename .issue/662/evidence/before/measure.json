@@ -1,0 +1,20 @@
+{
+ "desktop": {
+  "hasCopyButton": false,
+  "overflow": 0,
+  "pageHScroll": false,
+  "focus": "닫기"
+ },
+ "mobile": {
+  "hasCopyButton": false,
+  "overflow": 0,
+  "pageHScroll": false,
+  "focus": "닫기"
+ },
+ "mobile-blocked": {
+  "hasCopyButton": false,
+  "overflow": 0,
+  "pageHScroll": false,
+  "focus": "닫기"
+ }
+}

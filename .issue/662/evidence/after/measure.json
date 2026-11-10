@@ -1,0 +1,50 @@
+{
+ "desktop": {
+  "hasCopyButton": true,
+  "overflow": 0,
+  "pageHScroll": false,
+  "focus": "닫기",
+  "copyButton": "48x32",
+  "copyRect": [
+   839,
+   364,
+   48,
+   32
+  ],
+  "clipboard": "Qm7v-Tz29-Kp4x-Lw8r-Nd3j-Hs6c",
+  "selection": "",
+  "status": "복사했습니다"
+ },
+ "mobile": {
+  "hasCopyButton": true,
+  "overflow": 0,
+  "pageHScroll": false,
+  "focus": "닫기",
+  "copyButton": "48x44",
+  "copyRect": [
+   301,
+   330,
+   48,
+   44
+  ],
+  "clipboard": "Qm7v-Tz29-Kp4x-Lw8r-Nd3j-Hs6c",
+  "selection": "",
+  "status": "복사했습니다"
+ },
+ "mobile-blocked": {
+  "hasCopyButton": true,
+  "overflow": 0,
+  "pageHScroll": false,
+  "focus": "닫기",
+  "copyButton": "48x44",
+  "copyRect": [
+   301,
+   330,
+   48,
+   44
+  ],
+  "clipboard": null,
+  "selection": "Qm7v-Tz29-Kp4x-Lw8r-Nd3j-Hs6c",
+  "status": "복사하지 못했습니다. 선택된 값을 직접 복사하세요"
+ }
+}
