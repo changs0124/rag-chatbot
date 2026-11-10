@@ -143,6 +143,7 @@ export default function ChatPage() {
       onDelete={chat.deleteConversation}
       userName={user?.name ?? ''}
       onLogout={logout}
+      loading={chat.conversationsLoading}
     />
   )
 

@@ -1,7 +1,8 @@
+import { StrictMode } from 'react'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useChat } from './useChat'
-import type { ChatMessage } from '../lib/types'
+import type { ChatMessage, Conversation } from '../lib/types'
 import { deferred, msg } from '../test/fixtures'
 
 vi.mock('../lib/endpoints', () => ({
@@ -15,6 +16,8 @@ vi.mock('../lib/endpoints', () => ({
 }))
 
 const { getMessages, listConversations, streamChat } = await import('../lib/endpoints')
+
+const conv = (id: string): Conversation => ({ id, title: id, updatedAt: '2026-11-10T00:00:00Z' })
 
 /** 대화를 고른 뒤 이력이 올 때까지의 로딩 상태(#291) */
 describe('useChat 이력 불러오는 중', () => {
@@ -113,6 +116,47 @@ describe('useChat 이력 불러오는 중', () => {
     })
     expect(accepted).toBe(true)
     expect(streamChat).toHaveBeenCalledTimes(1)
+  })
+
+  /** 첫 목록이 오기 전에는 빈 배열이 「없음」이 아니다(#663) - 사이드바가 스켈레톤을 깔 수 있게 로딩을 따로 알린다 */
+  it('첫 대화 목록이 오는 동안 conversationsLoading 이 켜지고, 목록이 오면 꺼진다', async () => {
+    const list = deferred<Conversation[]>()
+    vi.mocked(listConversations).mockReturnValueOnce(list.promise)
+    const { result } = renderHook(() => useChat())
+    expect(result.current.conversationsLoading).toBe(true)
+
+    await act(async () => list.resolve([conv('a')]))
+    expect(result.current.conversationsLoading).toBe(false)
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['a'])
+  })
+
+  it('빈 목록이 와도 · 실패해도 로딩은 꺼진다(실패는 오류가 따로 알린다, #385)', async () => {
+    vi.mocked(listConversations).mockResolvedValueOnce([])
+    const empty = renderHook(() => useChat())
+    await act(async () => {})
+    expect(empty.result.current.conversationsLoading).toBe(false)
+    expect(empty.result.current.conversations).toEqual([])
+
+    vi.mocked(listConversations).mockRejectedValueOnce(new Error('down'))
+    const failed = renderHook(() => useChat())
+    await act(async () => {})
+    expect(failed.result.current.conversationsLoading).toBe(false)
+    expect(failed.result.current.error).toBe('대화 목록을 불러오지 못했습니다')
+  })
+
+  /** StrictMode(개발)는 첫 로드를 두 번 낸다 - 세대에 막힌 앞 요청이 먼저 끝나도 뒤 요청이 올 때까지 로딩을 유지한다 */
+  it('StrictMode 에서 앞 요청이 먼저 끝나도 마지막 요청이 올 때까지 로딩이 유지된다', async () => {
+    const first = deferred<Conversation[]>()
+    const second = deferred<Conversation[]>()
+    vi.mocked(listConversations).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+    const { result } = renderHook(() => useChat(), { wrapper: StrictMode })
+
+    await act(async () => first.resolve([]))
+    expect(result.current.conversationsLoading).toBe(true)
+
+    await act(async () => second.resolve([conv('a')]))
+    expect(result.current.conversationsLoading).toBe(false)
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['a'])
   })
 
   /** 대화 목록 첫 로드가 실패하면 「대화가 없습니다」가 아니라 오류로 알린다(#385, #77 · #359 와 같은 이유) */

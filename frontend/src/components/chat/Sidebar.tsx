@@ -36,6 +36,7 @@ export default memo(function Sidebar({
   onDelete,
   userName,
   onLogout,
+  loading = false,
 }: {
   conversations: Conversation[]
   activeId: string | null
@@ -44,6 +45,8 @@ export default memo(function Sidebar({
   onDelete: (id: string) => void
   userName: string
   onLogout: () => void
+  /** 첫 목록이 아직 안 왔다(#663) - 이때 빈 목록은 「없음」이 아니다 */
+  loading?: boolean
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Conversation | null>(null)
@@ -59,6 +62,8 @@ export default memo(function Sidebar({
   }, [conversations])
   const initial = userName.trim().charAt(0) || '?'
   const groups = groupByRecency(conversations)
+  // 첫 목록을 기다리는 동안에도 그 사이 만든 새 대화가 있으면 그것부터 보인다 - 스켈레톤은 빈 자리에만
+  const listPending = loading && conversations.length === 0
 
   return (
     <aside className="flex h-full w-full flex-col border-r border-line bg-surface">
@@ -79,7 +84,13 @@ export default memo(function Sidebar({
         </button>
       </div>
 
-      <nav className="scrollbar-none min-w-0 flex-1 overflow-y-auto px-2 pb-2">
+      {/* relative - 아래 낭독용 상태 줄(sr-only = absolute)이 스크롤 상자 밖으로 나가 높이를 늘리지 않게(#642 와 같은 이유) */}
+      <nav className="scrollbar-none relative min-w-0 flex-1 overflow-y-auto px-2 pb-2">
+        {/* 늘 있는 그릇에 글만 넣는다(#484 규칙 · #590) - 끼웠다 빼면 낭독기가 놓친다 */}
+        <p role="status" className="sr-only">
+          {listPending ? '대화 목록 불러오는 중' : ''}
+        </p>
+        {listPending && <ConversationListSkeleton />}
         {groups.map((group) => (
           <div key={group.label} className="mb-3">
             {/* 한글에는 자간 · 대문자 효과가 없어 걷었다(#646). 12px 이 읽히는 하한 */}
@@ -121,7 +132,7 @@ export default memo(function Sidebar({
             </div>
           </div>
         ))}
-        {conversations.length === 0 && (
+        {conversations.length === 0 && !loading && (
           <p className="px-3 py-6 text-center text-[13px] text-ink-muted">대화가 없습니다</p>
         )}
       </nav>
@@ -186,3 +197,23 @@ export default memo(function Sidebar({
     </aside>
   )
 })
+
+/**
+ * 첫 목록이 오기 전의 대화 목록 자리(#663). 「대화가 없습니다」를 먼저 보이면 대화가 있는 사용자에게 잠깐 「없다」고 말한다 -
+ * 관리 목록(AdminListSkeleton, #646)과 같은 결로 묶음 라벨 하나와 대화 행 모양을 깐다. 낭독기에는 숨기고 위 상태 줄이 알린다.
+ * 움직임 줄이기면 깜빡임을 끈다
+ */
+function ConversationListSkeleton() {
+  return (
+    <div aria-hidden="true" data-testid="conversation-list-skeleton" className="mb-3 animate-pulse motion-reduce:animate-none">
+      <div className="mx-3 mb-2 mt-1 h-3 w-12 rounded-full bg-highlight" />
+      <div className="space-y-0.5">
+        {[78, 62, 70, 55, 66].map((w) => (
+          <div key={w} className="flex h-11 items-center px-3 md:h-9">
+            <div className="h-3.5 rounded-full bg-highlight" style={{ width: `${w}%` }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
