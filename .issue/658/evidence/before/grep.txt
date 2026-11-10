@@ -1,0 +1,38 @@
+## 화면 이름 grep (마이페이지 · 환경설정)
+README.md:13:- 이메일/비밀번호 로그인(가입 없음) · 마이페이지에서 이름 · 비밀번호 변경
+docs/01_specs/api.md:503:**자기 자신은 대상에서 제외한다.** 마이페이지에 비밀번호 변경이 이미 있고, 관리자가 자기 세션을
+docs/01_specs/features.md:232:**화면:** 없음 (서버 전용). 결과는 마이페이지(`/me`)의 관리 메뉴 노출로 드러난다.
+docs/01_specs/features.md:410:| 자기 자신 대상 | 화면에 버튼을 띄우지 않는다. API 를 직접 부르면 `400`. 마이페이지에 비밀번호 변경이 이미 있다 |
+docs/01_specs/features.md:597:| `name` (계정 발급 폼 · 마이페이지 이름) | string | Y | **서버 상한까지**(#413, `USER_MAX_NAME_CHARS`, trim 뒤 코드 포인트) — 입력창이 `maxLength` 로 더 받지 않고, 넘긴 요청은 서버가 400 으로 거절한다(정본은 서버, API-POST-008 · API-PATCH-001) |
+docs/01_specs/live-integration.md:263:**문서 관리 화면은 `/admin/documents`** 다. 마이페이지 → 문서 관리로 들어간다. API 를 직접 불러도 된다.
+docs/02_architecture/design-system.md:230:  호출부는 바깥 여백 · 폭만 덧붙인다. 마이페이지 · 관리자 상단의 뒤로가기와 페이지 골격은 `BackLink` · `PageShell` 이 가진다.
+docs/02_architecture/design-system.md:276:- **마이페이지·관리자 상단은 채팅 헤더와 같은 높이다** — 위 여백 `pt-2` + 44px 뒤로가기 = 채팅 헤더 `min-h-14` 의 버튼 줄과 같다
+docs/02_architecture/frontend.md:168:      같은 계정이면 대화를 옮기거나 환경설정 · 관리 화면으로 떠나도(채팅 화면 언마운트) 지금처럼 뒤에서 이어 간다 · 같은 계정의 토큰 재발급도 같다
+docs/02_architecture/frontend.md:255:  **이 메타는 전 페이지에 걸린다** — Chrome 108 전의 기본 동작과 같다. 로그인·관리·마이 페이지는 `min-h-[100dvh]` +
+docs/02_architecture/frontend.md:292:| `Content-Security-Policy` | 스크립트 `'self'` · 연결 `'self'` + 백엔드 · 이미지 `'self'` + 백엔드 + `blob:` + `data:` · `frame-ancestors 'none'` | **강제한다**(#411). Report-Only(#404)로 운영 화면 전부(대화 목록 · 스트리밍 · 첨부 업로드/미리보기/확대 · 문서 그림 · 마이페이지 · 관리자)를 돌아 위반 0 을 본 뒤 바꿨다. 정책을 넓힐 때는 Report-Only 로 먼저 올린다. 내려받기는 그 점검에서 빠져 있었고 #481 에서 blob/data 경로 위반을 찾았다 — 앞으로 점검 범위에 포함한다 |
+frontend/src/components/BackLink.tsx:11: * 마이페이지 · 관리자 상단의 뒤로가기. 두 화면이 각자 들고 있으면 한쪽만 갈려 한 곳에 둔다(#330).
+frontend/src/components/chat/Sidebar.tsx:118:      {/* 사용자 프로필 - 클릭 시 환경설정/로그아웃 */}
+frontend/src/components/PageShell.tsx:10: * 마이페이지 · 관리자의 페이지 골격. 위 여백 `pt-2` 는 `BackLink` 와 함께 「상단은 채팅 헤더와 같은 높이」를
+frontend/src/hooks/useChat.test.ts:498:  // 같은 계정이 환경설정 · 관리 화면으로 옮기면 채팅 화면은 언마운트되지만, 새 대화의 판정은 빈 대화를 치우려고 이어 간다(#617 리뷰)
+frontend/src/hooks/useChat.ts:444:      // 언마운트로 가르지 않는다 - 같은 계정이 환경설정 · 관리 화면으로 옮겨도 언마운트되고, 그때는 빈 대화를 치워야 한다
+frontend/src/lib/endpoints.ts:13:// 프로필 (마이페이지)
+frontend/src/lib/limits.ts:1:// 이름 입력 상한(마이페이지 · 관리자 계정 추가). 서버 상한(USER_MAX_NAME_CHARS 기본값)과 같은 값. 정본은 서버라 넘긴 요청은 400 이다(#413).
+frontend/src/pages/AdminUsersPage.tsx:238:              {/* 자기 자신은 대상이 아니다 — 마이페이지에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
+frontend/src/pages/ChatPage.tsx:40:  //   동안만 문서 스크롤과 튕김을 끈다(관리·마이 페이지는 문서 스크롤을 그대로 쓴다).
+
+## design-system 토큰 개수 · 미달 표
+38:| `line-strong` | `#868E96` | **입력칸 테두리**(#646) — 사용자가 찾아야 하는 경계라 3:1 이 필요하다. 올리기 영역 점선 | **대응 없음** — 홈페이지 `line` 은 1.52:1 로 WCAG 1.4.11 미달. 같은 무채 램프의 중간값 |
+96:그건 위 계산에 들어가지 않는다. 바로 위 「토큰 밖 겹침」 셋은 재 놓았고, 아래 하나는 **아직 그대로다.**
+100:| `border-line` / `canvas` (입력 테두리) | 1.48 | WCAG 1.4.11 은 3.0 | **미달**. 3.0 을 맞추면 테두리가 눈에 띄게 진해져 색 범위를 넘는 디자인 변경이 된다 |
+119:19종이 실제로 쓰인다. **토큰 14개가 전부 쓰이고, 쓰는데 정의 안 된 것은 없다.**
+129:`--c-focus-ring` 은 `rgb(67 186 232 / 0.15)` — 토큰 14개와 달리 **투명도를 그대로 둔** 변수다. 링은 아래 면 위에 얹히므로
+136:**토큰을 만들면 쓰는 자리를 함께 정한다.** 쓰임이 적은 4종의 자리는 이렇다.
+181:| 구분선 | `border-line` 1px | **카드 · 목록 묶음 · 모달은 1px 경계를 두른다**(#646) — 면 색 차이(`surface` / `canvas` 1.06:1)만으로는 카드 가장자리가 안 보였다. 목록 행 사이는 `divide-line` |
+414:| `frontend/src/index.css` | 토큰 16개 | 정본 |
+
+## CHANGELOG 배경 클릭 · 혼재
+13:- **키보드 · 낭독기 사용자가 막히던 곳들을 고쳤다(#644, #105 §4 · F9 보류 해소).** 문서 업로드 칸이 `display:none` 이라 Tab 으로 닿지 않던 것(→ `sr-only`
+18:- **화면 모양을 서비스 수준으로 다듬었다(#646, 11-10 시안 승인).** 사용자 평가(「개발을 처음 하는 사람의 디자인」)를 받아 `design-system.md` 를 개정하
+
+## features.md:135
+- **새 모달 패턴을 만들지 않는다.** 키 처리·배경 클릭·`role="dialog"` · `aria-modal="true"` 는
