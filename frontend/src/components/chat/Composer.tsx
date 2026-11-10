@@ -327,12 +327,13 @@ export default function Composer({
         )}
 
         <div className="flex items-end gap-2 rounded-3xl border border-line-strong bg-raised px-2 py-1.5 shadow-[var(--shadow-ambient)] transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] focus-within:border-accent focus-within:shadow-[0_0_0_4px_var(--c-focus-ring)]">
-          {/* + 는 OS 선택창을 바로 연다 - iOS · Android 선택창이 촬영 항목을 붙인다(#289) */}
+          {/* + 는 OS 선택창을 바로 연다 - iOS · Android 선택창이 촬영 항목을 붙인다(#289).
+              -mr-2 로 줄의 gap-2 를 이 버튼 뒤에서만 지운다 - 「+」와 글자 사이가 버튼 여백 + 8 + 4px 로 멀었다(#670) */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             aria-label="첨부 추가"
-            className={roundBtn + ' text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink'}
+            className={roundBtn + ' -mr-2 text-ink-muted transition duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink'}
           >
             <IconPlus />
           </button>

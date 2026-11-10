@@ -261,8 +261,8 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
   풀면 가로 스크롤이 생겼다. 새 입력을 만들 때도 `text-base md:text-[15px]` 를 지킨다(`TextInput` 은 이미 그렇다).
   같은 이유로 `visualViewport.scale` 이 1 이 아닐 때(사용자가 손가락으로 확대한 동안)는 높이 맞춤을 하지 않는다.
 - 채팅 입력줄은 내용만큼 자라고 상한(모바일 128px · md 160px)에서 안쪽 스크롤로 바뀐다(#643) — 규칙은 `design-system.md` §5 「입력창」.
-- 모바일 드로어는 대화창이다(#644) — `role="dialog"` · Esc · 열린 동안 바깥 `inert` · 닫으면 메뉴 버튼으로 포커스 복귀(`hooks/useModalFocus`). 규칙은 `design-system.md` §7-1.
-- 모바일 헤더는 메뉴 버튼 · 대화 제목 · 새 채팅 버튼뿐이다. 로고는 드로어 안 사이드바에만 있다(#235, `design-system.md` 7-3).
+- 모바일 드로어는 화면 전체를 덮는 대화창이다(#644 · #669) — `role="dialog"` · X · Esc · 열린 동안 바깥 `inert` · 닫으면 메뉴 버튼으로 포커스 복귀(`hooks/useModalFocus`). 규칙은 `design-system.md` §7-1.
+- 모바일 헤더는 메뉴 버튼 · 대화 제목뿐이다(새 채팅 버튼은 #670 에서 뺐다 — 새 대화는 드로어의 「새 대화」로). 새 대화(아직 대화 없음)에서는 제목도 비운다. 로고는 드로어 안 사이드바에만 있다(#235, `design-system.md` 7-3).
 
 ## 오류 경계
 

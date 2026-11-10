@@ -6,11 +6,11 @@ import ResizableSidebar from '../components/chat/ResizableSidebar'
 import MessageList from '../components/chat/MessageList'
 import Composer from '../components/chat/Composer'
 import ConfirmModal from '../components/ConfirmModal'
-import { IconEdit, IconMenu } from '../components/icons'
+import { IconClose, IconMenu } from '../components/icons'
 import { useModalFocus } from '../hooks/useModalFocus'
 import { MAX_TITLE_CHARS } from '../lib/limits'
 
-// 헤더 양끝의 모바일 전용 아이콘 버튼(목록 열기 · 새 채팅)(#390)
+// 헤더 왼쪽의 모바일 전용 아이콘 버튼(목록 열기)(#390). 오른쪽 새 채팅 버튼은 #670 에서 뺐다 - 새 대화는 사이드바(드로어)의 「새 대화」로
 const headerIconBtn =
   'grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface hover:text-ink md:hidden'
 
@@ -219,18 +219,9 @@ export default function ChatPage() {
                   {activeTitle ?? '새 대화'}
                 </button>
               )
-            ) : (
-              <span className="px-2.5 text-[15px] font-semibold text-ink-muted">새 대화</span>
-            )}
+            ) : null}
+            {/* 새 대화(아직 대화 없음)는 제목을 비운다(#670) - 빈 화면의 「무엇을 도와드릴까요?」 하나만 남긴다 */}
           </div>
-
-          <button
-            className={headerIconBtn}
-            onClick={startNewChat}
-            aria-label="새 채팅"
-          >
-            <IconEdit />
-          </button>
         </header>
 
         {/* 스크롤 페이드 - 입력창 뒤로 글이 잘리지 않고 사라지게 함 */}
@@ -297,13 +288,15 @@ export default function ChatPage() {
 }
 
 // 모바일 대화 목록 드로어(#644, #105 F9) - 대화창으로 읽히고, Esc 로 닫히고, 열리면 포커스가 안으로 · 닫히면 햄버거로 돌아간다.
-// 배경 탭 닫기는 그대로 둔다. Esc 는 드로어 안의 확인 창(대화 삭제)이 받은 것이면 넘긴다 - 확인 창만 닫혀야 한다
+// 화면 전체를 덮고 오른쪽 위 X 로 닫는다(#669, ChatGPT · Claude 모바일과 같은 모양) - 덮인 배경이 없어 배경 탭 닫기는 없다.
+// X 는 사이드바 머리 줄(로고, 왼쪽)의 오른쪽 빈자리에 둔다 - 사이드바는 데스크톱과 같은 컴포넌트라 X 는 드로어에만 있다.
+// Esc 는 드로어 안의 확인 창(대화 삭제)이 받은 것이면 넘긴다 - 확인 창만 닫혀야 한다
 function MobileDrawer({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   const ref = useModalFocus<HTMLDivElement>()
   return (
     <div
       ref={ref}
-      className="fixed inset-0 z-40 md:hidden"
+      className="fixed inset-0 z-40 bg-surface md:hidden"
       role="dialog"
       aria-modal="true"
       aria-label="대화 목록"
@@ -313,8 +306,15 @@ function MobileDrawer({ onClose, children }: { onClose: () => void; children: Re
         onClose()
       }}
     >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="absolute inset-y-0 left-0 w-[min(84vw,320px)] shadow-[var(--shadow-lifted)]">{children}</div>
+      {children}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="대화 목록 닫기"
+        className="absolute top-2.5 right-3 grid h-11 w-11 place-items-center rounded-xl text-ink-muted transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-raised hover:text-ink"
+      >
+        <IconClose className="h-5 w-5" />
+      </button>
     </div>
   )
 }

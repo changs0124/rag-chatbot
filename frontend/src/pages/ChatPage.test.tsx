@@ -231,6 +231,26 @@ describe('ChatPage 제목 수정 (#371)', () => {
     chatState.renameConversation.mockClear()
   })
 
+  // #670 : 헤더 오른쪽 새 채팅 아이콘을 뺐고(새 대화는 사이드바의 「새 대화」로), 새 대화(대화 없음)는 제목을 비운다
+  it('헤더에 새 채팅 버튼이 없고, 새 대화에서는 제목 글자를 그리지 않는다', () => {
+    chatState.conversations = [{ id: 'c1', title: '첫 대화' }]
+    chatState.activeId = null
+    renderChatPage()
+
+    const header = document.querySelector('header')!
+    expect(screen.queryByRole('button', { name: '새 채팅' })).not.toBeInTheDocument()
+    expect(header).not.toHaveTextContent('새 대화')
+    expect(header.querySelector('[title="제목 변경"]')).toBeNull()
+  })
+
+  it('대화가 있으면 헤더 제목(이름 바꾸기 버튼)은 그대로다', () => {
+    chatState.conversations = [{ id: 'c1', title: '첫 대화' }]
+    chatState.activeId = 'c1'
+    renderChatPage()
+
+    expect(screen.getByTitle('제목 변경')).toHaveTextContent('첫 대화')
+  })
+
   // 서버 상한(app.chat.max-title-chars 기본값)과 같은 값 - 넘기면 서버가 400 으로 거절한다
   it('제목 입력은 100자까지만 받는다', () => {
     chatState.conversations = [{ id: 'c1', title: '대화' }]
@@ -397,18 +417,6 @@ describe('ChatPage 답변 중 이동 확인 (#503)', () => {
     expect(screen.getAllByText('둘째 대화')).toHaveLength(before)
   })
 
-  it('답을 받는 중에 새 채팅을 눌러도 먼저 묻는다 - 모바일 헤더 버튼도 같다', () => {
-    streamingIn('c1')
-    renderChatPage()
-
-    fireEvent.click(screen.getByRole('button', { name: '새 채팅' }))
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-    expect(chatState.newConversation).not.toHaveBeenCalled()
-
-    fireEvent.click(screen.getByRole('button', { name: '중단하고 이동' }))
-    expect(chatState.newConversation).toHaveBeenCalledTimes(1)
-  })
-
   it('사이드바의 새 대화 버튼도 먼저 묻는다', () => {
     streamingIn('c1')
     renderChatPage()
@@ -502,6 +510,25 @@ describe('ChatPage 모바일 드로어 (#644)', () => {
     expect(screen.queryByRole('dialog', { name: '대화 목록' })).toBeNull()
     expect(menu).toHaveFocus()
     expect(screen.getByRole('banner').closest('[inert]')).toBeNull()
+  })
+
+  // #669 : 드로어는 화면 전체를 덮고(덮인 배경이 없어 배경 탭 닫기 없음) 오른쪽 위 X 로 닫힌다 - 닫으면 햄버거로 돌아온다
+  it('전체 화면 드로어의 X 로 닫으면 햄버거로 포커스가 돌아오고 inert 가 풀린다', () => {
+    renderChatPage()
+    const menu = screen.getByRole('button', { name: '대화 목록 열기' })
+    menu.focus()
+    fireEvent.click(menu)
+
+    const drawer = screen.getByRole('dialog', { name: '대화 목록' })
+    // 전체 화면 - 대화창 자체가 inset-0 바탕이고, 그 안에 따로 덮인 배경(스크림)을 두지 않는다
+    expect(drawer).toHaveClass('fixed', 'inset-0')
+    expect(drawer.querySelector('.bg-black\\/40')).toBeNull()
+
+    fireEvent.click(within(drawer).getByRole('button', { name: '대화 목록 닫기' }))
+
+    expect(screen.queryByRole('dialog', { name: '대화 목록' })).toBeNull()
+    expect(menu).toHaveFocus()
+    expect(document.querySelector('[inert]')).toBeNull()
   })
 
   // #656 : 드로어를 연 채 md 폭이 되면(폰을 가로로) 드로어는 md:hidden 으로 사라지는데 inert · 스크롤 잠금이 남아
