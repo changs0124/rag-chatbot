@@ -245,7 +245,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
 - **접근성 규칙(#484)** : 오류 문구는 `role="alert"`(조건부로 삽입해도 낭독된다), 성공 알림은 `role="status"` 를 **늘 렌더하는 그릇**에 글만 바꿔 넣는다(조건부로 삽입하면 낭독되지 않는다. 자리를 늘 비워 두는 문구는 `aria-live`). 입력은 placeholder 만으로 두지 않고 `<label>` 이나 `aria-label` 을 단다.
   같은 이름의 컨트롤이 줄지어 있으면 몇 번째인지 이름에 붙이고(첨부 썸네일), 색으로만 드러낸 현재 항목에는 `aria-current` 를 단다(#590).
   `role="dialog"` 는 `aria-labelledby`(`useId`)로 제목에 잇고, **확인 모달의 첫 포커스는 파괴 버튼이 아니라 「취소」** 다. 호버로만 드러나는 버튼은 `focus-visible` · `group-focus-within` 에서도 드러낸다.
-  **모달 · 드로어는 `hooks/useModalFocus` 를 부른다(#644)** — 열린 동안 바깥에 `inert`(Tab · 낭독기 훑기가 뒤 화면에 닿지 않음), 닫히면 연 요소로 포커스 복귀. 모달 틀은 공통화하지 않는다(#105 판정). 숨긴 파일 입력은 `hidden` 이 아니라 `sr-only` 로 둬 Tab 으로 닿게 하고 포커스 표시는 감싼 상자에 준다.
+  **모달 · 드로어는 `hooks/useModalFocus` 를 부른다(#644)** — 열린 동안 바깥에 `inert`(Tab · 낭독기 훑기가 뒤 화면에 닿지 않음), 닫히면 연 요소로 포커스 복귀(Safari 처럼 클릭이 포커스를 주지 않으면 직전에 누른 요소로, #674). 확인 창(`ConfirmModal`)은 `document.body` 아래에 그린다(#674) — 숨는 조상(데스크톱 사이드바 `hidden md:block`) 안에서 띄워도 폭이 줄어 사라지지 않고, inert 가 앱 뿌리 하나에 걸려 바깥 창(드로어)이 먼저 닫혀도 풀리지 않는다. 모달 틀은 공통화하지 않는다(#105 판정). 숨긴 파일 입력은 `hidden` 이 아니라 `sr-only` 로 둬 Tab 으로 닿게 하고 포커스 표시는 감싼 상자에 준다.
   답이 흐르는 동안 `role="log"` 는 `aria-busy` 로 둬 토큰 조각마다 낭독되지 않게 한다.
 
 ## 6. supanova 스킬에서 **버린** 규칙과 사유
