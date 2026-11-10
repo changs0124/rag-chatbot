@@ -96,7 +96,7 @@ export default memo(function Sidebar({
         {listPending && <ConversationListSkeleton />}
         {groups.map((group) => (
           <div key={group.label} className="mb-3">
-            {/* 한글에는 자간 · 대문자 효과가 없어 걷었다(#646). 12px 이 읽히는 하한 */}
+            {/* 한글에는 자간 · 대문자 효과가 없어 걷었다(#646). 묶음 라벨은 12px 이 읽히는 하한(배지 · 장식 글자는 따로) */}
             <p className="px-3 pb-1 text-xs font-medium text-ink-muted">
               {group.label}
             </p>

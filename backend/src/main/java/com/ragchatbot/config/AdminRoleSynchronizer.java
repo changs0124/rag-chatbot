@@ -58,7 +58,7 @@ public class AdminRoleSynchronizer {
 						email, "admin", null, null));
 				created++;
 				// 이 한 줄이 첫 로그인의 유일한 통로다. 로그를 지우기 전에 옮겨 적어야 한다
-				log.warn("관리자 계정 발급 : {} · 임시 비밀번호 {} (최초 로그인 후 마이페이지에서 변경할 것)",
+				log.warn("관리자 계정 발급 : {} · 임시 비밀번호 {} (최초 로그인 후 설정에서 변경할 것)",
 						email, temporary);
 			}
 			// 강등을 먼저 한다. 명단이 비어도 돌려야 "명단을 통째로 비워 관리자를 없앤다"가 성립함
