@@ -1,0 +1,73 @@
+{
+ "desktop": {
+  "empty": {
+   "plusButton": "40x40",
+   "sendRowHeight": 40,
+   "buttonEdgeToText": 12,
+   "glyphEdgeToText": 22,
+   "textareaFont": "15px",
+   "headerButtons": [],
+   "headerTexts": [
+    "새 대화"
+   ],
+   "emptyTexts": [
+    "무엇을 도와드릴까요?",
+    "답변에는 근거 출처가 함께 붙습니다. 찾은 자료가 없으면 없다고 먼저 밝힙니다."
+   ],
+   "hScroll": false
+  },
+  "thread": {
+   "plusButton": "40x40",
+   "sendRowHeight": 40,
+   "buttonEdgeToText": 12,
+   "glyphEdgeToText": 22,
+   "textareaFont": "15px",
+   "headerButtons": [
+    "설계불량(부품선정오류) 클레임 처리 절차와 재발 방지 대책에 대한 아주 긴 제목의 대화"
+   ],
+   "headerTexts": [
+    "설계불량(부품선정오류) 클레임 처리 절차와 재발 방지 대책에 대한 아주 긴 제목의 대화"
+   ],
+   "emptyTexts": [],
+   "hScroll": false
+  }
+ },
+ "mobile": {
+  "empty": {
+   "plusButton": "44x44",
+   "sendRowHeight": 44,
+   "buttonEdgeToText": 12,
+   "glyphEdgeToText": 24,
+   "textareaFont": "16px",
+   "headerButtons": [
+    "대화 목록 열기",
+    "새 채팅"
+   ],
+   "headerTexts": [
+    "새 대화"
+   ],
+   "emptyTexts": [
+    "무엇을 도와드릴까요?",
+    "답변에는 근거 출처가 함께 붙습니다. 찾은 자료가 없으면 없다고 먼저 밝힙니다."
+   ],
+   "hScroll": false
+  },
+  "thread": {
+   "plusButton": "44x44",
+   "sendRowHeight": 44,
+   "buttonEdgeToText": 12,
+   "glyphEdgeToText": 24,
+   "textareaFont": "16px",
+   "headerButtons": [
+    "대화 목록 열기",
+    "설계불량(부품선정오류) 클레임 처리 절차와 재발 방지 대책에 대한 아주 긴 제목의 대화",
+    "새 채팅"
+   ],
+   "headerTexts": [
+    "설계불량(부품선정오류) 클레임 처리 절차와 재발 방지 대책에 대한 아주 긴 제목의 대화"
+   ],
+   "emptyTexts": [],
+   "hScroll": false
+  }
+ }
+}
