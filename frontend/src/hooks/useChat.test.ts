@@ -495,7 +495,7 @@ describe('useChat 중단·오류 상태(AC-9·AC-17)', () => {
     expect(vi.mocked(getMessages).mock.calls.length + vi.mocked(deleteConversationIfEmpty).mock.calls.length).toBe(sent)
   })
 
-  // 같은 계정이 환경설정 · 관리 화면으로 옮기면 채팅 화면은 언마운트되지만, 새 대화의 판정은 빈 대화를 치우려고 이어 간다(#617 리뷰)
+  // 같은 계정이 설정 · 관리 화면으로 옮기면 채팅 화면은 언마운트되지만, 새 대화의 판정은 빈 대화를 치우려고 이어 간다(#617 리뷰)
   it('같은 계정으로 화면을 떠나면(언마운트) 새 대화의 판정은 계속 확인한다 (#617 대조)', async () => {
     setToken(jwtOf('user-a'))
     onTestFinished(() => setToken(null))

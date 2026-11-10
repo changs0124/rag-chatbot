@@ -441,7 +441,7 @@ export function useChat() {
       const controller = new AbortController()
       abortRef.current = controller
       // 이 턴의 계정(#617). 판정은 화면을 떠나도 이어 가지만(#489) 계정이 바뀌면 멈춘다 - 남은 요청이 새 계정 토큰으로 나간다.
-      // 언마운트로 가르지 않는다 - 같은 계정이 환경설정 · 관리 화면으로 옮겨도 언마운트되고, 그때는 빈 대화를 치워야 한다
+      // 언마운트로 가르지 않는다 - 같은 계정이 설정 · 관리 화면으로 옮겨도 언마운트되고, 그때는 빈 대화를 치워야 한다
       const owner = tokenSubject()
       const sameAccount = () => tokenSubject() === owner
 

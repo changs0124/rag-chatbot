@@ -385,6 +385,8 @@ describe('문서 관리 화면', () => {
     await screen.findByText('복무규정.pdf')
 
     const input = container.querySelector('input[type="file"]') as HTMLInputElement
+    // jsdom 은 Tailwind CSS 를 적용하지 않아 `hidden` 이어도 focus() 가 성공한다 - 실제로 지키는 단언은 바로 아래 클래스 검사이고,
+    // 포커스 두 줄은 sr-only 입력이 포커스 가능한 요소로 남았는지만 본다. Tab 도달은 브라우저 탐침(#644 증거)이 정본
     expect(input).not.toHaveClass('hidden')
     input.focus()
     expect(input).toHaveFocus()

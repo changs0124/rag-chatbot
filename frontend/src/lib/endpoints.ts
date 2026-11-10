@@ -10,7 +10,7 @@ import type {
   RagDocument,
 } from './types'
 
-// 프로필 (마이페이지)
+// 프로필 (설정 화면 `/me`)
 export const updateName = (name: string) => api.patch<Me>('/api/profile/name', { name })
 // 변경 이전 토큰은 서버가 전부 무효화하므로 응답의 새 토큰으로 반드시 교체해야 세션이 이어짐
 export const updatePassword = (currentPassword: string, newPassword: string) =>

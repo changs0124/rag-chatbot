@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../auth/AuthContext'
@@ -13,6 +13,7 @@ import { MAX_NAME_CHARS } from '../lib/limits'
 
 export default function MyPage() {
   const { user, setUser } = useAuth()
+  const newPasswordHintId = useId()
   const [name, setName] = useState(user?.name ?? '')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -118,13 +119,13 @@ export default function MyPage() {
             <Field label="새 비밀번호">
               <TextInput
                 type="password"
-                aria-describedby="new-password-hint"
+                aria-describedby={newPasswordHintId}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 autoComplete="new-password"
               />
             </Field>
-            <p id="new-password-hint" className="-mt-1.5 text-[13px] text-ink-muted">
+            <p id={newPasswordHintId} className="-mt-1.5 text-[13px] text-ink-muted">
               8자 이상
             </p>
             <button type="submit" disabled={!canSavePassword} className={primaryButtonClass}>

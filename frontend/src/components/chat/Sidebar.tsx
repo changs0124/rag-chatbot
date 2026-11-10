@@ -115,7 +115,7 @@ export default memo(function Sidebar({
         )}
       </nav>
 
-      {/* 사용자 프로필 - 클릭 시 환경설정/로그아웃 */}
+      {/* 사용자 프로필 - 클릭 시 설정/로그아웃 */}
       <div className="relative border-t border-line p-2">
         <button
           onClick={() => setMenuOpen((v) => !v)}
