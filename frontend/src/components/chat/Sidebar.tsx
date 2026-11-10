@@ -116,7 +116,7 @@ export default memo(function Sidebar({
                       : 'text-ink-muted hover:bg-raised/70 hover:text-ink')
                   }
                 >
-                  {/* 지금 대화는 색 말고도 드러낸다(#646, WCAG 1.4.1) - 면 차이(1.13:1)만으로는 안 보여 굵기 + 왼쪽 막대(accent 4.85) */}
+                  {/* 지금 대화는 색 말고도 드러낸다(#646, WCAG 1.4.1) - 면 차이(1.13:1)만으로는 안 보여 굵기 + 왼쪽 막대(`accent`/`raised` 5.46) */}
                   {c.id === activeId && (
                     <span aria-hidden="true" className="absolute top-2 bottom-2 left-0 w-[3px] rounded-full bg-accent" />
                   )}

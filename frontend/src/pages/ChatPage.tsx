@@ -263,8 +263,7 @@ export default function ChatPage() {
                   {activeTitle ?? '새 대화'}
                 </button>
               )
-            ) : null}
-            {/* 새 대화(아직 대화 없음)는 제목을 비운다(#670) - 빈 화면의 「무엇을 도와드릴까요?」 하나만 남긴다 */}
+            ) : /* activeId 가 없으면(새 대화) 제목을 비운다(#670) - 빈 화면의 「무엇을 도와드릴까요?」 하나만 남긴다 */ null}
           </div>
         </header>
 
