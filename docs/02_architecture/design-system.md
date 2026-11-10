@@ -187,7 +187,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
 |------|-----|---------|
 | `--shadow-card` | `0 1px 2px rgb(16 24 40 / .06)` | 1px 경계가 있는 카드 · 목록 묶음 · 「새 대화」 버튼 · 지금 대화 행(#646) — 경계가 모양을 맡고 이것은 바닥에 붙은 느낌만 낸다 |
 | `--shadow-ambient` | `0 1px 2px rgb(0 0 0 / .04), 0 8px 24px -12px rgb(0 0 0 / .1)` | 채팅 입력창 · 로그인 카드 · 첨부 제거 원 |
-| `--shadow-lifted` | `0 2px 4px rgb(0 0 0 / .05), 0 16px 40px -16px rgb(0 0 0 / .18)` | **화면 위에 뜬 것** — 모달(`ConfirmModal` · `AdminUsersPage` 발급 창) · 드로어(`ChatPage`) · 팝오버(`Sidebar`) |
+| `--shadow-lifted` | `0 2px 4px rgb(0 0 0 / .05), 0 16px 40px -16px rgb(0 0 0 / .18)` | **화면 위에 뜬 것** — 모달(`ConfirmModal` · `AdminUsersPage` 발급 창) · 팝오버(`Sidebar`). 모바일 드로어는 화면 전체라 그림자가 없다(#669) |
 
 모달에 `ambient` 를 쓰면 기존 모달과 깊이가 갈린다.
 
@@ -280,9 +280,9 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
 - **누르는 영역만 넓히는 작은 원** — 첨부 제거(보이는 원 20px)는 `::after` 로 누르는 영역을 넓힌다 : 모바일 30px · 데스크톱 28px(WCAG 2.5.8 24px 이상). 원이 카드 밖으로 6px 나와 있어 영역이 카드 간격(12px)을 넘으면 이웃 카드의 「확대」와 겹친다 — 모바일 36px 은 2px 겹쳐 30px 로 줄였다(#657).
   카드 간격(12px) 때문에 44px 까지는 넓히지 않는다 — 이웃 카드의 확대 버튼 영역을 덮는다. 메뉴 항목 · 확인 모달 버튼 · 확대 보기 버튼은 모바일 44px · 데스크톱 36~40px
 - 측정은 `360x740`(일반) · `360x640`(작은 화면) 두 가지로 한다. 360x640 에서 로그인 버튼이 스크롤 없이 보여야 한다(565px)
-- 사이드바는 `md` 미만에서 드로어다. 폭 `min(84vw, 320px)`, 배경은 `backdrop-blur` + 반투명 검정
+- 사이드바는 `md` 미만에서 드로어다. **화면 전체를 덮고**(바탕 `surface`, 뒤 스크림 없음) 오른쪽 위 X(44px, 「대화 목록 닫기」)로 닫는다(#669, ChatGPT · Claude 모바일과 같은 모양). X 는 사이드바 머리 줄(로고)의 오른쪽 빈자리에 있고 드로어에만 있다
 - 드로어가 열린 동안 뒤 화면은 스크롤되지 않게 잠근다
-- 드로어는 `role="dialog"` · `aria-modal` · 이름 「대화 목록」 — 열리면 포커스가 안으로, Esc · 배경 탭으로 닫히고 메뉴 버튼으로 돌아온다(#644). 안의 확인 창이 받은 Esc 는 확인 창만 닫는다
+- 드로어는 `role="dialog"` · `aria-modal` · 이름 「대화 목록」 — 열리면 포커스가 안으로, X · Esc 로 닫히고 메뉴 버튼으로 돌아온다(#644 · #669 — 덮인 배경이 없어 배경 탭 닫기는 없다). 안의 확인 창이 받은 Esc 는 확인 창만 닫는다
 
 ## 7-2. 파비콘 · 앱 아이콘
 
@@ -417,7 +417,7 @@ s.save('frontend/public/favicon.ico',sizes=[(16,16),(32,32),(48,48)])"
 | `frontend/src/components/Logo.tsx` | 브랜드색 2 + 램프 5스톱 | **로고는 화면 토큰을 따라가면 안 된다.** CI 색은 고정이어야 한다 — 토큰으로 빼는 순간 화면 색을 바꿀 때 로고가 다른 회사 색이 된다. 파비콘도 여기서 렌더하므로 사본을 따로 두지 않는다 |
 | `frontend/index.html` | `theme-color` **1개** | `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 **같은 값을 손으로 맞춘다**. `media="(prefers-color-scheme: …)"` 로 두지 않는다 — OS 가 다크면 주소창만 다크가 된다 |
 | 사진·영상 위 오버레이 — `chat/ImageLightbox.tsx` · `chat/Composer.tsx` 썸네일 | `bg-black/*` · `bg-white/*` · `text-white*` · `border-white/*` | 아래 면이 **토큰이 아닌 이미지**라 화면 색과 무관하다 |
-| 모달·드로어 뒤 스크림 — `ConfirmModal.tsx` · `pages/AdminUsersPage.tsx`(발급 모달) · `pages/ChatPage.tsx`(모바일 드로어) | `bg-black/40`(확대 보기는 위 사진 오버레이 줄 — `bg-black/90`) | 화면 전체를 가리는 반투명 막이라 바탕 토큰과 짝지을 대상이 없다 |
+| 모달·드로어 뒤 스크림 — `ConfirmModal.tsx` · `pages/AdminUsersPage.tsx`(발급 모달). 모바일 드로어는 전체 화면이라 스크림이 없다(#669) | `bg-black/40`(확대 보기는 위 사진 오버레이 줄 — `bg-black/90`) | 화면 전체를 가리는 반투명 막이라 바탕 토큰과 짝지을 대상이 없다 |
 | 문서 그림 바탕 — `chat/DocFigure.tsx` | `bg-white` | 그림 자체가 화면 토큰과 무관한 이미지다 |
 
 **[CONVENTIONS.md](../CONVENTIONS.md) 「스타일」은 이 표를 가리킨다.** 자리를 늘리면 이 표를 고친다.

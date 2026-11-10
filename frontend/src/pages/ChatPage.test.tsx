@@ -472,6 +472,25 @@ describe('ChatPage 모바일 드로어 (#644)', () => {
     expect(screen.getByRole('banner').closest('[inert]')).toBeNull()
   })
 
+  // #669 : 드로어는 화면 전체를 덮고(덮인 배경이 없어 배경 탭 닫기 없음) 오른쪽 위 X 로 닫힌다 - 닫으면 햄버거로 돌아온다
+  it('전체 화면 드로어의 X 로 닫으면 햄버거로 포커스가 돌아오고 inert 가 풀린다', () => {
+    renderChatPage()
+    const menu = screen.getByRole('button', { name: '대화 목록 열기' })
+    menu.focus()
+    fireEvent.click(menu)
+
+    const drawer = screen.getByRole('dialog', { name: '대화 목록' })
+    // 전체 화면 - 대화창 자체가 inset-0 바탕이고, 그 안에 따로 덮인 배경(스크림)을 두지 않는다
+    expect(drawer).toHaveClass('fixed', 'inset-0')
+    expect(drawer.querySelector('.bg-black\\/40')).toBeNull()
+
+    fireEvent.click(within(drawer).getByRole('button', { name: '대화 목록 닫기' }))
+
+    expect(screen.queryByRole('dialog', { name: '대화 목록' })).toBeNull()
+    expect(menu).toHaveFocus()
+    expect(document.querySelector('[inert]')).toBeNull()
+  })
+
   // #656 : 드로어를 연 채 md 폭이 되면(폰을 가로로) 드로어는 md:hidden 으로 사라지는데 inert · 스크롤 잠금이 남아
   // 앱 전체가 눌리지 않았다 - 넓어지는 순간 드로어를 닫는다
   it('드로어가 열린 채 md 폭이 되면 닫히고 inert · 스크롤 잠금이 풀린다', () => {
