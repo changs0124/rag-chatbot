@@ -1,0 +1,68 @@
+{
+ "desktop": {
+  "admin-docs-fail": [
+   {
+    "items": 0,
+    "height": 2
+   }
+  ],
+  "admin-users-fail": [
+   {
+    "items": 0,
+    "height": 2
+   }
+  ],
+  "table": [
+   {
+    "tableW": 720,
+    "boxW": 720,
+    "overflows": false,
+    "role": "region",
+    "tabIndex": "0"
+   }
+  ],
+  "attach": {
+   "removeHit": [
+    "28x28",
+    "28x28"
+   ],
+   "overlapWithNeighborOpen": [
+    0,
+    0
+   ]
+  }
+ },
+ "mobile": {
+  "admin-docs-fail": [
+   {
+    "items": 0,
+    "height": 2
+   }
+  ],
+  "admin-users-fail": [
+   {
+    "items": 0,
+    "height": 2
+   }
+  ],
+  "table": [
+   {
+    "tableW": 536,
+    "boxW": 358,
+    "overflows": true,
+    "role": "region",
+    "tabIndex": "0"
+   }
+  ],
+  "attach": {
+   "removeHit": [
+    "36x36",
+    "36x36"
+   ],
+   "overlapWithNeighborOpen": [
+    44,
+    0
+   ]
+  }
+ }
+}
