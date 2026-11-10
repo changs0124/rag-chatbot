@@ -1,0 +1,6 @@
+11-10 운영 백엔드 배포 084caaa → 321dc8a
+- 배포 전 : 옛 컨테이너 로그 incomplete 0 · WARN/ERROR 0 · 롤백 태그 prev-084caaa = 5c23d8f51109
+- deploy.sh : 헬스 OK 10초 · 터널 OK 0초 · 새 이미지 latest = 3b642b56d3a6
+- 스모크 : GET /api/health 200 · HEAD /api/health 200 · 미인증 POST /api/chat 401 · /error 401 · X-Content-Type-Options nosniff · X-Frame-Options DENY
+- app 로그 WARN/ERROR 0 · Flyway "Successfully validated 10 migrations" · "Schema public is up to date. No migration necessary."
+- 이미지 안 AdminUserService.class : 「설정에서 변경할 것」 1 · 「마이페이지」 0
