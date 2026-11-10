@@ -62,7 +62,7 @@ export default function AdminUsersPage() {
         스스로 가입하는 경로가 없어 계정은 여기서만 만들어집니다.
       </p>
 
-      <AdminErrorBanners listError={listError} error={error} loaded={loaded} onRetry={() => void refresh()} />
+      <AdminErrorBanners listError={listError} error={error} loaded={loaded} onRetry={refresh} />
 
       <UsersSection users={users} loaded={loaded} loading={!loaded && !listError} currentUserId={user?.id} refresh={refresh} setError={setError} />
     </PageShell>
@@ -325,6 +325,8 @@ function IssuedDialog({
   // 다시 볼 수 없는 값이라 손으로 옮겨 적지 않게 복사 버튼을 둔다(#662). clipboard 는 클릭 핸들러 안에서 불러야 허락된다.
   // 막히면(권한 · 구형 브라우저) 값을 선택해 두어 사용자가 바로 복사할 수 있게 한다
   const copy = async () => {
+    // 먼저 비운다 - 두 번째 복사도 같은 문구라 그대로 두면 상태 줄이 바뀌지 않아 낭독기가 다시 읽지 않는다(#675)
+    setCopyNote('')
     try {
       await navigator.clipboard.writeText(issued.password)
       setCopyNote('복사했습니다')

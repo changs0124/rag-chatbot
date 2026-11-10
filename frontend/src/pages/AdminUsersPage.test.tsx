@@ -273,6 +273,10 @@ describe('사용자 관리 화면', () => {
       vi.mocked(listAdminUsers).mockResolvedValue([PARK])
       vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
     })
+    // 다른 테스트로 새지 않게 되돌린다(#675) - jsdom 의 navigator 에는 원래 clipboard 가 없다
+    afterEach(() => {
+      Reflect.deleteProperty(navigator, 'clipboard')
+    })
 
     it('복사 버튼이 값을 클립보드에 넣고 결과를 알린다', async () => {
       writeText.mockResolvedValue(undefined)
@@ -298,6 +302,22 @@ describe('사용자 관리 화면', () => {
 
       expect(await within(dialog).findByRole('status')).toHaveTextContent('복사하지 못했습니다')
       expect(window.getSelection()?.toString()).toBe('Xk7m-Qp29-Vr4t')
+    })
+
+    it('두 번째 복사도 상태 줄을 비웠다가 다시 채워 낭독기가 다시 읽는다(#675)', async () => {
+      writeText.mockResolvedValue(undefined)
+      renderPage()
+      await confirmReset()
+      const dialog = await screen.findByRole('dialog', { name: '임시 비밀번호가 발급되었습니다' })
+      fireEvent.click(within(dialog).getByRole('button', { name: '복사' }))
+      expect(await within(dialog).findByRole('status')).toHaveTextContent('복사했습니다')
+
+      const second = deferred<void>()
+      writeText.mockReturnValueOnce(second.promise)
+      fireEvent.click(within(dialog).getByRole('button', { name: '복사' }))
+      expect(within(dialog).getByRole('status')).toHaveTextContent('')
+      await act(async () => second.resolve())
+      expect(within(dialog).getByRole('status')).toHaveTextContent('복사했습니다')
     })
   })
 
