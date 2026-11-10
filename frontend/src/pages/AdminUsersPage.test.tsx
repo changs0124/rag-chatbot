@@ -389,4 +389,18 @@ describe('사용자 관리 화면', () => {
     expect(await screen.findByRole('button', { name: '박사원 삭제' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '박사원 비밀번호 초기화' })).toBeInTheDocument()
   })
+
+  // #644 : 발급 창이 닫히면 발급을 시작한 「비밀번호 초기화」 버튼으로 포커스가 돌아온다(요청 중 막혀 있던 버튼)
+  it('발급 창을 닫으면 초기화 버튼으로 포커스가 돌아온다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([PARK])
+    vi.mocked(resetUserPassword).mockResolvedValue({ temporaryPassword: 'Xk7m-Qp29-Vr4t' })
+    renderPage()
+
+    await confirmReset()
+    await screen.findByText('Xk7m-Qp29-Vr4t')
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: '닫기' })).toHaveFocus()
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '닫기' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '박사원 비밀번호 초기화' })).toHaveFocus())
+  })
 })

@@ -67,6 +67,16 @@ export default function Composer({
   // 'returned' 는 되돌린 카드와 합쳐 넘쳐 이미 붙어 있던 카드를 걷은 경우(#440) - 안내 문구가 다르다
   const [overLimit, setOverLimit] = useState<false | 'added' | 'returned'>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // 입력창은 내용만큼 자라고 max-h 에서 멈춘다(#643) - field-sizing:content 를 모르는 브라우저(Safari 26 미만 등)는
+  // 높이를 비웠다가 scrollHeight 로 다시 맞춘다. max-h 가 상한을 그대로 쥔다
+  useLayoutEffect(() => {
+    const el = textareaRef.current
+    if (!el || (typeof CSS !== 'undefined' && CSS.supports?.('field-sizing', 'content'))) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [text])
   // 언마운트 정리용 - 정리 시점에 최신 목록을 봐야 해서 상태가 아니라 ref 로 들고 있음
   const draftsRef = useRef<Draft[]>([])
   draftsRef.current = drafts
@@ -342,6 +352,7 @@ export default function Composer({
           />
 
           <textarea
+            ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onPaste={onPaste}
@@ -361,7 +372,8 @@ export default function Composer({
             // 한 줄 높이를 버튼과 정확히 맞춤 : 24 + 20 = 44(모바일 h-11), 24 + 16 = 40(md h-10).
             // leading-relaxed(24.375)면 md 에서 버튼이 2.2px 아래로 처진다(#218).
             // 모바일 글자는 16px - iOS 는 16px 미만 입력에 포커스하면 화면을 확대해 버린다(#221)
-            className="max-h-40 flex-1 resize-none bg-transparent px-1 py-2.5 text-base leading-6 text-ink md:py-2 md:text-[15px] outline-none placeholder:text-ink-muted"
+            // 상한은 모바일이 더 낮다 - 가상 키보드가 열리면 대화가 보이는 칸이 좁아진다(#643)
+            className="max-h-32 md:max-h-40 [field-sizing:content] flex-1 resize-none bg-transparent px-1 py-2.5 text-base leading-6 text-ink md:py-2 md:text-[15px] outline-none placeholder:text-ink-muted"
           />
 
           {streaming && !settling ? (

@@ -1,0 +1,135 @@
+{
+ "desktop": {
+  "docsTabOrder": [
+   "a「마이페이지」",
+   "button「스토어와 동기화」",
+   "button「삭제」",
+   "button「삭제」",
+   "button「삭제」",
+   "BODY",
+   "a「마이페이지」",
+   "button「스토어와 동기화」"
+  ],
+  "uploadReachable": false,
+  "deleteNames": [
+   "삭제",
+   "삭제",
+   "삭제"
+  ],
+  "uploadFocusOutline": {
+   "focused": false,
+   "labelOutline": "none 3px"
+  },
+  "confirm": {
+   "opener": "button「삭제」",
+   "tabs": [
+    "button「삭제」 ∈dialog(named)",
+    "BODY",
+    "a「마이페이지」",
+    "button「스토어와 동기화」",
+    "button「삭제」",
+    "button「삭제」"
+   ],
+   "tabsInsideDialog": "1/6",
+   "afterClose": "button「삭제」"
+  },
+  "issued": {
+   "opener": "button「김철수 비밀번호 초기화」",
+   "tabs": [
+    "BODY",
+    "a「마이페이지」",
+    "input「email」",
+    "input「」"
+   ],
+   "tabsInsideDialog": "0/4",
+   "afterClose": "input「」"
+  },
+  "logAriaBusy": null,
+  "lightbox": {
+   "opener": "button「첨부 이미지 1/2 확대」",
+   "tabs": [
+    "button「다음 이미지」 ∈dialog(named)",
+    "button「첨부 추가」",
+    "textarea「메시지 입력」",
+    "BODY",
+    "button「새 대화」",
+    "button「클레임 처리 절차」"
+   ],
+   "tabsInsideDialog": "1/6",
+   "afterClose": "button「클레임 처리 절차」"
+  }
+ },
+ "mobile": {
+  "docsTabOrder": [
+   "a「마이페이지」",
+   "button「스토어와 동기화」",
+   "button「삭제」",
+   "button「삭제」",
+   "button「삭제」",
+   "BODY",
+   "a「마이페이지」",
+   "button「스토어와 동기화」"
+  ],
+  "uploadReachable": false,
+  "deleteNames": [
+   "삭제",
+   "삭제",
+   "삭제"
+  ],
+  "uploadFocusOutline": {
+   "focused": false,
+   "labelOutline": "none 3px"
+  },
+  "confirm": {
+   "opener": "button「삭제」",
+   "tabs": [
+    "button「삭제」 ∈dialog(named)",
+    "BODY",
+    "a「마이페이지」",
+    "button「스토어와 동기화」",
+    "button「삭제」",
+    "button「삭제」"
+   ],
+   "tabsInsideDialog": "1/6",
+   "afterClose": "button「삭제」"
+  },
+  "issued": {
+   "opener": "button「김철수 비밀번호 초기화」",
+   "tabs": [
+    "BODY",
+    "a「마이페이지」",
+    "input「email」",
+    "input「」"
+   ],
+   "tabsInsideDialog": "0/4",
+   "afterClose": "input「」"
+  },
+  "drawer": {
+   "dialogs": [],
+   "focusAfterOpen": "button「대화 목록 열기」",
+   "tabs": [
+    "button「새 채팅」",
+    "button「첨부 추가」",
+    "textarea「메시지 입력」",
+    "BODY",
+    "button「새 대화」"
+   ],
+   "openAfterEsc": 1,
+   "focusAfterEsc": "button「새 대화」"
+  },
+  "logAriaBusy": null,
+  "lightbox": {
+   "opener": "button「첨부 이미지 1/2 확대」",
+   "tabs": [
+    "button「다음 이미지」 ∈dialog(named)",
+    "button「첨부 추가」",
+    "textarea「메시지 입력」",
+    "BODY",
+    "button「대화 목록 열기」",
+    "button「클레임 처리 절차」"
+   ],
+   "tabsInsideDialog": "1/6",
+   "afterClose": "button「클레임 처리 절차」"
+  }
+ }
+}

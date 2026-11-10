@@ -224,7 +224,9 @@ function DocumentsSection({
     <>
       <section className="mt-6">
         {/* 올리기 영역(#646) - 회색 면 대신 흰 카드 + 점선, 아이콘 타일과 버튼 모양 글자로 「누르는 곳」을 드러낸다 */}
-        <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border border-dashed border-line-strong bg-raised px-6 py-8 text-center transition-colors duration-150 ease-[var(--ease-out-quint)] hover:border-accent hover:bg-accent-soft/40">
+        {/* 파일 칸은 숨기되 Tab 으로 닿게 sr-only(display:none 이면 키보드로 못 올린다 - #644). 포커스 표시는 칸 대신 상자 전체에 -
+            전역 :focus-visible 과 같은 2px accent 외곽선. sr-only 는 absolute 라 상자를 기준(relative)으로 둔다 */}
+        <label className="relative flex cursor-pointer flex-col items-center gap-3 rounded-xl border border-dashed border-line-strong bg-raised px-6 py-8 text-center transition-colors duration-150 ease-[var(--ease-out-quint)] hover:border-accent hover:bg-accent-soft/40 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
           <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-accent-soft text-accent">
             <IconUpload className="h-5 w-5" />
           </span>
@@ -235,7 +237,7 @@ function DocumentsSection({
           <input
             type="file"
             accept={ACCEPT}
-            className="hidden"
+            className="sr-only"
             disabled={uploading}
             onChange={onPick}
           />
@@ -301,9 +303,11 @@ function DocumentsSection({
                     </p>
                   )}
                 </div>
+                {/* 「삭제」가 문서 수만큼 같은 이름으로 읽히지 않게 파일 이름을 붙인다(#644, 사용자 관리와 같은 방식) */}
                 <button
                   onClick={() => setPendingDelete(doc)}
                   disabled={deletingId !== null}
+                  aria-label={`${doc.filename} ${deletingId === doc.id ? '삭제 중' : '삭제'}`}
                   className={actionButtonClass + ' hover:border-danger/40 hover:text-danger'}
                 >
                   {deletingId === doc.id ? '삭제 중…' : '삭제'}

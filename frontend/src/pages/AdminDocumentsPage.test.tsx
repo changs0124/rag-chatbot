@@ -57,6 +57,9 @@ function renderPage() {
   )
 }
 
+// 행의 삭제 버튼 이름은 「<파일 이름> 삭제」다(#644) - 모달의 「삭제」와 겹치지 않는다
+const ROW_DELETE = /^.+ 삭제$/
+
 describe('문서 관리 화면', () => {
   beforeEach(() => {
     currentRole = 'admin'
@@ -234,7 +237,7 @@ describe('문서 관리 화면', () => {
   it('삭제 확인이 기존 답변의 출처는 남는다고 알린다', async () => {
     vi.mocked(listDocuments).mockResolvedValue([doc()])
     renderPage()
-    fireEvent.click(await screen.findByRole('button', { name: '삭제' }))
+    fireEvent.click(await screen.findByRole('button', { name: ROW_DELETE }))
 
     expect(screen.getByText(/이미 나간 답변의 출처 표기는 그대로 남습니다/)).toBeInTheDocument()
 
@@ -254,7 +257,7 @@ describe('문서 관리 화면', () => {
     vi.mocked(listDocuments).mockReturnValueOnce(late.promise).mockResolvedValue([])
     await vi.advanceTimersByTimeAsync(5000)
 
-    fireEvent.click(screen.getByRole('button', { name: '삭제' }))
+    fireEvent.click(screen.getByRole('button', { name: ROW_DELETE }))
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
     expect(await screen.findByText('아직 문서가 없습니다')).toBeInTheDocument()
 
@@ -324,7 +327,7 @@ describe('문서 관리 화면', () => {
     vi.mocked(deleteDocument).mockRejectedValueOnce(new Error('boom'))
     vi.mocked(syncDocuments).mockResolvedValueOnce({ added: 0, total: 2 })
     renderPage()
-    fireEvent.click(await screen.findByRole('button', { name: '삭제' }))
+    fireEvent.click(await screen.findByRole('button', { name: ROW_DELETE }))
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
     expect(await screen.findByRole('alert')).toBeInTheDocument()
 
@@ -350,14 +353,14 @@ describe('문서 관리 화면', () => {
     vi.mocked(listDocuments).mockResolvedValue([doc(), doc({ id: 'd2', filename: '복무규정.pdf' })])
     vi.mocked(deleteDocument).mockRejectedValueOnce(new Error('boom'))
     renderPage()
-    const [first] = await screen.findAllByRole('button', { name: '삭제' })
+    const [first] = await screen.findAllByRole('button', { name: ROW_DELETE })
     fireEvent.click(first)
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
     expect(await screen.findByText('삭제하지 못했습니다')).toBeInTheDocument()
 
     const slow = deferred<void>()
     vi.mocked(deleteDocument).mockReturnValueOnce(slow.promise)
-    fireEvent.click(screen.getAllByRole('button', { name: '삭제' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: ROW_DELETE })[0])
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
     expect(screen.queryByText('삭제하지 못했습니다')).not.toBeInTheDocument()
     for (const b of screen.getAllByRole('button', { name: /삭제/ })) expect(b).toBeDisabled()
@@ -373,5 +376,19 @@ describe('문서 관리 화면', () => {
     await screen.findByText('아직 문서가 없습니다')
     expect(screen.queryByRole('heading', { name: /사용자/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '계정 추가' })).not.toBeInTheDocument()
+  })
+
+  // #644 : 업로드 칸은 키보드로 닿아야 하고(display:none 금지), 행의 삭제 버튼은 파일 이름으로 구분된다
+  it('업로드 칸에 Tab 으로 닿고, 삭제 버튼 이름에 파일 이름이 붙는다', async () => {
+    vi.mocked(listDocuments).mockResolvedValue([doc(), doc({ id: 'd2', filename: '복무규정.pdf' })])
+    const { container } = renderPage()
+    await screen.findByText('복무규정.pdf')
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement
+    expect(input).not.toHaveClass('hidden')
+    input.focus()
+    expect(input).toHaveFocus()
+    expect(screen.getByRole('button', { name: '복무규정.pdf 삭제' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: ROW_DELETE })).toHaveLength(2)
   })
 })

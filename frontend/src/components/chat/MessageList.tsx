@@ -88,7 +88,9 @@ export default function MessageList({
    */
   useEffect(() => {
     if (!stick.current) return
-    endRef.current?.scrollIntoView?.({ behavior: 'smooth' })
+    // 움직임 줄이기 설정이면 부드럽게 굴리지 않는다(#644) - JS 로 준 smooth 는 CSS 의 scroll-behavior 전역 끄기가 못 막는다
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    endRef.current?.scrollIntoView?.({ behavior: reduce ? 'auto' : 'smooth' })
   }, [messages, stage])
 
   // 진행 단계를 보여주는 동안에는 답변 버블을 내지 않음(REQ-CHAT-005, 한 줄 교체형).
@@ -96,6 +98,8 @@ export default function MessageList({
   const last = messages.at(-1)
   const pending =
     !!last && last.role === 'assistant' && (!!stage || (last.status === 'streaming' && !last.content))
+  // 답이 흐르는 동안 log 를 바쁨으로 둔다(#644) - 아니면 낭독기가 토큰 조각마다 읽어 쌓는다. 끝나면 풀려 완성된 답을 읽는다
+  const busy = !!last && last.role === 'assistant' && (!!stage || last.status === 'streaming')
 
   // log 영역과 분리한 별도 라이브 영역 - 원자적으로 교체해 낭독이 누적되지 않게 함.
   // 그릇은 늘 두고 글만 넣는다(#484 규칙 · #590). 빈 화면 · 목록 어느 쪽이든 같은 자리(조각의 두 번째 자식)라
@@ -130,6 +134,7 @@ export default function MessageList({
           role="log"
           aria-live="polite"
           aria-relevant="additions text"
+          aria-busy={busy}
         >
           {messages.map((m) =>
             pending && m.id === last?.id ? null : <MessageBubble key={m.id} message={m} onAttachmentError={onAttachmentError} />,

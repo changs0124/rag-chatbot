@@ -29,14 +29,14 @@ vi.mock('../lib/api', async (importOriginal) => {
   }
 })
 
-const { updatePassword } = await import('../lib/endpoints')
+const { updateName, updatePassword } = await import('../lib/endpoints')
 
 /** 두 칸을 채우고 변경 버튼을 누름(버튼은 두 값이 다 차야 활성화됨) */
 function submitPasswordChange() {
-  fireEvent.change(screen.getByPlaceholderText('현재 비밀번호'), {
+  fireEvent.change(screen.getByLabelText('현재 비밀번호'), {
     target: { value: 'password123' },
   })
-  fireEvent.change(screen.getByPlaceholderText('새 비밀번호 (8자 이상)'), {
+  fireEvent.change(screen.getByLabelText('새 비밀번호'), {
     target: { value: 'newpassword1' },
   })
   fireEvent.click(screen.getByRole('button', { name: '비밀번호 변경' }))
@@ -179,5 +179,66 @@ describe('MyPage 이름 (#413)', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: '비밀번호 변경' }))
     expect(await screen.findByRole('status')).toHaveTextContent('비밀번호를 변경했습니다')
+  })
+})
+
+describe('MyPage 폼 (#645)', () => {
+  beforeEach(() => {
+    setToken('old-token')
+    currentRole = 'user'
+  })
+  afterEach(() => {
+    setToken(null)
+    vi.clearAllMocks()
+  })
+
+  // placeholder 뿐이면 입력하는 순간 칸의 이름과 「8자 이상」이 사라진다 - 라벨 · 안내를 칸 밖에 보인다
+  it('비밀번호 칸에 보이는 라벨이 있고 규칙 안내가 새 비밀번호 칸의 설명이다', () => {
+    renderMyPage()
+
+    expect(screen.getByText('현재 비밀번호').tagName).toBe('SPAN')
+    const next = screen.getByLabelText('새 비밀번호')
+    expect(next).not.toHaveAttribute('placeholder')
+    expect(next).toHaveAccessibleDescription('8자 이상')
+  })
+
+  it('새 비밀번호 칸에서 Enter 로 변경을 제출한다', async () => {
+    vi.mocked(updatePassword).mockResolvedValue({
+      token: 'new-token',
+      user: { id: 'u1', email: 'a@b.com', name: '사용자', role: 'user' },
+    })
+    renderMyPage()
+    fireEvent.change(screen.getByLabelText('현재 비밀번호'), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText('새 비밀번호'), { target: { value: 'newpassword1' } })
+    fireEvent.submit(screen.getByLabelText('새 비밀번호').closest('form')!)
+
+    expect(updatePassword).toHaveBeenCalledWith('password123', 'newpassword1')
+    await waitFor(() => expect(screen.getByText('비밀번호를 변경했습니다')).toBeInTheDocument())
+  })
+
+  // 버튼이 막힌 상태의 Enter(규칙 미달)는 요청을 보내지 않는다
+  it('새 비밀번호가 8자 미만이면 Enter 로도 제출하지 않는다', () => {
+    renderMyPage()
+    fireEvent.change(screen.getByLabelText('현재 비밀번호'), { target: { value: 'password123' } })
+    fireEvent.change(screen.getByLabelText('새 비밀번호'), { target: { value: 'short' } })
+    fireEvent.submit(screen.getByLabelText('새 비밀번호').closest('form')!)
+
+    expect(updatePassword).not.toHaveBeenCalled()
+  })
+
+  it('이름 칸에서 Enter 로 저장하고, 저장 중에는 버튼이 막혀 두 번 보내지 않는다', async () => {
+    const save = deferred<Awaited<ReturnType<typeof updateName>>>()
+    vi.mocked(updateName).mockReturnValue(save.promise)
+    renderMyPage()
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '새이름' } })
+    const form = screen.getByLabelText('이름').closest('form')!
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+
+    expect(updateName).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('button', { name: '저장 중…' })).toBeDisabled()
+    save.resolve({ id: 'u1', email: 'a@b.com', name: '새이름', role: 'user' })
+    await waitFor(() => expect(screen.getByText('이름을 변경했습니다')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: '저장' })).toBeEnabled()
   })
 })
