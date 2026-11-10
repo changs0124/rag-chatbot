@@ -136,7 +136,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
 |------|------|------|
 | `highlight` · `highlight-ink` | 배지 : `chat/MessageList.tsx` 「자료 없음」 · `AdminDocumentsPage` 처리중 · `AdminUsersPage` 사용자 역할(#646) | 같은 짝으로만 쓴다(대비 표 10.63) |
 | `highlight` | `chat/Composer.tsx` 첨부 실패 아이콘 | 1회. 어두운 고정 스크림 위라 밝은 면 기준 토큰을 못 쓴다 |
-| `highlight` | 스켈레톤 막대 : `ChatPage` 이력 로딩 · `AdminListSkeleton`(#646) | 글자 없는 자리 표시라 대비 기준이 없다 |
+| `highlight` | 스켈레톤 막대 : `ChatPage` 이력 로딩 · `AdminListSkeleton`(#646) · 사이드바 첫 목록(#663) | 글자 없는 자리 표시라 대비 기준이 없다 |
 | `danger-ink` | `ConfirmModal.tsx` 확인 버튼(삭제 · 비밀번호 초기화) | 1회 — `bg-danger` 가 있는 유일한 자리다 |
 | `danger-soft` | `components/AdminErrorBanners.tsx` 관리자 오류 배너 | 1회 — 관리자 두 화면이 공용으로 쓴다(#541) |
 | `danger-soft` | `pages/MyPage.tsx` 오류 배너 | 1회. 관리자 쪽과 같은 색 조합(모서리 · 여백은 다르다) |
@@ -223,7 +223,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
   | 종류 | 모양 | 정본 |
   |------|------|------|
   | 주요 | `accent` 면 · 흰 글자 · hover `accent-hover` · `h-11`(44px) | `components/primaryButton.ts` 의 `primaryButtonClass`(#330). 로그인은 `h-12` 전폭이라 따로 |
-  | 보조 | `raised` 면 + 1px `line` 경계 · `ink` 13px medium · hover `surface` · 모바일 `min-h-11` / 데스크톱 `h-8` | `components/actionButton.ts` 의 `actionButtonClass` — 관리 목록 행 끝(동기화 · 초기화 · 삭제). 삭제는 hover 에 `danger` 글자 · 경계 |
+  | 보조 | `raised` 면 + 1px `line` 경계 · `ink` 13px medium · hover `surface` · 모바일 `min-h-11` / 데스크톱 `h-8` | `components/actionButton.ts` 의 `actionButtonClass` — 관리 목록 행 끝(동기화 · 초기화 · 삭제) · 임시 비밀번호 창의 「복사」(#662). 삭제는 hover 에 `danger` 글자 · 경계 |
   | 위험 | `danger` 면 · 흰 글자 · hover `brightness-95` · `h-11 md:h-10` | 확인 모달의 확정 버튼 |
   | 아이콘 | 투명 면 · hover `surface`(보내기는 `accent` 면 · hover `accent-hover`). 반경은 자리마다 : 입력창 안 + · 보내기 · 중단과 확대 보기 이전/다음은 `rounded-full`, 채팅 헤더 · 뒤로가기는 `rounded-xl`, 확대 보기 내려받기 · 닫기는 `rounded-lg`, 대화 삭제 ✕ · 첨부 재시도는 `rounded-md` | 위 각 컴포넌트 |
 
@@ -233,8 +233,8 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
 - **목록(관리 화면)** — 한 장의 카드(`rounded-xl` + `line` 경계 + `shadow-card`) 안에 행을 `divide-line` 으로 나눈다. 행마다 회색 알약을 쌓지 않는다.
   행 머리에 타일(문서는 확장자, 사용자는 이름 첫 글자), 이름 14px medium, 메타 12px. 모바일에서 버튼이 한 줄에 안 들어가면 아래 줄로 내린다
 - **배지** — `rounded-full` · 11~12px medium · 면 + 글자 짝은 토큰 대비 표의 쌍만 쓴다 : 완료 · 관리자 `accent-soft`/`accent`, 처리중 · 사용자 `highlight`/`highlight-ink`, 실패 `danger-soft`/`danger`. 아이콘은 보조(`aria-hidden`)
-- **로딩 · 빈 상태 · 오류** — 첫 로드는 스켈레톤(대화 이력 : 질문 말풍선 + 답변 줄, 관리 목록 : `AdminListSkeleton` 행), 실패하면 스켈레톤을 걷고 오류 배너만 남긴다(멈춘 로딩으로 읽히지 않게).
-  빈 상태는 카드 안에 「무엇이 없는지 + 무엇을 하면 되는지」 두 문장. 사이드바 첫 로드 스켈레톤은 대화 목록 로드 상태가 없어 #646 범위 밖이다(`useChat` 상태 추가가 필요)
+- **로딩 · 빈 상태 · 오류** — 첫 로드는 스켈레톤(대화 이력 : 질문 말풍선 + 답변 줄, 관리 목록 : `AdminListSkeleton` 행, 사이드바 대화 목록 : 묶음 라벨 + 대화 행 — #663), 실패하면 스켈레톤을 걷고 오류 배너만 남긴다(멈춘 로딩으로 읽히지 않게).
+  빈 상태는 카드 안에 「무엇이 없는지 + 무엇을 하면 되는지」 두 문장. 사이드바의 「대화가 없습니다」는 첫 목록이 와서 비었을 때만 보인다 — 오기 전에 보이면 대화가 있는 사용자에게 잠깐 「없다」고 말한다(#663, `useChat` 의 `conversationsLoading`)
 - **아이콘** : 지금의 자체 SVG 세트(`frontend/src/components/icons.tsx`)를 계속 쓴다. 굵기 1.8 유지.
   **이모지·장식 기호(📄 ⚠ ● ← → 등)를 화면에 쓰지 않는다**(#192) — 글꼴·OS 마다 모양이 다르고 일부는 컬러 이모지로 떠서
   무채색 화면에서 혼자 튄다. 필요한 모양은 같은 규약(24 격자 · 1.8 stroke · `currentColor`)으로 `icons.tsx` 에 더한다.

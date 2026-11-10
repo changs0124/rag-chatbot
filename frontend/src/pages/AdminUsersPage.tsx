@@ -319,6 +319,22 @@ function IssuedDialog({
 }) {
   const titleId = useId()
   const dialogRef = useModalFocus<HTMLDivElement>(returnTo)
+  const valueRef = useRef<HTMLParagraphElement>(null)
+  const [copyNote, setCopyNote] = useState('')
+
+  // 다시 볼 수 없는 값이라 손으로 옮겨 적지 않게 복사 버튼을 둔다(#662). clipboard 는 클릭 핸들러 안에서 불러야 허락된다.
+  // 막히면(권한 · 구형 브라우저) 값을 선택해 두어 사용자가 바로 복사할 수 있게 한다
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(issued.password)
+      setCopyNote('복사했습니다')
+    } catch {
+      const el = valueRef.current
+      if (el) window.getSelection()?.selectAllChildren(el)
+      setCopyNote('복사하지 못했습니다. 선택된 값을 직접 복사하세요')
+    }
+  }
+
   return (
     <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       {/* ConfirmModal 과 같은 한 겹 카드(#646) */}
@@ -327,8 +343,16 @@ function IssuedDialog({
           <h2 id={titleId} className="text-base font-semibold text-ink">
             {issued.kind === 'created' ? '계정이 발급되었습니다' : '임시 비밀번호가 발급되었습니다'}
           </h2>
-          <p className="mt-4 rounded-lg border border-line bg-surface px-4 py-3 text-center font-mono text-base break-all text-ink">
-            {issued.password}
+          <div className="mt-4 flex items-center gap-2">
+            <p ref={valueRef} className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-4 py-3 text-center font-mono text-base break-all text-ink">
+              {issued.password}
+            </p>
+            <button type="button" onClick={copy} className={actionButtonClass}>
+              복사
+            </button>
+          </div>
+          <p role="status" className="mt-2 min-h-5 text-center text-xs text-ink-muted">
+            {copyNote}
           </p>
           {/* 두 문장 모두 필요하다 : 다시 못 본다는 사실과, 이 발급이 상대에게 무엇을 뜻하는지 */}
           <p className="mt-4 text-sm leading-relaxed text-ink-muted">

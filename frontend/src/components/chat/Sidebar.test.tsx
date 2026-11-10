@@ -121,3 +121,42 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
     expect(screen.getByRole('button', { name: '새 대화' })).toHaveFocus()
   })
 })
+
+// #663 : 첫 목록이 오기 전에는 「대화가 없습니다」 대신 스켈레톤 - 대화가 있는 사용자에게 잠깐 「없다」고 말하지 않게
+describe('Sidebar 첫 로드 (#663)', () => {
+  const renderSidebar = (conversations: Conversation[], loading: boolean) =>
+    render(
+      <BrowserRouter>
+        <Sidebar
+          conversations={conversations}
+          activeId={null}
+          onSelect={vi.fn()}
+          onNew={vi.fn()}
+          onDelete={vi.fn()}
+          userName="사용자"
+          onLogout={vi.fn()}
+          loading={loading}
+        />
+      </BrowserRouter>,
+    )
+
+  it('목록을 기다리는 동안은 스켈레톤과 상태 문구만 - 「대화가 없습니다」는 없다', () => {
+    renderSidebar([], true)
+    expect(screen.getByTestId('conversation-list-skeleton')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('대화 목록 불러오는 중')
+    expect(screen.queryByText('대화가 없습니다')).not.toBeInTheDocument()
+  })
+
+  it('다 읽었는데 비었으면 「대화가 없습니다」, 스켈레톤 · 상태 문구는 없다', () => {
+    renderSidebar([], false)
+    expect(screen.getByText('대화가 없습니다')).toBeInTheDocument()
+    expect(screen.queryByTestId('conversation-list-skeleton')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('')
+  })
+
+  it('기다리는 중이라도 그 사이 만든 대화가 있으면 목록을 보인다', () => {
+    renderSidebar([conv('방금 만든 대화', new Date())], true)
+    expect(screen.getByText('방금 만든 대화')).toBeInTheDocument()
+    expect(screen.queryByTestId('conversation-list-skeleton')).not.toBeInTheDocument()
+  })
+})
