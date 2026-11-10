@@ -63,15 +63,9 @@ export default function ChatPage() {
   //    그래서 이벤트만 기다리면 열릴 때는 Safari 가 입력칸을 보이려고 화면 전체를 위로 민 다음에야 높이를 맞추고(두 번 움직임),
   //    닫힐 때는 키보드가 다 사라진 뒤에야 늘어난다. interactive-widget 은 Safari 가 지원하지 않는다(WebKit bug 259770)
   //  · 닫힐 때 : 입력칸 focusout(키보드가 내려가기 시작하는 때)에 높이를 바로 지운다 - 다른 입력칸으로 옮겨 가면 그대로 둔다
-  //  · 열릴 때 : 한 번 연 키보드 높이를 기억해 두고, 다음부터는 입력칸을 **누르는 순간**(touchstart · pointerdown) 그만큼 미리 줄인다(#687).
-  //    #682 는 focusin 에 줄였는데 실기기에서 매번 「입력칸이 화면 위 끝까지 올라갔다 내려옴」 - focusin 은 Safari 가 입력칸을
-  //    보이게 밀지 정한 뒤라, 루트가 줄어든 위에 Safari 의 밀기까지 겹쳐 두 번 움직였다. 누르는 순간은 포커스(손을 뗄 때)보다
-  //    앞이라 그 판단 전에 레이아웃이 반영된다. focusin 은 키보드로 옮겨 온 포커스 · 프로그램 포커스를 위해 그대로 둔다.
-  //    누르고 포커스가 오지 않으면(끌기 · 길게 누르기) 되돌린다. 첫 번째 열림은 높이를 몰라 예전처럼 끝난 뒤 맞춘다
-  //  · 그래도 밀리면 따라간다(#687) : 문서 스크롤을 꺼 둔 상태라 Safari 가 문서 대신 보이는 영역을 미는 경우(scrollY 0 · visualViewport.offsetTop > 0
-  //    - scrollTo(0,0) 로는 안 돌아온다 · 실기기 증상에서 세운 가설). 루트를 offsetTop 만큼 내려(translateY) 보이는 영역 맨 위에 붙인다. 확대 중 · 키보드가 닫히면 푼다.
-  //    offsetTop 은 밀기가 끝난 뒤에야 갱신되고(WebKit bug 218465) 키보드가 떠 있는 동안 fixed/뷰포트 계산이 어긋난다(WebKit bug 191204) -
-  //    그래서 이것은 보정이고, 주된 처방은 위의 「누르는 순간 미리 줄이기」다. **실기기 확인 필요**
+  //  · 열릴 때 : 한 번 연 키보드 높이를 기억해 두고, 다음부터는 입력칸 focusin 에 그만큼 미리 줄인다 - 입력칸이 이미 키보드
+  //    위에 있으니 Safari 가 화면을 밀 일이 없다(첫 번째 열림은 높이를 몰라 예전처럼 끝난 뒤 맞춘다).
+  //    **실기기 확인 필요** : focusin 에서 줄인 높이가 Safari 의 「밀지 말지」 판단보다 먼저 반영되는지는 헤드리스로 재현되지 않는다
   //  · 이벤트 반영은 프레임을 기다리지 않는다(#668 의 requestAnimationFrame 한 프레임 지연을 없앰) - React 를 거치지 않아 즉시여도 싸다
   useEffect(() => {
     const html = document.documentElement
@@ -87,74 +81,40 @@ export default function ChatPage() {
       const root = rootRef.current
       if (root && root.style.height !== value) root.style.height = value
     }
-    // 보이는 영역이 밀린 만큼 루트를 따라 내린다(#687) - 0 이면 지운다
-    const follow = (offset: number) => {
-      const root = rootRef.current
-      const value = offset > 0 ? `translateY(${offset}px)` : ''
-      if (root && root.style.transform !== value) root.style.transform = value
-    }
     const unpan = () => {
       if (window.scrollY || window.scrollX) window.scrollTo(0, 0)
     }
-    const keyboardOpen = () => !!vv && vv.height < window.innerHeight - KEYBOARD_MIN_PX
     const apply = () => {
-      if (!vv || zoomed()) {
-        follow(0)
-        return
-      }
+      if (!vv || zoomed()) return
       // 레이아웃 높이(innerHeight)에서 보이는 영역이 줄어든 만큼이 키보드다. 화면 방향마다 다르니 innerHeight 를 열쇠로 둔다.
       // 주소창 접힘 같은 작은 차이는 키보드로 치지 않는다
       const inset = window.innerHeight - vv.height
       if (inset > KEYBOARD_MIN_PX) keyboardInsets.set(window.innerHeight, inset)
       setHeight(`${vv.height}px`)
       unpan()
-      follow(keyboardOpen() ? vv.offsetTop : 0)
-    }
-    // 기억한 키보드 높이만큼 미리 줄인다 - 확대 중이 아니고, 채팅 화면 안 텍스트 입력이고, 키보드가 아직 안 떠 있을 때만
-    const preshrink = (target: EventTarget | null) => {
-      if (zoomed() || !isTextEntry(target) || !rootRef.current?.contains(target as Node)) return false
-      const inset = keyboardInsets.get(window.innerHeight)
-      // 키보드가 이미 떠 있으면(입력칸 사이 이동) 보이는 영역이 이미 줄어 있다 - 다시 줄이지 않는다
-      if (!inset || keyboardOpen()) return false
-      setHeight(`${window.innerHeight - inset}px`)
-      unpan()
-      return true
-    }
-    // 누르고도 포커스가 오지 않으면(끌기 · 길게 눌러 메뉴) 미리 줄인 높이를 되돌린다
-    let undoTimer: ReturnType<typeof setTimeout> | undefined
-    const PRESS_FOCUS_MS = 600
-    const onPress = (e: Event) => {
-      if (!preshrink(e.target) || e.target === document.activeElement) return
-      clearTimeout(undoTimer)
-      undoTimer = setTimeout(() => {
-        if (!isTextEntry(document.activeElement) && !keyboardOpen()) setHeight('')
-      }, PRESS_FOCUS_MS)
     }
     const onFocusIn = (e: FocusEvent) => {
-      clearTimeout(undoTimer)
-      preshrink(e.target)
+      if (zoomed() || !isTextEntry(e.target) || !rootRef.current?.contains(e.target as Node)) return
+      const inset = keyboardInsets.get(window.innerHeight)
+      // 키보드가 이미 떠 있으면(입력칸 사이 이동) 보이는 영역이 이미 줄어 있다 - 다시 줄이지 않는다
+      if (!inset || !vv || vv.height < window.innerHeight - KEYBOARD_MIN_PX) return
+      setHeight(`${window.innerHeight - inset}px`)
+      unpan()
     }
     const onFocusOut = (e: FocusEvent) => {
       if (zoomed() || !isTextEntry(e.target) || isTextEntry(e.relatedTarget)) return
       setHeight('')
-      follow(0)
       unpan()
     }
     vv?.addEventListener('resize', apply)
     vv?.addEventListener('scroll', apply)
-    // 손가락이 닿는 순간 - 포커스는 손을 뗄 때 온다. 마우스(데스크톱)는 기억한 높이가 없어 아무 일도 없다
-    document.addEventListener('touchstart', onPress, { passive: true })
-    document.addEventListener('pointerdown', onPress)
     document.addEventListener('focusin', onFocusIn)
     document.addEventListener('focusout', onFocusOut)
     return () => {
-      clearTimeout(undoTimer)
       html.style.overflow = prev.overflow
       html.style.overscrollBehavior = prev.overscroll
       vv?.removeEventListener('resize', apply)
       vv?.removeEventListener('scroll', apply)
-      document.removeEventListener('touchstart', onPress)
-      document.removeEventListener('pointerdown', onPress)
       document.removeEventListener('focusin', onFocusIn)
       document.removeEventListener('focusout', onFocusOut)
     }
