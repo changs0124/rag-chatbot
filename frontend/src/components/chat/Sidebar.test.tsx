@@ -105,8 +105,12 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
         <Sidebar conversations={[conv('c1', new Date())]} {...props} />
       </BrowserRouter>,
     )
-    fireEvent.click(screen.getByRole('button', { name: "'c1' 대화 삭제" }))
+    // 브라우저는 누른 버튼에 포커스를 준다 - jsdom 은 안 주므로 직접 준다(확인 창은 닫힐 때 이 ✕ 로 포커스를 돌려준다)
+    const x = screen.getByRole('button', { name: "'c1' 대화 삭제" })
+    x.focus()
+    fireEvent.click(x)
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+    expect(x).toHaveFocus()
     rerender(
       <BrowserRouter>
         <Sidebar conversations={[]} {...props} />

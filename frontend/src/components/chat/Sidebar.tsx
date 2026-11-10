@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import type { Conversation } from '../../lib/types'
 import { IconChevronRight, IconClose, IconLogout, IconPlus, IconSettings } from '../icons'
@@ -47,8 +47,16 @@ export default memo(function Sidebar({
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Conversation | null>(null)
-  // 대화를 지우면 연 ✕ 버튼이 행째 사라진다 - 포커스를 「새 대화」로 돌려 드로어 안이면 Esc 도 계속 먹게 한다(#656)
+  // 대화를 지우면 연 ✕ 버튼이 행째 사라진다(#656). 확인 창이 닫힐 때는 아직 ✕ 가 있어 포커스가 거기로 돌아갔다가,
+  // 삭제가 끝나 행이 빠지는 순간 body 로 빠진다 - 그때 「새 대화」로 옮겨 드로어 안이면 Esc 도 계속 먹게 한다
   const newChatRef = useRef<HTMLButtonElement>(null)
+  const deletedIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    const id = deletedIdRef.current
+    if (!id || conversations.some((c) => c.id === id)) return
+    deletedIdRef.current = null
+    if (!document.activeElement || document.activeElement === document.body) newChatRef.current?.focus()
+  }, [conversations])
   const initial = userName.trim().charAt(0) || '?'
   const groups = groupByRecency(conversations)
 
@@ -168,11 +176,11 @@ export default memo(function Sidebar({
           message={`'${pendingDelete.title}' 대화가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`}
           confirmLabel="삭제"
           onConfirm={() => {
+            deletedIdRef.current = pendingDelete.id
             onDelete(pendingDelete.id)
             setPendingDelete(null)
           }}
           onCancel={() => setPendingDelete(null)}
-          returnTo={() => newChatRef.current}
         />
       )}
     </aside>
