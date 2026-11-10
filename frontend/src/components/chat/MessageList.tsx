@@ -116,9 +116,6 @@ export default function MessageList({
         <div className="grid h-full place-items-center px-6 text-center">
           <div>
             <p className="text-2xl font-semibold tracking-tight text-ink md:text-[28px]">무엇을 도와드릴까요?</p>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink-muted">
-              답변에는 근거 출처가 함께 붙습니다. 찾은 자료가 없으면 없다고 먼저 밝힙니다.
-            </p>
           </div>
         </div>
         {status}

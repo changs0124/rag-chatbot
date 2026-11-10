@@ -139,6 +139,8 @@ describe('MessageList', () => {
   it('shows empty state when there are no messages', () => {
     render(<MessageList messages={[]} />)
     expect(screen.getByText(/무엇을 도와드릴까요/)).toBeInTheDocument()
+    // #670 : 빈 화면은 인사 한 줄만 - 아래 보조 문구를 뺐다
+    expect(screen.queryByText(/근거 출처가 함께 붙습니다/)).not.toBeInTheDocument()
   })
 
   // 진행 단계 표시(REQ-CHAT-005)
