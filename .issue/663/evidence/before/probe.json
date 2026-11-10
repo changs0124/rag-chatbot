@@ -1,0 +1,118 @@
+{
+ "desktop": {
+  "list": {
+   "loading": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": []
+   },
+   "done": {
+    "emptyTextShown": false,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 2,
+    "status": [],
+    "alert": []
+   }
+  },
+  "empty": {
+   "loading": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": []
+   },
+   "done": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": []
+   }
+  },
+  "fail": {
+   "loading": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": []
+   },
+   "done": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": [
+     "대화 목록을 불러오지 못했습니다"
+    ]
+   }
+  }
+ },
+ "mobile": {
+  "list": {
+   "loading": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": []
+   },
+   "done": {
+    "emptyTextShown": false,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 2,
+    "status": [],
+    "alert": []
+   }
+  },
+  "empty": {
+   "loading": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": []
+   },
+   "done": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": []
+   }
+  },
+  "fail": {
+   "loading": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": []
+   },
+   "done": {
+    "emptyTextShown": true,
+    "skeleton": false,
+    "rows": 0,
+    "titlesShown": 0,
+    "status": [],
+    "alert": [
+     "대화 목록을 불러오지 못했습니다"
+    ]
+   }
+  }
+ }
+}
