@@ -216,7 +216,8 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
 - **활성 대화**(#646) : `raised` 면 + `ink` medium 글자 + 한 겹 그림자 + **왼쪽 3px `accent` 막대**. 예전의 `accent-soft` 배경은 사이드바 면과 1.03:1 이라
   색 하나(글자색)로만 구분됐다(WCAG 1.4.1). 굵기와 막대가 색 말고도 드러낸다. 낭독기에는 `aria-current`(#590)
 - **사이드바 폭** : `ResizableSidebar` 가 관장한다(200~420px, 기본 260px, `localStorage`). 범위 밖 저장값은 무시하고 기본값으로 연다.
-  손잡이는 `role="separator"` 로 키보드에서도 조절된다. 모바일 드로어에는 손잡이가 없다.
+  손잡이는 `role="separator"` 로 키보드에서도 조절된다. 모바일 드로어에는 손잡이가 없다. 자리는 4px 이고 누르는 영역은 `::after` 로
+  본문 쪽만 8px 넓힌 12px(사이드바 쪽으로 넓히면 대화 목록 스크롤바를 덮는다), 키보드 포커스 선은 2px · hover 선은 1px 다(#664).
 - **버튼 체계(#646)** — 모양은 넷이다. 글자 버튼(주요 · 보조 · 위험)의 반경은 모두 `rounded-lg` 다.
 
   | 종류 | 모양 | 정본 |

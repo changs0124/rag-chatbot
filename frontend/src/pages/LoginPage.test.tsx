@@ -47,4 +47,24 @@ describe('LoginPage', () => {
     await waitFor(() => expect(post).toHaveBeenCalled())
     post.mockRestore()
   })
+
+  // #664 : 오류 문구가 라이브 영역에만 있으면 칸으로 돌아간 낭독기 사용자는 무엇이 잘못됐는지 다시 들을 수 없다
+  it('로그인 실패 뒤 두 입력칸이 잘못됨으로 표시되고 오류 문구를 가리킨다', async () => {
+    const post = vi.spyOn(api, 'post').mockRejectedValue(new Error('boom'))
+    renderLogin()
+    const email = screen.getByLabelText('이메일')
+    const password = screen.getByLabelText('비밀번호')
+    expect(email).not.toHaveAttribute('aria-invalid')
+    expect(email).not.toHaveAttribute('aria-describedby')
+    fireEvent.change(email, { target: { value: 'a@b.com' } })
+    fireEvent.change(password, { target: { value: 'password123' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+
+    await screen.findByText(/오류가 발생했습니다/)
+    for (const input of [email, password]) {
+      expect(input).toHaveAttribute('aria-invalid', 'true')
+      expect(input).toHaveAccessibleDescription(/오류가 발생했습니다/)
+    }
+    post.mockRestore()
+  })
 })
