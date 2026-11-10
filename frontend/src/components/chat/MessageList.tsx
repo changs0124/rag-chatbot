@@ -151,7 +151,8 @@ export default function MessageList({
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-muted motion-reduce:animate-none [animation-delay:-0.15s]" />
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-muted motion-reduce:animate-none" />
               </span>
-              {stage ?? '…'}
+              {/* 단계 글자가 아직 없으면 점 셋만 - 「…」 글자를 더하면 점이 두 번 보였다(#657). 낭독용 status 는 「…」를 그대로 둔다 */}
+              {stage}
             </p>
           )}
           <div ref={endRef} className={pending ? 'mt-6' : undefined} />

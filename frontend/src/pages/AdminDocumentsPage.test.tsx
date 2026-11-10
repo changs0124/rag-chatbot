@@ -91,6 +91,21 @@ describe('문서 관리 화면', () => {
     expect(screen.queryByText('아직 문서가 없습니다')).not.toBeInTheDocument()
   })
 
+  // #657 : 첫 로드 동안은 스켈레톤, 실패하면 스켈레톤을 걷고 빈 목록 상자(테두리 · 그림자만 남던)도 그리지 않는다
+  it('첫 로드 중에는 스켈레톤, 실패하면 스켈레톤과 빈 목록을 걷고 오류만 남는다', async () => {
+    const first = deferred<never>()
+    vi.mocked(listDocuments).mockReturnValueOnce(first.promise)
+    renderPage()
+    await waitFor(() => expect(listDocuments).toHaveBeenCalled())
+    expect(screen.getByTestId('admin-list-skeleton')).toBeInTheDocument()
+
+    await act(async () => first.reject(new Error('503')))
+
+    expect(await screen.findByText('목록을 불러오지 못했습니다')).toBeInTheDocument()
+    expect(screen.queryByTestId('admin-list-skeleton')).toBeNull()
+    expect(screen.queryByRole('list')).toBeNull()
+  })
+
   // #483 : 첫 로드 실패는 폴링도 돌지 않는다 - 배너의 「다시 시도」로 다시 부르고, 성공하면 배너가 걷힌다
   it('첫 로드 실패 배너의 다시 시도가 목록을 다시 읽는다', async () => {
     vi.mocked(listDocuments).mockRejectedValueOnce(new Error('503'))
@@ -392,5 +407,17 @@ describe('문서 관리 화면', () => {
     expect(input).toHaveFocus()
     expect(screen.getByRole('button', { name: '복무규정.pdf 삭제' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: ROW_DELETE })).toHaveLength(2)
+  })
+
+  // #656 : 삭제를 확정하면 연 행이 사라진다 - 포커스가 body 로 빠지지 않고 목록 머리로 간다
+  it('삭제가 끝나 행이 사라지면 포커스가 목록 머리로 간다', async () => {
+    vi.mocked(listDocuments).mockResolvedValueOnce([doc()]).mockResolvedValue([])
+    vi.mocked(deleteDocument).mockResolvedValue(undefined)
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: ROW_DELETE }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: ROW_DELETE })).toBeNull())
+    expect(screen.getByRole('heading', { level: 2, name: /^문서/ })).toHaveFocus()
   })
 })

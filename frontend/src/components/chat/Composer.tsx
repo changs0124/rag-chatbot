@@ -504,9 +504,10 @@ function DraftCard({
         type="button"
         onClick={onRemove}
         aria-label="첨부 제거"
-        // 보이는 원은 20px 그대로, 누르는 영역만 ::after 로 넓힌다(#646) - 데스크톱 28px(WCAG 2.5.8 24px 이상) · 모바일 36px.
-        // 카드 간격(gap-3 = 12px) 안에 들어가 이웃 카드의 누르는 영역과 겹치지 않는 크기
-        className="absolute -top-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full border border-line bg-raised text-ink-muted shadow-[var(--shadow-ambient)] transition-colors duration-150 ease-[var(--ease-out-quint)] after:absolute after:-inset-2 after:content-[''] hover:text-danger md:after:-inset-1"
+        // 보이는 원은 20px 그대로, 누르는 영역만 ::after 로 넓힌다(#646) - 데스크톱 28px(WCAG 2.5.8 24px 이상) · 모바일 30px.
+        // 원이 카드 밖으로 6px(-right-1.5) 나와 있어 영역이 카드 끝에서 6 + 인셋만큼 나간다 - 카드 간격(gap-3 = 12px)보다 작아야
+        // 이웃 카드의 「확대」와 겹치지 않는다. 모바일 인셋 8px 은 14px 로 2px 겹쳤다(#657)
+        className="absolute -top-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full border border-line bg-raised text-ink-muted shadow-[var(--shadow-ambient)] transition-colors duration-150 ease-[var(--ease-out-quint)] after:absolute after:-inset-[5px] after:content-[''] hover:text-danger md:after:-inset-1"
       >
         <IconClose className="h-3 w-3" />
       </button>

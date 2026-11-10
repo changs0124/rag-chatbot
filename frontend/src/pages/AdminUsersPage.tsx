@@ -103,6 +103,15 @@ function UsersSection({
   const [creating, setCreating] = useState(false)
   // 발급 창을 닫으면 포커스를 돌려줄 버튼(#644) - 요청 중에는 막혀 있어 연 요소로 돌아갈 수 없다
   const issuedReturnRef = useRef<HTMLElement | null>(null)
+  // 확인 창이 닫힐 때 연 버튼이 막혔거나(요청 중) 행째 사라지면(삭제) 포커스가 body 로 빠진다(#656) - 목록 머리로 돌려준다
+  const listHeadingRef = useRef<HTMLHeadingElement>(null)
+  // 초기화가 실패하면 발급 창이 뜨지 않아 포커스를 받아 줄 곳이 없다 - 요청이 끝나 버튼이 다시 풀린 뒤 그 버튼으로 돌린다(#656)
+  const refocusResetRef = useRef(false)
+  useEffect(() => {
+    if (resettingId !== null || !refocusResetRef.current) return
+    refocusResetRef.current = false
+    issuedReturnRef.current?.focus()
+  }, [resettingId])
 
   // 일회용 비밀번호 창은 Esc 와 「닫기」로만 닫는다(#253). 배경 클릭으로 닫히면 「지금만 볼 수 있는」 값이
   // 한 번의 헛클릭에 사라져 비밀번호를 다시 초기화해야 한다 - 그래서 이 창만 배경 닫기를 두지 않는다
@@ -126,6 +135,7 @@ function UsersSection({
       setIssued({ kind: 'reset', name: target.name, password: res.temporaryPassword })
     } catch (e) {
       setError(errorMessage(e, '초기화하지 못했습니다'))
+      refocusResetRef.current = true
     } finally {
       setResettingId(null)
     }
@@ -170,7 +180,7 @@ function UsersSection({
     <>
       <section className="mt-6">
         {/* 못 불러온 것을 「0명」으로 보이지 않는다(#483) */}
-        <h2 className="text-base font-semibold text-ink">사용자{loaded && ` ${users.length}명`}</h2>
+        <h2 ref={listHeadingRef} tabIndex={-1} className="text-base font-semibold text-ink">사용자{loaded && ` ${users.length}명`}</h2>
         {/* 스스로 가입하는 경로가 없으므로 계정은 여기서만 태어난다 */}
         {/* 흰 카드 위에 둔다(#646) - 입력칸 테두리 line-strong 은 surface 위에서 2.95:1 로 3:1 에 못 미친다 */}
         <form onSubmit={onCreate} className="mt-3 rounded-xl border border-line bg-raised p-4 shadow-[var(--shadow-card)] md:flex md:items-end md:gap-3">
@@ -204,8 +214,9 @@ function UsersSection({
         </form>
         {loading ? (
           <AdminListSkeleton rows={3} />
-        ) : (
-        // 한 장의 카드 + 행 구분선(#646). 행 머리에 이름 첫 글자 아바타, 역할은 배지
+        ) : loaded ? (
+        // 한 장의 카드 + 행 구분선(#646). 행 머리에 이름 첫 글자 아바타, 역할은 배지.
+        // 첫 로드가 실패하면(loaded 아님) 그리지 않는다 - 빈 목록에도 테두리 · 그림자가 붙어 배너 아래 빈 상자로 남았다(#657)
         <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line bg-raised shadow-[var(--shadow-card)]">
           {users.map((person) => (
             <li
@@ -265,7 +276,7 @@ function UsersSection({
             </li>
           ))}
         </ul>
-        )}
+        ) : null}
       </section>
 
       {pendingReset && (
@@ -284,6 +295,7 @@ function UsersSection({
           message="이 사용자의 대화와 첨부가 함께 지워지며 되돌릴 수 없습니다."
           onConfirm={() => void confirmDelete()}
           onCancel={() => setPendingDelete(null)}
+          returnTo={() => listHeadingRef.current}
         />
       )}
 
@@ -329,6 +341,7 @@ function IssuedDialog({
           <div className="mt-6 flex justify-end">
             <button
               autoFocus
+              data-autofocus
               onClick={onClose}
               className={primaryButtonClass}
             >

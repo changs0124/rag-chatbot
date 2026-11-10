@@ -83,6 +83,21 @@ describe('사용자 관리 화면', () => {
     expect(screen.queryByText(/사용자 0명/)).not.toBeInTheDocument()
   })
 
+  // #657 : 첫 로드 동안은 스켈레톤, 실패하면 스켈레톤을 걷고 빈 목록 상자(테두리 · 그림자만 남던)도 그리지 않는다
+  it('첫 로드 중에는 스켈레톤, 실패하면 스켈레톤과 빈 목록을 걷고 오류만 남는다', async () => {
+    const first = deferred<never>()
+    vi.mocked(listAdminUsers).mockReturnValueOnce(first.promise)
+    renderPage()
+    await waitFor(() => expect(listAdminUsers).toHaveBeenCalled())
+    expect(screen.getByTestId('admin-list-skeleton')).toBeInTheDocument()
+
+    await act(async () => first.reject(new Error('503')))
+
+    expect(await screen.findByText('목록을 불러오지 못했습니다')).toBeInTheDocument()
+    expect(screen.queryByTestId('admin-list-skeleton')).toBeNull()
+    expect(screen.queryByRole('list')).toBeNull()
+  })
+
   /** 임시 비밀번호는 "다시 못 본다"와 "대상이 로그아웃된다"를 함께 알려야 한다 */
   it('임시 비밀번호 발급이 두 가지 사실을 함께 알린다', async () => {
     vi.mocked(listAdminUsers).mockResolvedValue([
@@ -402,5 +417,27 @@ describe('사용자 관리 화면', () => {
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '닫기' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: '박사원 비밀번호 초기화' })).toHaveFocus())
+  })
+
+  // #656 : 초기화가 실패하면 발급 창이 뜨지 않는다 - 요청이 끝나 버튼이 풀린 뒤 그 버튼으로 포커스를 돌린다
+  it('초기화가 실패하면 포커스가 그 행의 초기화 버튼으로 돌아온다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValue([PARK])
+    vi.mocked(resetUserPassword).mockRejectedValue(new Error('500'))
+    renderPage()
+    await confirmReset()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '박사원 비밀번호 초기화' })).toHaveFocus())
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+  })
+
+  // #656 : 삭제를 확정하면 행이 사라진다 - 포커스가 목록 머리로 간다
+  it('사용자를 지워 행이 사라지면 포커스가 목록 머리로 간다', async () => {
+    vi.mocked(listAdminUsers).mockResolvedValueOnce([PARK]).mockResolvedValue([])
+    vi.mocked(deleteAdminUser).mockResolvedValue(undefined)
+    renderPage()
+    await confirmDelete()
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: '박사원 삭제' })).toBeNull())
+    expect(screen.getByRole('heading', { level: 2, name: /^사용자/ })).toHaveFocus()
   })
 })

@@ -66,6 +66,19 @@ export default function ChatPage() {
     }
   }, [])
 
+  // 드로어가 열린 채 md 폭이 되면(폰을 가로로 돌림) 드로어는 md:hidden 으로 사라지는데 바깥 inert · 스크롤 잠금은 남아
+  // 앱 전체가 눌리지 않는다(#656) - 넓어지는 순간 드로어를 닫는다. md 는 Tailwind 기본 768px
+  useEffect(() => {
+    if (!sidebarOpen) return
+    const mq = window.matchMedia?.('(min-width: 768px)')
+    if (!mq) return
+    const onChange = () => {
+      if (mq.matches) setSidebarOpen(false)
+    }
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [sidebarOpen])
+
   // 드로어가 열린 동안 뒤 화면이 같이 스크롤되면 어디를 보고 있었는지 잃는다
   useEffect(() => {
     if (!sidebarOpen) return

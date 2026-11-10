@@ -166,6 +166,8 @@ function DocumentsSection({
   const [syncNotice, setSyncNotice] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<RagDocument | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  // 삭제를 확정하면 연 행이 사라져 포커스가 body 로 빠진다(#656) - 목록 머리로 돌려준다
+  const listHeadingRef = useRef<HTMLHeadingElement>(null)
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -246,7 +248,7 @@ function DocumentsSection({
 
       <section className="mt-8">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-ink">
+          <h2 ref={listHeadingRef} tabIndex={-1} className="text-base font-semibold text-ink">
             {/* 다 읽기 전 · 못 읽었을 때 「0건」은 다 지워졌다고 읽힌다(#589, #483 F4 와 같은 오독) */}
             문서{loaded && ` ${documents.length}건`}
           </h2>
@@ -276,8 +278,9 @@ function DocumentsSection({
               문서를 올리면 답변에 출처가 붙기 시작합니다.
             </p>
           </div>
-        ) : (
-          // 한 장의 카드 + 행 구분선(#646) - 행마다 회색 알약을 쌓던 목록을 표처럼 읽히게
+        ) : loaded ? (
+          // 한 장의 카드 + 행 구분선(#646) - 행마다 회색 알약을 쌓던 목록을 표처럼 읽히게.
+          // 첫 로드가 실패하면(loaded 아님) 그리지 않는다 - 빈 목록에도 테두리 · 그림자가 붙어 배너 아래 빈 상자로 남았다(#657)
           <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line bg-raised shadow-[var(--shadow-card)]">
             {documents.map((doc) => (
               <li
@@ -315,7 +318,7 @@ function DocumentsSection({
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
       </section>
 
       {/* 모달은 fixed 라 골격 안에 두어도 화면 기준으로 뜬다 */}
@@ -327,6 +330,7 @@ function DocumentsSection({
           message="이 문서는 더 이상 답변 근거로 쓰이지 않습니다. 이미 나간 답변의 출처 표기는 그대로 남습니다."
           onConfirm={() => void confirmDelete()}
           onCancel={() => setPendingDelete(null)}
+          returnTo={() => listHeadingRef.current}
         />
       )}
     </>
