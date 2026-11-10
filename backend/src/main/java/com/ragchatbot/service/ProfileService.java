@@ -19,7 +19,7 @@ import com.ragchatbot.dto.AuthDtos.AuthResponse;
 import com.ragchatbot.dto.AuthDtos.MeResponse;
 
 /**
- * 마이페이지 - 이름/비밀번호 변경. 소유자 본인만(userId는 JWT에서).
+ * 설정 화면(/me) - 이름/비밀번호 변경. 소유자 본인만(userId는 JWT에서).
  */
 @Service
 public class ProfileService {
