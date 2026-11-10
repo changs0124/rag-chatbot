@@ -1,0 +1,35 @@
+{
+ "A": {
+  "at1440": {
+   "width": 1440,
+   "confirmInDom": 1,
+   "confirmVisible": 1,
+   "inert": 6,
+   "composerInert": true
+  },
+  "at700": {
+   "width": 700,
+   "confirmInDom": 1,
+   "confirmVisible": 0,
+   "inert": 6,
+   "composerInert": true
+  },
+  "cancelledByButton": false,
+  "afterCancel": {
+   "width": 700,
+   "confirmInDom": 1,
+   "confirmVisible": 0,
+   "inert": 6,
+   "composerInert": true
+  }
+ },
+ "C-desktop": {
+  "openerWasBody": true,
+  "focusAfterCancel": "BODY"
+ },
+ "C-mobile": {
+  "openerWasBody": true,
+  "focusAfterCancel": "BODY",
+  "drawerOpenAfterSecondEsc": 1
+ }
+}
