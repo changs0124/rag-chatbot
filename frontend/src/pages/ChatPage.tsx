@@ -17,11 +17,6 @@ const headerIconBtn =
 // 확인을 기다리는 이동 - 새 채팅 또는 다른 대화(#503)
 type LeaveTarget = { to: 'new' } | { to: 'select'; id: string }
 
-// 한 번 열린 가상 키보드의 높이(#682) - 화면 방향마다 다르므로 레이아웃 높이(innerHeight)를 열쇠로 둔다.
-// 모듈에 두는 이유 : 채팅 화면을 떠났다 돌아와도 다시 배울 필요가 없다. 페이지를 새로 읽으면 처음부터 다시 배운다
-const keyboardInsets = new Map<number, number>()
-// 주소창이 접히고 펴지는 정도(수십 px)는 키보드로 치지 않는다
-const KEYBOARD_MIN_PX = 120
 // 가상 키보드를 띄우는 입력칸 - 버튼 · 체크박스 등으로 포커스가 옮겨 가면 키보드가 내려간다
 const NON_TEXT_INPUTS = new Set(['button', 'checkbox', 'radio', 'file', 'submit', 'reset', 'range', 'color', 'image', 'hidden'])
 function isTextEntry(el: EventTarget | null): boolean {
@@ -63,9 +58,9 @@ export default function ChatPage() {
   //    그래서 이벤트만 기다리면 열릴 때는 Safari 가 입력칸을 보이려고 화면 전체를 위로 민 다음에야 높이를 맞추고(두 번 움직임),
   //    닫힐 때는 키보드가 다 사라진 뒤에야 늘어난다. interactive-widget 은 Safari 가 지원하지 않는다(WebKit bug 259770)
   //  · 닫힐 때 : 입력칸 focusout(키보드가 내려가기 시작하는 때)에 높이를 바로 지운다 - 다른 입력칸으로 옮겨 가면 그대로 둔다
-  //  · 열릴 때 : 한 번 연 키보드 높이를 기억해 두고, 다음부터는 입력칸 focusin 에 그만큼 미리 줄인다 - 입력칸이 이미 키보드
-  //    위에 있으니 Safari 가 화면을 밀 일이 없다(첫 번째 열림은 높이를 몰라 예전처럼 끝난 뒤 맞춘다).
-  //    **실기기 확인 필요** : focusin 에서 줄인 높이가 Safari 의 「밀지 말지」 판단보다 먼저 반영되는지는 헤드리스로 재현되지 않는다
+  //  · 열릴 때는 미리 줄이지 않는다(#687). #682 는 한 번 연 키보드 높이를 기억해 focusin 에 미리 줄였는데, 실기기에서 Safari 의
+  //    밀기와 겹쳐 입력칸이 화면 위 끝까지 올라갔다가 내려왔다(줄임 + 밀기 두 번). 누르는 순간(touchstart)으로 당긴 #689 는 입력칸이
+  //    손가락 아래에서 비켜나 탭이 빗나가 키보드가 아예 뜨지 않아 되돌렸다(#690). 열림은 Safari 가 한 번 밀고 resize 때 맞춘다
   //  · 이벤트 반영은 프레임을 기다리지 않는다(#668 의 requestAnimationFrame 한 프레임 지연을 없앰) - React 를 거치지 않아 즉시여도 싸다
   useEffect(() => {
     const html = document.documentElement
@@ -86,19 +81,7 @@ export default function ChatPage() {
     }
     const apply = () => {
       if (!vv || zoomed()) return
-      // 레이아웃 높이(innerHeight)에서 보이는 영역이 줄어든 만큼이 키보드다. 화면 방향마다 다르니 innerHeight 를 열쇠로 둔다.
-      // 주소창 접힘 같은 작은 차이는 키보드로 치지 않는다
-      const inset = window.innerHeight - vv.height
-      if (inset > KEYBOARD_MIN_PX) keyboardInsets.set(window.innerHeight, inset)
       setHeight(`${vv.height}px`)
-      unpan()
-    }
-    const onFocusIn = (e: FocusEvent) => {
-      if (zoomed() || !isTextEntry(e.target) || !rootRef.current?.contains(e.target as Node)) return
-      const inset = keyboardInsets.get(window.innerHeight)
-      // 키보드가 이미 떠 있으면(입력칸 사이 이동) 보이는 영역이 이미 줄어 있다 - 다시 줄이지 않는다
-      if (!inset || !vv || vv.height < window.innerHeight - KEYBOARD_MIN_PX) return
-      setHeight(`${window.innerHeight - inset}px`)
       unpan()
     }
     const onFocusOut = (e: FocusEvent) => {
@@ -108,14 +91,12 @@ export default function ChatPage() {
     }
     vv?.addEventListener('resize', apply)
     vv?.addEventListener('scroll', apply)
-    document.addEventListener('focusin', onFocusIn)
     document.addEventListener('focusout', onFocusOut)
     return () => {
       html.style.overflow = prev.overflow
       html.style.overscrollBehavior = prev.overscroll
       vv?.removeEventListener('resize', apply)
       vv?.removeEventListener('scroll', apply)
-      document.removeEventListener('focusin', onFocusIn)
       document.removeEventListener('focusout', onFocusOut)
     }
   }, [])

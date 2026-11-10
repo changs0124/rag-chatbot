@@ -186,8 +186,8 @@ describe('ChatPage 모바일 뷰포트 (#221)', () => {
     other.remove()
   })
 
-  // #682 : 열릴 때 Safari 가 화면 전체를 민 다음 줄어드는(두 번 움직임) 것을 줄인다 - 한 번 배운 키보드 높이만큼 포커스 순간 미리 줄인다
-  it('한 번 연 키보드 높이를 기억해 두고, 다음 포커스 때 그만큼 미리 줄인다(처음엔 모르므로 줄이지 않는다)', () => {
+  // #687 : 포커스 순간 미리 줄이면 실기기에서 Safari 의 밀기와 겹쳐 입력칸이 위 끝까지 갔다가 내려왔다 - 키보드를 한 번 열었어도 미리 줄이지 않는다
+  it('키보드를 한 번 열고 닫은 뒤에도 다음 포커스에 높이를 미리 줄이지 않는다(열림은 resize 때 맞춘다)', () => {
     layoutHeight(849)
     const vv = fakeVisualViewport(849)
     renderChatPage()
@@ -204,7 +204,7 @@ describe('ChatPage 모바일 뷰포트 (#221)', () => {
     expect(rootOf().style.height).toBe('849px')
 
     fireEvent.focusIn(input)
-    expect(rootOf().style.height).toBe('549px')
+    expect(rootOf().style.height).toBe('849px')
   })
 
   it('채팅 화면에 있는 동안만 문서 스크롤·튕김을 끄고, 떠나면 되돌린다', () => {
