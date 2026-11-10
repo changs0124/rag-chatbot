@@ -1,0 +1,19 @@
+{
+ "mobile": {
+  "firstFocus": "(비어 있음)",
+  "keyboardOpen": "(비어 있음)",
+  "rightAfterBlur": "544px",
+  "afterKeyboardGone": "544px",
+  "secondFocus": "844px",
+  "secondOpen": "844px",
+  "reactCommits": 0,
+  "docScrollTop": 0
+ },
+ "desktop": {
+  "firstFocus": "(비어 있음)",
+  "rightAfterBlur": "(비어 있음)",
+  "secondFocus": "(비어 있음)",
+  "reactCommits": 0,
+  "docScrollTop": 0
+ }
+}
