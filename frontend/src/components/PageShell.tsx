@@ -7,7 +7,7 @@ interface PageShellProps {
 }
 
 /**
- * 마이페이지 · 관리자의 페이지 골격. 위 여백 `pt-2` 는 `BackLink` 와 함께 「상단은 채팅 헤더와 같은 높이」를
+ * 설정 · 관리자의 페이지 골격. 위 여백 `pt-2` 는 `BackLink` 와 함께 「상단은 채팅 헤더와 같은 높이」를
  * 지키는 값이라 두 화면이 따로 들고 있으면 한쪽만 갈린다(#330).
  */
 export default function PageShell({ maxWidth, children }: PageShellProps) {

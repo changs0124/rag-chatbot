@@ -246,7 +246,7 @@ function UsersSection({
               </div>
               {/* 모바일은 동작 버튼을 아래 줄로 내린다 - 390px 한 줄에 이름 · 메일 · 버튼 둘이 들어가지 않는다 */}
               <div className="flex w-full shrink-0 justify-end gap-2 md:w-auto">
-              {/* 자기 자신은 대상이 아니다 — 마이페이지에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
+              {/* 자기 자신은 대상이 아니다 — 설정 화면에 변경 기능이 있고, 자기 세션을 스스로 끊을 이유가 없다 */}
               {person.id !== currentUserId && (
                 <button
                   onClick={(e) => {

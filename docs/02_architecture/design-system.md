@@ -93,11 +93,8 @@
 ### 이 표가 덮지 못하는 것
 
 **"토큰 쌍"이라고 쓴 것은 한정이다.** 화면에는 토큰끼리 만나지 않는 조합이 남아 있고,
-그건 위 계산에 들어가지 않는다. 바로 위 「토큰 밖 겹침」 셋은 재 놓았고, 아래 하나는 **아직 그대로다.**
-
-| 자리 | 값 | 기준 | 비고 |
-|------|-----|------|------|
-| `border-line` / `canvas` (입력 테두리) | 1.48 | WCAG 1.4.11 은 3.0 | **미달**. 3.0 을 맞추면 테두리가 눈에 띄게 진해져 색 범위를 넘는 디자인 변경이 된다 |
+그건 위 계산에 들어가지 않는다. 바로 위 「토큰 밖 겹침」 셋은 재 놓았다. 남아 있던 입력칸 테두리 미달(`line` / `canvas` 1.48)은
+#646 에서 입력칸만 `line-strong`(3.32 · 3.24)으로 올려 풀었다 — 장식선 `line` 은 그대로라 입력칸에 쓰지 않는다(§5). 지금 이 절에 남은 미달은 없다.
 
 **대비 주장을 검사하는 게이트는 없다.** `check-doc-versions.sh` 가 버전 주장을 지키는 것과 달리
 대비 주장은 아무도 안 본다 — 색을 건드리면 이 표를 손으로 다시 재야 한다.
@@ -110,13 +107,13 @@
 
 ```
 bg-canvas · bg-surface · bg-raised · from-canvas
-text-ink · text-ink-muted · border-line
-bg-accent · text-accent · text-accent-ink · bg-accent-soft · border-accent
+text-ink · text-ink-muted · bg-ink-muted · border-line · divide-line · border-line-strong
+bg-accent · bg-accent-hover · text-accent · text-accent-ink · bg-accent-soft · border-accent · outline-accent
 bg-highlight · text-highlight · text-highlight-ink
-bg-danger · text-danger · text-danger-ink · bg-danger-soft
+bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
 ```
 
-19종이 실제로 쓰인다. **토큰 14개가 전부 쓰이고, 쓰는데 정의 안 된 것은 없다.**
+25종이 실제로 쓰인다(11-10 #658 에서 다시 셈). **토큰 16개가 전부 쓰이고, 쓰는데 정의 안 된 것은 없다.**
 (`TextInput` · `Composer` · 대화 제목 편집의 포커스 링은 유틸리티가 아니라 `var(--c-focus-ring)` 을 직접 참조한다)
 
 ### 포커스 — 홈페이지 규칙 그대로 (#190)
@@ -126,7 +123,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | 입력칸(`TextInput` · `Composer` · 대화 제목 편집) | 테두리 `accent` + 바깥 링 4px `--c-focus-ring` | `.field` 의 `focus:border-primary-deep focus:ring-4 focus:ring-primary/15` |
 | 버튼 · 링크 등 나머지 | 키보드 포커스(`:focus-visible`)에 2px `accent` 외곽선, 2px 띄움 | `.rule-row-link:focus-visible` 의 `outline-2 outline-primary-deep` |
 
-`--c-focus-ring` 은 `rgb(67 186 232 / 0.15)` — 토큰 14개와 달리 **투명도를 그대로 둔** 변수다. 링은 아래 면 위에 얹히므로
+`--c-focus-ring` 은 `rgb(67 186 232 / 0.15)` — 토큰 16개와 달리 **투명도를 그대로 둔** 변수다. 링은 아래 면 위에 얹히므로
 불투명으로 섞어 두면 면에 따라 색이 어긋난다. `@theme` 에 올리지 않아 `bg-…` 유틸리티로는 쓸 수 없다(쓸 자리가 링뿐이다).
 
 전역 `:focus-visible` 규칙은
@@ -137,11 +134,13 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 
 | 토큰 | 자리 | 사용 |
 |------|------|------|
-| `highlight` · `highlight-ink` | `chat/MessageList.tsx` 「자료 없음」 배지 | 각 1회 (같은 줄) |
+| `highlight` · `highlight-ink` | 배지 : `chat/MessageList.tsx` 「자료 없음」 · `AdminDocumentsPage` 처리중 · `AdminUsersPage` 사용자 역할(#646) | 같은 짝으로만 쓴다(대비 표 10.63) |
 | `highlight` | `chat/Composer.tsx` 첨부 실패 아이콘 | 1회. 어두운 고정 스크림 위라 밝은 면 기준 토큰을 못 쓴다 |
+| `highlight` | 스켈레톤 막대 : `ChatPage` 이력 로딩 · `AdminListSkeleton`(#646) | 글자 없는 자리 표시라 대비 기준이 없다 |
 | `danger-ink` | `ConfirmModal.tsx` 확인 버튼(삭제 · 비밀번호 초기화) | 1회 — `bg-danger` 가 있는 유일한 자리다 |
 | `danger-soft` | `components/AdminErrorBanners.tsx` 관리자 오류 배너 | 1회 — 관리자 두 화면이 공용으로 쓴다(#541) |
 | `danger-soft` | `pages/MyPage.tsx` 오류 배너 | 1회. 관리자 쪽과 같은 색 조합(모서리 · 여백은 다르다) |
+| `danger-soft` | `AdminDocumentsPage` 실패 배지(#646) | `danger` 글자와 짝(4.64) |
 
 쓰이지 않는 토큰은 다음 사람이 아무 데나 갖다 쓰는 근거가 된다.
 
@@ -175,10 +174,10 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 |------|-----|------|
 | 라운드(모달 · 로그인 카드) | `rounded-2xl` (16px) | |
 | 라운드(카드 · 목록 묶음 · 메뉴) | `rounded-xl` (12px) | 관리 목록 · 설정 카드 · 프로필 메뉴(#646) |
-| 라운드(버튼 · 입력칸 · 목록 행 · 타일) | `rounded-lg` (8px) | **버튼은 한 가지 반경이다**(#646) — 알약(`rounded-full`)은 둥근 아이콘 버튼(입력창 안 + · 보내기)과 배지에만 |
+| 라운드(버튼 · 입력칸 · 목록 행 · 타일) | `rounded-lg` (8px) | **글자 버튼은 한 가지 반경이다**(#646) — 알약(`rounded-full`)은 둥근 아이콘 버튼(입력창 안 + · 보내기 · 확대 보기 이전/다음)과 배지에만. 아이콘 버튼 반경의 예외는 §5 버튼 체계 표 |
 | 라운드(채팅 입력창 · 질문 말풍선) | `rounded-3xl` (24px) | ChatGPT · Claude 모두 알약에 가깝다 |
 | 그림자 | **세 단계다.** 아래 표 참고 | 확산형만. 짙은 `shadow-md` 금지 |
-| 구분선 | `border-line` 1px | **카드 · 목록 묶음 · 모달은 1px 경계를 두른다**(#646) — 면 색 차이(`surface` / `canvas` 1.06:1)만으로는 카드 가장자리가 안 보였다. 목록 행 사이는 `divide-line` |
+| 구분선 | `border-line` 1px | **카드 · 목록 묶음 · 모달은 1px 경계를 두른다**(#646) — 면 색 차이(`surface` / `canvas` 1.10:1)만으로는 카드 가장자리가 안 보였다. 목록 행 사이는 `divide-line` |
 
 ### 그림자는 세 단계다
 
@@ -201,7 +200,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - **누르는 느낌은 색으로 낸다**(#646) — hover 는 면 색만 바꾼다(주요 `accent-hover`, 보조 `surface`, 위험 `brightness-95`).
   예전의 `hover:scale-[1.02]` / `active:scale-[0.98]` 는 걷었다 — 버튼 · 카드가 커졌다 줄었다 하면 장난감처럼 읽힌다(사용자 평가 「처음 만든 디자인 같다」)
 - **로딩은 자리 모양으로 보인다**(#646) — 돌아가는 원 대신 올 내용의 모양(스켈레톤, `animate-pulse` + `bg-highlight`)을 깐다. 답변 준비 중은 점 셋(`animate-bounce`)과 단계 글자.
-  둘 다 `motion-reduce:animate-none`
+  둘 다 `motion-reduce:animate-none`. 예외 : 자리 모양이 없는 짧은 작업 — 첨부 업로드 중 카드 위 회전 원 · 「스토어와 동기화」 아이콘 회전은 그대로다(전역 reduced-motion 규칙이 1ms 로 멈춘다)
 - **끄는 중에는 트랜지션을 끈다** : 사이드바 폭 드래그처럼 값이 매 프레임 바뀌는 동작에 트랜지션이 걸리면
   손가락보다 늦게 따라와 고무줄처럼 보인다
 - **`prefers-reduced-motion: reduce` 를 존중한다** : 모든 트랜지션·애니메이션을 1ms 로 줄인다. JS 로 굴리는 스크롤(`scrollIntoView`)은 CSS 로 꺼지지 않으므로 설정을 읽어 `smooth` 를 쓰지 않는다(#644)
@@ -218,16 +217,16 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
   색 하나(글자색)로만 구분됐다(WCAG 1.4.1). 굵기와 막대가 색 말고도 드러낸다. 낭독기에는 `aria-current`(#590)
 - **사이드바 폭** : `ResizableSidebar` 가 관장한다(200~420px, 기본 260px, `localStorage`). 범위 밖 저장값은 무시하고 기본값으로 연다.
   손잡이는 `role="separator"` 로 키보드에서도 조절된다. 모바일 드로어에는 손잡이가 없다.
-- **버튼 체계(#646)** — 모양은 넷이고 반경은 모두 `rounded-lg` 다.
+- **버튼 체계(#646)** — 모양은 넷이다. 글자 버튼(주요 · 보조 · 위험)의 반경은 모두 `rounded-lg` 다.
 
   | 종류 | 모양 | 정본 |
   |------|------|------|
   | 주요 | `accent` 면 · 흰 글자 · hover `accent-hover` · `h-11`(44px) | `components/primaryButton.ts` 의 `primaryButtonClass`(#330). 로그인은 `h-12` 전폭이라 따로 |
   | 보조 | `raised` 면 + 1px `line` 경계 · `ink` 13px medium · hover `surface` · 모바일 `min-h-11` / 데스크톱 `h-8` | `components/actionButton.ts` 의 `actionButtonClass` — 관리 목록 행 끝(동기화 · 초기화 · 삭제). 삭제는 hover 에 `danger` 글자 · 경계 |
   | 위험 | `danger` 면 · 흰 글자 · hover `brightness-95` · `h-11 md:h-10` | 확인 모달의 확정 버튼 |
-  | 아이콘 | 둥근(`rounded-full`) · 투명 면 · hover `surface` | 채팅 입력창 안(+ · 보내기 · 중단) · 헤더 · 확대 보기 |
+  | 아이콘 | 투명 면 · hover `surface`(보내기는 `accent` 면 · hover `accent-hover`). 반경은 자리마다 : 입력창 안 + · 보내기 · 중단과 확대 보기 이전/다음은 `rounded-full`, 채팅 헤더 · 뒤로가기는 `rounded-xl`, 확대 보기 내려받기 · 닫기는 `rounded-lg`, 대화 삭제 ✕ · 첨부 재시도는 `rounded-md` | 위 각 컴포넌트 |
 
-  호출부는 바깥 여백 · 폭만 덧붙인다. 마이페이지 · 관리자 상단의 뒤로가기와 페이지 골격은 `BackLink` · `PageShell` 이 가진다.
+  호출부는 바깥 여백 · 폭만 덧붙인다. 설정 · 관리자 상단의 뒤로가기와 페이지 골격은 `BackLink` · `PageShell` 이 가진다.
   화면 이름은 「설정」 하나다 — 메뉴 · 제목 · 관리 화면 뒤로가기가 같은 말을 쓴다(#646)
 - **이중 테두리(double-bezel)는 쓰지 않는다**(#646) — 모달 · 로그인 폼도 한 겹 카드(`raised` + 1px `line` + 그림자)다. 바깥 트레이가 카드를 두 번 감싸 무거워 보였다.
 - **목록(관리 화면)** — 한 장의 카드(`rounded-xl` + `line` 경계 + `shadow-card`) 안에 행을 `divide-line` 으로 나눈다. 행마다 회색 알약을 쌓지 않는다.
@@ -273,10 +272,10 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
   **모바일(md 미만)에서만 키우고 데스크톱 값은 `md:` 로 그대로 둔다** — 마우스는 작은 대상을 정확히 누르고, 데스크톱 밀도를 바꿀 이유가 없다
 - 시각 크기를 키우지 않고 누르는 영역만 넓힐 때는 패딩으로 한다(예 : 대화 삭제 ✕ 는 아이콘 16 + `p-3.5`).
   글자 링크(뒤로가기)는 `h-11` 에 `-ml-2 px-2` 로 글자 위치를 유지한다
-- **마이페이지·관리자 상단은 채팅 헤더와 같은 높이다** — 위 여백 `pt-2` + 44px 뒤로가기 = 채팅 헤더 `min-h-14` 의 버튼 줄과 같다
+- **설정·관리자 상단은 채팅 헤더와 같은 높이다** — 위 여백 `pt-2` + 44px 뒤로가기 = 채팅 헤더 `min-h-14` 의 버튼 줄과 같다
 - **로그인은 한 겹 카드다**(#646) — 이중 테두리를 걷어(§5) 모바일도 데스크톱과 같은 카드(`px-5 py-7`, 페이지 `px-4`)다.
   모바일은 위에서부터 쌓는다(`content-start pt-12`) — 세로 가운데 정렬은 소개글과 폼 사이에 230px 빈 띠를 만들었다
-- **누르는 영역만 넓히는 작은 원** — 첨부 제거(보이는 원 20px)는 `::after` 로 누르는 영역을 넓힌다 : 모바일 36px · 데스크톱 28px(WCAG 2.5.8 24px 이상).
+- **누르는 영역만 넓히는 작은 원** — 첨부 제거(보이는 원 20px)는 `::after` 로 누르는 영역을 넓힌다 : 모바일 30px · 데스크톱 28px(WCAG 2.5.8 24px 이상). 원이 카드 밖으로 6px 나와 있어 영역이 카드 간격(12px)을 넘으면 이웃 카드의 「확대」와 겹친다 — 모바일 36px 은 2px 겹쳐 30px 로 줄였다(#657).
   카드 간격(12px) 때문에 44px 까지는 넓히지 않는다 — 이웃 카드의 확대 버튼 영역을 덮는다. 메뉴 항목 · 확인 모달 버튼 · 확대 보기 버튼은 모바일 44px · 데스크톱 36~40px
 - 측정은 `360x740`(일반) · `360x640`(작은 화면) 두 가지로 한다. 360x640 에서 로그인 버튼이 스크롤 없이 보여야 한다(565px)
 - 사이드바는 `md` 미만에서 드로어다. 폭 `min(84vw, 320px)`, 배경은 `backdrop-blur` + 반투명 검정

@@ -260,7 +260,7 @@ cd ~/deploy && sudo docker compose logs app | grep -iE "openai|vector|관리자"
 **제품 안에 있다**(FEAT-ADMIN-002). `POST /api/admin/documents` 로 올리면 백엔드가 OpenAI Files 에
 업로드하고 공용 Vector Store 에 연결한 뒤 `rag_documents` 에 기록한다 — 누가 언제 올렸는지가 저장소에 남는다.
 
-**문서 관리 화면은 `/admin/documents`** 다. 마이페이지 → 문서 관리로 들어간다. API 를 직접 불러도 된다.
+**문서 관리 화면은 `/admin/documents`** 다. 설정 → 문서 관리로 들어간다. API 를 직접 불러도 된다.
 
 | 필요한 것 | 방법 |
 |-----------|------|

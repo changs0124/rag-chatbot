@@ -493,7 +493,7 @@ function DraftCard({
           {/* 바탕이 임의의 이미지라 최악(흰 이미지)을 기준으로 잰다 - 스크림 75% 에서 highlight 8.34
               (아이콘 기준 3.0). 화면 색과 무관한 고정 어두운 면이라 danger 를 쓰면 1.06 으로 무너진다 */}
           <IconAlert className="h-4 w-4 text-highlight" />
-          {/* 누르는 영역을 카드 아래쪽 절반으로(#646 터치 타깃) - 글자 10px 밑줄 링크는 손가락으로 맞히기 어렵다 */}
+          {/* 누르는 영역을 높이 24px 이상(`min-h-6` + `px-2`)으로(#646 터치 타깃, WCAG 2.5.8) - 글자 10px 밑줄 링크는 손가락으로 맞히기 어렵다 */}
           <button type="button" onClick={onRetry} className="min-h-6 rounded-md px-2 text-[11px] font-medium underline">
             재시도
           </button>
