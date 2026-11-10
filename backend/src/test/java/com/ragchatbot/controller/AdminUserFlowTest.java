@@ -155,7 +155,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
-	/** 자기 자신은 대상이 아니다 - 마이페이지에 변경 기능이 이미 있고, 자기 세션을 스스로 끊을 이유가 없다 */
+	/** 자기 자신은 대상이 아니다 - 설정 화면에 변경 기능이 이미 있고, 자기 세션을 스스로 끊을 이유가 없다 */
 	@Test
 	void admin_cannot_reset_self() {
 		String adminToken = createAdminUser("reset-self@b.com");
@@ -178,7 +178,7 @@ class AdminUserFlowTest extends AbstractPgIntegrationTest {
 	}
 
 	/**
-	 * 발급하는 이름도 앞뒤 공백을 걷는다(#327). 마이페이지 이름 변경과 대화 제목은 이미 걷는데
+	 * 발급하는 이름도 앞뒤 공백을 걷는다(#327). 설정 화면 이름 변경과 대화 제목은 이미 걷는데
 	 * 여기만 그대로 저장하면 같은 사람이 목록에서 공백째 보인다.
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })

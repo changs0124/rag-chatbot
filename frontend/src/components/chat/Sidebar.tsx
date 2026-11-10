@@ -59,10 +59,13 @@ export default memo(function Sidebar({
   // 삭제가 끝나 행이 빠지는 순간 body 로 빠진다 - 그때 「새 대화」로 옮겨 드로어 안이면 Esc 도 계속 먹게 한다
   const newChatRef = useRef<HTMLButtonElement>(null)
   const deletedIdRef = useRef<string | null>(null)
+  // 목록이 한 번 바뀌면 표시를 거둔다 - 삭제가 실패해 행이 남았는데 표시를 들고 있으면, 나중에 다른 경로(다른 기기에서
+  // 지움 · 목록 갱신)로 그 행이 빠질 때 엉뚱하게 「새 대화」로 포커스가 튄다(#674)
   useEffect(() => {
     const id = deletedIdRef.current
-    if (!id || conversations.some((c) => c.id === id)) return
+    if (!id) return
     deletedIdRef.current = null
+    if (conversations.some((c) => c.id === id)) return
     if (!document.activeElement || document.activeElement === document.body) newChatRef.current?.focus()
   }, [conversations])
   const initial = userName.trim().charAt(0) || '?'
@@ -98,7 +101,7 @@ export default memo(function Sidebar({
         {listPending && <ConversationListSkeleton />}
         {groups.map((group) => (
           <div key={group.label} className="mb-3">
-            {/* 한글에는 자간 · 대문자 효과가 없어 걷었다(#646). 12px 이 읽히는 하한 */}
+            {/* 한글에는 자간 · 대문자 효과가 없어 걷었다(#646). 묶음 라벨은 12px 이 읽히는 하한(배지 · 장식 글자는 따로) */}
             <p className="px-3 pb-1 text-xs font-medium text-ink-muted">
               {group.label}
             </p>

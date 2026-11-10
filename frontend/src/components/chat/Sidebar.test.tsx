@@ -120,6 +120,31 @@ describe('Sidebar 삭제 버튼 (#484)', () => {
     expect(props.onDelete).toHaveBeenCalledWith('c1')
     expect(screen.getByRole('button', { name: '새 대화' })).toHaveFocus()
   })
+
+  // #674 : 삭제가 실패해 행이 남은 뒤, 나중에 다른 경로(다른 기기에서 지움 · 목록 갱신)로 그 행이 빠져도 포커스를 옮기지 않는다
+  it('삭제가 실패한 뒤 나중에 그 행이 빠져도 포커스를 새 대화로 옮기지 않는다', () => {
+    const props = { activeId: null, onSelect: vi.fn(), onNew: vi.fn(), onDelete: vi.fn(), userName: '사용자', onLogout: vi.fn() }
+    const c1 = conv('c1', new Date())
+    const c2 = conv('c2', new Date())
+    const view = (list: Conversation[]) => (
+      <BrowserRouter>
+        <Sidebar conversations={list} {...props} />
+      </BrowserRouter>
+    )
+    const { rerender } = render(view([c1, c2]))
+    fireEvent.click(screen.getByRole('button', { name: "'c1' 대화 삭제" }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }))
+    // 실패 - 목록은 그대로(새 배열로 다시 그려짐)
+    rerender(view([c1, c2]))
+    const elsewhere = screen.getByRole('button', { name: "'c2' 대화 삭제" })
+    elsewhere.focus()
+    ;(document.activeElement as HTMLElement).blur()
+
+    // 한참 뒤 다른 경로로 c1 이 빠진다
+    rerender(view([c2]))
+
+    expect(screen.getByRole('button', { name: '새 대화' })).not.toHaveFocus()
+  })
 })
 
 // #663 : 첫 목록이 오기 전에는 「대화가 없습니다」 대신 스켈레톤 - 대화가 있는 사용자에게 잠깐 「없다」고 말하지 않게

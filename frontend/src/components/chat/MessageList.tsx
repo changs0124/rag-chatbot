@@ -98,7 +98,8 @@ export default function MessageList({
   const last = messages.at(-1)
   const pending =
     !!last && last.role === 'assistant' && (!!stage || (last.status === 'streaming' && !last.content))
-  // 답이 흐르는 동안 log 를 바쁨으로 둔다(#644) - 아니면 낭독기가 토큰 조각마다 읽어 쌓는다. 끝나면 풀려 완성된 답을 읽는다
+  // 답이 흐르는 동안 log 를 바쁨으로 둔다(#644) - 아니면 낭독기가 토큰 조각마다 읽어 쌓는다. 끝나 풀린 뒤 완성된 답을 읽게 하려는
+  // 의도다 - 해제 뒤 실제로 읽는지는 낭독기마다 달라 실기기로 확인하지 않았다(11-10 보류, #105)
   const busy = !!last && last.role === 'assistant' && (!!stage || last.status === 'streaming')
 
   // log 영역과 분리한 별도 라이브 영역 - 원자적으로 교체해 낭독이 누적되지 않게 함.

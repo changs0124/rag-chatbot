@@ -112,8 +112,8 @@ public class AdminUserService {
 	 */
 	public String resetPassword(UUID adminId, UUID targetUserId) {
 		if (adminId.equals(targetUserId)) {
-			// 마이페이지에 비밀번호 변경이 이미 있고, 관리자가 자기 세션을 스스로 끊을 이유가 없다
-			throw new BadRequestException("자기 자신은 초기화 대상이 아님 - 마이페이지에서 변경할 것");
+			// 설정 화면에 비밀번호 변경이 이미 있고, 관리자가 자기 세션을 스스로 끊을 이유가 없다
+			throw new BadRequestException("자기 자신은 초기화 대상이 아님 - 설정에서 변경할 것");
 		}
 		User target = userRepository.findById(targetUserId)
 				.orElseThrow(() -> new NotFoundException("사용자 없음"));

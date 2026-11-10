@@ -1,0 +1,9 @@
+backend/src/main/java/com/ragchatbot/config/AdminRoleSynchronizer.java:61:				log.warn("관리자 계정 발급 : {} · 임시 비밀번호 {} (최초 로그인
+backend/src/main/java/com/ragchatbot/dto/AuthDtos.java:26:		/** 로그인·마이페이지가 같은 모양을 내도록 한 곳에서 만든다(#389) */
+backend/src/main/java/com/ragchatbot/dto/ProfileDtos.java:7: * 마이페이지 - 이름/비밀번호 변경 요청 DTO.
+backend/src/main/java/com/ragchatbot/service/AdminUserService.java:115:			// 마이페이지에 비밀번호 변경이 이미 있고, 관리자가 자기 세션
+backend/src/main/java/com/ragchatbot/service/AdminUserService.java:116:			throw new BadRequestException("자기 자신은 초기화 대상이 아님 - 마이페
+backend/src/main/java/com/ragchatbot/service/ProfileService.java:22: * 마이페이지 - 이름/비밀번호 변경. 소유자 본인만(userId는 JWT에서).
+backend/src/test/java/com/ragchatbot/controller/AdminUserFlowTest.java:158:	/** 자기 자신은 대상이 아니다 - 마이페이지에 변경 기능이 이�
+backend/src/test/java/com/ragchatbot/controller/AdminUserFlowTest.java:181:	 * 발급하는 이름도 앞뒤 공백을 걷는다(#327). 마이페이지 이름 �
+backend/src/test/java/com/ragchatbot/controller/ProfileFlowTest.java:15: * 마이페이지 - 이름/비밀번호/테마 변경.

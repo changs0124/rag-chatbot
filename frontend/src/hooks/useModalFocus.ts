@@ -2,6 +2,30 @@ import { useEffect, useRef, useState } from 'react'
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
+// Safari(macOS · iOS)는 클릭 · 탭에 버튼 포커스를 주지 않는다 - 연 순간 activeElement 가 body 라 닫힌 뒤 돌아갈 곳이 없었다(#674).
+// 마지막으로 누른 포커스 대상을 기억해 두고 activeElement 가 body 일 때 연 요소로 쓴다. 한 번만 단다(캡처 단계 - 먼저 듣는다)
+// 누른 지 오래된 것은 쓰지 않는다 - 나중에 코드가 띄운 창이 한참 전에 누른 버튼으로 포커스를 보내지 않게
+const PRESS_FRESH_MS = 1000
+let lastPressed: HTMLElement | null = null
+let lastPressedAt = 0
+let listening = false
+function rememberPresses() {
+  if (listening || typeof document === 'undefined') return
+  listening = true
+  document.addEventListener('pointerdown', (e) => {
+    lastPressed = (e.target as Element | null)?.closest?.<HTMLElement>(FOCUSABLE) ?? null
+    lastPressedAt = Date.now()
+  }, true)
+}
+// 모듈을 읽을 때 단다 - 첫 창을 연 그 누름부터 기억해야 한다(훅 안에서 달면 첫 창은 이미 늦다)
+rememberPresses()
+function currentOpener(): HTMLElement | null {
+  if (typeof document === 'undefined') return null
+  const active = document.activeElement as HTMLElement | null
+  if (active && active !== document.body) return active
+  return lastPressed?.isConnected && Date.now() - lastPressedAt < PRESS_FRESH_MS ? lastPressed : active
+}
+
 /**
  * 모달 · 드로어가 떠 있는 동안 키보드 · 낭독기를 그 안에 가둔다(#644, #105 §4 · F9).
  * - 열린 동안 모달 바깥(모달에서 body 까지 올라가는 길의 형제들)에 `inert` 를 건다 - Tab 도 낭독기 훑기도 뒤 화면에 닿지 않는다
@@ -13,7 +37,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), texta
 export function useModalFocus<T extends HTMLElement>(returnTo?: () => HTMLElement | null | undefined) {
   const ref = useRef<T>(null)
   // 연 요소는 렌더 때 잡는다 - 커밋 단계의 autoFocus 가 먼저 포커스를 옮기기 때문에 effect 에서는 늦다
-  const [opener] = useState(() => (typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null)))
+  const [opener] = useState(currentOpener)
   // returnTo 는 렌더마다 새 함수다 - 효과의 의존성에 넣으면 열린 채로 inert 를 걸었다 풀었다 하므로 마지막 것을 ref 로 들고 있는다
   const returnToRef = useRef(returnTo)
   useEffect(() => {

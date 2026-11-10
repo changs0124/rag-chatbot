@@ -1,0 +1,35 @@
+{
+ "A": {
+  "at1440": {
+   "width": 1440,
+   "confirmInDom": 1,
+   "confirmVisible": 1,
+   "inert": 1,
+   "composerInert": true
+  },
+  "at700": {
+   "width": 700,
+   "confirmInDom": 1,
+   "confirmVisible": 1,
+   "inert": 1,
+   "composerInert": true
+  },
+  "cancelledByButton": true,
+  "afterCancel": {
+   "width": 700,
+   "confirmInDom": 0,
+   "confirmVisible": 0,
+   "inert": 0,
+   "composerInert": false
+  }
+ },
+ "C-desktop": {
+  "openerWasBody": true,
+  "focusAfterCancel": "button「'클레임 처리 절차' 대화 삭제」"
+ },
+ "C-mobile": {
+  "openerWasBody": true,
+  "focusAfterCancel": "button「'클레임 처리 절차' 대화 삭제」",
+  "drawerOpenAfterSecondEsc": 0
+ }
+}
