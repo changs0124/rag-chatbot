@@ -6,7 +6,8 @@ export default function Citations({ citations }: { citations: Citation[] }) {
   if (citations.length === 0) return null
   return (
     <div className="mt-4 space-y-1.5 border-t border-line pt-3">
-      <p className="text-[11px] font-medium tracking-[0.08em] text-ink-muted uppercase">출처</p>
+      {/* 한글 라벨이라 자간 · 대문자를 걷었다(#646) */}
+      <p className="text-xs font-semibold text-ink-muted">출처</p>
       <ol className="space-y-1">
         {citations.map((c) => (
           <li key={c.seq} className="text-[13px] leading-relaxed text-ink-muted">

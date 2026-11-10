@@ -76,7 +76,7 @@ export default function MyPage() {
     <PageShell maxWidth="max-w-2xl">
       <BackLink to="/">채팅으로</BackLink>
 
-      <h1 className="mt-4 mb-1 text-2xl font-semibold text-ink">설정</h1>
+      <h1 className="mt-4 mb-1 text-xl font-semibold tracking-tight text-ink md:text-2xl">설정</h1>
       <p className="mb-6 text-sm text-ink-muted">{user?.email}</p>
 
       {/* status 는 늘 있는 그릇에 글만 바꿔 넣어야 낭독된다(#484) */}
@@ -139,7 +139,7 @@ export default function MyPage() {
             <div className="space-y-2">
               <Link
                 to="/admin/documents"
-                className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas"
+                className="flex min-h-11 items-center justify-between rounded-lg border border-line px-3.5 py-2.5 text-sm font-medium text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface"
               >
                 <span className="inline-flex items-center gap-2">
                   <IconFile className="h-4 w-4 text-ink-muted" />
@@ -149,7 +149,7 @@ export default function MyPage() {
               </Link>
               <Link
                 to="/admin/users"
-                className="flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm text-ink transition duration-150 ease-[var(--ease-out-quint)] hover:bg-canvas"
+                className="flex min-h-11 items-center justify-between rounded-lg border border-line px-3.5 py-2.5 text-sm font-medium text-ink transition-colors duration-150 ease-[var(--ease-out-quint)] hover:bg-surface"
               >
                 <span className="inline-flex items-center gap-2">
                   <IconUser className="h-4 w-4 text-ink-muted" />
@@ -177,8 +177,9 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl bg-raised p-5 shadow-[var(--shadow-ambient)]">
-      <h2 className="mb-3 text-sm font-medium text-ink">{title}</h2>
+    // 카드는 1px 경계 + 한 겹 그림자(#646) - 관리 화면 목록과 같은 모양
+    <section className="rounded-xl border border-line bg-raised p-5 shadow-[var(--shadow-card)]">
+      <h2 className="mb-3 text-base font-semibold text-ink">{title}</h2>
       {children}
     </section>
   )

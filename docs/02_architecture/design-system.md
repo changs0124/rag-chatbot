@@ -34,10 +34,12 @@
 | `canvas` | `#FBFCFE` | 화면 바탕 | body 그라데이션 중간값 |
 | `surface` | `#EDF2F8` | 사이드바 · 가라앉은 면 | body 그라데이션 끝값 |
 | `raised` | `#FFFFFF` | 카드 · 모달 · 입력창 | 흰 바탕 |
-| `line` | `#D0D2D3` | 실선 구분 | `border-dark/[0.22]`(카드 헤어라인)를 흰 바탕에 합성 |
+| `line` | `#D0D2D3` | 실선 구분(장식) — 카드 · 목록 행 · 구분선 | `border-dark/[0.22]`(카드 헤어라인)를 흰 바탕에 합성 |
+| `line-strong` | `#868E96` | **입력칸 테두리**(#646) — 사용자가 찾아야 하는 경계라 3:1 이 필요하다. 올리기 영역 점선 | **대응 없음** — 홈페이지 `line` 은 1.52:1 로 WCAG 1.4.11 미달. 같은 무채 램프의 중간값 |
 | `ink` | `#283139` | 본문 | `text-dark`(body 글자) |
 | `ink-muted` | `#4A545F` | 보조 텍스트 | `dark-light` |
 | `accent` | `#08719B` | 강조 · 활성 · 주요 버튼 · 포커스(입력칸 테두리 · 키보드 외곽선) | `--brand-deep`(`.btn-primary` 면 · 링크 · `.field` 포커스 테두리) |
+| `accent-hover` | `#065F82` | 주요 버튼 hover 면(#646) | **대응 없음** — `accent` 와 같은 색상각, 명도만 한 단 내림 |
 | `accent-ink` | `#FFFFFF` | accent 위 글자 | `.btn-primary` 흰 글자 |
 | `accent-soft` | `#E8F7FC` | 활성 항목 배경 · 알림 배너 | `--brand` 12% 를 흰 바탕에 합성(body 틴트와 같은 세기) |
 | `highlight` | `#E2E7ED` | 주의 배지 배경(「자료 없음」) + **어두운 고정 스크림 위 아이콘**(첨부 실패) | 무채색 — 홈페이지 칩이 무채색이다(사용자 결정) |
@@ -47,7 +49,8 @@
 | `danger-soft` | `#FBE9E7` | 오류 배너 배경 | 대응 없음 |
 
 **합성값**(`line` · `accent-soft`)은 홈페이지가 투명도로 쓰는 색을 흰 바탕 위에 미리 섞은 것이다 — 앱은 토큰을 불투명 hex 로
-두므로 그대로 옮길 수 없다. 서체(홈페이지 Wanted Sans)와 조판(카드 헤어라인 · 그림자 제거)은 #190 범위 밖이다.
+두므로 그대로 옮길 수 없다. 서체(홈페이지 Wanted Sans)는 #190 · #646 모두 범위 밖이다(Pretendard 유지).
+조판은 #646 에서 정했다(§3 · §5) — 카드는 1px `line` 경계 + 한 겹 그림자, 이중 테두리는 걷었다.
 
 ### 측정한 대비 (WCAG 2.1 상대휘도)
 
@@ -63,6 +66,10 @@
 | 자료없음 글자 / 배지 | 10.63 | 4.5 |
 | 오류 글자 / 오류 배경 | 4.64 | 4.5 |
 | 삭제 확인 버튼 글자 / 버튼 | 5.44 | 4.5 |
+| 버튼 글자 / 주요 버튼 hover(`accent-hover`) | 7.08 | 4.5 |
+| 입력칸 테두리(`line-strong`) / `raised` · `canvas` | 3.32 · 3.24 | 3.0 |
+| 처리중 배지 글자 / `highlight` | 10.63 | 4.5 |
+| 지금 대화 막대(`accent`) / 사이드바 | 4.85 | 3.0 |
 
 가장 빡빡한 쌍은 「accent 아이콘 / 사이드바」(4.85)다.
 
@@ -143,8 +150,20 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - **본문 서체** : Pretendard Variable (npm 패키지로 번들에 넣는다 — CDN 을 새로 물리지 않는다).
   받지 못하는 환경을 위해 시스템 스택을 뒤에 둔다.
 - **금지** : `Noto Sans KR` · `Malgun Gothic` 을 **선순위로** 지정하지 않는다. 자소 간격이 넓어 화면이 헐거워 보인다.
-- **크기** : 본문 15px / 보조는 14px(`text-sm`)이 주이고 13px · 12px(`text-xs`)도 쓴다(라벨 · 배지 11px, 첨부 재시도 버튼 10px). 화면 제목은 화면마다 다르다 — `AdminDocumentsPage` · `AdminUsersPage` 20px(`text-xl`) · `MyPage` 24px(`text-2xl`) ·
-  `LoginPage` 24px → md 이상 36px(`text-2xl md:text-4xl`). **답변 문단**은 14px 보다 작게 두지 않는다
+- **크기(타입 스케일, #646)** — 단계를 줄여 화면마다 같은 자리는 같은 크기다.
+
+  | 자리 | 크기 · 굵기 |
+  |------|-------------|
+  | 화면 제목(설정 · 문서 관리 · 사용자 관리) | 20px → md 24px(`text-xl md:text-2xl`) · semibold · `tracking-tight` |
+  | 빈 채팅 인사 | 24px → md 28px · semibold · `tracking-tight` |
+  | 로그인 소개 제목 | 24px → md 36px(`text-2xl md:text-4xl`) |
+  | 구역 제목(카드 · 목록 머리) | 16px(`text-base`) semibold |
+  | 본문 · 답변 | 15px |
+  | 목록 행 이름 · 버튼 · 보조 글 | 14px(`text-sm`), 행 이름은 medium |
+  | 보조 버튼 · 폼 라벨 | 13px medium |
+  | 메타 · 배지 · 사이드바 묶음 이름 | 12px(`text-xs`) — **한글에는 `uppercase` · 자간(`tracking-[…]`)을 쓰지 않는다**(효과가 없고 글자만 벌어진다). 역할 배지 · 파일 종류 타일만 11 · 10px |
+
+  **답변 문단**은 14px 보다 작게 두지 않는다
   (`Markdown.tsx` 의 코드 블록 13px · 표 14px 는 이 규칙 밖이다).
 - **한국어 규칙**
   - `body` 에 전역 `word-break: keep-all`(`index.css`), 한국어 블록에는 `break-keep` 도 — 조사 앞에서 줄이 갈리면 읽는 속도가 눈에 띄게 떨어진다
@@ -154,19 +173,21 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 
 | 항목 | 값 | 비고 |
 |------|-----|------|
-| 라운드(카드·모달) | `rounded-2xl` (16px) | |
-| 라운드(입력창) | `rounded-3xl` (24px) | ChatGPT · Claude 모두 알약에 가깝다 |
-| 라운드(버튼) | `rounded-xl`, 주요 CTA 는 `rounded-full` | |
-| 그림자 | **두 단계다.** 아래 표 참고 | 확산형만. 짙은 `shadow-md` 금지 |
-| 구분선 | `border-line` 1px | 필요한 곳에만. 면 색 차이로 구분되면 선을 넣지 않는다 |
+| 라운드(모달 · 로그인 카드) | `rounded-2xl` (16px) | |
+| 라운드(카드 · 목록 묶음 · 메뉴) | `rounded-xl` (12px) | 관리 목록 · 설정 카드 · 프로필 메뉴(#646) |
+| 라운드(버튼 · 입력칸 · 목록 행 · 타일) | `rounded-lg` (8px) | **버튼은 한 가지 반경이다**(#646) — 알약(`rounded-full`)은 둥근 아이콘 버튼(입력창 안 + · 보내기)과 배지에만 |
+| 라운드(채팅 입력창 · 질문 말풍선) | `rounded-3xl` (24px) | ChatGPT · Claude 모두 알약에 가깝다 |
+| 그림자 | **세 단계다.** 아래 표 참고 | 확산형만. 짙은 `shadow-md` 금지 |
+| 구분선 | `border-line` 1px | **카드 · 목록 묶음 · 모달은 1px 경계를 두른다**(#646) — 면 색 차이(`surface` / `canvas` 1.06:1)만으로는 카드 가장자리가 안 보였다. 목록 행 사이는 `divide-line` |
 
-### 그림자는 두 단계다
+### 그림자는 세 단계다
 
 깊이를 섞으면 같은 층위의 것들이 다른 높이로 보인다. **면 위에 얹힌 것과 화면 위에 뜬 것을 나눈다.**
 
 | 토큰 | 값 | 쓰는 곳 |
 |------|-----|---------|
-| `--shadow-ambient` | `0 1px 2px rgb(0 0 0 / .04), 0 8px 24px -12px rgb(0 0 0 / .1)` | 면 위 카드 · 입력창 · 「새 대화」 버튼 |
+| `--shadow-card` | `0 1px 2px rgb(16 24 40 / .06)` | 1px 경계가 있는 카드 · 목록 묶음 · 「새 대화」 버튼 · 지금 대화 행(#646) — 경계가 모양을 맡고 이것은 바닥에 붙은 느낌만 낸다 |
+| `--shadow-ambient` | `0 1px 2px rgb(0 0 0 / .04), 0 8px 24px -12px rgb(0 0 0 / .1)` | 채팅 입력창 · 로그인 카드 · 첨부 제거 원 |
 | `--shadow-lifted` | `0 2px 4px rgb(0 0 0 / .05), 0 16px 40px -16px rgb(0 0 0 / .18)` | **화면 위에 뜬 것** — 모달(`ConfirmModal` · `AdminUsersPage` 발급 창) · 드로어(`ChatPage`) · 팝오버(`Sidebar`) |
 
 모달에 `ambient` 를 쓰면 기존 모달과 깊이가 갈린다.
@@ -177,7 +198,10 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
   `linear` · `ease-in-out` 금지.
 - **지속** : 150ms 하나(`duration-150`) — 상태 변화 · 모달 모두
 - **속성** : `transform` · `opacity` · 색(`transition-colors`) · 입력 포커스 테두리(`border-color` · `box-shadow`)만. 레이아웃을 흔드는 속성(폭 · 높이 · 여백)에 트랜지션을 걸지 않는다
-- **누르는 느낌** : 버튼 `hover:scale-[1.02]` / `active:scale-[0.98]`
+- **누르는 느낌은 색으로 낸다**(#646) — hover 는 면 색만 바꾼다(주요 `accent-hover`, 보조 `surface`, 위험 `brightness-95`).
+  예전의 `hover:scale-[1.02]` / `active:scale-[0.98]` 는 걷었다 — 버튼 · 카드가 커졌다 줄었다 하면 장난감처럼 읽힌다(사용자 평가 「처음 만든 디자인 같다」)
+- **로딩은 자리 모양으로 보인다**(#646) — 돌아가는 원 대신 올 내용의 모양(스켈레톤, `animate-pulse` + `bg-highlight`)을 깐다. 답변 준비 중은 점 셋(`animate-bounce`)과 단계 글자.
+  둘 다 `motion-reduce:animate-none`
 - **끄는 중에는 트랜지션을 끈다** : 사이드바 폭 드래그처럼 값이 매 프레임 바뀌는 동작에 트랜지션이 걸리면
   손가락보다 늦게 따라와 고무줄처럼 보인다
 - **`prefers-reduced-motion: reduce` 를 존중한다** : 모든 트랜지션·애니메이션을 1ms 로 줄인다. JS 로 굴리는 스크롤(`scrollIntoView`)은 CSS 로 꺼지지 않으므로 설정을 읽어 `smooth` 를 쓰지 않는다(#644)
@@ -185,17 +209,32 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 ## 5. 컴포넌트 규칙
 
 - **말풍선은 사용자 쪽에만 둔다.** ChatGPT · Claude 모두 답변에는 배경을 깔지 않는다 —
-  답변이 길 때 큰 색면이 화면을 갈라 읽기 흐름을 끊는다. 사용자 메시지만 `raised` 카드로 오른쪽 정렬한다.
-- **입력창은 떠 있는 판이다.** `raised` + 확산 그림자 + `rounded-3xl`. 포커스면 테두리가 `accent` 로 바뀌고 시안 15% 링이 4px 둘린다(#190).
+  답변이 길 때 큰 색면이 화면을 갈라 읽기 흐름을 끊는다. 사용자 메시지만 그림자 없는 `surface` 말풍선(`rounded-3xl`)으로 오른쪽 정렬한다(#646 — 떠 있는 카드보다 가라앉은 면이 시선을 답변 쪽으로 넘긴다).
+- **입력창은 떠 있는 판이다.** `raised` + 확산 그림자 + `rounded-3xl` + `line-strong` 테두리. 포커스면 테두리가 `accent` 로 바뀌고 시안 15% 링이 4px 둘린다(#190).
   입력줄은 내용만큼 자라고 상한에서 안쪽 스크롤로 바뀐다 — 모바일 128px · md 160px(가상 키보드가 열리면 대화 칸이 좁아져 모바일을 낮춘다, #643). 한 줄 높이는 버튼과 같은 44/40px.
+  **입력칸(채팅 입력창 · 폼 · 제목 수정)의 테두리는 `line-strong`**(#646) — 장식선 `line` 은 1.52:1 이라 경계가 안 보인다. 입력칸은 `surface` 위에 두지 않는다(2.95:1) — 폼은 흰 카드 안에
 - **스크롤 페이드** : 메시지 영역 하단에 `canvas` 로 가는 그라데이션을 깔아 입력창 뒤로 글이 사라지게 한다.
-- **활성 대화** : `accent-soft` 배경 + `accent` 글자. 선을 두르지 않는다.
+- **활성 대화**(#646) : `raised` 면 + `ink` medium 글자 + 한 겹 그림자 + **왼쪽 3px `accent` 막대**. 예전의 `accent-soft` 배경은 사이드바 면과 1.03:1 이라
+  색 하나(글자색)로만 구분됐다(WCAG 1.4.1). 굵기와 막대가 색 말고도 드러낸다. 낭독기에는 `aria-current`(#590)
 - **사이드바 폭** : `ResizableSidebar` 가 관장한다(200~420px, 기본 260px, `localStorage`). 범위 밖 저장값은 무시하고 기본값으로 연다.
   손잡이는 `role="separator"` 로 키보드에서도 조절된다. 모바일 드로어에는 손잡이가 없다.
-- **주요 버튼은 `components/primaryButton.ts` 의 `primaryButtonClass` 하나다**(#330) — accent 알약 · `h-11`(44px) ·
-  비활성 `opacity-50`. 호출부는 바깥 여백만 덧붙인다. 마이페이지 · 관리자 · 발급 창 「닫기」 · 오류 화면이 쓴다
-  (로그인 버튼은 `h-12` 전폭이라 따로다). 마이페이지 · 관리자 상단의 뒤로가기와 페이지 골격은 `BackLink` · `PageShell` 이 가진다
-- **이중 테두리(double-bezel)는 모달과 로그인 폼에만** 쓴다. 대화 버블·첨부 카드에는 과하다.
+- **버튼 체계(#646)** — 모양은 넷이고 반경은 모두 `rounded-lg` 다.
+
+  | 종류 | 모양 | 정본 |
+  |------|------|------|
+  | 주요 | `accent` 면 · 흰 글자 · hover `accent-hover` · `h-11`(44px) | `components/primaryButton.ts` 의 `primaryButtonClass`(#330). 로그인은 `h-12` 전폭이라 따로 |
+  | 보조 | `raised` 면 + 1px `line` 경계 · `ink` 13px medium · hover `surface` · 모바일 `min-h-11` / 데스크톱 `h-8` | `components/actionButton.ts` 의 `actionButtonClass` — 관리 목록 행 끝(동기화 · 초기화 · 삭제). 삭제는 hover 에 `danger` 글자 · 경계 |
+  | 위험 | `danger` 면 · 흰 글자 · hover `brightness-95` · `h-11 md:h-10` | 확인 모달의 확정 버튼 |
+  | 아이콘 | 둥근(`rounded-full`) · 투명 면 · hover `surface` | 채팅 입력창 안(+ · 보내기 · 중단) · 헤더 · 확대 보기 |
+
+  호출부는 바깥 여백 · 폭만 덧붙인다. 마이페이지 · 관리자 상단의 뒤로가기와 페이지 골격은 `BackLink` · `PageShell` 이 가진다.
+  화면 이름은 「설정」 하나다 — 메뉴 · 제목 · 관리 화면 뒤로가기가 같은 말을 쓴다(#646)
+- **이중 테두리(double-bezel)는 쓰지 않는다**(#646) — 모달 · 로그인 폼도 한 겹 카드(`raised` + 1px `line` + 그림자)다. 바깥 트레이가 카드를 두 번 감싸 무거워 보였다.
+- **목록(관리 화면)** — 한 장의 카드(`rounded-xl` + `line` 경계 + `shadow-card`) 안에 행을 `divide-line` 으로 나눈다. 행마다 회색 알약을 쌓지 않는다.
+  행 머리에 타일(문서는 확장자, 사용자는 이름 첫 글자), 이름 14px medium, 메타 12px. 모바일에서 버튼이 한 줄에 안 들어가면 아래 줄로 내린다
+- **배지** — `rounded-full` · 11~12px medium · 면 + 글자 짝은 토큰 대비 표의 쌍만 쓴다 : 완료 · 관리자 `accent-soft`/`accent`, 처리중 · 사용자 `highlight`/`highlight-ink`, 실패 `danger-soft`/`danger`. 아이콘은 보조(`aria-hidden`)
+- **로딩 · 빈 상태 · 오류** — 첫 로드는 스켈레톤(대화 이력 : 질문 말풍선 + 답변 줄, 관리 목록 : `AdminListSkeleton` 행), 실패하면 스켈레톤을 걷고 오류 배너만 남긴다(멈춘 로딩으로 읽히지 않게).
+  빈 상태는 카드 안에 「무엇이 없는지 + 무엇을 하면 되는지」 두 문장. 사이드바 첫 로드 스켈레톤은 대화 목록 로드 상태가 없어 #646 범위 밖이다(`useChat` 상태 추가가 필요)
 - **아이콘** : 지금의 자체 SVG 세트(`frontend/src/components/icons.tsx`)를 계속 쓴다. 굵기 1.8 유지.
   **이모지·장식 기호(📄 ⚠ ● ← → 등)를 화면에 쓰지 않는다**(#192) — 글꼴·OS 마다 모양이 다르고 일부는 컬러 이모지로 떠서
   무채색 화면에서 혼자 튄다. 필요한 모양은 같은 규약(24 격자 · 1.8 stroke · `currentColor`)으로 `icons.tsx` 에 더한다.
@@ -220,8 +259,9 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 | Iconify Solar CDN | 버림 | 외부 스크립트를 늘리지 않는다. 자체 SVG 로 충분하다 |
 | 마케팅 카피 · 가짜 지표/후기 | 버림 | 실제 제품 화면이다. 없는 숫자를 적지 않는다 |
 | 종이 질감(노이즈 오버레이) | 버림 | 면 색 차이만으로 계층이 충분히 읽힌다. 고정 오버레이를 한 겹 더 얹을 이유가 없다 |
-| 이징 시그니처 · 누름 물리감 | **채택** | §4 |
-| 이중 테두리 카드 · 알약 CTA | **부분 채택** | 이중 테두리는 모달 · 로그인 폼에만(§5), 알약은 주요 버튼 |
+| 이징 시그니처 | **채택** | §4 |
+| 누름 물리감(scale) | **버림**(#646) | 실제 서비스 앱(ChatGPT · Claude)은 버튼 크기를 흔들지 않는다. hover 는 색으로(§4) |
+| 이중 테두리 카드 · 알약 CTA | **버림**(#646) | 한 겹 카드 + `rounded-lg` 버튼으로 통일(§3 · §5). 알약은 아이콘 버튼 · 배지 · 채팅 입력창에만 |
 | 한국어 타이포 규칙(`break-keep`, 행간) | **채택** | §2 |
 | 모바일 붕괴 규칙 · `100dvh` | **채택** | §7-1 |
 
@@ -234,8 +274,10 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft
 - 시각 크기를 키우지 않고 누르는 영역만 넓힐 때는 패딩으로 한다(예 : 대화 삭제 ✕ 는 아이콘 16 + `p-3.5`).
   글자 링크(뒤로가기)는 `h-11` 에 `-ml-2 px-2` 로 글자 위치를 유지한다
 - **마이페이지·관리자 상단은 채팅 헤더와 같은 높이다** — 위 여백 `pt-2` + 44px 뒤로가기 = 채팅 헤더 `min-h-14` 의 버튼 줄과 같다
-- **로그인은 모바일에서 카드 바깥 프레임을 걷는다** — 이중 테두리(면 + `p-1.5`) + 안쪽 `p-6` 이 360px 에서 입력칸을 268px 까지
-  줄였다. 모바일은 안쪽 카드 하나(`px-4 py-6`)와 페이지 `px-3` 으로 304px. 데스크톱은 이중 테두리 그대로
+- **로그인은 한 겹 카드다**(#646) — 이중 테두리를 걷어(§5) 모바일도 데스크톱과 같은 카드(`px-5 py-7`, 페이지 `px-4`)다.
+  모바일은 위에서부터 쌓는다(`content-start pt-12`) — 세로 가운데 정렬은 소개글과 폼 사이에 230px 빈 띠를 만들었다
+- **누르는 영역만 넓히는 작은 원** — 첨부 제거(보이는 원 20px)는 `::after` 로 누르는 영역을 넓힌다 : 모바일 36px · 데스크톱 28px(WCAG 2.5.8 24px 이상).
+  카드 간격(12px) 때문에 44px 까지는 넓히지 않는다 — 이웃 카드의 확대 버튼 영역을 덮는다. 메뉴 항목 · 확인 모달 버튼 · 확대 보기 버튼은 모바일 44px · 데스크톱 36~40px
 - 측정은 `360x740`(일반) · `360x640`(작은 화면) 두 가지로 한다. 360x640 에서 로그인 버튼이 스크롤 없이 보여야 한다(565px)
 - 사이드바는 `md` 미만에서 드로어다. 폭 `min(84vw, 320px)`, 배경은 `backdrop-blur` + 반투명 검정
 - 드로어가 열린 동안 뒤 화면은 스크롤되지 않게 잠근다
@@ -369,11 +411,11 @@ s.save('frontend/public/favicon.ico',sizes=[(16,16),(32,32),(48,48)])"
 
 | 자리 | 값 | 왜 토큰이 아닌가 |
 |------|-----|-----------------|
-| `frontend/src/index.css` | 토큰 14개 | 정본 |
+| `frontend/src/index.css` | 토큰 16개 | 정본 |
 | `frontend/src/components/Logo.tsx` | 브랜드색 2 + 램프 5스톱 | **로고는 화면 토큰을 따라가면 안 된다.** CI 색은 고정이어야 한다 — 토큰으로 빼는 순간 화면 색을 바꿀 때 로고가 다른 회사 색이 된다. 파비콘도 여기서 렌더하므로 사본을 따로 두지 않는다 |
 | `frontend/index.html` | `theme-color` **1개** | `<meta>` 는 CSS 변수를 못 읽는다. `canvas` 와 **같은 값을 손으로 맞춘다**. `media="(prefers-color-scheme: …)"` 로 두지 않는다 — OS 가 다크면 주소창만 다크가 된다 |
 | 사진·영상 위 오버레이 — `chat/ImageLightbox.tsx` · `chat/Composer.tsx` 썸네일 | `bg-black/*` · `bg-white/*` · `text-white*` · `border-white/*` | 아래 면이 **토큰이 아닌 이미지**라 화면 색과 무관하다 |
-| 모달·드로어 뒤 스크림 — `ConfirmModal.tsx` · `pages/AdminUsersPage.tsx`(발급 모달) · `pages/ChatPage.tsx`(모바일 드로어) | `bg-black/40` | 화면 전체를 가리는 반투명 막이라 바탕 토큰과 짝지을 대상이 없다 |
+| 모달·드로어 뒤 스크림 — `ConfirmModal.tsx` · `pages/AdminUsersPage.tsx`(발급 모달) · `pages/ChatPage.tsx`(모바일 드로어) | `bg-black/40`(확대 보기는 위 사진 오버레이 줄 — `bg-black/90`) | 화면 전체를 가리는 반투명 막이라 바탕 토큰과 짝지을 대상이 없다 |
 | 문서 그림 바탕 — `chat/DocFigure.tsx` | `bg-white` | 그림 자체가 화면 토큰과 무관한 이미지다 |
 
 **[CONVENTIONS.md](../CONVENTIONS.md) 「스타일」은 이 표를 가리킨다.** 자리를 늘리면 이 표를 고친다.

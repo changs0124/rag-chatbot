@@ -13,9 +13,10 @@ export default function TextInput(props: TextInputProps) {
 
 type TextInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'className'>
 
+// 테두리는 line-strong(#646) - 장식선 line(1.52:1)으로는 입력칸 경계가 3:1 에 못 미친다.
 // h-11 = 44px. 모바일 터치 대상 하한이라 데스크톱과 같은 값을 쓴다.
 // 모바일 글자는 16px - iOS 는 16px 미만 입력에 포커스하면 화면을 확대하고 풀어 주지 않는다(#221)
 const inputClass =
-  'h-11 w-full rounded-xl border border-line bg-raised px-3.5 text-base text-ink outline-none md:text-[15px] ' +
+  'h-11 w-full rounded-lg border border-line-strong bg-raised px-3.5 text-base text-ink outline-none md:text-[15px] ' +
   'transition-[border-color,box-shadow] duration-150 ease-[var(--ease-out-quint)] ' +
   'placeholder:text-ink-muted focus:border-accent focus:shadow-[0_0_0_4px_var(--c-focus-ring)]'

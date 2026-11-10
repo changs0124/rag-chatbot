@@ -157,7 +157,7 @@ export default function ImageLightbox({
   }
 
   return (
-    <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/90 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
       <h2 id={titleId} className="sr-only">이미지 보기</h2>
 
@@ -166,7 +166,7 @@ export default function ImageLightbox({
           type="button"
           onClick={download}
           aria-label="내려받기"
-          className="grid h-9 w-9 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white"
+          className="grid h-11 w-11 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white focus-visible:outline-white md:h-9 md:w-9"
         >
           <IconDownload />
         </button>
@@ -175,7 +175,7 @@ export default function ImageLightbox({
           autoFocus
           onClick={onClose}
           aria-label="닫기"
-          className="grid h-9 w-9 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white"
+          className="grid h-11 w-11 place-items-center rounded-lg text-white/80 hover:bg-white/10 hover:text-white focus-visible:outline-white md:h-9 md:w-9"
         >
           <IconClose />
         </button>
@@ -188,7 +188,7 @@ export default function ImageLightbox({
             onClick={() => move(-1)}
             disabled={index === 0}
             aria-label="이전 이미지"
-            className="absolute left-2 z-10 grid h-10 w-10 place-items-center rounded-full text-white/80 hover:bg-white/10 disabled:opacity-30"
+            className="absolute left-2 z-10 grid h-11 w-11 place-items-center rounded-full text-white/80 hover:bg-white/10 focus-visible:outline-white disabled:opacity-30 md:h-10 md:w-10"
           >
             <IconChevronLeft />
           </button>
@@ -197,7 +197,7 @@ export default function ImageLightbox({
             onClick={() => move(1)}
             disabled={index === items.length - 1}
             aria-label="다음 이미지"
-            className="absolute right-2 z-10 grid h-10 w-10 place-items-center rounded-full text-white/80 hover:bg-white/10 disabled:opacity-30"
+            className="absolute right-2 z-10 grid h-11 w-11 place-items-center rounded-full text-white/80 hover:bg-white/10 focus-visible:outline-white disabled:opacity-30 md:h-10 md:w-10"
           >
             <IconChevronRight />
           </button>
@@ -225,7 +225,7 @@ export default function ImageLightbox({
       )}
 
       {items.length > 1 && (
-        <span className="absolute bottom-4 text-xs text-white/70">
+        <span className="absolute bottom-4 rounded-full bg-black/60 px-2.5 py-1 text-xs text-white/80">
           {index + 1} / {items.length}
         </span>
       )}

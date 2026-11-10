@@ -115,8 +115,8 @@ export default function MessageList({
       <>
         <div className="grid h-full place-items-center px-6 text-center">
           <div>
-            <p className="text-xl font-semibold text-ink">무엇을 도와드릴까요?</p>
-            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+            <p className="text-2xl font-semibold tracking-tight text-ink md:text-[28px]">무엇을 도와드릴까요?</p>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink-muted">
               답변에는 근거 출처가 함께 붙습니다. 찾은 자료가 없으면 없다고 먼저 밝힙니다.
             </p>
           </div>
@@ -144,7 +144,13 @@ export default function MessageList({
             끝 표식과 한 묶음으로 두어 단계 줄이 없을 때 flex 간격이 하나 더 생기지 않게 하고, 있을 때는 mt-6 로 전과 같은 간격 */}
         <div>
           {pending && (
-            <p aria-hidden="true" className="px-1 text-sm text-ink-muted">
+            // 움직이는 점 셋(#646) - 정지한 「…」 글자는 멈춘 것처럼 읽혔다. 움직임 줄이기면 점은 멈추고 단계 글자만 남는다
+            <p aria-hidden="true" className="flex items-center gap-2.5 px-1 text-sm text-ink-muted">
+              <span className="inline-flex gap-1">
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-muted motion-reduce:animate-none [animation-delay:-0.3s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-muted motion-reduce:animate-none [animation-delay:-0.15s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-muted motion-reduce:animate-none" />
+              </span>
               {stage ?? '…'}
             </p>
           )}
@@ -191,7 +197,8 @@ const MessageBubble = memo(function MessageBubble({
       <div
         className={
           isUser
-            ? 'max-w-[85%] rounded-2xl bg-raised px-4 py-3 text-[15px] leading-relaxed text-ink shadow-[var(--shadow-ambient)]'
+            ? // 질문은 그림자 없는 면(#646) - 떠 있는 카드보다 가라앉은 말풍선이 답변 쪽으로 시선을 넘긴다
+              'max-w-[85%] rounded-3xl bg-surface px-4 py-2.5 text-[15px] leading-relaxed text-ink'
             : 'w-full text-[15px] leading-relaxed text-ink'
         }
       >
