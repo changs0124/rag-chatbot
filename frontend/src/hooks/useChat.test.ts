@@ -1496,6 +1496,27 @@ describe('useChat 스트리밍 delta 를 프레임 단위로 반영(#692)', () =
     expect(result.current.messages[1].status).toBe('complete')
   })
 
+  it('출처 이벤트도 남은 delta 를 먼저 반영한다 - 출처가 본문보다 먼저 보이지 않게 (#707)', async () => {
+    const stream = openStream()
+    const seen: { content: string; cites: number }[] = []
+    const { result } = renderHook(() => {
+      const chat = useChat()
+      const m = chat.messages[1]
+      if (m) seen.push({ content: m.content, cites: m.citations.length })
+      return chat
+    })
+    await startStream(() => result.current.send('점검 순서', []))
+
+    act(() => {
+      stream.handlers?.onToken?.('근거 있는 답')
+      stream.handlers?.onCitations?.([{ seq: 1, sourceName: '필드클레임현황.md', snippet: '' } as never])
+    })
+
+    // 출처가 붙은 첫 렌더에 본문도 이미 있다
+    const firstWithCites = seen.find((x) => x.cites > 0)!
+    expect(firstWithCites.content).toBe('근거 있는 답')
+  })
+
   it('오류 이벤트도 남은 delta 를 먼저 반영한다', async () => {
     const stream = openStream()
     const { result } = renderHook(() => useChat())

@@ -29,5 +29,6 @@ export function takePrefetchedConversations(): Promise<Conversation[]> | null {
   if (!taken || taken.owner !== tokenSubject() || Date.now() - taken.at > PREFETCH_MAX_AGE_MS) return null
   // 미리 받기가 실패했으면 새로 받는다(#701) - 배포 재시작 순간의 5xx 는 me 가 재시도(#250)로 넘기는데, 그 실패를 그대로 쓰면
   // 목록만 「불러오지 못했습니다」로 남았다. 만료 토큰의 401 뒤 같은 계정으로 다시 로그인한 경우도 같다(만료 JWT 도 sub 가 같다)
-  return taken.promise.catch(() => listConversations())
+  // 재시도 직전에 계정을 다시 본다(#707) - 진행 중이던 요청이 401 이면 onUnauthorized 가 먼저 토큰을 지워, 토큰 없이 한 번 더 나갔다
+  return taken.promise.catch((e: unknown) => (tokenSubject() === taken.owner ? listConversations() : Promise.reject(e)))
 }
