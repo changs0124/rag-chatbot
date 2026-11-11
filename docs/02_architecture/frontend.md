@@ -95,6 +95,9 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 - **토큰은 진행 중인 답변 하나만 새 객체로 바꾼다 — 그 동일성이 재렌더를 막는다**(#405). `MessageBubble` · `Sidebar` 는
   `memo` 이고, `ChatPage` 가 사이드바에 넘기는 핸들러는 `useCallback` 으로 고정한다. 지난 메시지를 새 객체로 만들거나
   인라인 함수를 넘기면 토큰마다 지난 답변의 마크다운 파싱과 대화 목록 렌더가 되살아난다(`MessageListRender` · `ChatPageRender` 테스트가 잡는다).
+- **토큰은 모았다가 프레임(requestAnimationFrame)마다 한 번 반영한다**(#692). 운영 토큰은 한 프레임에 평균 2개 남짓 따로 도착해,
+  토큰마다 반영하면 진행 중 답의 마크다운을 그만큼 더 다시 파싱한다. 완료 · 오류 · 중단(catch)에서는 남은 토큰을 **먼저** 반영한다 —
+  빈 답 판정과 저장본 비교가 반영된 본문을 봐야 한다. 숨은 탭에서는 rAF 가 멈춰 표시만 미뤄지고 최종 결과는 같다.
 - **진행 단계는 최소 표시 시간(350ms)만큼 붙잡는다.** 목업은 단계가 같은 순간에 도착해 표시 시간이 0이 된다.
   없는 단계를 만들거나 순서를 바꾸지는 않는다 — 실제 도달한 단계에만 시간을 준다.
 - **단계를 보여주는 동안에는 답변 버블을 내지 않는다.** 단계가 끝나면 그 자리가 답변 텍스트로 교체된다.
@@ -297,6 +300,11 @@ preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막�
 | `X-Content-Type-Options` | `nosniff` | 형식 추측 금지 |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | 다른 출처에는 경로 없이 출처만 |
 | `Content-Security-Policy` | 스크립트 `'self'` · 연결 `'self'` + 백엔드 · 이미지 `'self'` + 백엔드 + `blob:` + `data:` · `frame-ancestors 'none'` | **강제한다**(#411). Report-Only(#404)로 운영 화면 전부(대화 목록 · 스트리밍 · 첨부 업로드/미리보기/확대 · 문서 그림 · 마이페이지 · 관리자)를 돌아 위반 0 을 본 뒤 바꿨다. 정책을 넓힐 때는 Report-Only 로 먼저 올린다. 내려받기는 그 점검에서 빠져 있었고 #481 에서 blob/data 경로 위반을 찾았다 — 앞으로 점검 범위에 포함한다 |
+
+**빌드 산출물 `/assets/*` 는 1년 캐시한다**(`Cache-Control: public, max-age=31536000, immutable`, #693). 파일 이름에 내용 해시가
+붙어 내용이 바뀌면 이름도 바뀌기 때문이다. 없으면 Vercel 기본값(`max-age=0, must-revalidate`)이라 재방문마다 JS · CSS · 폰트 서브셋을
+다시 확인해 첫 화면 앞에 왕복이 붙는다. `index.html`(`/` · 라우트)은 기본값 그대로 매번 확인한다 — 새 배포의 해시 이름을 받아야 한다.
+배포 뒤 옛 청크를 찾는 열린 탭은 Markdown lazy 의 평문 대체가 받는다.
 
 **CSP 에 백엔드 주소(`https://api.chseong.fyi`)가 박혀 있다.** `VITE_API_BASE_URL` 을 바꾸면 이 값도 함께 바꿔야 한다 —
 강제로 바꾼 뒤에 어긋나면 모든 API 호출 · 첨부 이미지가 막힌다.

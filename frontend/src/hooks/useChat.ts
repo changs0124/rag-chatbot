@@ -493,6 +493,20 @@ export function useChat() {
 
       const patch = (updater: (m: ChatMessage) => ChatMessage) =>
         setMessages((prev) => prev.map((m) => (m.id === assistantId ? updater(m) : m)))
+      // delta 를 모아 프레임마다 한 번만 반영한다(#692). delta 마다 반영하면 진행 중 답의 마크다운을 매번 처음부터 다시 파싱한다.
+      // 종단(완료 · 오류 · 중단 · 끊김)에서는 남은 것을 먼저 반영한다 - 빈 답 판정과 저장본 비교가 반영된 본문을 봐야 한다
+      let pendingDelta = ''
+      let frame: number | null = null
+      const flushDelta = () => {
+        if (frame !== null) {
+          cancelAnimationFrame(frame)
+          frame = null
+        }
+        if (!pendingDelta) return
+        const delta = pendingDelta
+        pendingDelta = ''
+        patch((m) => ({ ...m, content: m.content + delta }))
+      }
       // 200 을 받았는지(#435). 서버는 질문을 저장한 뒤에 200 을 돌려주므로, 그 전에 끊긴 요청은 질문이 없을 수 있다
       let opened = false
       // 토큰 · 완료를 받았는지(#489). 200 뒤라도 토큰 0개에서 멈추면 서버가 질문을 걷을 수 있어 200 전과 같이 판정한다
@@ -510,15 +524,23 @@ export function useChat() {
             // 토큰이 와도 단계를 끊지 않음 - 남은 단계가 최소 표시 시간을 마치면 답변으로 교체됨
             onToken: (delta) => {
               gotToken = true
-              patch((m) => ({ ...m, content: m.content + delta }))
+              pendingDelta += delta
+              if (frame === null) {
+                frame = requestAnimationFrame(() => {
+                  frame = null
+                  flushDelta()
+                })
+              }
             },
             onCitations: (items) => patch((m) => ({ ...m, citations: items })),
             onDone: () => {
               done = true
+              flushDelta()
               patch((m) => ({ ...m, status: 'complete' }))
               refreshConversations()
             },
             onError: (msg) => {
+              flushDelta()
               clearStages() // 오류 경로는 즉시 비움(잔류 0)
               setError(msg)
               patch((m) => ({ ...m, status: 'error' }))
@@ -528,6 +550,7 @@ export function useChat() {
         )
       } catch (e) {
         // 사용자가 중단한 경우는 오류가 아님(부분 답변 유지). 중단·절단 모두 단계는 즉시 비움
+        flushDelta()
         clearStages()
         const aborted = controller.signal.aborted
         // 중단이 아닌 200 전 실패(#480)
