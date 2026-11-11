@@ -1451,3 +1451,31 @@ describe('useChat 만료된 첨부 썸네일 재서명(#558)', () => {
     expect(result.current.messages[0].attachments?.[0].url).toBe('/c2')
   })
 })
+
+describe('useChat 첫 목록 로드가 미리 받은 요청을 쓴다(#694)', () => {
+  const jwtOf = (sub: string) => `h.${btoa(JSON.stringify({ sub }))}.s`
+  afterEach(() => {
+    setToken(null)
+    vi.mocked(listConversations).mockReset().mockResolvedValue([])
+  })
+
+  it('미리 받기가 있으면 마운트 때 목록을 다시 요청하지 않고 그 결과를 보인다', async () => {
+    const { prefetchConversations } = await import('../lib/conversationPrefetch')
+    setToken(jwtOf('user-a'))
+    vi.mocked(listConversations).mockResolvedValueOnce([{ id: 'c9', title: '미리 받은 대화', updatedAt: '' }])
+    prefetchConversations()
+    expect(listConversations).toHaveBeenCalledTimes(1)
+
+    const { result } = renderHook(() => useChat())
+    await act(async () => {})
+
+    expect(listConversations).toHaveBeenCalledTimes(1)
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['c9'])
+  })
+
+  it('미리 받기가 없으면 예전처럼 마운트 때 요청한다', async () => {
+    renderHook(() => useChat())
+    await act(async () => {})
+    expect(listConversations).toHaveBeenCalledTimes(1)
+  })
+})

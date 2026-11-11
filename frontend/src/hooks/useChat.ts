@@ -9,6 +9,7 @@ import {
   streamChat,
 } from '../lib/endpoints'
 import { ApiError, errorMessage, tokenSubject } from '../lib/api'
+import { takePrefetchedConversations } from '../lib/conversationPrefetch'
 import type { Attachment, ChatMessage, Conversation } from '../lib/types'
 import { useStageQueue } from './useStageQueue'
 
@@ -216,7 +217,9 @@ export function useChat() {
   useEffect(() => {
     const mine = ++listGen.current
     const first = ++firstLoadGen.current
-    listConversations()
+    // 새로고침 때 me 와 함께 시작해 둔 요청이 있으면 그것을 쓴다(#694) - 같은 계정 · 한 번만
+    const firstList = takePrefetchedConversations() ?? listConversations()
+    firstList
       .then((list) => {
         if (listGen.current === mine) setConversations(list)
       })
