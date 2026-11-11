@@ -3,7 +3,7 @@
 새로고침 때 대화 목록 요청을 `/api/auth/me` 와 함께 시작한다. 이전에는 me 응답 → ProtectedRoute 가 채팅 화면을 그림 → `useChat` 이 목록 요청으로, 왕복 둘이 직렬이었다.
 
 - `frontend/src/lib/conversationPrefetch.ts` : 토큰이 있으면 `listConversations()` 를 시작하고 주인(`tokenSubject`) · 시각을 기억. `takePrefetchedConversations()` 는 **한 번만**, 같은 계정이고 10초 안일 때만 돌려준다(#617 계정 경계 · 설정 화면에 머물다 온 경우는 새로 받음). 쓰이지 않은 실패가 unhandled rejection 으로 남지 않게 막음
-- `main.tsx` 가 기동 때 호출(처음엔 AuthProvider 에 넣었으나 endpoints 를 부분 목업한 기존 테스트 35곳이 깨져, 기동 지점으로 옮김 — 더 일찍 시작하기도 함)
+- `main.tsx` 가 기동 때 호출(처음엔 AuthProvider 에 넣었으나 endpoints 를 목업하며 listConversations 를 빼 둔 기존 테스트(MyPage · AdminDocumentsPage 등)가 깨져, 기동 지점으로 옮김 — 더 일찍 시작하기도 함)
 - `useChat` 첫 로드 : `takePrefetchedConversations() ?? listConversations()`
 
 - 커밋 : `2d43e17d`(코드) · `87b6577e`(문서 · CHANGELOG · 프론트 케이스 하한 407 → 415)
