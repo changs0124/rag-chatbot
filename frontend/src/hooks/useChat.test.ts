@@ -1550,6 +1550,23 @@ describe('useChat 첫 목록 로드가 미리 받은 요청을 쓴다(#694)', ()
     expect(result.current.conversations.map((c) => c.id)).toEqual(['c9'])
   })
 
+  it('미리 받기가 실패했으면 마운트 때 새로 받아 목록을 보인다 (#701)', async () => {
+    const { prefetchConversations } = await import('../lib/conversationPrefetch')
+    setToken(jwtOf('user-a'))
+    vi.mocked(listConversations)
+      .mockRejectedValueOnce(new ApiError(503, '재시작 중'))
+      .mockResolvedValueOnce([{ id: 'c7', title: '다시 받은 대화', updatedAt: '' }])
+    prefetchConversations()
+
+    const { result } = renderHook(() => useChat())
+    await act(async () => {})
+
+    expect(listConversations).toHaveBeenCalledTimes(2)
+    expect(result.current.conversations.map((c) => c.id)).toEqual(['c7'])
+    expect(result.current.error).toBeNull()
+    expect(result.current.conversationsFailed).toBe(false)
+  })
+
   it('미리 받기가 없으면 예전처럼 마운트 때 요청한다', async () => {
     renderHook(() => useChat())
     await act(async () => {})
