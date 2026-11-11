@@ -41,7 +41,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | 상태 | 보유자 | 비고 |
 |------|--------|------|
 | 로그인 사용자 | `frontend/src/auth/AuthContext.tsx` | 기동 시 `/api/auth/me` 로 토큰 유효성 확인. **401 일 때만 토큰 폐기** — 네트워크 · 5xx 면 토큰을 두고 3초 간격으로 첫 시도 포함 최대 10회 묻는다(#250, 배포 · 재기동 중 새로고침) |
-| 대화·메시지·스트리밍 | `frontend/src/hooks/useChat.ts` | 대화 목록, 활성 대화, 메시지 배열, 스트리밍 여부, 진행 단계, 오류를 한 훅이 보유(진행 단계 큐는 `useStageQueue` 에 위임) |
+| 대화·메시지·스트리밍 | `frontend/src/hooks/useChat.ts` | 대화 목록, 활성 대화, 메시지 배열, 스트리밍 여부, 진행 단계, 오류를 한 훅이 보유(진행 단계 큐는 `useStageQueue` 에 위임). 첫 목록은 `main.tsx` 가 기동 때 `/api/auth/me` 와 함께 시작해 둔 요청(`lib/conversationPrefetch.ts`)을 **한 번만** 쓴다 — 같은 계정(`tokenSubject`)이고 10초 안일 때만, 아니면 새로 받는다(#694, 계정 경계 #617) |
 | 인증 토큰 | `frontend/src/lib/api.ts` 모듈 변수 + `localStorage` | React 상태가 아님 — 렌더링과 무관하게 요청 시점에 읽혀야 함. 저장소 접근이 던지는 브라우저(사이트 데이터 차단)에서는 모듈 변수만 쓴다 — 세션은 새로고침 전까지이고, 모듈 평가에서 터져 백지가 되지 않게 한다(#483). 이때는 storage 이벤트가 없어 다른 탭의 로그아웃이 전파되지 않는다 |
 
 테마 상태는 없다 — 화면은 라이트 하나다([design-system.md](./design-system.md) §1).
