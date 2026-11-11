@@ -1,0 +1,8 @@
+# 프리뷰 c0c9aedd (Vercel 보호 → 사용자 Chrome 세션에서 같은 출처 fetch, cache: no-store)
+경로 | 상태 | Content-Type | Cache-Control | CSP | X-Frame-Options
+/assets/nonexistent-zzz.js | 404 | text/plain | public, max-age=31536000, immutable | 있음 | DENY
+/ | 200 | text/html | public, max-age=0, must-revalidate | 있음 | DENY
+/me | 200 | text/html | public, max-age=0, must-revalidate | 있음 | DENY
+/admin/users | 200 | text/html | public, max-age=0, must-revalidate | 있음 | DENY
+/assets/index-*.js | 200 | application/javascript | public, max-age=31536000, immutable | 있음 | DENY
+/assets/index-*.css | 200 | text/css | public, max-age=31536000, immutable | 있음 | DENY
