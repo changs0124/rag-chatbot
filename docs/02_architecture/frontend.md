@@ -10,7 +10,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 | `frontend/src/pages/` | 라우트 단위 화면 — `LoginPage` · `ChatPage` · `MyPage` · `AdminDocumentsPage` · `AdminUsersPage` |
 | `frontend/src/components/` | 재사용 컴포넌트. 기능이 커지면 `components/chat/` 처럼 하위 폴더 |
 | `frontend/src/hooks/` | 도메인 훅 — `useChat.ts` 와, 그것이 쓰는 진행 단계 표시 큐 `useStageQueue.ts` |
-| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `limits.ts`(서버 상한과 맞춘 입력 상한 — 이름 · 첨부 수 · 본문 · 제목, 사본은 여기 한 곳, #483) · `docFigures.ts`(그림 표식 파서) |
+| `frontend/src/lib/` | `api.ts`(fetch 래퍼·토큰) · `endpoints.ts`(엔드포인트 함수·SSE 파서) · `types.ts`(공유 타입) · `limits.ts`(서버 상한과 맞춘 입력 상한 — 이름 · 첨부 수 · 본문 · 제목, 사본은 여기 한 곳, #483) · `docFigures.ts`(그림 표식 파서) · `conversationPrefetch.ts`(새로고침 때 대화 목록을 me 와 함께 미리 받기, #694 · 실패하면 새로 받기 #701) |
 | `frontend/src/auth/` | Context Provider |
 | `frontend/src/test/` | Vitest 셋업(`setup.ts`) · 테스트 공유 픽스처(`fixtures.ts`) |
 
@@ -94,7 +94,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 - **토큰은 진행 중인 답변 하나만 새 객체로 바꾼다 — 그 동일성이 재렌더를 막는다**(#405). `MessageBubble` · `Sidebar` 는
   `memo` 이고, `ChatPage` 가 사이드바에 넘기는 핸들러는 `useCallback` 으로 고정한다. 지난 메시지를 새 객체로 만들거나
-  인라인 함수를 넘기면 토큰마다 지난 답변의 마크다운 파싱과 대화 목록 렌더가 되살아난다(`MessageListRender` · `ChatPageRender` 테스트가 잡는다).
+  인라인 함수를 넘기면 토큰 반영(프레임마다, 아래 #692)마다 지난 답변의 마크다운 파싱과 대화 목록 렌더가 되살아난다(`MessageListRender` · `ChatPageRender` 테스트가 잡는다).
 - **토큰은 모았다가 프레임(requestAnimationFrame)마다 한 번 반영한다**(#692). 운영 토큰은 한 프레임에 평균 2개 남짓 따로 도착해,
   토큰마다 반영하면 진행 중 답의 마크다운을 그만큼 더 다시 파싱한다. 완료 · 오류 · 중단(catch)에서는 남은 토큰을 **먼저** 반영한다 —
   빈 답 판정과 저장본 비교가 반영된 본문을 봐야 한다. 숨은 탭에서는 rAF 가 멈춰 표시만 미뤄지고 최종 결과는 같다.
