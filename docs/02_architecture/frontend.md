@@ -288,7 +288,7 @@ React 19 + TypeScript + Vite 8 + Tailwind CSS 4. 반응형 웹(PC·모바일 브
 
 preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막힌다.
 
-`frontend/vercel.json` 이 빌드 명령·출력 디렉터리와 **SPA 리라이트**를 고정한다. 리라이트가 없으면
+`frontend/vercel.json` 이 빌드 명령·출력 디렉터리와 **SPA 리라이트**(단 `/assets/` 는 뺀다 — 아래 #702)를 고정한다. 리라이트가 없으면
 `/me` 를 직접 열거나 새로고침할 때 404 가 난다 — 라우팅을 `BrowserRouter` 가 하기 때문이다.
 
 같은 파일이 **보안 헤더**를 모든 경로에 붙인다(#404). 없으면 Vercel 기본 HSTS 하나뿐이라 다른 사이트가 `/admin` 을
