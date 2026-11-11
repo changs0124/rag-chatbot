@@ -1,0 +1,3 @@
+     × 없는 /assets 청크는 index.html 로 돌리지 않는다 (#702) - 돌리면 HTML 이 1년 immutable 로 캐시된다(#693) 5ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 2 passed (3)
