@@ -1451,3 +1451,80 @@ describe('useChat 만료된 첨부 썸네일 재서명(#558)', () => {
     expect(result.current.messages[0].attachments?.[0].url).toBe('/c2')
   })
 })
+
+describe('useChat 스트리밍 delta 를 프레임 단위로 반영(#692)', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.clearAllMocks()
+  })
+
+  it('한 프레임 안의 delta 여러 개는 다음 프레임에 한 번에 반영된다', async () => {
+    const stream = openStream()
+    const seen: string[] = []
+    const { result } = renderHook(() => {
+      const chat = useChat()
+      const content = chat.messages[1]?.content
+      if (content !== undefined && seen.at(-1) !== content) seen.push(content)
+      return chat
+    })
+    await startStream(() => result.current.send('점검 순서', []))
+
+    act(() => {
+      for (const d of ['안', '내', '는 ', '다음']) stream.handlers?.onToken?.(d)
+    })
+    // 프레임 전에는 화면에 반영하지 않는다
+    expect(result.current.messages[1].content).toBe('')
+    act(() => void vi.advanceTimersToNextFrame())
+    expect(result.current.messages[1].content).toBe('안내는 다음')
+    // 빈 본문 → 합친 본문, 중간 단계(「안」 · 「안내」 …)를 거치지 않는다
+    expect(seen).toEqual(['', '안내는 다음'])
+  })
+
+  it('완료 이벤트는 프레임을 기다리지 않고 남은 delta 를 반영한 뒤 확정한다', async () => {
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('점검 순서', []))
+
+    act(() => {
+      stream.handlers?.onToken?.('끝까지 ')
+      stream.handlers?.onToken?.('받은 답')
+      stream.handlers?.onDone?.({ finishReason: 'stop', noSource: false })
+    })
+
+    expect(result.current.messages[1].content).toBe('끝까지 받은 답')
+    expect(result.current.messages[1].status).toBe('complete')
+  })
+
+  it('오류 이벤트도 남은 delta 를 먼저 반영한다', async () => {
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('점검 순서', []))
+
+    act(() => {
+      stream.handlers?.onToken?.('여기까지')
+      stream.handlers?.onError?.('응답이 중단되었습니다')
+    })
+
+    expect(result.current.messages[1].content).toBe('여기까지')
+    expect(result.current.messages[1].status).toBe('error')
+  })
+
+  it('프레임 전에 중단해도 받은 delta 를 잃지 않고 부분 답으로 남긴다', async () => {
+    const stream = openStream()
+    const { result } = renderHook(() => useChat())
+    await startStream(() => result.current.send('점검 순서', []))
+
+    act(() => void stream.handlers?.onToken?.('부분'))
+    await act(async () => {
+      result.current.stop()
+    })
+    await act(async () => {
+      stream.fail?.(new DOMException('aborted', 'AbortError'))
+    })
+
+    expect(result.current.messages).toHaveLength(2)
+    expect(result.current.messages[1].content).toBe('부분')
+    expect(result.current.messages[1].stopped).toBe(true)
+  })
+})
