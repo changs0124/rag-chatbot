@@ -1,0 +1,7 @@
+# 프리뷰 배포 441fe378 (Vercel 보호 → 사용자 Chrome 세션에서 같은 출처 fetch, cache: no-store)
+경로 | 상태 | Cache-Control | CSP 있음 | X-Frame-Options | X-Content-Type-Options
+/ | 200 | public, max-age=0, must-revalidate | true | DENY | nosniff
+/login | 200 | public, max-age=0, must-revalidate | true | DENY | nosniff
+/assets/index-*.js | 200 | public, max-age=31536000, immutable | true | DENY | nosniff
+/assets/index-*.css | 200 | public, max-age=31536000, immutable | true | DENY | nosniff
+/assets/PretendardVariable.subset.0-*.woff2 | 200 | public, max-age=31536000, immutable | true | DENY | nosniff
