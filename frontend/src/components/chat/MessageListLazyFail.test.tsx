@@ -5,7 +5,7 @@ import MessageList from './MessageList'
 import type { ChatMessage } from '../../lib/types'
 
 /*
- * 마크다운 청크를 못 받으면 평문으로 물러선다(#417). 재배포로 옛 해시 청크가 사라지면 SPA 리라이트가 HTML 을 돌려줘
+ * 마크다운 청크를 못 받으면 평문으로 물러선다(#417). 재배포로 옛 해시 청크가 사라지면 그 요청이 404 라(#702 전에는 SPA 리라이트가 HTML 을 돌려줬다)
  * 모듈 로드가 실패한다 - 그 오류가 최상위 ErrorBoundary 까지 가면 앱 전체가 오류 화면이 된다.
  * 청크 실패는 모듈 단위로 굳으므로 성공 경로(MessageListLazy)와 파일을 나눈다.
  */
