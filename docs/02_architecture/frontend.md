@@ -304,7 +304,7 @@ preview 배포의 출처는 백엔드 `ALLOWED_ORIGINS` 에 없어 CORS 로 막�
 **빌드 산출물 `/assets/*` 는 1년 캐시한다**(`Cache-Control: public, max-age=31536000, immutable`, #693). 파일 이름에 내용 해시가
 붙어 내용이 바뀌면 이름도 바뀌기 때문이다. 없으면 Vercel 기본값(`max-age=0, must-revalidate`)이라 재방문마다 JS · CSS · 폰트 서브셋을
 다시 확인해 첫 화면 앞에 왕복이 붙는다. `index.html`(`/` · 라우트)은 기본값 그대로 매번 확인한다 — 새 배포의 해시 이름을 받아야 한다.
-배포 뒤 옛 청크를 찾는 열린 탭은 Markdown lazy 의 평문 대체가 받는다.
+배포 뒤 옛 청크를 찾는 열린 탭은 Markdown lazy 의 평문 대체가 받는다. **SPA 리라이트는 `/assets/` 를 빼고 건다**(`/((?!assets/).*)`, #702) — 넣으면 없는 청크 요청이 `index.html`(200)을 위 1년 immutable 헤더로 받아, 롤백으로 그 해시가 되살아나도 그 브라우저는 하드 리로드 전까지 HTML 을 붙잡았다. 지금은 없는 `/assets/*` 가 404 다.
 
 **CSP 에 백엔드 주소(`https://api.chseong.fyi`)가 박혀 있다.** `VITE_API_BASE_URL` 을 바꾸면 이 값도 함께 바꿔야 한다 —
 강제로 바꾼 뒤에 어긋나면 모든 API 호출 · 첨부 이미지가 막힌다.
