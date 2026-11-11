@@ -1,0 +1,1 @@
+변경 전 = main 53311b07 (리뷰가 짚은 줄 : preprocess.py:266 · 311, live-integration.md:313, frontend.md:13 · 97, conversationPrefetch.ts 주석 위치 · 21행, CHANGELOG #694 · #699 문구)

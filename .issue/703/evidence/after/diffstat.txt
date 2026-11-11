@@ -1,0 +1,6 @@
+ docs/01_specs/live-integration.md        |  2 +-
+ docs/02_architecture/frontend.md         |  4 ++--
+ docs/06_changelog/CHANGELOG.md           |  5 +++--
+ frontend/src/lib/conversationPrefetch.ts | 12 +++++++-----
+ scripts/claims/preprocess.py             |  5 +++--
+ 5 files changed, 16 insertions(+), 12 deletions(-)
