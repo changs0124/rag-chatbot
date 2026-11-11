@@ -1,0 +1,75 @@
+{
+ "runs": [
+  {
+   "run": 1,
+   "totalMs": 15999,
+   "script": 10.03,
+   "task": 14.78,
+   "layout": 674,
+   "longN": 2,
+   "longSum": 116,
+   "longMax": 65,
+   "inputMax": 32,
+   "textLen": 3559
+  },
+  {
+   "run": 2,
+   "totalMs": 15753,
+   "script": 9.35,
+   "task": 13.87,
+   "layout": 727,
+   "longN": 2,
+   "longSum": 122,
+   "longMax": 69,
+   "inputMax": 32,
+   "textLen": 3559
+  },
+  {
+   "run": 3,
+   "totalMs": 15844,
+   "script": 9.52,
+   "task": 14.06,
+   "layout": 677,
+   "longN": 0,
+   "longSum": 0,
+   "longMax": 0,
+   "inputMax": 24,
+   "textLen": 3559
+  },
+  {
+   "run": 4,
+   "totalMs": 15878,
+   "script": 9.44,
+   "task": 13.73,
+   "layout": 654,
+   "longN": 0,
+   "longSum": 0,
+   "longMax": 0,
+   "inputMax": 24,
+   "textLen": 3559
+  },
+  {
+   "run": 5,
+   "totalMs": 16232,
+   "script": 10.08,
+   "task": 14.59,
+   "layout": 603,
+   "longN": 0,
+   "longSum": 0,
+   "longMax": 0,
+   "inputMax": 24,
+   "textLen": 3559
+  }
+ ],
+ "median": {
+  "totalMs": 15878,
+  "script": 9.52,
+  "task": 14.06,
+  "layout": 674,
+  "longN": 0,
+  "longSum": 0,
+  "longMax": 0,
+  "inputMax": 24,
+  "textLen": 3559
+ }
+}
