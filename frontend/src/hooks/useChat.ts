@@ -532,7 +532,11 @@ export function useChat() {
                 })
               }
             },
-            onCitations: (items) => patch((m) => ({ ...m, citations: items })),
+            // 출처도 모아 둔 delta 를 먼저 반영한다(#707) - 안 그러면 출처가 마지막 본문 조각보다 한 프레임 먼저 보였다
+            onCitations: (items) => {
+              flushDelta()
+              patch((m) => ({ ...m, citations: items }))
+            },
             onDone: () => {
               done = true
               flushDelta()

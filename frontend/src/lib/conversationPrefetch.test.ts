@@ -3,7 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('./endpoints', () => ({ listConversations: vi.fn() }))
 
 const { listConversations } = await import('./endpoints')
-const { setToken } = await import('./api')
+const { setToken, ApiError } = await import('./api')
+const { deferred } = await import('../test/fixtures')
 const { prefetchConversations, takePrefetchedConversations, PREFETCH_MAX_AGE_MS } = await import('./conversationPrefetch')
 
 const jwtOf = (sub: string) => `h.${btoa(JSON.stringify({ sub }))}.s`
@@ -62,5 +63,26 @@ describe('대화 목록 미리 받기(#694)', () => {
     await new Promise((r) => setTimeout(r, 0))
     // 이 케이스가 끝나도 vitest 가 unhandled rejection 으로 실패하지 않으면 통과
     expect(listConversations).toHaveBeenCalledTimes(1)
+  })
+
+  it('미리 받기가 실패하면 같은 계정일 때만 새로 받는다 (#701 · #707)', async () => {
+    setToken(jwtOf('user-a'))
+    const first = deferred<typeof conv[]>()
+    vi.mocked(listConversations).mockReturnValueOnce(first.promise)
+    prefetchConversations()
+    const taken = takePrefetchedConversations()!
+    // 진행 중이던 요청이 401 이면 onUnauthorized 가 먼저 토큰을 지운다 - 그 뒤 토큰 없이 다시 요청하지 않는다
+    setToken(null)
+    first.reject(new ApiError(401, '만료'))
+    await expect(taken).rejects.toBeInstanceOf(ApiError)
+    expect(listConversations).toHaveBeenCalledTimes(1)
+  })
+
+  it('같은 계정이면 실패 뒤 새로 받는다 (#701)', async () => {
+    setToken(jwtOf('user-a'))
+    vi.mocked(listConversations).mockRejectedValueOnce(new ApiError(503, '재시작')).mockResolvedValueOnce([conv])
+    prefetchConversations()
+    await expect(takePrefetchedConversations()).resolves.toEqual([conv])
+    expect(listConversations).toHaveBeenCalledTimes(2)
   })
 })
