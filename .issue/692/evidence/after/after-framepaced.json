@@ -1,0 +1,51 @@
+{
+ "runs": [
+  {
+   "run": 1,
+   "totalMs": 16029,
+   "script": 10.21,
+   "task": 14.91,
+   "layout": 608,
+   "longN": 15,
+   "longSum": 835,
+   "longMax": 67,
+   "inputMax": 24,
+   "textLen": 3559
+  },
+  {
+   "run": 2,
+   "totalMs": 15730,
+   "script": 10.25,
+   "task": 14.91,
+   "layout": 637,
+   "longN": 1,
+   "longSum": 61,
+   "longMax": 61,
+   "inputMax": 32,
+   "textLen": 3559
+  },
+  {
+   "run": 3,
+   "totalMs": 16122,
+   "script": 10.51,
+   "task": 15.33,
+   "layout": 581,
+   "longN": 1,
+   "longSum": 63,
+   "longMax": 63,
+   "inputMax": 32,
+   "textLen": 3559
+  }
+ ],
+ "median": {
+  "totalMs": 16029,
+  "script": 10.25,
+  "task": 14.91,
+  "layout": 608,
+  "longN": 1,
+  "longSum": 63,
+  "longMax": 63,
+  "inputMax": 32,
+  "textLen": 3559
+ }
+}

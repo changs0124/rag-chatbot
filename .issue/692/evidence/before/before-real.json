@@ -1,0 +1,75 @@
+{
+ "runs": [
+  {
+   "run": 1,
+   "totalMs": 16167,
+   "script": 10.77,
+   "task": 15.35,
+   "layout": 669,
+   "longN": 5,
+   "longSum": 267,
+   "longMax": 63,
+   "inputMax": 40,
+   "textLen": 3559
+  },
+  {
+   "run": 2,
+   "totalMs": 16204,
+   "script": 10.87,
+   "task": 15.57,
+   "layout": 614,
+   "longN": 0,
+   "longSum": 0,
+   "longMax": 0,
+   "inputMax": 40,
+   "textLen": 3559
+  },
+  {
+   "run": 3,
+   "totalMs": 15780,
+   "script": 10.83,
+   "task": 15.42,
+   "layout": 625,
+   "longN": 1,
+   "longSum": 51,
+   "longMax": 51,
+   "inputMax": 32,
+   "textLen": 3559
+  },
+  {
+   "run": 4,
+   "totalMs": 15993,
+   "script": 10.76,
+   "task": 15.5,
+   "layout": 636,
+   "longN": 1,
+   "longSum": 51,
+   "longMax": 51,
+   "inputMax": 32,
+   "textLen": 3559
+  },
+  {
+   "run": 5,
+   "totalMs": 16106,
+   "script": 10.74,
+   "task": 15.45,
+   "layout": 639,
+   "longN": 2,
+   "longSum": 122,
+   "longMax": 66,
+   "inputMax": 48,
+   "textLen": 3559
+  }
+ ],
+ "median": {
+  "totalMs": 16106,
+  "script": 10.77,
+  "task": 15.45,
+  "layout": 636,
+  "longN": 1,
+  "longSum": 51,
+  "longMax": 51,
+  "inputMax": 40,
+  "textLen": 3559
+ }
+}
