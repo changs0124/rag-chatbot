@@ -1,0 +1,402 @@
+[
+ {
+  "user": "1@local.test",
+  "conv": "b57b2772-9be7-4514-b0bc-9169b91154c2",
+  "end": 207.3,
+  "error": null,
+  "done": true,
+  "last_stage": [
+   199.0,
+   "stage:generating"
+  ],
+  "first_token": 199.0,
+  "chars": 930,
+  "max_silence_before_first_token": 18.2,
+  "comments": 10,
+  "comment_gaps": [
+   20.0,
+   20.0,
+   20.0,
+   20.0,
+   20.0,
+   20.0,
+   20.0,
+   20.0,
+   20.0
+  ],
+  "events": [
+   [
+    0.8,
+    "meta"
+   ],
+   [
+    0.8,
+    "stage:analyzing"
+   ],
+   [
+    3.3,
+    "stage:searching"
+   ],
+   [
+    6.1,
+    "stage:reviewing"
+   ],
+   [
+    20.8,
+    "comment"
+   ],
+   [
+    40.8,
+    "comment"
+   ],
+   [
+    60.8,
+    "comment"
+   ],
+   [
+    80.8,
+    "comment"
+   ],
+   [
+    100.8,
+    "comment"
+   ],
+   [
+    120.8,
+    "comment"
+   ],
+   [
+    140.8,
+    "comment"
+   ],
+   [
+    160.8,
+    "comment"
+   ],
+   [
+    180.8,
+    "comment"
+   ],
+   [
+    199.0,
+    "stage:generating"
+   ],
+   [
+    200.8,
+    "comment"
+   ],
+   [
+    207.3,
+    "citations"
+   ],
+   [
+    207.3,
+    "done"
+   ],
+   [
+    199.0,
+    "token"
+   ]
+  ]
+ },
+ {
+  "user": "2@local.test",
+  "conv": "55d001e7-7030-4fd4-b991-f6a0ea46eda8",
+  "end": 121.2,
+  "error": null,
+  "done": true,
+  "last_stage": [
+   115.0,
+   "stage:generating"
+  ],
+  "first_token": 115.0,
+  "chars": 730,
+  "max_silence_before_first_token": 14.3,
+  "comments": 6,
+  "comment_gaps": [
+   20.0,
+   20.0,
+   20.0,
+   20.0,
+   20.0
+  ],
+  "events": [
+   [
+    0.7,
+    "meta"
+   ],
+   [
+    0.7,
+    "stage:analyzing"
+   ],
+   [
+    3.2,
+    "stage:searching"
+   ],
+   [
+    5.8,
+    "stage:reviewing"
+   ],
+   [
+    20.7,
+    "comment"
+   ],
+   [
+    40.7,
+    "comment"
+   ],
+   [
+    60.7,
+    "comment"
+   ],
+   [
+    80.7,
+    "comment"
+   ],
+   [
+    100.7,
+    "comment"
+   ],
+   [
+    115.0,
+    "stage:generating"
+   ],
+   [
+    120.7,
+    "comment"
+   ],
+   [
+    121.2,
+    "citations"
+   ],
+   [
+    121.2,
+    "done"
+   ],
+   [
+    115.0,
+    "token"
+   ]
+  ]
+ },
+ {
+  "user": "3@local.test",
+  "conv": "c107fac3-e8d5-48fe-9486-a8fbe3654aa8",
+  "end": 78.7,
+  "error": null,
+  "done": true,
+  "last_stage": [
+   71.4,
+   "stage:generating"
+  ],
+  "first_token": 71.4,
+  "chars": 1091,
+  "max_silence_before_first_token": 10.7,
+  "comments": 3,
+  "comment_gaps": [
+   20.0,
+   20.0
+  ],
+  "events": [
+   [
+    0.7,
+    "meta"
+   ],
+   [
+    0.7,
+    "stage:analyzing"
+   ],
+   [
+    3.5,
+    "stage:searching"
+   ],
+   [
+    6.4,
+    "stage:reviewing"
+   ],
+   [
+    20.7,
+    "comment"
+   ],
+   [
+    40.7,
+    "comment"
+   ],
+   [
+    60.7,
+    "comment"
+   ],
+   [
+    71.4,
+    "stage:generating"
+   ],
+   [
+    78.6,
+    "citations"
+   ],
+   [
+    78.6,
+    "done"
+   ],
+   [
+    71.4,
+    "token"
+   ]
+  ]
+ },
+ {
+  "user": "4@local.test",
+  "conv": "b7619d80-51ab-443c-a65c-50bec0649ef7",
+  "end": 109.2,
+  "error": null,
+  "done": true,
+  "last_stage": [
+   102.0,
+   "stage:generating"
+  ],
+  "first_token": 102.0,
+  "chars": 892,
+  "max_silence_before_first_token": 1.3,
+  "comments": 5,
+  "comment_gaps": [
+   20.0,
+   20.0,
+   20.0,
+   20.0
+  ],
+  "events": [
+   [
+    0.7,
+    "meta"
+   ],
+   [
+    0.7,
+    "stage:analyzing"
+   ],
+   [
+    3.2,
+    "stage:searching"
+   ],
+   [
+    6.1,
+    "stage:reviewing"
+   ],
+   [
+    20.7,
+    "comment"
+   ],
+   [
+    40.7,
+    "comment"
+   ],
+   [
+    60.7,
+    "comment"
+   ],
+   [
+    80.7,
+    "comment"
+   ],
+   [
+    100.7,
+    "comment"
+   ],
+   [
+    102.0,
+    "stage:generating"
+   ],
+   [
+    109.2,
+    "citations"
+   ],
+   [
+    109.2,
+    "done"
+   ],
+   [
+    102.0,
+    "token"
+   ]
+  ]
+ },
+ {
+  "user": "5@local.test",
+  "conv": "086b5007-de80-4db8-acbb-6fbac56fddbc",
+  "end": 127.3,
+  "error": null,
+  "done": true,
+  "last_stage": [
+   118.7,
+   "stage:generating"
+  ],
+  "first_token": 118.7,
+  "chars": 892,
+  "max_silence_before_first_token": 17.9,
+  "comments": 6,
+  "comment_gaps": [
+   20.0,
+   20.0,
+   20.0,
+   20.0,
+   20.0
+  ],
+  "events": [
+   [
+    0.8,
+    "meta"
+   ],
+   [
+    0.8,
+    "stage:analyzing"
+   ],
+   [
+    3.6,
+    "stage:searching"
+   ],
+   [
+    6.7,
+    "stage:reviewing"
+   ],
+   [
+    20.8,
+    "comment"
+   ],
+   [
+    40.8,
+    "comment"
+   ],
+   [
+    60.8,
+    "comment"
+   ],
+   [
+    80.8,
+    "comment"
+   ],
+   [
+    100.8,
+    "comment"
+   ],
+   [
+    118.7,
+    "stage:generating"
+   ],
+   [
+    120.8,
+    "comment"
+   ],
+   [
+    127.3,
+    "citations"
+   ],
+   [
+    127.3,
+    "done"
+   ],
+   [
+    118.7,
+    "token"
+   ]
+  ]
+ }
+]
