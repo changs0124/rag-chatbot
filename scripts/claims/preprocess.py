@@ -143,9 +143,11 @@ def claims_to_md(xlsx, terms):
     def nums(rs):
         return "·".join(fmt(r["순번"]) for r in sorted(rs, key=lambda r: r["순번"]))
 
-    def breakdown(groups, min_count=1, by_name=False, avg=False, with_nums=False):
+    def breakdown(groups, min_count=1, by_name=False, avg=False, with_nums=False, svc_upto=0):
         """그룹 → 최종원인 분포. 기본은 건수 순, 연도처럼 순서가 있는 그룹은 이름 순.
-        avg 는 평균 사용일, with_nums 는 클레임 번호 목록을 덧붙인다 - 「평균 며칠」·「어떤 건」은 건수만으로 답이 안 된다(#321)"""
+        avg 는 평균 사용일, with_nums 는 클레임 번호 목록을 덧붙인다 - 「평균 며칠」·「어떤 건」은 건수만으로 답이 안 된다(#321).
+        svc_upto 이하인 그룹은 「클레임 N(서비스번호)」 목록을 붙인다 - 표에 건수만 있으면 「서비스번호도 빠짐없이」를
+        서비스번호 없는 상세 줄 `[클레임 N] 품번 : …` 을 모아 답하다 이웃 클레임이 섞였다(24건 중 2회 · #712)"""
         lines = []
         order = (lambda kv: kv[0]) if by_name else (lambda kv: (-len(kv[1]), kv[0]))
         for name, rs in sorted(groups.items(), key=order):
@@ -158,6 +160,9 @@ def claims_to_md(xlsx, terms):
                 line += f" · 평균 사용일 {sum(days) / len(days):.1f}일"
             if with_nums:
                 line += f" · 클레임 {nums(rs)}"
+            if len(rs) <= svc_upto:
+                line += " · " + " · ".join(f"클레임 {fmt(r['순번'])}(서비스번호 {fmt(r['서비스번호'])})"
+                                           for r in sorted(rs, key=lambda r: r["순번"]))
             lines.append(line)
         return lines
 
@@ -267,7 +272,7 @@ def claims_to_md(xlsx, terms):
         # 클레임마다의 값은 요약 줄에도 있다(#699)
         "### S/W 버전별 건수 (10건 이하는 클레임 번호도)", "", *count("S/W버전", nums_upto=10, label="S/W 버전 "), "",
         "### 소손 및 불량소자별 건수 (상위 15)", "", *count("소손및불량소자", 15), "",
-        "### 품번별 건수와 최종원인 · 평균 사용일", "", *breakdown(by_part, avg=True), "",
+        "### 품번별 건수와 최종원인 · 평균 사용일 (30건 이하는 클레임 · 서비스번호도)", "", *breakdown(by_part, avg=True, svc_upto=30), "",
         "### 입고 연도별 건수와 최종원인 (입고일자의 연도 기준)", "", *breakdown(by_year, by_name=True, avg=True), "",
         "### 입고 연도 × 품번별 건수와 최종원인", "", *breakdown(by_year_part, by_name=True, avg=True), "",
         "### 기종별 건수와 최종원인 (전체 기종, 기종 이름이 조금만 달라도 다른 기종 — 예 : T 4000 과 T 4000L)", "",
