@@ -189,5 +189,6 @@ jobs:
         with:
           node-version-file: .nvmrc
       # npm ci 를 두지 않는다(#331) - npm audit 는 package-lock.json 만 읽어 node_modules 가 필요 없음
-      - name: npm audit (high 이상 0건)
-        run: npm audit --audit-level=high
+      # 고친 판이 없는 경보만 frontend/audit-allowlist.json 에 기한 · 사유를 적어 넘긴다(#716) - 만료되면 다시 실패
+      - name: npm audit (high 이상 0건 · 기한 있는 예외만 허용)
+        run: node ../scripts/check-npm-audit.mjs
