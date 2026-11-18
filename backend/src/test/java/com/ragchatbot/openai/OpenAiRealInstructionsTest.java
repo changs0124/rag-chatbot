@@ -127,6 +127,22 @@ class OpenAiRealInstructionsTest {
 	}
 
 	/**
+	 * 클레임 「불량 내용」 줄이 끝 표시(〔끝〕) 없이 끊겼으면 일부라고 밝히라는 지시가 실린다(#714).
+	 *
+	 * <p>표시 · 지시가 없으면 검색 조각이 줄 중간에서 잘린 것을 모델이 몰라, 앞부분만 「원문 그대로」라거나 「조치 내역은
+	 * 기록에 없다」고 답했다 - 11-18 QA 178건 중 3, 측정 #714.
+	 */
+	@Test
+	void tells_model_to_flag_a_claim_text_cut_before_its_end_marker() {
+		chat("shared-store");
+
+		assertThat(bodies.get(0))
+				.contains("`〔끝〕` 없이")
+				.contains("일부라는 사실을 밝힌다")
+				.contains("`〔끝〕` 은 답에 옮기지도 언급하지도 않는다");
+	}
+
+	/**
 	 * 다른 언어로 답해 달라는 명시 요청만 따르고, 질문 언어만 다르면 한국어로 답하라는 지시가 실린다(#438).
 	 *
 	 * <p>「한국어로 답한다」만 두면 「answer in English please」 같은 요청에도 한국어로 답했다 - 변경 전 실측 명시 요청(E4 · E5 · E6) 0/9 · 앞 턴 요청 뒤 후속 질문(M1 · M2) 0/6.
