@@ -15,6 +15,7 @@ import com.ragchatbot.service.ChatConcurrencyLimiter;
 import com.ragchatbot.service.ChatService;
 import com.ragchatbot.service.ChatService.PreparedChat;
 import com.ragchatbot.service.RateLimiterService;
+import com.ragchatbot.service.SseHeartbeat;
 import com.ragchatbot.dto.ChatDtos.ChatRequest;
 
 /**
@@ -30,15 +31,17 @@ public class ChatController {
 	private final ChatConcurrencyLimiter concurrency;
 	private final ExecutorService chatExecutor;
 	private final long sseTimeoutMs;
+	private final SseHeartbeat heartbeat;
 
 	public ChatController(ChatService chatService, RateLimiterService rateLimiter,
 			ChatConcurrencyLimiter concurrency, ExecutorService chatExecutor,
-			@Value("${app.chat.sse-timeout-ms}") long sseTimeoutMs) {
+			@Value("${app.chat.sse-timeout-ms}") long sseTimeoutMs, SseHeartbeat heartbeat) {
 		this.chatService = chatService;
 		this.rateLimiter = rateLimiter;
 		this.concurrency = concurrency;
 		this.chatExecutor = chatExecutor;
 		this.sseTimeoutMs = sseTimeoutMs;
+		this.heartbeat = heartbeat;
 	}
 
 	@PostMapping
@@ -56,9 +59,12 @@ public class ChatController {
 			PreparedChat prepared = chatService.prepare(userId, req); // 400/404 동기 반환
 			SseEmitter emitter = new SseEmitter(sseTimeoutMs); // 타임아웃이 스트림 수명 단독 결정
 			chatExecutor.execute(() -> {
+				// 첫 토큰 전 무음에 앞단 프록시가 연결을 끊지 않게(#713)
+				Runnable stopHeartbeat = heartbeat.start(emitter);
 				try {
 					chatService.stream(userId, prepared, emitter);
 				} finally {
+					stopHeartbeat.run();
 					concurrency.release(userId);
 				}
 			});
