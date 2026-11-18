@@ -325,7 +325,10 @@ def claims_to_md(xlsx, terms):
         val = lambda f: fmt(r[re.sub(r'\s+', '', f)])  # 칸 이름의 공백은 키에서 빠져 있다(「S/W 버전」 → 「S/W버전」)
         summary = [f"서비스번호 {fmt(r['서비스번호'])}"] + [f"{f} {val(f)}" for f in in_summary if val(f)]
         out.append(f"- {tag} 요약 : " + " · ".join(summary))
-        out.append(f"- {tag} 불량 내용 : {fmt(r['불량내용'])}")
+        # 줄 끝에 〔끝〕을 붙인다 - 검색 조각 경계가 이 줄 중간에 걸리면 모델은 뒤가 있는지 알 단서가 없어, 앞부분만
+        # 「원문 그대로」라거나 「조치 내역은 기록에 없다」고 답했다(#714). 표시가 없으면 잘린 것이라고 지시문이 알려 준다
+        text = fmt(r['불량내용'])
+        out.append(f"- {tag} 불량 내용 : {text}" + (" 〔끝〕" if text else ""))
         for f in FIELDS:
             # 요약에 있는 값은 상세에 다시 적지 않는다 - 같은 말이 두 번 들어가 「원인」 같은 단어의 키워드 점수가 부풀면
             # 매뉴얼 · 클레임 복합 질문에서 매뉴얼 조각이 검색 상위 20 밖으로 밀렸다(#467)
