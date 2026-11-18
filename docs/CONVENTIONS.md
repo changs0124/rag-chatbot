@@ -117,6 +117,8 @@
 - 시크릿 스캔(gitleaks)·의존성 취약점 스캔(Trivy · `npm audit`)은 **변경마다 + 주 1회** 돈다(#135).
   공개 저장소는 **시크릿이 한 번 들어오면 회수가 불가능**하므로 merge 전에 돌아야 한다.
   주간 실행은 우리 커밋이 아니라 **바깥**(취약점 DB)이 바뀐 것을 잡는다.
+  **고친 판이 없는 프론트 경보만 기한 있는 예외로 넘긴다**(#716) — `frontend/audit-allowlist.json` 에 경보 id · 만료일(`until`, 그날까지) · 사유를 적고 `scripts/check-npm-audit.mjs` 가 본다.
+  목록에 없거나 만료된 high 이상은 실패, 목록에 있는데 더는 안 잡히는 항목은 지우라고 알린다. 고친 판이 나오면 예외가 아니라 lock 갱신으로 푼다.
 - **CI 7잡 전부가 `main` 의 required status checks 다**(#166, `main: CI must pass` ruleset) — `backend` · `frontend` · `docker` ·
   `static` · `secrets` · `deps (백엔드)` · `deps (프론트)`. **이 목록은 축약이다**(#172) — 실제 context 는 `ci.yml` 잡 `name:` 전체 문자열이고,
   여기에 옮겨 적지 않는다. 무엇을 넣고 뺐는지의 이유는 CHANGELOG #166 이다(`secrets` · `deps` 가 필수인 근거는 위 #135).

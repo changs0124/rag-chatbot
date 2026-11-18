@@ -153,7 +153,7 @@ else
 fi
 
 # --- 의존성 취약점 (CI 의 deps-backend · deps-frontend 잡 · 변경마다) ---------------------------------------------
-run "프론트 의존성 audit"    bash -c 'cd frontend && npm audit --audit-level=high'
+run "프론트 의존성 audit"    node scripts/check-npm-audit.mjs
 if command -v trivy >/dev/null 2>&1; then
 	# `--list-all-pkgs` 는 CI 도 켜 둔다 - 해석한 패키지를 출력에 남겨야
 	# 「취약점 0건」과 「패키지를 한 건도 해석하지 못함」이 구분된다
