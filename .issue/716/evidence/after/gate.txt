@@ -1,0 +1,12 @@
+$ node scripts/check-npm-audit.mjs
+· high GHSA-fc5q-39xc-vjpf (picomatch) - 예외(~2026-12-31) : picomatch ReDoS - 고친 판 없음(최신 4.0.7 까지 영향, 11-18). vite · vitest 의 빌드 · 테스트 시점 글롭에만 쓰이고 패턴은 저장소 설정에서만 온다. 배포 번들 · 서버에 없음(#716)
+OK - high 이상 1건, 모두 기한 안의 예외
+exit=0
+
+$ (음성 대조 1) 허용 목록 비움
+✗ high GHSA-fc5q-39xc-vjpf (picomatch) picomatch vulnerable to ReDoS through single-branch repeated extglobs - 허용 목록에 없음
+exit=1
+
+$ (음성 대조 2) until 을 어제(2026-11-17)로
+✗ high GHSA-fc5q-39xc-vjpf (picomatch) - 예외 만료(2026-11-17). 고친 판을 확인하고 lock 을 갱신하거나 다시 판단해 기한을 바꾼다
+exit=1
