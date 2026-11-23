@@ -249,6 +249,17 @@ def claims_to_md(xlsx, terms):
         undated_n = sum(not isinstance(r[key], dt.datetime) for r in recs)
         return lines + ([f"- {label} 값이 날짜가 아닌 클레임 {undated_n}건은 위 줄에서 뺐다"] if undated_n else [])
 
+    def day_lines(key):
+        """날짜마다 한 줄 - 그날의 클레임 · 서비스번호 전부. 연월 표는 건수뿐이라 「그날 고장 난 건」은 서비스번호가 든 요약 줄을
+        검색으로 모아야 했고, 2건 이상인 날짜는 일부만 모은 채 「2건입니다」로 단정했다(105/190 · #721)"""
+        g = collections.defaultdict(list)
+        for r in recs:
+            if isinstance(r[key], dt.datetime):
+                g[fmt(r[key])].append(r)
+        return [f"- {key} {d} : {len(rs)}건 — " + " · ".join(f"클레임 {fmt(r['순번'])}(서비스번호 {fmt(r['서비스번호'])})"
+                                                        for r in sorted(rs, key=lambda r: r["순번"]))
+                for d, rs in sorted(g.items())]
+
     machines = machine_lines()
     out = [
         "# 필드 클레임 현황 (서보 드라이브 불량 분석 통합리스트)",
@@ -299,6 +310,9 @@ def claims_to_md(xlsx, terms):
         "### 출하 후 고장까지 사용일 구간별 건수", "", *usage_lines(), "",
         "### 출하일 · 고장일 · 입고일자 연월별 건수 (연도 · 반기 · 분기 · 월)", "",
         *month_lines("출하일", "출하일"), *month_lines("고장일", "고장일"), *month_lines("입고일자", "입고일자"), "",
+        # 연월 표 줄은 그대로 두고 새 절로 붙인다 - 그 표로 답하던 질문의 검색 조각이 바뀌지 않게(#321 · #532)
+        "### 출하일별 클레임 (그 날짜에 출하된 클레임 전부)", "", *day_lines("출하일"), "",
+        "### 고장일별 클레임 (그 날짜에 고장 난 클레임 전부)", "", *day_lines("고장일"), "",
         "### 드라이브 표시 UU (저전압) 언급 건수", "",
         # 분포까지 함께 둔다 - 건수만 있으면 모델이 이 숫자를 들고 최종원인 분포를 지어냈다(#267)
         # AL.2144 만의 줄을 합집합 바로 곁에 둔다 - 이 절만 검색되면 모델이 합집합 건수를 AL.2144 건수로 읽었다(#267)
