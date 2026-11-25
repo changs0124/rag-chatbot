@@ -1,0 +1,362 @@
+{
+ "freezeMs": 15,
+ "scenes": {
+  "desktop-confirm": {
+   "animations": [],
+   "box": {
+    "x": 528,
+    "y": 354,
+    "w": 384,
+    "h": 192,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 2,
+    "styleRecalcs": 8,
+    "layoutMs": 2.76,
+    "styleMs": 2.1,
+    "scriptMs": 2.81,
+    "taskMs": 26.99,
+    "appearMs": 31
+   },
+   "perfMin": {
+    "layouts": 2,
+    "styleRecalcs": 7,
+    "layoutMs": 2.54,
+    "styleMs": 1.9,
+    "scriptMs": 2.61,
+    "taskMs": 25.68,
+    "appearMs": 29
+   }
+  },
+  "desktop-menu": {
+   "animations": [
+    {
+     "name": "",
+     "duration": 150,
+     "target": "[object SVGAnimatedString]"
+    }
+   ],
+   "box": {
+    "x": 8,
+    "y": 750,
+    "w": 243,
+    "h": 82,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 1,
+    "styleRecalcs": 15,
+    "layoutMs": 0.46,
+    "styleMs": 1.47,
+    "scriptMs": 3.19,
+    "taskMs": 27.41,
+    "appearMs": 49
+   },
+   "perfMin": {
+    "layouts": 1,
+    "styleRecalcs": 15,
+    "layoutMs": 0.42,
+    "styleMs": 1.19,
+    "scriptMs": 2.97,
+    "taskMs": 26.13,
+    "appearMs": 42
+   }
+  },
+  "desktop-lightbox": {
+   "animations": [
+    {
+     "name": "",
+     "duration": 150,
+     "target": "shrink-0 rounded-md p-3.5 text-ink-muted opacity-100 md:p-1 "
+    }
+   ],
+   "box": {
+    "x": 320,
+    "y": 190,
+    "w": 800,
+    "h": 520,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 3,
+    "styleRecalcs": 11,
+    "layoutMs": 0.41,
+    "styleMs": 1.84,
+    "scriptMs": 2.19,
+    "taskMs": 10.39,
+    "appearMs": 25
+   },
+   "perfMin": {
+    "layouts": 3,
+    "styleRecalcs": 10,
+    "layoutMs": 0.38,
+    "styleMs": 1.65,
+    "scriptMs": 2.04,
+    "taskMs": 9.71,
+    "appearMs": 19
+   }
+  },
+  "desktop-drop": {
+   "animations": [],
+   "box": {
+    "x": 0,
+    "y": 0,
+    "w": 1440,
+    "h": 900,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 2,
+    "styleRecalcs": 2,
+    "layoutMs": 4.09,
+    "styleMs": 0.27,
+    "scriptMs": 0.4,
+    "taskMs": 23.7,
+    "appearMs": 22
+   },
+   "perfMin": {
+    "layouts": 2,
+    "styleRecalcs": 2,
+    "layoutMs": 3.7,
+    "styleMs": 0.23,
+    "scriptMs": 0.33,
+    "taskMs": 21.45,
+    "appearMs": 20
+   }
+  },
+  "desktop-banner": {
+   "animations": [],
+   "box": {
+    "x": 360,
+    "y": 156,
+    "w": 720,
+    "h": 44,
+    "opacity": "1"
+   }
+  },
+  "desktop-password": {
+   "animations": [
+    {
+     "name": "",
+     "duration": 150,
+     "target": "inline-flex min-h-11 shrink-0 items-center justify-center ro"
+    }
+   ],
+   "box": {
+    "x": 553,
+    "y": 413,
+    "w": 334,
+    "h": 20,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 1,
+    "styleRecalcs": 11,
+    "layoutMs": 0.84,
+    "styleMs": 0.65,
+    "scriptMs": 1.02,
+    "taskMs": 8.56,
+    "appearMs": 18
+   },
+   "perfMin": {
+    "layouts": 1,
+    "styleRecalcs": 9,
+    "layoutMs": 0.78,
+    "styleMs": 0.57,
+    "scriptMs": 0.93,
+    "taskMs": 7.71,
+    "appearMs": 13
+   }
+  },
+  "mobile-confirm": {
+   "animations": [],
+   "box": {
+    "x": 16,
+    "y": 298,
+    "w": 358,
+    "h": 248,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 1,
+    "styleRecalcs": 5,
+    "layoutMs": 2.46,
+    "styleMs": 1.13,
+    "scriptMs": 1.45,
+    "taskMs": 15.9,
+    "appearMs": 16
+   },
+   "perfMin": {
+    "layouts": 1,
+    "styleRecalcs": 5,
+    "layoutMs": 2.23,
+    "styleMs": 0.98,
+    "scriptMs": 1.26,
+    "taskMs": 13.9,
+    "appearMs": 14
+   }
+  },
+  "mobile-menu": {
+   "animations": [
+    {
+     "name": "",
+     "duration": 150,
+     "target": "[object SVGAnimatedString]"
+    }
+   ],
+   "box": {
+    "x": 8,
+    "y": 678,
+    "w": 374,
+    "h": 98,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 1,
+    "styleRecalcs": 14,
+    "layoutMs": 0.43,
+    "styleMs": 1.09,
+    "scriptMs": 1.97,
+    "taskMs": 16.66,
+    "appearMs": 21
+   },
+   "perfMin": {
+    "layouts": 1,
+    "styleRecalcs": 13,
+    "layoutMs": 0.41,
+    "styleMs": 1.03,
+    "scriptMs": 1.88,
+    "taskMs": 16.07,
+    "appearMs": 15
+   }
+  },
+  "mobile-drawer": {
+   "animations": [],
+   "box": {
+    "x": 0,
+    "y": 0,
+    "w": 390,
+    "h": 844,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 3,
+    "styleRecalcs": 6,
+    "layoutMs": 11.67,
+    "styleMs": 1.24,
+    "scriptMs": 2.8,
+    "taskMs": 36.45,
+    "appearMs": 62
+   },
+   "perfMin": {
+    "layouts": 3,
+    "styleRecalcs": 6,
+    "layoutMs": 9.74,
+    "styleMs": 1.16,
+    "scriptMs": 2.67,
+    "taskMs": 33.71,
+    "appearMs": 53
+   }
+  },
+  "mobile-lightbox": {
+   "animations": [],
+   "box": {
+    "x": 16,
+    "y": 306,
+    "w": 358,
+    "h": 233,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 1,
+    "styleRecalcs": 5,
+    "layoutMs": 0.28,
+    "styleMs": 0.92,
+    "scriptMs": 1.9,
+    "taskMs": 7.82,
+    "appearMs": 20
+   },
+   "perfMin": {
+    "layouts": 1,
+    "styleRecalcs": 5,
+    "layoutMs": 0.27,
+    "styleMs": 0.84,
+    "scriptMs": 1.64,
+    "taskMs": 7,
+    "appearMs": 15
+   }
+  },
+  "mobile-drop": {
+   "animations": [],
+   "box": {
+    "x": 0,
+    "y": 0,
+    "w": 390,
+    "h": 844,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 2,
+    "styleRecalcs": 2,
+    "layoutMs": 7.4,
+    "styleMs": 0.22,
+    "scriptMs": 0.36,
+    "taskMs": 26.74,
+    "appearMs": 25
+   },
+   "perfMin": {
+    "layouts": 2,
+    "styleRecalcs": 2,
+    "layoutMs": 6.68,
+    "styleMs": 0.2,
+    "scriptMs": 0.33,
+    "taskMs": 24.01,
+    "appearMs": 22
+   }
+  },
+  "mobile-banner": {
+   "animations": [],
+   "box": {
+    "x": 16,
+    "y": 147,
+    "w": 358,
+    "h": 44,
+    "opacity": "1"
+   }
+  },
+  "mobile-password": {
+   "animations": [],
+   "box": {
+    "x": 41,
+    "y": 385,
+    "w": 308,
+    "h": 20,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 1,
+    "styleRecalcs": 4,
+    "layoutMs": 0.83,
+    "styleMs": 0.28,
+    "scriptMs": 0.95,
+    "taskMs": 7.26,
+    "appearMs": 24
+   },
+   "perfMin": {
+    "layouts": 1,
+    "styleRecalcs": 4,
+    "layoutMs": 0.78,
+    "styleMs": 0.23,
+    "scriptMs": 0.88,
+    "taskMs": 6.43,
+    "appearMs": 16
+   }
+  }
+ },
+ "desktop-cancelDuringAnimation": "closed",
+ "desktop-reducedMotionAnimations": [],
+ "mobile-cancelDuringAnimation": "closed",
+ "mobile-drawerEscDuringAnimation": "closed",
+ "mobile-reducedMotionAnimations": []
+}

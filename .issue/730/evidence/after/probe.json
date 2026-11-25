@@ -1,0 +1,456 @@
+{
+ "freezeMs": 15,
+ "scenes": {
+  "desktop-confirm": {
+   "animations": [
+    {
+     "name": "fade-in",
+     "duration": 200,
+     "target": "fixed inset-0 z-50 grid animate-dialog-fade place-items-cent"
+    },
+    {
+     "name": "dialog-scale",
+     "duration": 200,
+     "target": "relative w-full max-w-sm animate-dialog-scale rounded-2xl bo"
+    }
+   ],
+   "box": {
+    "x": 534,
+    "y": 357,
+    "w": 372,
+    "h": 186,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 3,
+    "styleRecalcs": 13,
+    "layoutMs": 2.96,
+    "styleMs": 2.93,
+    "scriptMs": 3.24,
+    "taskMs": 33.49,
+    "appearMs": 35
+   },
+   "perfMin": {
+    "layouts": 3,
+    "styleRecalcs": 12,
+    "layoutMs": 2.75,
+    "styleMs": 2.68,
+    "scriptMs": 2.9,
+    "taskMs": 32.43,
+    "appearMs": 34
+   }
+  },
+  "desktop-menu": {
+   "animations": [
+    {
+     "name": "",
+     "duration": 150,
+     "target": "[object SVGAnimatedString]"
+    },
+    {
+     "name": "pop-up",
+     "duration": 150,
+     "target": "absolute right-2 bottom-full left-2 z-30 mb-1 animate-pop-up"
+    }
+   ],
+   "box": {
+    "x": 8,
+    "y": 752,
+    "w": 243,
+    "h": 82,
+    "opacity": "0.494391"
+   },
+   "perf": {
+    "layouts": 1,
+    "styleRecalcs": 16,
+    "layoutMs": 0.51,
+    "styleMs": 3.38,
+    "scriptMs": 3.62,
+    "taskMs": 33.49,
+    "appearMs": 51
+   },
+   "perfMin": {
+    "layouts": 1,
+    "styleRecalcs": 15,
+    "layoutMs": 0.43,
+    "styleMs": 2.48,
+    "scriptMs": 3.21,
+    "taskMs": 28.81,
+    "appearMs": 48
+   }
+  },
+  "desktop-lightbox": {
+   "animations": [
+    {
+     "name": "",
+     "duration": 150,
+     "target": "shrink-0 rounded-md p-3.5 text-ink-muted opacity-100 md:p-1 "
+    },
+    {
+     "name": "fade-in",
+     "duration": 200,
+     "target": "fixed inset-0 z-50 grid animate-dialog-fade place-items-cent"
+    },
+    {
+     "name": "dialog-scale",
+     "duration": 200,
+     "target": "relative max-h-[85vh] max-w-full animate-dialog-scale touch-"
+    }
+   ],
+   "box": {
+    "x": 332,
+    "y": 198,
+    "w": 776,
+    "h": 504,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 3,
+    "styleRecalcs": 15,
+    "layoutMs": 0.47,
+    "styleMs": 2.73,
+    "scriptMs": 2.71,
+    "taskMs": 13.93,
+    "appearMs": 24
+   },
+   "perfMin": {
+    "layouts": 3,
+    "styleRecalcs": 14,
+    "layoutMs": 0.42,
+    "styleMs": 2.55,
+    "scriptMs": 2.31,
+    "taskMs": 12.57,
+    "appearMs": 15
+   }
+  },
+  "desktop-drop": {
+   "animations": [
+    {
+     "name": "fade-in",
+     "duration": 150,
+     "target": "fixed inset-0 z-40 grid animate-fade-in place-items-center b"
+    }
+   ],
+   "box": {
+    "x": 0,
+    "y": 0,
+    "w": 1440,
+    "h": 900,
+    "opacity": "0.494391"
+   },
+   "perf": {
+    "layouts": 2,
+    "styleRecalcs": 6,
+    "layoutMs": 3.72,
+    "styleMs": 0.51,
+    "scriptMs": 1.12,
+    "taskMs": 27.08,
+    "appearMs": 24
+   },
+   "perfMin": {
+    "layouts": 2,
+    "styleRecalcs": 4,
+    "layoutMs": 3.42,
+    "styleMs": 0.43,
+    "scriptMs": 0.99,
+    "taskMs": 22.82,
+    "appearMs": 20
+   }
+  },
+  "desktop-banner": {
+   "animations": [
+    {
+     "name": "fade-in",
+     "duration": 150,
+     "target": "mt-4 animate-fade-in rounded-2xl bg-danger-soft px-4 py-3 te"
+    }
+   ],
+   "box": {
+    "x": 360,
+    "y": 156,
+    "w": 720,
+    "h": 44,
+    "opacity": "0.494391"
+   }
+  },
+  "desktop-password": {
+   "animations": [
+    {
+     "name": "",
+     "duration": 150,
+     "target": "inline-flex min-h-11 shrink-0 items-center justify-center ro"
+    },
+    {
+     "name": "fade-in",
+     "duration": 150,
+     "target": "animate-fade-in"
+    }
+   ],
+   "box": {
+    "x": 553,
+    "y": 413,
+    "w": 334,
+    "h": 20,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 2,
+    "styleRecalcs": 12,
+    "layoutMs": 0.93,
+    "styleMs": 0.91,
+    "scriptMs": 1.1,
+    "taskMs": 10.69,
+    "appearMs": 23
+   },
+   "perfMin": {
+    "layouts": 2,
+    "styleRecalcs": 10,
+    "layoutMs": 0.89,
+    "styleMs": 0.78,
+    "scriptMs": 1.02,
+    "taskMs": 10.05,
+    "appearMs": 14
+   }
+  },
+  "mobile-confirm": {
+   "animations": [
+    {
+     "name": "fade-in",
+     "duration": 200,
+     "target": "fixed inset-0 z-50 grid animate-dialog-fade place-items-cent"
+    },
+    {
+     "name": "dialog-scale",
+     "duration": 200,
+     "target": "relative w-full max-w-sm animate-dialog-scale rounded-2xl bo"
+    }
+   ],
+   "box": {
+    "x": 21,
+    "y": 302,
+    "w": 347,
+    "h": 240,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 2,
+    "styleRecalcs": 10,
+    "layoutMs": 2.43,
+    "styleMs": 1.44,
+    "scriptMs": 1.41,
+    "taskMs": 16.48,
+    "appearMs": 14
+   },
+   "perfMin": {
+    "layouts": 2,
+    "styleRecalcs": 9,
+    "layoutMs": 2.27,
+    "styleMs": 1.33,
+    "scriptMs": 1.35,
+    "taskMs": 15.71,
+    "appearMs": 14
+   }
+  },
+  "mobile-menu": {
+   "animations": [
+    {
+     "name": "",
+     "duration": 150,
+     "target": "[object SVGAnimatedString]"
+    },
+    {
+     "name": "pop-up",
+     "duration": 150,
+     "target": "absolute right-2 bottom-full left-2 z-30 mb-1 animate-pop-up"
+    }
+   ],
+   "box": {
+    "x": 8,
+    "y": 680,
+    "w": 374,
+    "h": 98,
+    "opacity": "0.494391"
+   },
+   "perf": {
+    "layouts": 1,
+    "styleRecalcs": 13,
+    "layoutMs": 0.45,
+    "styleMs": 2.76,
+    "scriptMs": 1.99,
+    "taskMs": 18.48,
+    "appearMs": 22
+   },
+   "perfMin": {
+    "layouts": 1,
+    "styleRecalcs": 13,
+    "layoutMs": 0.43,
+    "styleMs": 2.46,
+    "scriptMs": 1.91,
+    "taskMs": 17.85,
+    "appearMs": 16
+   }
+  },
+  "mobile-drawer": {
+   "animations": [
+    {
+     "name": "drawer-in",
+     "duration": 150,
+     "target": "fixed inset-0 z-40 animate-drawer-in bg-surface md:hidden [&"
+    }
+   ],
+   "box": {
+    "x": -197,
+    "y": 0,
+    "w": 390,
+    "h": 844,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 4,
+    "styleRecalcs": 13,
+    "layoutMs": 11.4,
+    "styleMs": 1.6,
+    "scriptMs": 3.12,
+    "taskMs": 38.3,
+    "appearMs": 59
+   },
+   "perfMin": {
+    "layouts": 4,
+    "styleRecalcs": 12,
+    "layoutMs": 9.98,
+    "styleMs": 1.53,
+    "scriptMs": 2.87,
+    "taskMs": 35.46,
+    "appearMs": 52
+   }
+  },
+  "mobile-lightbox": {
+   "animations": [
+    {
+     "name": "fade-in",
+     "duration": 200,
+     "target": "fixed inset-0 z-50 grid animate-dialog-fade place-items-cent"
+    },
+    {
+     "name": "dialog-scale",
+     "duration": 200,
+     "target": "relative max-h-[85vh] max-w-full animate-dialog-scale touch-"
+    }
+   ],
+   "box": {
+    "x": 21,
+    "y": 309,
+    "w": 347,
+    "h": 226,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 1,
+    "styleRecalcs": 11,
+    "layoutMs": 0.28,
+    "styleMs": 1.32,
+    "scriptMs": 1.82,
+    "taskMs": 9.39,
+    "appearMs": 20
+   },
+   "perfMin": {
+    "layouts": 1,
+    "styleRecalcs": 10,
+    "layoutMs": 0.26,
+    "styleMs": 1.22,
+    "scriptMs": 1.7,
+    "taskMs": 8.95,
+    "appearMs": 13
+   }
+  },
+  "mobile-drop": {
+   "animations": [
+    {
+     "name": "fade-in",
+     "duration": 150,
+     "target": "fixed inset-0 z-40 grid animate-fade-in place-items-center b"
+    }
+   ],
+   "box": {
+    "x": 0,
+    "y": 0,
+    "w": 390,
+    "h": 844,
+    "opacity": "0.494391"
+   },
+   "perf": {
+    "layouts": 2,
+    "styleRecalcs": 7,
+    "layoutMs": 6.67,
+    "styleMs": 0.52,
+    "scriptMs": 1.05,
+    "taskMs": 26.49,
+    "appearMs": 23
+   },
+   "perfMin": {
+    "layouts": 2,
+    "styleRecalcs": 5,
+    "layoutMs": 6.35,
+    "styleMs": 0.45,
+    "scriptMs": 0.91,
+    "taskMs": 25.73,
+    "appearMs": 22
+   }
+  },
+  "mobile-banner": {
+   "animations": [
+    {
+     "name": "fade-in",
+     "duration": 150,
+     "target": "mt-4 animate-fade-in rounded-2xl bg-danger-soft px-4 py-3 te"
+    }
+   ],
+   "box": {
+    "x": 16,
+    "y": 147,
+    "w": 358,
+    "h": 44,
+    "opacity": "0.494391"
+   }
+  },
+  "mobile-password": {
+   "animations": [
+    {
+     "name": "fade-in",
+     "duration": 150,
+     "target": "animate-fade-in"
+    }
+   ],
+   "box": {
+    "x": 41,
+    "y": 385,
+    "w": 308,
+    "h": 20,
+    "opacity": "1"
+   },
+   "perf": {
+    "layouts": 2,
+    "styleRecalcs": 10,
+    "layoutMs": 0.91,
+    "styleMs": 0.6,
+    "scriptMs": 1.03,
+    "taskMs": 9.47,
+    "appearMs": 21
+   },
+   "perfMin": {
+    "layouts": 2,
+    "styleRecalcs": 9,
+    "layoutMs": 0.87,
+    "styleMs": 0.55,
+    "scriptMs": 0.94,
+    "taskMs": 9.04,
+    "appearMs": 11
+   }
+  }
+ },
+ "desktop-cancelDuringAnimation": "closed",
+ "desktop-reducedMotionAnimations": [],
+ "mobile-cancelDuringAnimation": "closed",
+ "mobile-drawerEscDuringAnimation": "closed",
+ "mobile-reducedMotionAnimations": []
+}
