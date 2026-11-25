@@ -354,7 +354,7 @@ function IssuedDialog({
             </button>
           </div>
           <p role="status" className="mt-2 min-h-5 text-center text-xs text-ink-muted">
-            {/* 그릇(role=status)은 그대로 두고 글만 바꿔 끼운다(#484) - 문구가 바뀔 때마다 새로 붙어 나타나도록 key 를 문구로(#730) */}
+            {/* 그릇(role=status)은 그대로 두고 안쪽 글만 붙였다 뗀다(#484). 누를 때마다 Fade 가 다시 도는 건 copy() 가 먼저 비워 span 이 빠졌다 다시 붙기 때문(#675) - key 는 빈 값을 거치지 않고 문구가 바로 바뀌는 경우의 보험(#730) */}
             {copyNote && <span key={copyNote} className="animate-fade-in">{copyNote}</span>}
           </p>
           {/* 두 문장 모두 필요하다 : 다시 못 본다는 사실과, 이 발급이 상대에게 무엇을 뜻하는지 */}
