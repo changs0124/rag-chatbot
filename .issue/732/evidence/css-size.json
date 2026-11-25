@@ -1,0 +1,12 @@
+{
+ "before 853393cf": {
+  "file": "index-DzGbsWf-.css",
+  "bytes": 85389,
+  "gzip_level9": 22284
+ },
+ "after aabb7669 (e8415db4 와 트리 동일)": {
+  "file": "index-CCT_-DIz.css",
+  "bytes": 85873,
+  "gzip_level9": 22412
+ }
+}
