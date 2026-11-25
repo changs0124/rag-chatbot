@@ -205,7 +205,7 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
     드래그 오버레이 · 관리 화면 오류 배너 · 복사 알림 : `animate-fade-in` — 모두 150ms
   - **속도를 해치지 않는 조건** : CSS `@keyframes` 만 쓴다(JS 상태 · 타이머 없음 — 리렌더 횟수 그대로). `opacity` 와 개별 변형 속성
     `scale` · `translate` 만 움직인다 — 레이아웃을 다시 계산하지 않고, 라이트박스 이미지의 인라인 `transform`(확대 · 이동)과도 겹치지 않는다.
-    `pointer-events` 를 막지 않아 첫 프레임부터 누르고 Esc 로 닫을 수 있다. 실측은 #730 증거(열기 전후 Layout 횟수 같음)
+    `pointer-events` 를 막지 않아 첫 프레임부터 누르고 Esc 로 닫을 수 있다. 실측(#730, 열기 → 400ms, 15회 중앙값) : 클릭 → 화면에 붙기까지 시간 전후 같음 · Layout 은 확인 창 · 발급 창 · 드로어에서 1회 늘지만 레이아웃 시간 차이 0.2ms 이하 · 메인 스레드 작업 +1~7ms(스타일 재계산)
   - 채팅 목록(말풍선 · 스트리밍 답변)에는 넣지 않는다 — 아래 §6 「스크롤 진입 애니메이션」과 같은 이유
 - **속성** : `transform` · `opacity` · 색(`transition-colors`) · 입력 포커스 테두리(`border-color` · `box-shadow`)만. 레이아웃을 흔드는 속성(폭 · 높이 · 여백)에 트랜지션을 걸지 않는다
 - **누르는 느낌은 색으로 낸다**(#646) — hover 는 면 색만 바꾼다(주요 `accent-hover`, 보조 `surface`, 위험 `brightness-95`).
