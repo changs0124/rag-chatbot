@@ -196,7 +196,17 @@ bg-danger · text-danger · text-danger-ink · bg-danger-soft · border-danger
 
 - **이징 한 가지** : `cubic-bezier(0.16, 1, 0.3, 1)` — `--ease-out-quint` 로 두고 전 컴포넌트가 쓴다.
   `linear` · `ease-in-out` 금지.
-- **지속** : 150ms 하나(`duration-150`) — 상태 변화 · 모달 모두
+- **지속** : 150ms 하나(`duration-150`) — 상태 변화. 예외는 아래 진입 애니메이션의 다이얼로그 · 라이트박스 200ms 뿐
+- **진입 애니메이션(#730)** : 열리는 층은 들어올 때만 움직이고, 닫힐 때는 지금처럼 곧바로 사라진다.
+  퇴장까지 넣으려면 언마운트를 늦추는 상태가 컴포넌트마다 생겨 렌더 경로가 무거워진다. 토큰은 `index.css` 의 `--animate-*` 다섯
+  - 확인 창 · 비밀번호 발급 창 · 라이트박스 : 바깥(스크림) `animate-dialog-fade` + 카드 · 이미지 `animate-dialog-scale`(0.95 → 1), 둘 다 200ms.
+    눌림 scale(#646, 아래 「누르는 느낌」)과는 다른 일이다 — 손에 반응해 커졌다 줄었다 하는 게 아니라 한 번 나타나는 동작이다
+  - 사용자 메뉴 : `animate-pop-up`(아래 4px 에서 올라오며 투명도) · 모바일 드로어 : `animate-drawer-in`(왼쪽 밖에서 밀려 들어옴) ·
+    드래그 오버레이 · 관리 화면 오류 배너 · 복사 알림 : `animate-fade-in` — 모두 150ms
+  - **속도를 해치지 않는 조건** : CSS `@keyframes` 만 쓴다(JS 상태 · 타이머 없음 — 리렌더 횟수 그대로). `opacity` 와 개별 변형 속성
+    `scale` · `translate` 만 움직인다 — 레이아웃을 다시 계산하지 않고, 라이트박스 이미지의 인라인 `transform`(확대 · 이동)과도 겹치지 않는다.
+    `pointer-events` 를 막지 않아 첫 프레임부터 누르고 Esc 로 닫을 수 있다. 실측은 #730 증거(열기 전후 Layout 횟수 같음)
+  - 채팅 목록(말풍선 · 스트리밍 답변)에는 넣지 않는다 — 아래 §6 「스크롤 진입 애니메이션」과 같은 이유
 - **속성** : `transform` · `opacity` · 색(`transition-colors`) · 입력 포커스 테두리(`border-color` · `box-shadow`)만. 레이아웃을 흔드는 속성(폭 · 높이 · 여백)에 트랜지션을 걸지 않는다
 - **누르는 느낌은 색으로 낸다**(#646) — hover 는 면 색만 바꾼다(주요 `accent-hover`, 보조 `surface`, 위험 `brightness-95`).
   예전의 `hover:scale-[1.02]` / `active:scale-[0.98]` 는 걷었다 — 버튼 · 카드가 커졌다 줄었다 하면 장난감처럼 읽힌다(사용자 평가 「처음 만든 디자인 같다」)

@@ -437,7 +437,7 @@ export default function Composer({
       {/* 스크림은 검정이 아니라 canvas/85 - 글자 12.67 · 점선 5.23(design-system 「토큰 밖 겹침 — 실측 (#155)」). 85~95 는 사실상 같은 값이라
           뒤가 비치는 85 를 쓴다 */}
       {dragging && (
-        <div className="fixed inset-0 z-40 grid place-items-center bg-canvas/85 p-6 backdrop-blur-sm">
+        <div className="fixed inset-0 z-40 grid animate-fade-in place-items-center bg-canvas/85 p-6 backdrop-blur-sm">
           <div className="grid h-full w-full place-items-center rounded-[1.75rem] border-2 border-dashed border-accent text-[15px] font-medium text-ink">
             여기에 놓아 첨부
           </div>

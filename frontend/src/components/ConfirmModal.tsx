@@ -32,10 +32,10 @@ export default function ConfirmModal({
   // 바깥에 건 inert 는 남아 앱 전체가 눌리지 않았다. body 아래면 늘 보이고 inert 는 #root 하나에 걸려, 겹친 창(드로어 위의
   // 이동 확인 창)이 먼저 닫힌 바깥 창 때문에 풀리지도 않는다. React 이벤트는 컴포넌트 트리를 따라 올라가므로 드로어의 Esc 판정은 그대로
   return createPortal(
-    <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <div ref={dialogRef} className="fixed inset-0 z-50 grid animate-dialog-fade place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className="absolute inset-0" onClick={onCancel} aria-hidden="true" />
       {/* 한 겹 카드(#646) - 이중 테두리(트레이)를 걷었다. 경계는 1px line + 떠 있는 그림자 */}
-      <div className="relative w-full max-w-sm rounded-2xl border border-line bg-raised shadow-[var(--shadow-lifted)]">
+      <div className="relative w-full max-w-sm animate-dialog-scale rounded-2xl border border-line bg-raised shadow-[var(--shadow-lifted)]">
         <div className="p-6">
           <h2 id={titleId} className="text-base font-semibold text-ink">{title}</h2>
           {message && <p className="mt-2 text-sm leading-relaxed text-ink-muted">{message}</p>}
