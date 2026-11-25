@@ -31,7 +31,7 @@ export default function AdminErrorBanners({
   return [listError, error].map(
     (m, i) =>
       m && (
-        <p key={i} role="alert" className="mt-4 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
+        <p key={i} role="alert" className="mt-4 animate-fade-in rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
           {m}
           {i === 0 && !loaded && (
             <button type="button" onClick={retry} disabled={retrying} className="ml-2 font-medium underline disabled:no-underline disabled:opacity-70">

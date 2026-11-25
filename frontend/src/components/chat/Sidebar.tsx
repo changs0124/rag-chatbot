@@ -194,7 +194,7 @@ export default memo(function Sidebar({
             {/* 폭 조절 손잡이(z-10, #664)보다 위 - 같은 층이면 뒤에 오는 손잡이가 위에 그려져 그 자리를 누르면 메뉴가 안 닫혔다(#675) */}
             <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
             {/* 항목은 모바일 44px · 데스크톱 36px(#646 터치 하한). 이름은 화면 제목 「설정」과 맞춘다 */}
-            <div className="absolute right-2 bottom-full left-2 z-30 mb-1 overflow-hidden rounded-xl border border-line bg-raised p-1 shadow-[var(--shadow-lifted)]">
+            <div className="absolute right-2 bottom-full left-2 z-30 mb-1 animate-pop-up overflow-hidden rounded-xl border border-line bg-raised p-1 shadow-[var(--shadow-lifted)]">
               <Link
                 to="/me"
                 onClick={() => setMenuOpen(false)}

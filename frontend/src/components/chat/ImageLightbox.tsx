@@ -157,7 +157,7 @@ export default function ImageLightbox({
   }
 
   return (
-    <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/90 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <div ref={dialogRef} className="fixed inset-0 z-50 grid animate-dialog-fade place-items-center bg-black/90 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
       <h2 id={titleId} className="sr-only">이미지 보기</h2>
 
@@ -216,7 +216,7 @@ export default function ImageLightbox({
         onError={() => onImageError?.(index)}
         style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})` }}
         // touch-none : 브라우저 기본 제스처(스크롤·확대)가 먼저 먹으면 핀치 이벤트가 오지 않음
-        className="relative max-h-[85vh] max-w-full touch-none rounded-lg object-contain"
+        className="relative max-h-[85vh] max-w-full animate-dialog-scale touch-none rounded-lg object-contain"
       />
 
       {downloadFailed === index && (

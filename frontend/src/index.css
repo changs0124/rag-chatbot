@@ -75,6 +75,38 @@
   /* 모션 시그니처 - 전 컴포넌트가 이 이징 하나를 쓴다. linear · ease-in-out 은 쓰지 않음 */
   --ease-out-quint: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /*
+   * 진입 애니메이션(#730) - 열리는 층이 들어올 때만 한 번. 닫힐 때는 바로 사라진다(design-system §4).
+   * opacity 와 개별 변형 속성(scale · translate)만 움직인다 - 레이아웃을 다시 계산하지 않고, 요소의 transform
+   * (라이트박스 이미지의 확대 · 이동)과 겹치지 않는다. 움직임 줄이기는 아래 전역 규칙이 1ms 로 끈다
+   */
+  --animate-fade-in: fade-in 150ms var(--ease-out-quint);
+  --animate-pop-up: pop-up 150ms var(--ease-out-quint);
+  --animate-drawer-in: drawer-in 150ms var(--ease-out-quint);
+  --animate-dialog-fade: fade-in 200ms var(--ease-out-quint);
+  --animate-dialog-scale: dialog-scale 200ms var(--ease-out-quint);
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes pop-up {
+    from {
+      opacity: 0;
+      translate: 0 4px;
+    }
+  }
+  @keyframes drawer-in {
+    from {
+      translate: -100% 0;
+    }
+  }
+  @keyframes dialog-scale {
+    from {
+      scale: 0.95;
+    }
+  }
+
   /* 확산형 그림자만 씀. 짙은 그림자는 면 색 차이로 만든 계층을 뭉개 버림 */
   --shadow-ambient: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.1);
   --shadow-lifted: 0 2px 4px rgb(0 0 0 / 0.05), 0 16px 40px -16px rgb(0 0 0 / 0.18);

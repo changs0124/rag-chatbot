@@ -321,7 +321,7 @@ function MobileDrawer({ onClose, children }: { onClose: () => void; children: Re
     <div
       ref={ref}
       // 사이드바의 오른쪽 경계선은 화면 전체 드로어에서는 화면 끝 1px 선으로만 남아 지운다(#684)
-      className="fixed inset-0 z-40 bg-surface md:hidden [&_aside]:border-r-0"
+      className="fixed inset-0 z-40 animate-drawer-in bg-surface md:hidden [&_aside]:border-r-0"
       role="dialog"
       aria-modal="true"
       aria-label="대화 목록"

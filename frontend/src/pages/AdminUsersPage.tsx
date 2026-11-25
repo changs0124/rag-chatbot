@@ -338,9 +338,9 @@ function IssuedDialog({
   }
 
   return (
-    <div ref={dialogRef} className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <div ref={dialogRef} className="fixed inset-0 z-50 grid animate-dialog-fade place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       {/* ConfirmModal 과 같은 한 겹 카드(#646) */}
-      <div className="relative w-full max-w-sm rounded-2xl border border-line bg-raised shadow-[var(--shadow-lifted)]">
+      <div className="relative w-full max-w-sm animate-dialog-scale rounded-2xl border border-line bg-raised shadow-[var(--shadow-lifted)]">
         <div className="p-6">
           <h2 id={titleId} className="text-base font-semibold text-ink">
             {issued.kind === 'created' ? '계정이 발급되었습니다' : '임시 비밀번호가 발급되었습니다'}
@@ -354,7 +354,8 @@ function IssuedDialog({
             </button>
           </div>
           <p role="status" className="mt-2 min-h-5 text-center text-xs text-ink-muted">
-            {copyNote}
+            {/* 그릇(role=status)은 그대로 두고 글만 바꿔 끼운다(#484) - 문구가 바뀔 때마다 새로 붙어 나타나도록 key 를 문구로(#730) */}
+            {copyNote && <span key={copyNote} className="animate-fade-in">{copyNote}</span>}
           </p>
           {/* 두 문장 모두 필요하다 : 다시 못 본다는 사실과, 이 발급이 상대에게 무엇을 뜻하는지 */}
           <p className="mt-4 text-sm leading-relaxed text-ink-muted">
